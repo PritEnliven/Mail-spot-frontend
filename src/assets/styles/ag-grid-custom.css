@@ -1,0 +1,20 @@
+/* AG Grid custom styles */
+.ag-theme-alpine {
+    --ag-font-family: 'DM Sans', sans-serif;
+    --ag-foreground-color: #333;
+    --ag-background-color: #fff;
+    --ag-header-foreground-color: #333;
+    --ag-header-background-color: #f8f9fa;
+    --ag-row-hover-color: #f5f5f5;
+    --ag-selected-row-background-color: rgba(33, 150, 243, 0.1);
+    --ag-border-color: #e0e0e0;
+}
+
+/* Apply DM Sans font to all elements in AG Grid */
+.ag-theme-alpine,
+.ag-theme-alpine .ag-header-cell,
+.ag-theme-alpine .ag-cell,
+.ag-theme-alpine .ag-paging-panel,
+.ag-theme-alpine .ag-paging-row-summary-panel {
+    font-family: 'DM Sans', sans-serif !important;
+}

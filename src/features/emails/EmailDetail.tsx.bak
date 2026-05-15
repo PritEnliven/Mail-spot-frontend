@@ -1,0 +1,427 @@
+import replyIcon from "@images/arrow-uturn-left-icon.svg";
+import replyAllIcon from "@images/reply-all-icon.svg";
+import replyIconHover from "@images/arrow-uturn-left-icon-hover.svg";
+import replyAllIconHover from "@images/reply-all-icon-hover.svg";
+import forwardIcon from "@images/arrow-uturn-right-icon.svg";
+import forwardIconHover from "@images/arrow-uturn-right-icon-hover.svg";
+import CopyEmail from "@components/ui/email/CopyEmail";
+import editIcon from '@images/edit2-icon.svg';
+import editIconHover from '@images/edit2-icon-hover.svg';
+import closeIcon from "@images/close-icon.svg";
+import closeIconHover from "@images/close-icon-hover.svg";
+import InteractiveIcon from "@components/ui/InteractiveIcon";
+import EmailRecipientList from "@components/ui/email/EmailRecipientList";
+import EmailBody from "@components/ui/email/EmailBody";
+import EmailDetailAttachmentPreview from "@components/ui/email/EmailDetailAttachmentPreview";
+import ThreadEmailItem from "@components/ui/threadEmail/ThreadEmailItem";
+import ReplyForwardComposer from "@components/ui/ReplyForwardComposer";
+import type { Email } from "@models/Email";
+import { formatDate, TimeFormat } from "@utils/dateUtil";
+import { useAttachmentDownload } from "@hooks/useAttachmentDownload";
+import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
+import { useReplyForward } from "@hooks/useReplyForward";
+import { useState, useEffect, useCallback } from "react";
+import { useMailData, useMailUI } from '../../context/index';
+import { useHorizontalScrollbar } from "@hooks/useHorizontalScrollbar";
+import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
+import { showError, showSuccess } from "@components/ui/toast/toastNotification";
+import type { Response } from "@models/Response";
+import { useRef } from "react";
+
+
+const API_URL = import.meta.env.VITE_API_URL;
+const TOKEN = import.meta.env.VITE_TOKEN;
+
+console.log(API_URL, TOKEN);
+
+export interface RelativeDate {
+    isOld: boolean;
+    value: string;
+}
+
+export interface CustomBox {
+    key: string;
+    value: string;
+}
+
+interface Props {
+    email: Email;
+}
+
+const openAttachment = (customFileName: string, filename: string, isEml: boolean) => {
+    console.log('Opening attachment:', customFileName, filename, isEml);
+};
+
+const EmailDetail = ({ email }: Props) => {
+    const { downloadAttachments } = useAttachmentDownload();
+    const { openModal } = useMailUI();
+    const { emails, setEmails, setEmailDetailSelected, pagination, setPagination, setActiveEmailMessageId, boxName, updateBoxCount } = useMailData()
+    const { replyForwardState, openReplyForward, closeReplyForward } = useReplyForward();
+    const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar()
+    const [threadEmails, setThreadEmails] = useState<any[]>([]);
+
+    const fromEmail = email.from[0];
+    const fromName = fromEmail.split("@")[0];
+    const initial = fromEmail.split("@")[0].charAt(0);
+
+    const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
+
+    const loadThreadEmails = useCallback(async () => {
+        try {
+            const response = await getAllThreadEmails({
+                messageId: email.messageId,
+                threadId: email.threadId
+            });
+            setThreadEmails(response.data.threadEmails || []);
+        } catch (error) {
+            console.error('Error loading thread emails:', error);
+        }
+    }, [email.messageId, email.threadId]);
+
+    useEffect(() => {
+        // Don't load thread emails if current box is schedule
+        if (!boxName.toLocaleLowerCase().includes('schedule')) {
+            loadThreadEmails();
+        }
+    }, [loadThreadEmails, boxName]);
+
+    const handleCancelScheduleEmail = async (id: string) => {
+        try {
+            const response: Response = await cancelScheduledEmail({ id });
+            if (response.statusCode === 200) {
+                showSuccess("Schedule email canceld !!")
+                const emailToDelete = emails.find(email => email.id === id);
+                if (emailToDelete) {
+                    updateBoxCount(boxName, -1, -1);
+                    setEmails(prevEmails => prevEmails.filter(email => email.id !== id));
+                    setEmailDetailSelected(null);
+                    setActiveEmailMessageId(null);
+                    if (pagination) {
+                        setPagination({
+                            ...pagination,
+                            endCount: pagination.endCount - 1,
+                            totalEmails: pagination.totalEmails - 1
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            showError("Error while cancel schedule email")
+        }
+    }
+
+    const handleEmailReplyForward = () => {
+        if (!boxName.toLocaleLowerCase().includes('schedule')) {
+            setEmails(prevEmails =>
+                prevEmails.map(e =>
+                    e.messageId === email.messageId
+                        ? { ...e, threadCount: (e.threadCount ?? 0) + 1 }
+                        : e
+                )
+            );
+            loadThreadEmails();
+        }
+    }
+
+    const handleEditScheduleEmail = async (id: string) => {
+        try {
+            const response: Response = await getScheduleEmail({ id });
+            if (response.statusCode === 200) {
+                const email = response.data;
+                openModal('compose', {
+                    emailData: {
+                        _id: email._id,
+                        to: email.to ?? [],
+                        cc: email.cc ?? [],
+                        bcc: email.bcc ?? [],
+                        subject: email.subject ?? '',
+                        body: email.body ?? '',
+                        attachments: email.attachments ?? [],
+                        scheduledTime: email.scheduledTime ?? null,
+                        isScheduled: true,
+                    }
+                })
+                showSuccess('Scheduled email loaded for editing');
+            }
+        } catch (error) {
+            showError("Error while cancel schedule email")
+        }
+    }
+
+    return (
+        <div className="email-detail-section">
+            {/* Header */}
+            <div
+                className="mail-details-header d-flex align-items-center justify-content-between"
+                id="singleEmailPage"
+                data-message-id={email.messageId}
+                data-thread-id={email.threadId}
+                data-uid={email.uid}
+            >
+                <div className="d-flex align-items-center">
+                    <h2 className="box-title">{email.subject}</h2>
+                </div>
+            </div>
+
+            {/* mail-details-information-details-box */}
+            <div className="mail-message-send--information-details-box">
+                <div className="d-block">
+                    <div className="mail-details-information-details-box d-flex align-items-start justify-content-between">
+                        <div className="d-flex align-items-center justify-content-between position-relative profile-main-box">
+                            <span className="label-sm">From</span>
+                            <div className="d-flex align-items-center profile-section">
+                                <span className="mail-profile-label ms-0">
+                                    {initial.charAt(0).toUpperCase()}
+                                </span>
+                                <div className="d-block">
+                                    <span className="mail-profile-name d-block">
+                                        {fromName}
+                                    </span>
+                                    <span className="mail-profile-id d-block">{fromEmail}</span>
+                                </div>
+                            </div>
+                            <CopyEmail name={fromName} email={fromEmail} initial={initial} />
+                        </div>
+
+                        <span className="info-received-details d-block">
+                            {emailDate}
+                        </span>
+                    </div>
+
+                    <div className="d-flex align-items-end justify-content-between cc-bcc-to-info">
+                        <div className="d-block">
+                            {/* To */}
+                            <div className="mail-details-information-details-box  d-flex align-items-start m-0">
+                                <span className="label-sm">To</span>
+                                <div className="d-flex align-items-center tomail-list">
+                                    <EmailRecipientList emails={email.to} />
+                                </div>
+                            </div>
+
+                            {/* CC */}
+                            {email.cc.length > 0 && (
+                                <div className="mail-details-information-details-box d-flex align-items-center m-0">
+                                    <span className="label-sm">CC</span>
+                                    <div className="d-flex align-items-center tomail-list">
+                                        <EmailRecipientList emails={email.cc} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* BCC */}
+                            {email.bcc.length > 0 && (
+                                <div className="mail-details-information-details-box d-flex align-items-center m-0">
+                                    <span className="label-sm">BCC</span>
+                                    <div className="d-flex align-items-center tomail-list">
+                                        <EmailRecipientList emails={email.bcc} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {/* Actions */}
+                        {!email.isSchedule && (
+                            <div className="application-btn-multi" id="emailActionsBtn">
+                                <ul>
+                                    <li>
+                                        <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("reply", email, "reply-forward-bottom-box"); }}>
+                                            <InteractiveIcon
+                                                defaultIcon={replyIcon}
+                                                hoverIcon={replyIconHover}
+                                                activeIcon=""
+                                                isActive={false}
+                                                alt=""
+                                                className="interactive-icon hover-image"
+                                                renderAs="img"
+                                                tooltip="Reply"
+                                            />
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("replyAll", email, "reply-forward-bottom-box"); }}>
+                                            <InteractiveIcon
+                                                defaultIcon={replyAllIcon}
+                                                hoverIcon={replyAllIconHover}
+                                                activeIcon=""
+                                                isActive={false}
+                                                alt=""
+                                                className="interactive-icon hover-image"
+                                                renderAs="img"
+                                                tooltip="Reply All"
+                                            />
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("forward", email, "reply-forward-bottom-box"); }}>
+                                            <InteractiveIcon
+                                                defaultIcon={forwardIcon}
+                                                hoverIcon={forwardIconHover}
+                                                activeIcon=""
+                                                isActive={false}
+                                                alt=""
+                                                className="interactive-icon hover-image"
+                                                renderAs="img"
+                                                tooltip="Forward"
+                                            />
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            { /** Schedule info box */}
+
+            {email.isSchedule && (
+                <div className="schedule-info-box">
+                    <div className="d-flex align-items-center">
+                        <img src="images/scheduled-icon.svg" alt="" className="me-3" />
+                        <p className="m-0 me-1">Send scheduled for</p>
+                        <span>{formatDate(email.date, TimeFormat.SCHEDULE_DATE)}</span>
+                    </div>
+                    <div className="d-flex align-items-center">
+                        <a href="javascript:;" className="hover-link d-flex align-items-center me-2" onClick={() => handleEditScheduleEmail(email.id)}>
+                            <InteractiveIcon
+                                defaultIcon={editIcon}
+                                hoverIcon={editIconHover}
+                                activeIcon=""
+                                isActive={false}
+                                alt=""
+                                className="interactive-icon hover-image"
+                                renderAs="img"
+                                tooltip="Edit"
+                            />
+                        </a>
+                        <a href="javascript:;" className="hover-link d-flex align-items-center" onClick={() => handleCancelScheduleEmail(email.id)}>
+                            <InteractiveIcon
+                                defaultIcon={closeIcon}
+                                hoverIcon={closeIconHover}
+                                activeIcon=""
+                                isActive={false}
+                                alt=""
+                                className="interactive-icon hover-image"
+                                renderAs="img"
+                                tooltip="Cancel send"
+                            />
+                        </a>
+                    </div>
+                </div>
+            )}
+
+            {/* Body */}
+            <div className="mail-content-details-box" id="emailBodySection">
+                <div className="horizontal-scroll-container" >
+                    <div className="horizontal-scroll-content" ref={contentRef}>
+                        <div>
+                            <EmailBody html={email.body} />
+                        </div>
+                    </div>
+                    <div className="custom-horizontal-scrollbar-sticky-top" ref={scrollbarRef}>
+                        <div className="custom-scrollbar-thumb-horizontal" ref={thumbRef}></div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Attachments */}
+            <EmailDetailAttachmentPreview
+                attachments={email.attachments}
+                messageId={email.messageId}
+                onDownloadAttachment={downloadAttachments}
+                onOpenAttachment={openAttachment}
+            />
+
+            {!email.isSchedule && (
+                <div className="application-btn-multi" id="replyForwardActionButtons">
+                    <ul>
+                        <li>
+                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("reply", email, 'reply-forward-bottom-box'); }}
+                                className="hover-link"
+                                data-tooltip-id="my-tooltip"
+                                data-tooltip-content="Reply"
+                                data-tooltip-place="top"
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={replyIcon}
+                                    hoverIcon={replyIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="hover-image me-2 interactive-icon"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                                Reply
+                            </a>
+                        </li>
+                        <li>
+                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("replyAll", email, 'reply-forward-bottom-box'); }}
+                                className="hover-link"
+                                data-tooltip-id="my-tooltip"
+                                data-tooltip-content="Reply all"
+                                data-tooltip-place="top"
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={replyAllIcon}
+                                    hoverIcon={replyAllIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="hover-image me-2 interactive-icon"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                                Reply All
+                            </a>
+                        </li>
+                        <li>
+                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("forward", email, 'reply-forward-bottom-box'); }}
+                                className="hover-link"
+                                data-tooltip-id="my-tooltip"
+                                data-tooltip-content="Forward"
+                                data-tooltip-place="top"
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={forwardIcon}
+                                    hoverIcon={forwardIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="hover-image me-2 interactive-icon"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                                Forward
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            )
+            }
+
+            <div className="reply-section mt-3" id="replyForwardSection">
+                {replyForwardState.isOpen && replyForwardState.sourceEmail?.messageId === email.messageId && replyForwardState.sourceEmail && (
+                    <ReplyForwardComposer
+                        email={replyForwardState.sourceEmail}
+                        type={replyForwardState.type!}
+                        onClose={closeReplyForward}
+                        onEmailSent={handleEmailReplyForward}
+                    />
+                )}
+            </div>
+
+            {/* Thread Emails */}
+            {
+                threadEmails.length > 0 &&
+                <div className="thread-email" id="threadEmailsSection">
+                    {threadEmails.map((email, index) => (
+                        <ThreadEmailItem key={email.messageId} email={email} index={index} />
+                    ))}
+                </div>
+            }
+
+        </div >
+    );
+};
+
+export default EmailDetail;

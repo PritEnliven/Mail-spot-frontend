@@ -1,0 +1,51 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@routes/*": [
+        "src/routes/*"
+      ],
+      "@images/*": [
+        "src/assets/images/*"
+      ],
+      "@assets/*": [
+        "src/assets/*"
+      ],
+      "@styles/*": [
+        "src/assets/styles/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@features/*": [
+        "src/features/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
+      "@context/*": [
+        "src/context/*"
+      ],
+      "@models/*": [
+        "src/models/*"
+      ],
+      "@hooks/*": [
+        "src/hooks/*"
+      ]
+    },
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  }
+}

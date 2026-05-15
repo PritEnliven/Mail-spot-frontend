@@ -1,0 +1,156 @@
+import { ComposeEmailModal } from '@features/compose/ComposeEmailModal';
+import ConfirmDelete from './Modals/ConfirmDelete';
+import { useMailUI } from '../../context/index';
+import Schedule from '@components/ui/Modals/schedule/Schedule';
+import CalendarEventModal from '@components/ui/Modals/CalendarEventModal/CalendarEventModal';
+import EventInfoModal from '@components/ui/Modals/EventInfoModal';
+import EditRecurringModal from '@components/ui/Modals/EditRecurringModal/EditRecurringModal';
+import CustomRecurrenceModal from '@components/ui/Modals/CustomRecurrenceModal/CustomRecurrenceModal';
+import CreateCustomFolderModal from '@components/ui/Modals/CreateCustomFolder/CreateCustomFolderModal';
+import ChangeImapSmtpPasswordModal from '@components/ui/Modals/PasswordChangeImapSmtp/changeImapSmtpPasswordModal';
+import SignatureModal from '@components/ui/Modals/SignatureModal/SignatureModal';
+import ChangePassword from '@components/ui/Modals/ChangePassword/ChangePassword';
+import ForwardEmail from '@components/ui/Modals/forwardEmailModal/ForwardEmail';
+
+const BASE_Z_INDEX = 1050;
+const Z_INDEX_STEP = 20;
+
+function ModalRoot() {
+    const { activeModals } = useMailUI();
+    if (activeModals.length === 0) return null;
+
+    return (
+        <>
+            {activeModals.map((modal, index) => {
+                const zIndex = BASE_Z_INDEX + index * Z_INDEX_STEP;
+
+                switch (modal.type) {
+                    case 'compose':
+                        return (
+                            <ComposeEmailModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+
+                    case 'confirmDelete':
+                        return (
+                            <ConfirmDelete
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+
+                    case 'schedule':
+                        return (
+                            <Schedule
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+
+                    case 'calendarEvent':
+                        return (
+                            <CalendarEventModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+
+                    case 'eventInfo':
+                        return (
+                            <EventInfoModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    case 'recurrenceModal':
+                        return (
+                            <EditRecurringModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    case 'customRecurrence':
+                        return (
+                            <CustomRecurrenceModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    case 'createCustomFolder':
+                        return (
+                            <CreateCustomFolderModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    case 'changeImapSmtpPassword':
+                        return (
+                            <ChangeImapSmtpPasswordModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    case 'changePassword':
+                        return (
+                            <ChangePassword
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+
+                        )
+
+                    case 'createSignature':
+                        return (
+                            <SignatureModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+                    case 'forwardIt':
+                        return (
+                            <ForwardEmail
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    default:
+                        return null;
+                }
+            })}
+        </>
+    );
+}
+
+export default ModalRoot;

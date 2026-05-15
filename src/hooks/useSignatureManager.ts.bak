@@ -1,0 +1,113 @@
+import { useState, useEffect } from 'react';
+import { getAllSignatures } from '@services/settings/settingsService';
+
+export interface Signature {
+    _id: string;
+    signatureName: string;
+    body: string;
+    name: string
+}
+
+export const useSignatureManager = () => {
+    const [signatures, setSignatures] = useState<Signature[]>([]);
+    const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    // Load all signatures
+    useEffect(() => {
+        const loadSignatures = async () => {
+            try {
+                setLoading(true);
+                const response = await getAllSignatures();
+                if (response.statusCode === 200) {
+                    setSignatures(response.data?.signatures || []);
+                }
+            } catch (error) {
+                console.error('Failed to load signatures:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadSignatures();
+    }, []);
+
+    // Handle signature selection with intelligent content analysis
+    const handleSignatureSelect = (
+        signature: Signature,
+        setBodyValue: (value: string) => void,
+        getCurrentBody: () => string
+    ) => {
+        setSelectedSignatureId(signature._id);
+        
+        const currentBody = getCurrentBody() || '';
+        console.log('Signature Manager: Processing signature selection for', signature._id);
+        
+        const analyzeEmailStructure = (body: string) => {
+            const structure = {
+                userContent: '',
+                existingSignature: '',
+                quotedContent: '',
+                forwardedMessage: ''
+            };
+
+            // Detect forwarded message
+            const forwardMatch = body.match(/<div[^>]*id="forwarded-message"[^>]*>[\s\S]*?<\/div>/i);
+
+            if (forwardMatch) {
+                structure.forwardedMessage = forwardMatch[0];
+                structure.userContent = body.substring(0, body.indexOf(forwardMatch[0]));
+            } else {
+                const quotedMatch = body.match(/<div[^>]*id="quoted-message"[^>]*>[\s\S]*?<\/div>/i);
+
+                if (quotedMatch) {
+                    structure.quotedContent = quotedMatch[0];
+                    structure.userContent = body.substring(0, body.indexOf(quotedMatch[0]));
+                } else {
+                    structure.userContent = body;
+                }
+            }
+
+            // Detect existing signature
+            const signaturePattern = /<div[^>]*id="email-signature"[^>]*>[\s\S]*?<\/div>/i;
+            const match = structure.userContent.match(signaturePattern);
+
+            if (match) {
+                structure.existingSignature = match[0];
+                structure.userContent = structure.userContent.replace(signaturePattern, '').trim();
+            }
+
+            return structure;
+        };
+
+        const structure = analyzeEmailStructure(currentBody);
+
+        const newSignature = signature.body
+            ? `<div id="email-signature" data-signature-id="${signature._id}">${signature.body}</div>`
+            : '';
+
+        const userContentTrimmed = structure.userContent.trim();
+        const hasExistingSignature = structure.existingSignature.length > 0;
+
+        const spacingBeforeSignature =
+            !hasExistingSignature && userContentTrimmed ? '<br><br>' : '';
+
+        const updatedBody =
+            userContentTrimmed +
+            spacingBeforeSignature +
+            newSignature +
+            (structure.quotedContent || structure.forwardedMessage || '');
+
+        console.log('Signature Manager: Final updated body:', updatedBody);
+        
+        setBodyValue(updatedBody);
+    };
+
+    return {
+        signatures,
+        selectedSignatureId,
+        loading,
+        handleSignatureSelect,
+        setSelectedSignatureId
+    };
+};

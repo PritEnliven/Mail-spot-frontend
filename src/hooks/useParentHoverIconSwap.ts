@@ -1,0 +1,56 @@
+import { useEffect } from "react";
+
+export function useParentHoverIconSwap() {
+  useEffect(() => {
+
+    const handleHover = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const link = target.closest(".hover-link") as HTMLElement | null;
+      if (!link) return;
+
+      const img = link.querySelector<HTMLImageElement>(".interactive-icon[data-hover-icon]");
+      if (!img) {
+        return;
+      }
+
+      // Original src store only once
+      if (!img.dataset.originalSrc) {
+        img.dataset.originalSrc = img.src;
+      }
+
+      const related = e.relatedTarget as HTMLElement | null;
+      const isLeaving = e.type === "mouseout" && (!related || !link.contains(related));
+
+      if (e.type === "mouseover") {
+        // Icon swap to hover
+        const hoverSrc = img.dataset.hoverIcon;
+        if (hoverSrc && img.src !== hoverSrc) {
+          img.src = hoverSrc;
+        }
+
+        // Tooltip: set title attribute dynamically (native browser tooltip)
+        if (link.dataset.tooltip && !link.title) {
+          link.title = link.dataset.tooltip;
+        }
+      } else if (isLeaving) {
+        // Reset icon only when truly leaving
+        if (img.dataset.originalSrc && img.src !== img.dataset.originalSrc) {
+          img.src = img.dataset.originalSrc;
+        }
+
+        // Optional: title remove kar sakte ho (tooltip hide karne ke liye), lekin browser khud hide kar deta hai
+        // link.removeAttribute("title");  // ← agar chahiye to uncomment
+      }
+    };
+
+    document.addEventListener("mouseover", handleHover, { passive: true });
+    document.addEventListener("mouseout", handleHover, { passive: true });
+
+    return () => {
+      document.removeEventListener("mouseover", handleHover);
+      document.removeEventListener("mouseout", handleHover);
+    };
+  }, []);
+}

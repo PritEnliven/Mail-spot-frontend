@@ -1,0 +1,101 @@
+import smartMessageIcon from "@images/smart-message-icon-16.svg";
+import { useSmartReplies } from "@hooks/useSmartReplies";
+
+interface SmartRepliesCardProps {
+    editor?: any;
+    emailContent?: string;
+    onClose?: () => void;
+}
+
+const SmartRepliesCard = ({ editor, emailContent, onClose }: SmartRepliesCardProps) => {
+    const { smartReplies, isLoading, error, handleSmartReplyClick } = useSmartReplies({
+        emailContent,
+        onSmartReplyClick: (reply: string) => {
+            if (editor) {
+                editor.model.change(() => {
+                    const root = editor.model.document.getRoot();
+
+                    let insertPosition = editor.model.createPositionAt(root, "end");
+
+                    // Try to find signature and insert before it using model traversal
+                    const range = editor.model.createRangeIn(root);
+                    for (const item of range.getItems()) {
+                        if (item.is('textProxy') || item.is('text')) {
+                            const text = item.data || item.data || '';
+                            
+                            // Check for signature patterns in text
+                            if (text.includes('<br><br><br>') || text.startsWith('--')) {
+                                insertPosition = editor.model.createPositionBefore(item);
+                                break;
+                            }
+                        } else if (item.is('element')) {
+                            // Check for br elements that might indicate signature
+                            if (item.name === 'br') {
+                                const nextSibling = item.nextSibling;
+                                if (nextSibling && nextSibling.is('element') && nextSibling.name === 'br') {
+                                    const nextNextSibling = nextSibling.nextSibling;
+                                    if (nextNextSibling && nextNextSibling.is('element') && nextNextSibling.name === 'br') {
+                                        // Found triple br pattern, insert before first br
+                                        insertPosition = editor.model.createPositionBefore(item);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    const viewFragment = editor.data.processor.toView(`<p>${reply}</p><p>&nbsp;</p>`);
+                    const modelFragment = editor.data.toModel(viewFragment);
+                    editor.model.insertContent(modelFragment, insertPosition);
+                });
+            }
+            // Hide the smart replies card after clicking
+            onClose?.();
+        }
+    });
+
+    if (isLoading) {
+        return (
+            <div className="smart-replies" id="smart-replies-editor-1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="email-loader-container">
+                    <div className="email-loader-dots">
+                        <div className="email-loader-dot"></div>
+                        <div className="email-loader-dot"></div>
+                        <div className="email-loader-dot"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="smart-replies" id="smart-replies-editor-1" style={{ display: 'flex' }}>
+                <div className="d-flex align-items-center">
+                    <span className="me-2 text-muted">{error}</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (smartReplies.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="smart-replies" id="smart-replies-editor-1" style={{ display: 'flex' }}>
+            {smartReplies.map((reply, index) => (
+                <button
+                    key={index}
+                    className="btn-small-new smart-reply-suggestion hover-link"
+                    onClick={() => handleSmartReplyClick(reply)}
+                >
+                    <img className="me-2" src={smartMessageIcon} width="16" height="16" alt="Smart reply" />
+                    {reply}
+                </button>
+            ))}
+        </div>
+    );
+};
+
+export default SmartRepliesCard;

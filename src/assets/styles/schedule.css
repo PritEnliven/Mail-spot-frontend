@@ -1,0 +1,17 @@
+.schedule-info-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #F5F5F5;
+    padding: 8px;
+    border-radius: 5px;
+}
+.schedule-info-box p, .schedule-info-box span{
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 100%;
+    color: #717D84;
+}
+.schedule-message-box .mail-received-date{
+    color: #0073B6;
+}

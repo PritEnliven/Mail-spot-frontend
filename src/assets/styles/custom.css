@@ -1,0 +1,152 @@
+.skeleton-item {
+    padding: 0px;
+    list-style: none;
+}
+
+.skeleton-item .m-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.skeleton-icon {
+    width: 20px;
+    height: 20px;
+    margin-left: 20px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-text {
+    width: 126px;
+    height: 21px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+    animation-delay: 0.2s;
+}
+
+.skeleton-badge {
+    display: block;
+    width: 24px;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+    animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
+}
+
+.skeleton-email-row {
+    padding: 0px;
+    height: 60px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fff;
+}
+
+.skeleton-checkbox {
+    min-width: 20px;
+    min-height: 20px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    margin-right: 15px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-email-sender,
+.skeleton-email-date,
+.skeleton-email-subject,
+.skeleton-email-preview {
+    height: 16px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    margin: 4px 0;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-email-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 0 8px 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.skeleton-email-row:hover .skeleton-email-actions {
+    opacity: 1;
+}
+
+.skeleton-email-action-btn {
+    width: 24px;
+    height: 24px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    margin-left: 8px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-div {
+    padding: 10px 9px 16px;
+}
+
+.skeleton-back-btn {
+    background: #e0e0e0;
+    border-radius: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-email-header {
+    margin-bottom: 24px;
+}
+
+.skeleton-email-title {
+    background: #e0e0e0;
+    border-radius: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-avatar {
+    background: #e0e0e0;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-attachment {
+    background: #e0e0e0;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-button {
+    background: #e0e0e0;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
+}
