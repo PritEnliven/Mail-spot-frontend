@@ -15,6 +15,10 @@ import { colorListConfi } from "../../../../config/fullCalendar.config";
 import { useMailData } from "@context/MailDataContext";
 import { createCustomBox } from "@services/customBox/customBoxService";
 import { showSuccess } from "@components/ui/toast/toastNotification";
+import { useMemo } from "react";
+import { buildParentFolderOptions } from "@utils/emailUtil";
+
+const defaultColor = colorListConfi.find(c => c.default)?.value ?? colorListConfi[0].value;
 
 interface CreateCustomFoldarModlaProps {
     modalId: string;
@@ -33,6 +37,11 @@ function CreateCustomFolderModal(
     const { sidebarState, setSidebarStateFromAPI } = useMailData();
     const { closeModal } = useMailUI();
 
+    const parentFolderOptions = useMemo(
+        () => buildParentFolderOptions([], sidebarState.customBoxes, props.editFolderId),
+        [sidebarState.customBoxes, props.editFolderId]
+    );
+
     const {
         control,
         handleSubmit,
@@ -42,7 +51,7 @@ function CreateCustomFolderModal(
         resolver: zodResolver(createCustomFolderFormSchema),
         defaultValues: {
             folderName: props.folderName,
-            folderIconColor: props.folderIconColor,
+            folderIconColor: props.folderIconColor ?? defaultColor,
             parentFolder: props.parentFolder,
             editFolderId: props.editFolderId,
             isEdit: props.isEdit,
@@ -181,7 +190,7 @@ function CreateCustomFolderModal(
                                             render={({ field }) => (
                                                 <Select2Wrapper
                                                     {...field}
-                                                    options={sidebarState.parentFolderOptions}
+                                                    options={parentFolderOptions}
                                                     placeholder="Select one"
                                                     isMulti={false}
                                                     value={field.value || null}

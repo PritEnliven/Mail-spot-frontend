@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useRef, Suspense, lazy } from 'react';
+import { useEffect, useRef, Suspense, lazy, useCallback } from 'react';
 import { getSingleEmailService } from '../../services/email/emailService';
 import EmailRow from '../../features/emails/EmailRow';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
@@ -17,7 +17,7 @@ const MailBoxPage = () => {
     const emailScrollRef = useRef<HTMLDivElement | null>(null);
     const { boxName } = useParams<{ boxName: string }>();
     const { setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId } = useMailData();
-    const { selectedEmails } = useMailSelection();
+    const { selectedEmails, toggleEmailSelection } = useMailSelection();
     const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
 
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
@@ -27,6 +27,32 @@ const MailBoxPage = () => {
 
     // Ref to track the current markAsRead timeout
     const markAsReadTimeoutRef = useRef<number | null>(null);
+
+    /**
+     * Holds the latest versions of every value that the stable row callbacks need.
+     * Updated synchronously on every render — never triggers a re-render itself.
+     * This is the standard "latest-ref" pattern for creating stable useCallback
+     * wrappers that still see fresh values at call-time.
+     */
+    const latestRef = useRef<Record<string, any>>({});
+    latestRef.current = {
+        markAsRead,
+        markAsUnread,
+        deleteEmail,
+        activeEmailMessageId,
+        openModal,
+        closeModal,
+        setToolbarState,
+        activeModals,
+        toggleEmailSelection,
+        isDesktop,
+        setEmailDetailSelected,
+        setActiveEmailMessageId,
+        setIsMailListOpen,
+        currentActiveBox,
+        boxName,
+        isDraftBox,
+    };
 
     useEffect(() => {
         if (!boxName) return;
@@ -69,7 +95,7 @@ const MailBoxPage = () => {
                 showBack: false,
                 showSelectAll: true,
                 showRefresh: true,
-                showDelete: false,                 
+                showDelete: false,
                 showMarkAsRead: false,
                 showMarkAsUnread: false,
                 showMove: false,
@@ -78,8 +104,7 @@ const MailBoxPage = () => {
 
         return () => {
             isCancelled = true;
-            isLoading = false; // Reset flag when component unmounts
-            // Clear any pending markAsRead timeout
+            isLoading = false;
             if (markAsReadTimeoutRef.current) {
                 clearTimeout(markAsReadTimeoutRef.current);
                 markAsReadTimeoutRef.current = null;
@@ -87,61 +112,22 @@ const MailBoxPage = () => {
         };
     }, [boxName]);
 
-    const markAsReadUnreadEmailHandler = (messageIds: string[], shouldMarkAsRead: boolean) => {
-        if (shouldMarkAsRead) {
-            markAsRead(messageIds);
-        } else {
-            markAsUnread(messageIds);
-        }
+    // ---------------------------------------------------------------------------
+    // Stable row callbacks — empty dependency arrays are intentional.
+    // All dynamic values are read from latestRef.current at call-time so that
+    // React.memo on EmailRow can skip re-renders when unrelated state changes.
+    // ---------------------------------------------------------------------------
 
-        if (activeEmailMessageId) {
-            setToolbarState({
-                showBack: false,
-                showSelectAll: true,
-                showRefresh: false,
-                showDelete: true,
-                showMarkAsRead: !shouldMarkAsRead,
-                showMarkAsUnread: shouldMarkAsRead,
-                showMove: true,
-            });
-        }
-    }
-
-    const setupDeleteConfirmation = (mesageIds: string[], isDraftEmail: boolean) => {
-        // TODO: implement add forward email address modal logic
-        console.log("Open Add Forward Email Address Modal");
-        openModal('confirmDelete', {
-            onConfirm: () => deleteEmailHandler(mesageIds, isDraftEmail)
-        })
-    }
-
-    const deleteEmailHandler = async (messageIds: string[], isDraftEmail: boolean) => {
-        // Check if current box is draft and compose modal is open, then close it
-        if (isDraftBox) {
-            const composeModal = activeModals.find(modal => modal.type === 'compose');
-            if (composeModal) {
-                closeModal(composeModal.id);
-            }
-        }
-
-        return handleEmailDeletion(messageIds, isDraftEmail, {
-            deleteFn: deleteEmail,
-            successMessage: 'Email deleted successfully',
-            errorMessage: 'Failed to delete email'
-        });
-    }
-
-    const openEmailDetailHandler = async (
-        currentActiveBox: string,
+    const onOpenEmail = useCallback(async (
         uid: number,
         messageId: string,
         isSearch: boolean,
         mongoId?: string
     ) => {
         try {
-
+            const l = latestRef.current;
             const payload = {
-                current_active_box: currentActiveBox,
+                current_active_box: l.currentActiveBox,
                 uid,
                 messageId,
                 isSearch,
@@ -153,29 +139,25 @@ const MailBoxPage = () => {
                 data.emailList.isSchedule = true;
             }
 
-            if (boxName && verifyBoxName(boxName, 'draft')) {
+            if (l.boxName && verifyBoxName(l.boxName, 'draft')) {
                 data.emailList.isDraftMail = true;
                 data.emailList.draftEmailId = data.emailList.id;
                 data.emailList.draftMessageId = data.emailList.messageId;
                 console.log("Open Compose Modal");
-                openModal('compose', {
-                    emailData: data.emailList
-                })
+                l.openModal('compose', { emailData: data.emailList });
             }
 
-            setEmailDetailSelected(data.emailList);
-            setActiveEmailMessageId(messageId);
-            // setSelectedEmails(new Set([messageId]));
+            l.setEmailDetailSelected(data.emailList);
+            l.setActiveEmailMessageId(messageId);
             const isRead = data.emailList.flags.includes("\\Seen");
 
-            // On mobile, hide mail list and show email detail
-            if (!isDesktop) {
-                setIsMailListOpen(false);
+            if (!l.isDesktop) {
+                l.setIsMailListOpen(false);
             }
 
-            setToolbarState({
-                showBack: !isDesktop,
-                showSelectAll: isDesktop,
+            l.setToolbarState({
+                showBack: !l.isDesktop,
+                showSelectAll: l.isDesktop,
                 showRefresh: false,
                 showDelete: true,
                 showMarkAsRead: !isRead,
@@ -183,27 +165,68 @@ const MailBoxPage = () => {
                 showMove: true,
             });
 
-            // here after 3 seconds this mail should mark as read
-            if (boxName && verifyBoxName(boxName, 'schedule')) {
+            if (l.boxName && verifyBoxName(l.boxName, 'schedule')) {
                 return;
             }
+
             if (!isRead) {
-                // Clear any existing timeout
                 if (markAsReadTimeoutRef.current) {
                     clearTimeout(markAsReadTimeoutRef.current);
                 }
-
-                // Set new timeout for this email
                 markAsReadTimeoutRef.current = window.setTimeout(() => {
-                    markAsRead([messageId]);
+                    latestRef.current.markAsRead([messageId]);
                     markAsReadTimeoutRef.current = null;
                 }, 3000);
             }
-
         } catch (error) {
             console.error('Failed to fetch email detail', error);
         }
-    };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const onMarkReadUnread = useCallback((messageIds: string[], shouldMarkAsRead: boolean) => {
+        const l = latestRef.current;
+        if (shouldMarkAsRead) {
+            l.markAsRead(messageIds);
+        } else {
+            l.markAsUnread(messageIds);
+        }
+        if (l.activeEmailMessageId) {
+            l.setToolbarState({
+                showBack: false,
+                showSelectAll: true,
+                showRefresh: false,
+                showDelete: true,
+                showMarkAsRead: !shouldMarkAsRead,
+                showMarkAsUnread: shouldMarkAsRead,
+                showMove: true,
+            });
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const onDelete = useCallback((messageIds: string[], isDraftEmail: boolean) => {
+        const l = latestRef.current;
+        l.openModal('confirmDelete', {
+            onConfirm: async () => {
+                if (l.isDraftBox) {
+                    const composeModal = l.activeModals.find((modal: any) => modal.type === 'compose');
+                    if (composeModal) {
+                        l.closeModal(composeModal.id);
+                    }
+                }
+                return handleEmailDeletion(messageIds, isDraftEmail, {
+                    deleteFn: l.deleteEmail,
+                    successMessage: 'Email deleted successfully',
+                    errorMessage: 'Failed to delete email',
+                });
+            }
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const onToggleSelection = useCallback((messageId: string) => {
+        latestRef.current.toggleEmailSelection(messageId);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ---------------------------------------------------------------------------
 
     const isSchedule = boxName?.toLocaleLowerCase().includes('schedule');
     const mailListStyleOpenViaSearch = !isMailListOpen ? { width: '0px', 'min-width': '0px', 'border-right': '0px', overflow: 'hidden', opacity: '0' } : {};
@@ -256,18 +279,20 @@ const MailBoxPage = () => {
                                             emails.map((email: any) => {
                                                 const isRead = email.flags.includes("\\Seen");
                                                 const isSelected = selectedEmails.has(email.messageId);
+                                                const isActive = activeEmailMessageId === (isSchedule ? email._id : email.messageId);
                                                 return (
                                                     <EmailRow
                                                         key={email.messageId}
                                                         email={email}
                                                         isRead={isRead}
                                                         isSelected={isSelected}
+                                                        isActive={isActive}
                                                         isSearch={false}
-                                                        onOpenEmail={(uid: number, messageId: string, isSearch: boolean, mongoId?: string) =>
-                                                            openEmailDetailHandler(currentActiveBox, uid, messageId, isSearch, mongoId)
-                                                        }
-                                                        onMarkReadUnread={markAsReadUnreadEmailHandler}
-                                                        onDelete={setupDeleteConfirmation}
+                                                        boxName={currentActiveBox}
+                                                        onOpenEmail={onOpenEmail}
+                                                        onMarkReadUnread={onMarkReadUnread}
+                                                        onDelete={onDelete}
+                                                        onToggleSelection={onToggleSelection}
                                                     />
                                                 );
                                             })

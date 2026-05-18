@@ -180,55 +180,54 @@ function getAttachmentIcon(filename: string): string {
 }
 
 const buildParentFolderOptions = (
-    boxes: any[],
+    _boxes: any[],
     customBoxes: any[],
     boxName?: string
 ) => {
-    const options: any[] = [];
-
-    // Default option
-    options.push({
-        label: "Select a folder",
-        value: "noFolderSelect",
-    });
-
-    // Main boxes
-    boxes.forEach((box) => {
-        const value =
-            typeof box.value === "object"
-                ? JSON.stringify(box.value)
-                : box.value;
-
-        options.push({
-            label: box.key.toLowerCase().includes("inbox")
-                ? "Inbox"
-                : box.key,
-            value,
-            parentBox: box.parentBox,
-        });
-    });
-
-    // Remove current folder (edit case)
+    // Remove current folder in edit case
     let filteredCustomBoxes = customBoxes;
     if (boxName) {
         filteredCustomBoxes = customBoxes.filter(
-            (box) =>
-                box.value.value.toLowerCase() !== boxName.toLowerCase()
+            (box) => box.value.value.toLowerCase() !== boxName.toLowerCase()
         );
     }
 
-    // Custom boxes
+    interface TreeNode {
+        box: any;
+        children: TreeNode[];
+    }
+
+    const nodeMap = new Map<string, TreeNode>();
     filteredCustomBoxes.forEach((box) => {
-        options.push({
-            label: box.key,
-            value:
-                typeof box.value === "object"
-                    ? box.value.value
-                    : box.value,
-            parentBox: box.parentBox,
-        });
+        const imap = typeof box.value === "object" ? box.value.value : box.value;
+        nodeMap.set(imap, { box, children: [] });
     });
 
+    const roots: TreeNode[] = [];
+    filteredCustomBoxes.forEach((box) => {
+        const imap = typeof box.value === "object" ? box.value.value : box.value;
+        const parentImap = typeof box.value === "object" ? box.value.parentBox : undefined;
+        const node = nodeMap.get(imap)!;
+
+        if (parentImap && nodeMap.has(parentImap)) {
+            nodeMap.get(parentImap)!.children.push(node);
+        } else {
+            roots.push(node);
+        }
+    });
+
+    const options: any[] = [];
+    options.push({ label: "Select a folder", value: "noFolderSelect", depth: 0 });
+
+    const flatten = (nodes: TreeNode[], depth: number) => {
+        nodes.forEach((node) => {
+            const imap = typeof node.box.value === "object" ? node.box.value.value : node.box.value;
+            options.push({ label: node.box.key, value: imap, depth });
+            flatten(node.children, depth + 1);
+        });
+    };
+
+    flatten(roots, 0);
     return options;
 };
 
@@ -334,4 +333,35 @@ const openEmailDetail = async (
     return data.emailList;
 }
 
-export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, resolveSidebarItem, resolveAllSidebarItems, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName };
+// Takes already-resolved sidebar items for customBoxes (each has boxName = IMAP path, parentBox = parent IMAP path)
+// Returns them flattened in depth-first tree order with a `depth` field added.
+const buildCustomFolderTree = (customBoxItems: any[]): any[] => {
+    interface TreeNode { item: any; children: TreeNode[]; }
+
+    const nodeMap = new Map<string, TreeNode>();
+    customBoxItems.forEach(item => {
+        nodeMap.set(item.boxName, { item, children: [] });
+    });
+
+    const roots: TreeNode[] = [];
+    customBoxItems.forEach(item => {
+        const node = nodeMap.get(item.boxName)!;
+        if (item.parentBox && nodeMap.has(item.parentBox)) {
+            nodeMap.get(item.parentBox)!.children.push(node);
+        } else {
+            roots.push(node);
+        }
+    });
+
+    const result: any[] = [];
+    const flatten = (nodes: TreeNode[], depth: number) => {
+        nodes.forEach(node => {
+            result.push({ ...node.item, depth });
+            flatten(node.children, depth + 1);
+        });
+    };
+    flatten(roots, 0);
+    return result;
+};
+
+export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName };

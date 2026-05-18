@@ -8,14 +8,14 @@ import menuIcon from "@images/menu-icon.svg";
 import menuIconHover from "@images/menu-icon-hover.svg";
 import closeIcon from '@images/close-icon.svg';
 import closeIconHover from '@images/close-icon-hover.svg'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import SidebarItem from '../../features/emails/SidebarItem';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMailData, useMailUI, useContacts, useCalendar } from '../../context/index';
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { CustomFolderSection } from '../ui/sidebar/CustomFolderSection';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
-import { resolveSidebarItem, verifyBoxName } from '@utils/emailUtil';
+import { resolveSidebarItem, verifyBoxName, buildCustomFolderTree } from '@utils/emailUtil';
 import { deleteCustomBox } from '@services/customBox/customBoxService';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
@@ -38,6 +38,11 @@ const LeftPanel = () => {
         setSidebarStateFromAPI } = useMailData();
     const { setToolbarState, openModal, closeModal, activeModals, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { fetchContacts } = useContacts();
+
+    const customFolders = useMemo(() => {
+        const items = sidebarItems.filter(item => item.category === 'customBoxes');
+        return buildCustomFolderTree(items);
+    }, [sidebarItems]);
 
     //call an api 
     useEffect(() => {
@@ -320,14 +325,14 @@ const LeftPanel = () => {
                     </ul>
 
                     <CustomFolderSection
-                        folders={sidebarItems.filter(item => item.category === 'customBoxes')
-                            .map((item) => ({
-                                id: item.id,
-                                name: item.label,
-                                color: item.color,
-                                icon: item.icon,
-                                value: item.boxName
-                            }))}
+                        folders={customFolders.map(item => ({
+                            id: item.id,
+                            name: item.label,
+                            color: item.color,
+                            icon: item.icon,
+                            value: item.boxName,
+                            depth: item.depth,
+                        }))}
                         activeBoxId={activeBoxId}
                         onChangeBox={(boxName) => {
                             const item = sidebarItems.find(si => si.boxName === boxName);

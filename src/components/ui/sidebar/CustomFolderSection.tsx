@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import scrollUpIcon from '@images/scroll-up-icon.svg';
 import scrollDownIcon from "@images/scroll-dwon-icon.svg";
 import chevronRightIcon from "@images/chevron-right-icon.svg";
@@ -28,6 +28,7 @@ interface Folder {
   color: string;
   icon: string;
   value: string;
+  depth?: number;
 }
 
 interface CustomFolderSectionProps {
@@ -51,8 +52,47 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownResetKey] = useState(0); // for closing hover dropdown
+  const [dropdownResetKey] = useState(0);
   const dropdownRef = useRef<HTMLLIElement>(null);
+
+  // Set of folder IDs that have been collapsed by the user (starts empty = all expanded)
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+
+  const toggleCollapse = (folderId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCollapsedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folderId)) { next.delete(folderId); } else { next.add(folderId); }
+      return next;
+    });
+  };
+
+  // Which folders have at least one direct child (checked via DFS order: next item has greater depth)
+  const foldersWithChildren = useMemo(() => {
+    const set = new Set<string>();
+    folders.forEach((folder, i) => {
+      if (i + 1 < folders.length && (folders[i + 1].depth ?? 0) > (folder.depth ?? 0)) {
+        set.add(folder.id);
+      }
+    });
+    return set;
+  }, [folders]);
+
+  // Filter the list so descendants of collapsed parents are hidden
+  const visibleFolders = useMemo(() => {
+    const result: Folder[] = [];
+    let lastCollapsedDepth = Infinity;
+    for (const folder of folders) {
+      const depth = folder.depth ?? 0;
+      if (depth > lastCollapsedDepth) continue; // hidden under a collapsed ancestor
+      lastCollapsedDepth = Infinity; // coming back to same/lower depth, reset
+      result.push(folder);
+      if (foldersWithChildren.has(folder.id) && collapsedFolders.has(folder.id)) {
+        lastCollapsedDepth = depth; // hide everything deeper than this
+      }
+    }
+    return result;
+  }, [folders, collapsedFolders, foldersWithChildren]);
   const {
     scrollRef,
     fadeTopRef,
@@ -181,8 +221,12 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
             >
               <div className="nav-custom-scroll-fade-top" ref={fadeTopRef} />
 
-              {folders.map((folder) => {
+              {visibleFolders.map((folder) => {
                 const isActive = activeBoxId === folder.id;
+                const depth = folder.depth ?? 0;
+                const isChild = depth > 0;
+                const hasChildren = foldersWithChildren.has(folder.id);
+                const isCollapsedFolder = collapsedFolders.has(folder.id);
                 return (
                   <li
                     key={folder.id}
@@ -190,18 +234,37 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                     id={`${folder.name}`}
                     onClick={() => handleFolderClick(folder)}
                     ref={openDropdownId === folder.id ? dropdownRef : null}
+                    style={isSidebarOpen ? { paddingLeft: `${depth * 12}px` } : undefined}
                   >
                     <div className={`m-link ${!isSidebarOpen && openDropdownId === folder.id ? 'sub-open-hover-active' : ''} ${isActive ? 'active' : ''}`}>
-                      <img
-                        className="hover-image"
-                        src={getFolderIcon(folder.color)}
-                      />
+
+                      {/* Expand/collapse toggle for parent folders (expanded sidebar only) */}
+                      {isSidebarOpen && hasChildren && (
+                        <span
+                          onClick={(e) => toggleCollapse(folder.id, e)}
+                          style={{ cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', marginRight: '2px' }}
+                        >
+                          <InteractiveIcon
+                            defaultIcon={isCollapsedFolder ? chevronRightIcon : chevronDownIcon}
+                            hoverIcon={isCollapsedFolder ? chevronRightIconHover : chevronDownIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt={isCollapsedFolder ? 'Expand' : 'Collapse'}
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip=""
+                          />
+                        </span>
+                      )}
+
+                      {/* Leaf-child connector (expanded sidebar only, no children) */}
+                      {isSidebarOpen && isChild && !hasChildren && (
+                        <span style={{ color: '#BBC0C4', fontSize: '11px', marginRight: '2px', flexShrink: 0, lineHeight: 1 }}>{'└'}</span>
+                      )}
+
+                      <img className="hover-image" src={getFolderIcon(folder.color)} />
                       <span className="active-line-t"
-                        style={
-                          {
-                            '--active-line-bg': folder.color || 'rgba(0, 151, 239, 1)',
-                          } as React.CSSProperties
-                        }
+                        style={{ '--active-line-bg': folder.color || 'rgba(0, 151, 239, 1)' } as React.CSSProperties}
                       />
                       <div className="nav-link-before-collapse-single-box-100">
                         <div className="nav-link-before-collapse">
@@ -209,23 +272,15 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                           <FolderActionsDropdown
                             key={`${folder.id} - ${dropdownResetKey}}`}
                             isOpen={openDropdownId === folder.id}
-                            onToggle={(nextOpen) => {
-                              setOpenDropdownId(nextOpen ? folder.id : null);
-                            }}
-                            onEdit={() => {
-                              setOpenDropdownId(null);
-                              onEditFolder?.(folder.value);
-                            }}
-                            onDelete={() => {
-                              setOpenDropdownId(null);
-                              onDeleteFolder?.(folder.value, folder.name);
-                            }}
+                            onToggle={(nextOpen) => setOpenDropdownId(nextOpen ? folder.id : null)}
+                            onEdit={() => { setOpenDropdownId(null); onEditFolder?.(folder.value); }}
+                            onDelete={() => { setOpenDropdownId(null); onDeleteFolder?.(folder.value, folder.name); }}
                           />
                         </div>
                       </div>
                     </div>
                   </li>
-                )
+                );
               })}
 
               <div className="nav-custom-scroll-fade-bottom" ref={fadeBottomRef} />

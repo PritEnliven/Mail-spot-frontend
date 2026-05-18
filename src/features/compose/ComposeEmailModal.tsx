@@ -261,11 +261,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             }
         });
 
-        console.log('[prepareFormData] final FormData keys:');
-        for (const [key, value] of formData.entries()) {
-            console.log(' -', key, value instanceof File ? `File(${(value as File).name})` : value);
-        }
-
         return formData;
     };
 
@@ -337,6 +332,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         else {
             for (let [key, value] of formData.entries()) {
 
+                console.log('without schedule event condition',key, value);
                 console.log('without schedule event condition', key, value);
             }
 

@@ -65,6 +65,7 @@ export function useEmailAction() {
                 current_active_box: boxName,
                 isDraftMail
             });
+
             if (response.statusCode === 200) {
                 if (boxName.toLowerCase() !== 'inbox') {
                     // deleteEmailState(messageIds);
@@ -74,6 +75,7 @@ export function useEmailAction() {
                     setEmailDetailSelected(null);
                 }
             }
+            
             return response;
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete emails');

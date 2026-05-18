@@ -1,3 +1,4 @@
+import React from 'react';
 import Select, { components } from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { MultiValue, StylesConfig, GroupBase } from 'react-select';
@@ -299,8 +300,9 @@ type SingleSelectProps = {
   placeholder?: string;
   isMulti?: false;
   moduleName?: string;
-  isModal?: boolean | false
+  isModal?: boolean | false;
   typeable?: boolean | true;
+  formatOptionLabel?: (option: any, meta?: { context: 'menu' | 'value' }) => React.ReactNode;
 };
 
 type Select2WrapperProps = MultiSelectProps | SingleSelectProps;
@@ -475,6 +477,7 @@ const renderSingleSelect = ({
   moduleName,
   isModal = false,
   typeable = false,
+  formatOptionLabel,
 }: SingleSelectProps) => {
   const selectedOption = getSelectedSingleOption(options, value);
 
@@ -497,7 +500,7 @@ const renderSingleSelect = ({
       }}
       onChange={handleChange}
       isSearchable={typeable}
-    // menuIsOpen={true}
+      {...(formatOptionLabel ? { formatOptionLabel } : {})}
     />
   );
 };
