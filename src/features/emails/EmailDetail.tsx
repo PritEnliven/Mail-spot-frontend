@@ -43,7 +43,7 @@ export interface RelativeDate {
 
 export interface CustomBox {
     key: string;
-    value: string;
+    value: string;  
 }
 
 interface Props {

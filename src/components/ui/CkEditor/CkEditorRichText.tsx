@@ -1,3 +1,4 @@
+import 'ckeditor5/ckeditor5.css';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import { ClassicEditor } from 'ckeditor5';
 import ckEditorConfig from '../../../config/ckeditor.config';

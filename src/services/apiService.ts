@@ -139,6 +139,7 @@ export const longRunningRequest = async (endpoint: string, config = {}): Promise
     ...config,
     timeout: 300000, // 5 minutes for email fetching operations
   });
+  
   return response.data;
 };
 
