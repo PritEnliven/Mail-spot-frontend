@@ -454,13 +454,13 @@ const Header = () => {
     }
 
     const closeProfileModalMobile = () => {
+
     }
 
     const isCalendar = verifyBoxName(boxName, "calendar");
     const isSettings = verifyBoxName(boxName, "settings");
 
-    const startFromMonth = new Date().getMonth();
-    const mountMonthDropdown = useFlatpickrMonthDropdown(startFromMonth);
+    const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
 
 
@@ -713,7 +713,7 @@ const Header = () => {
                                                                                 dateFormat: 'd-m-Y',
                                                                                 allowInput: true,
                                                                                 defaultDate: [new Date(), new Date()],
-                                                                                onReady: (_, __, instance) => mountMonthDropdown(instance)
+                                                                                onReady: (_, __, instance) => mountFilterMonthDropdown(instance)
                                                                             }}
                                                                             className="form-control DateRangePickerStaticTop"
                                                                             placeholder="Select date range"

@@ -108,7 +108,8 @@ async function getUserPermissions() {
     try {
         const response = await getData('email/get-permissions');
         return response;
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         return error;
     }
 }
