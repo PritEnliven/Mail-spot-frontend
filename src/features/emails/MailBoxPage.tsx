@@ -16,7 +16,7 @@ const EmailDetail = lazy(() => import('../../features/emails/EmailDetail'));
 const MailBoxPage = () => {
     const emailScrollRef = useRef<HTMLDivElement | null>(null);
     const { boxName } = useParams<{ boxName: string }>();
-    const { setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId } = useMailData();
+    const { setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, allSearchResult } = useMailData();
     const { selectedEmails, toggleEmailSelection } = useMailSelection();
     const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
 
@@ -52,6 +52,7 @@ const MailBoxPage = () => {
         currentActiveBox,
         boxName,
         isDraftBox,
+        allSearchResult,
     };
 
     useEffect(() => {
@@ -126,15 +127,19 @@ const MailBoxPage = () => {
     ) => {
         try {
             const l = latestRef.current;
+            const isSearchOpen = isSearch || l.allSearchResult;
             const payload = {
                 current_active_box: l.currentActiveBox,
                 uid,
                 messageId,
-                isSearch,
+                isSearch: isSearchOpen,
                 ...(mongoId ? { id: mongoId } : {}),
             };
 
             let data = await getSingleEmailService(payload);
+            if (isSearchOpen) {
+                data.emailList.isSearchEmail = true;
+            }
             if (data.isScheduled) {
                 data.emailList.isSchedule = true;
             }

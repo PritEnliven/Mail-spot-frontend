@@ -202,6 +202,7 @@ import EmailRecipientList from "@components/ui/email/EmailRecipientList";
 import { Dropdown } from "react-bootstrap";
 import type { Email } from "@models/Email";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
+import { HighlightText } from "@components/ui/HighlightText";
 
 interface EmailSendInformationProps {
   initial: string;
@@ -209,6 +210,7 @@ interface EmailSendInformationProps {
   fromEmail: string;
   isSchedule: boolean;
   email: Email;
+  searchTerm?: string;
   onReplyForwardAction: (action: string) => void;
 }
 
@@ -217,6 +219,7 @@ const EmailSendInformation = ({
   fromName,
   fromEmail,
   email,
+  searchTerm = "",
   onReplyForwardAction,
 }: EmailSendInformationProps) => {
   const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
@@ -286,8 +289,12 @@ const EmailSendInformation = ({
             <div className="d-flex align-items-center profile-section">
               <span className="mail-profile-label ms-0">{initial.charAt(0).toUpperCase()}</span>
               <div className="d-block">
-                <span className="mail-profile-name d-block">{fromName}</span>
-                <span className="mail-profile-id d-block">{fromEmail}</span>
+                <span className="mail-profile-name d-block">
+                  <HighlightText text={fromName} searchTerm={searchTerm} />
+                </span>
+                <span className="mail-profile-id d-block">
+                  <HighlightText text={fromEmail} searchTerm={searchTerm} />
+                </span>
               </div>
             </div>
             <CopyEmail name={fromName} email={fromEmail} initial={initial} />
@@ -414,7 +421,7 @@ const EmailSendInformation = ({
             <div className="mail-details-information-details-box d-flex align-items-start m-0">
               <span className="label-sm">To</span>
               <div className="d-flex align-items-center tomail-list">
-                <EmailRecipientList emails={email.to} />
+                <EmailRecipientList emails={email.to} searchTerm={searchTerm} />
               </div>
             </div>
 
@@ -423,7 +430,7 @@ const EmailSendInformation = ({
               <div className="mail-details-information-details-box d-flex align-items-center m-0">
                 <span className="label-sm">CC</span>
                 <div className="d-flex align-items-center tomail-list from-cc-details">
-                  <EmailRecipientList emails={email.cc} />
+                  <EmailRecipientList emails={email.cc} searchTerm={searchTerm} />
                 </div>
               </div>
             )}
@@ -433,7 +440,7 @@ const EmailSendInformation = ({
               <div className="mail-details-information-details-box d-flex align-items-center m-0">
                 <span className="label-sm">BCC</span>
                 <div className="d-flex align-items-center tomail-list from-cc-details">
-                  <EmailRecipientList emails={email.bcc} />
+                  <EmailRecipientList emails={email.bcc} searchTerm={searchTerm} />
                 </div>
               </div>
             )}

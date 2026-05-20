@@ -1275,6 +1275,14 @@ input::-webkit-search-cancel-button {
     padding-right: 80px;
 }
 
+.t-search-group .search-term-highlight,
+.search-term-highlight {
+    background-color: #FFE799;
+    color: inherit;
+    padding: 0 1px;
+    border-radius: 2px;
+}
+
 
 /* Top Filter */
 .top-filter {

@@ -1,10 +1,21 @@
 import { useEffect, useRef } from "react";
+import { highlightTextInHtml } from "@utils/highlightUtil";
 
 interface EmailBodyProps {
   html: string;
+  searchTerm?: string;
 }
 
-function EmailBody({ html }: EmailBodyProps) {
+const HIGHLIGHT_STYLE = `
+  .search-term-highlight {
+    background-color: #FFE799;
+    color: inherit;
+    padding: 0 1px;
+    border-radius: 2px;
+  }
+`;
+
+function EmailBody({ html, searchTerm }: EmailBodyProps) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -15,7 +26,17 @@ function EmailBody({ html }: EmailBodyProps) {
       hostRef.current.shadowRoot ??
       hostRef.current.attachShadow({ mode: "open" });
 
-    shadowRoot.innerHTML = html;
+    const term = searchTerm?.trim() ?? "";
+    const contentHtml = term ? highlightTextInHtml(html, term) : html;
+
+    shadowRoot.innerHTML = "";
+    const style = document.createElement("style");
+    style.textContent = HIGHLIGHT_STYLE;
+    shadowRoot.appendChild(style);
+
+    const container = document.createElement("div");
+    container.innerHTML = contentHtml;
+    shadowRoot.appendChild(container);
 
     // Link handling (same as your jQuery logic)
     const clickHandler = (e: Event) => {
@@ -32,7 +53,7 @@ function EmailBody({ html }: EmailBodyProps) {
     return () => {
       shadowRoot.removeEventListener("click", clickHandler);
     };
-  }, [html]);
+  }, [html, searchTerm]);
 
   return <div ref={hostRef} />;
 }

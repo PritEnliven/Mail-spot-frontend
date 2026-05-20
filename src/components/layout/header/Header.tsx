@@ -273,6 +273,7 @@ const Header = () => {
             }
             if (isSearch) {
                 data.emailList.isSearchEmail = true;
+                setSearchTerm(searchText);
             }
             setIsMailListOpen(false);
             setEmailDetailSelected(data.emailList);
@@ -436,6 +437,7 @@ const Header = () => {
         }
 
         const response = await searchAndFilterEmailService(payload);
+
         if (response.statusCode === 200) {
             setEmails(response.data.emailList);
             setPagination(response.data.pagination);
@@ -530,6 +532,7 @@ const Header = () => {
                                                                 <SearchEmailRow
                                                                     key={email.uid}
                                                                     email={email}
+                                                                    searchTerm={searchText}
                                                                     onEmailClick={(email, isSearch = true) =>
                                                                         openEmailDetailHandler(boxName, email.uid, email.messageId, isSearch, (email as { _id?: string })._id)
                                                                     }

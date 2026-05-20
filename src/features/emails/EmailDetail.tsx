@@ -29,6 +29,7 @@ import { lazy, Suspense } from "react";
 import { verifyBoxName, mailboxParticipantToString, parseEmailAddress } from "@utils/emailUtil";
 import EmailSendInformation from "@components/ui/email/EmailSendInformationRespon";
 import { useScreen } from "@context/ScreenContext";
+import { HighlightText } from "@components/ui/HighlightText";
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -57,7 +58,7 @@ const openAttachment = (customFileName: string, filename: string, isEml: boolean
 const EmailDetail = ({ email }: Props) => {
     const { downloadAttachments } = useAttachmentDownload();
     const { openModal } = useMailUI();
-    const { emails, setEmails, emailDetailSelected, setEmailDetailSelected, pagination, setPagination, setActiveEmailMessageId, boxName, updateBoxCount } = useMailData()
+    const { emails, setEmails, emailDetailSelected, setEmailDetailSelected, pagination, setPagination, setActiveEmailMessageId, boxName, updateBoxCount, searchTerm, allSearchResult } = useMailData()
     const { replyForwardState, openReplyForward, closeReplyForward } = useReplyForward();
     const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar()
     const [threadEmails, setThreadEmails] = useState<any[]>([]);
@@ -72,6 +73,7 @@ const EmailDetail = ({ email }: Props) => {
     const initial = parsedFrom.initial;
 
     const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
+    const highlightTerm = email.isSearchEmail || allSearchResult ? searchTerm : "";
 
     const loadThreadEmails = useCallback(async () => {
         try {
@@ -166,7 +168,9 @@ const EmailDetail = ({ email }: Props) => {
                 data-uid={email.uid}
             >
                 <div className="d-flex align-items-center">
-                    <h2 className="box-title">{email.subject}</h2>
+                    <h2 className="box-title">
+                        <HighlightText text={email.subject || "No Subject"} searchTerm={highlightTerm} />
+                    </h2>
                 </div>
             </div>
 
@@ -183,9 +187,11 @@ const EmailDetail = ({ email }: Props) => {
                                     </span>
                                     <div className="d-block">
                                         <span className="mail-profile-name d-block">
-                                            {fromName}
+                                            <HighlightText text={fromName} searchTerm={highlightTerm} />
                                         </span>
-                                        <span className="mail-profile-id d-block">{fromEmail}</span>
+                                        <span className="mail-profile-id d-block">
+                                            <HighlightText text={fromEmail} searchTerm={highlightTerm} />
+                                        </span>
                                     </div>
                                 </div>
                                 <CopyEmail name={fromName} email={fromEmail} initial={initial} />
@@ -202,7 +208,7 @@ const EmailDetail = ({ email }: Props) => {
                                 <div className="mail-details-information-details-box  d-flex align-items-start m-0">
                                     <span className="label-sm">To</span>
                                     <div className="d-flex align-items-center tomail-list">
-                                        <EmailRecipientList emails={email.to} />
+                                        <EmailRecipientList emails={email.to} searchTerm={highlightTerm} />
                                     </div>
                                 </div>
 
@@ -211,7 +217,7 @@ const EmailDetail = ({ email }: Props) => {
                                     <div className="mail-details-information-details-box d-flex align-items-center m-0">
                                         <span className="label-sm">CC</span>
                                         <div className="d-flex align-items-center tomail-list">
-                                            <EmailRecipientList emails={email.cc} />
+                                            <EmailRecipientList emails={email.cc} searchTerm={highlightTerm} />
                                         </div>
                                     </div>
                                 )}
@@ -221,7 +227,7 @@ const EmailDetail = ({ email }: Props) => {
                                     <div className="mail-details-information-details-box d-flex align-items-center m-0">
                                         <span className="label-sm">BCC</span>
                                         <div className="d-flex align-items-center tomail-list">
-                                            <EmailRecipientList emails={email.bcc} />
+                                            <EmailRecipientList emails={email.bcc} searchTerm={highlightTerm} />
                                         </div>
                                     </div>
                                 )}
@@ -286,6 +292,7 @@ const EmailDetail = ({ email }: Props) => {
                     fromEmail={fromEmail}
                     isSchedule={!!email.isSchedule}
                     email={email}
+                    searchTerm={highlightTerm}
                     onReplyForwardAction={(action) => openReplyForward(action as any, email, "reply-forward-bottom-box")}
                 />)
             )}
@@ -334,7 +341,7 @@ const EmailDetail = ({ email }: Props) => {
                     {email.body && (
                         <div className="horizontal-scroll-content" ref={contentRef}>
                             <div>
-                                <EmailBody html={email.body} />
+                                <EmailBody html={email.body} searchTerm={highlightTerm} />
                             </div>
                         </div>
                     )}
