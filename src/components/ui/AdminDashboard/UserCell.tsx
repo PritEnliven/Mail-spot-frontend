@@ -1,4 +1,3 @@
-// UserCell.tsx
 interface UserCellProps {
     data: any;
 }

@@ -1,5 +1,5 @@
-import type { Response } from '@services/emailSending/emailSendingService';
 import { deleteData, getData, postData } from '@services/apiService';
+import type { Response } from '@services/emailSending/emailSendingService';
 
 interface GetScheduleEmailParams {
     id: string;
@@ -15,7 +15,6 @@ interface ResendScheduledEmailPayload {
 
 async function scheduleEmail(payload: FormData): Promise<Response> {
     try {
-        
         const response = await postData('email/schedule-email', payload);
         return response;
     } catch (error: any) {
@@ -54,8 +53,5 @@ async function resendScheduledEmail(payload: ResendScheduledEmailPayload): Promi
 }
 
 export {
-    scheduleEmail,
-    getScheduleEmail,
-    cancelScheduledEmail,
-    resendScheduledEmail
-}
+    cancelScheduledEmail, getScheduleEmail, resendScheduledEmail, scheduleEmail
+};

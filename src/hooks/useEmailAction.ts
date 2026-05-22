@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { readUnreadEmails, deleteEmails } from '../services/emailAction/emailActionService';
 import { useMailData } from '../context/index';
+import { deleteEmails, readUnreadEmails } from '../services/emailAction/emailActionService';
 
 export function useEmailAction() {
     const [loading, setLoading] = useState(false);
@@ -16,11 +16,10 @@ export function useEmailAction() {
                 current_active_box: boxName,
                 markAsRead: true
             });
-            
             if (response.statusCode === 200) {
                 updateEmailReadState(messageIds, true);
                 // Update box counts - decrement unread count for emails being marked as read
-                const unreadEmailsCount = emails.filter(email => messageIds.includes(email.messageId) && !email.flags.includes('\\Seen')).length;
+                const unreadEmailsCount = emails.filter(email => messageIds.includes(email.messageId) && !email.isSeen).length;
                 updateBoxCount(boxName, -unreadEmailsCount, 0);
             }
             return response;
@@ -44,7 +43,7 @@ export function useEmailAction() {
             if (response.statusCode === 200) {
                 updateEmailReadState(messageIds, false);
                 // Update box counts - increment unread count for emails being marked as unread
-                const readEmailCount = emails.filter(email => messageIds.includes(email.messageId) && email.flags.includes('\\Seen')).length;
+                const readEmailCount = emails.filter(email => messageIds.includes(email.messageId) && email.isSeen).length;
                 updateBoxCount(boxName, readEmailCount, 0); // Negative to increment
             }
             return response;
@@ -65,7 +64,6 @@ export function useEmailAction() {
                 current_active_box: boxName,
                 isDraftMail
             });
-
             if (response.statusCode === 200) {
                 if (boxName.toLowerCase() !== 'inbox') {
                     // deleteEmailState(messageIds);
@@ -75,7 +73,6 @@ export function useEmailAction() {
                     setEmailDetailSelected(null);
                 }
             }
-            
             return response;
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete emails');

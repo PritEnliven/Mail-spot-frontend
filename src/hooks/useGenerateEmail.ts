@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
 import { generateEmail } from '@services/aiService/aiService';
+import { useCallback, useState } from 'react';
 
 interface GeneratedEmail {
     subject: string;

@@ -39,7 +39,6 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
     const formValues = useWatch({ control });
 
     const onSubmit = async (data: forwardEmailFormValues) => {
-        console.log(data);
         await onConfirm(data);
         onClose();
     }

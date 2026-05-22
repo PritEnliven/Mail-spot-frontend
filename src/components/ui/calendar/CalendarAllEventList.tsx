@@ -32,8 +32,6 @@ interface CalendarAllEventListProps {
 const CalendarAllEventList = ({ startDate, endDate }: CalendarAllEventListProps) => {
 
     // TODO: Use startDate and endDate for filtering or displaying date range information
-    console.log('CalendarAllEventList date range:', { startDate, endDate });
-
     const { calendarAllSearchedEvents, setIsCalendarAllSearchActive, setCalendarAllSearchedEvents, setSelectedEvent, getAllEventList, resetSearchState } = useCalendar();
     const { openModal } = useMailUI();
 

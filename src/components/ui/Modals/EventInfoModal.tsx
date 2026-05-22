@@ -38,8 +38,6 @@ function EventInfoModal({ modalId, zIndex, event }: EventInfoModalProps) {
         closeModal(modalId);
     };
 
-    console.log(event);
-
     const guests: Guest[] = normalizeGuests(event.guestList);
 
     const editEventHandler = () => {

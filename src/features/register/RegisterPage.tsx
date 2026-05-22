@@ -1,42 +1,38 @@
 import "@assets/styles/header-main-style.css";
 import "@assets/styles/sign-in-style.css";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
-import mailSpotLogo from "@images/mailspot-login-logo.svg";
-import nameIcon from "@images/name-icon-16.svg";
-import mailIcon from "@images/mail-icon-16.svg";
-import errorIcon16 from "@images/error-icon-16.svg";
+import SubmitButton from "@components/ui/form/SubmitButton";
+import { showError, showSuccess } from "@components/ui/toast/toastNotification";
+import { zodResolver } from "@hookform/resolvers/zod";
 import chevronLeftIconBig from "@images/chevron-left-icon-big.svg";
+import enlivenLogo from "@images/enliven-logo.svg";
+import errorIcon16 from "@images/error-icon-16.svg";
+import mailIconfocuse from "@images/mail-icon-16-blue.svg";
+import mailIcon from "@images/mail-icon-16.svg";
+import mailSpotLogo from "@images/mailspot-login-logo.svg";
+import nameIconfocuse from "@images/name-icon-16-blue.svg";
+import nameIcon from "@images/name-icon-16.svg";
+import passwordHideIcon from "@images/password-hide-icon-16.svg";
+import lockIconfocuse from "@images/password-icon-16-blue.svg";
 import lockIcon from "@images/password-icon-16.svg";
 import passwordShowIcon from "@images/password-show-icon-16.svg";
-import passwordHideIcon from "@images/password-hide-icon-16.svg";
-import successfullyIcon from "@images/successfully-icon-green.svg";
-import enlivenLogo from "@images/enliven-logo.svg";
+import recommendedIconfocuse from "@images/recommended-icon-16-blue.svg";
+import recommendedIcon from "@images/recommended-icon-16.svg";
+import serverIconfocuse from "@images/server-icon-16-blue.svg";
 import serverIcon from "@images/server-icon-16.svg";
-import recommendedIcon from "@images/recommended-icon-16.svg"
-
-// focuse
-import nameIconfocuse from "@images/name-icon-16-blue.svg"
-import mailIconfocuse from "@images/mail-icon-16-blue.svg"
-import lockIconfocuse from "@images/password-icon-16-blue.svg"
-import serverIconfocuse from "@images/server-icon-16-blue.svg"
-import recommendedIconfocuse from "@images/recommended-icon-16-blue.svg"
-
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { RegisterPageSchema, type RegisterPageFormValues } from "./RegisterPage.schema";
+import successfullyIcon from "@images/successfully-icon-green.svg";
+import type { RegisterPayload } from "@services/register/registerService";
 import {
   checkUserExists,
+  fetchAndStoreEmails,
+  registerUser,
   verifyImapConnection,
   verifySmtpConnection,
-  registerUser,
-  fetchAndStoreEmails,
 } from "@services/register/registerService";
-import type { RegisterPayload } from "@services/register/registerService";
-
-import { showError, showSuccess } from "@components/ui/toast/toastNotification";
-import SubmitButton from "@components/ui/form/SubmitButton";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { RegisterPageSchema, type RegisterPageFormValues } from "./RegisterPage.schema";
 
 const STEPS = {
   BASIC: 1,
@@ -188,7 +184,7 @@ const RegisterPage = () => {
 
       const existsRes = await checkUserExists(getValues("email"));
       if (existsRes?.statusCode !== 200) {
-        showError(existsRes?.message || "Email already exists");
+        showError(existsRes?.data?.data?.message || "User already exists");
         return;
       }
 
@@ -201,7 +197,6 @@ const RegisterPage = () => {
       setCurrentStep(STEPS.SMTP);
       return;
     } else if (currentStep === STEPS.SMTP) {
-      console.log(getValues());
       isValid = await trigger(["smtpUsername", "smtpHost", "smtpPort", "smtpSecurityType"]);
       if (!isValid) return;
       await handleFinalSubmission();

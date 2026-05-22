@@ -76,47 +76,6 @@ function Base64UploadAdapterPlugin(editor: any) {
     };
 }
 
-// Auto Line Height Plugin
-// function applyAutoLineHeight(editor: any) {
-//     const conversion = editor.conversion;
-
-//     // 1. Allow marginBottom attribute on block elements
-//     editor.model.schema.extend('$block', { allowAttributes: 'marginBottom' });
-
-//     // 2. Convert model attribute to view (when saving/displaying)
-//     conversion.for('downcast').add((dispatcher: any) => {
-//         dispatcher.on('attribute:marginBottom', (_: any, data: any, conversionApi: any) => {
-//             const viewElement = conversionApi.mapper.toViewElement(data.item);
-//             const viewWriter = conversionApi.writer;
-
-//             if (viewElement) {
-//                 viewWriter.setStyle('margin-bottom', data.attributeNewValue || '10px', viewElement);
-//             }
-//         });
-//     });
-
-//     // 3. Set default margin for new content
-//     editor.model.document.on('change:data', () => {
-//         editor.model.change((writer: any) => {
-//             const root = editor.model.document.getRoot();
-//             for (const node of root.getChildren()) {
-//                 setDefaultMarginRecursively(node, writer);
-//             }
-//         });
-//     });
-
-//     function setDefaultMarginRecursively(node: any, writer: any) {
-//         if (!node.is('element')) return;
-//         if (!node.hasAttribute('marginBottom')) {
-//             writer.setAttribute('marginBottom', '10px', node);
-//         }
-
-//         for (const child of node.getChildren()) {
-//             setDefaultMarginRecursively(child, writer);
-//         }
-//     }
-// }
-
 // Custom Media Plugin
 function appendMediaModal(editor: any) {
     const editorId = editor.sourceElement.id;

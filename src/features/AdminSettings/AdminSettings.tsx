@@ -1,16 +1,16 @@
-import { Controller, useForm, useWatch } from 'react-hook-form';
-import InteractiveIcon from "@components/ui/InteractiveIcon";
-import closeIcon from "@images/close-icon.svg"
-import closeIconHover from "@images/close-icon.svg"
-import { adminSettingsSchema, type AdminSettingsFormValues } from './adminSettings.schema';
-import { zodResolver } from '@hookform/resolvers/zod';
 import SubmitButton from '@components/ui/form/SubmitButton';
-import { useEffect } from 'react';
-import { useAdmin } from '@context/AdminDataContext';
-import { adminSaveSettings, getAdminSettings } from '@services/adminService/adminService';
-import type { Response } from '@models/Response';
+import InteractiveIcon from "@components/ui/InteractiveIcon";
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
+import { useAdmin } from '@context/AdminDataContext';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { default as closeIcon, default as closeIconHover } from "@images/close-icon.svg";
+import type { Response } from '@models/Response';
+import { adminSaveSettings, getAdminSettings } from '@services/adminService/adminService';
+import { isDangerousExtension } from './dangerousFileExtensions';
+import { useEffect } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import { adminSettingsSchema, type AdminSettingsFormValues } from './adminSettings.schema';
 
 const AdminSettings = () => {
     const navigate = useNavigate();
@@ -22,6 +22,7 @@ const AdminSettings = () => {
         setValue,
         getValues,
         watch,
+        formState: { errors },
     } = useForm<AdminSettingsFormValues>({
         resolver: zodResolver(adminSettingsSchema),
         defaultValues: {
@@ -45,14 +46,16 @@ const AdminSettings = () => {
 
             try {
                 const response: Response = await getAdminSettings(settingPayLoad);
-                console.log(response);
 
                 if (isMounted && response.statusCode === 200) {
+                    // Filter out dangerous extensions from backend data
+                    const filteredExtensions = response.data.allowedFileTypes?.filter((ext: string) => !isDangerousExtension(ext)) || [];
+
                     reset({
                         name: response.data.userName,
                         email: response.data.email,
                         fileSize: response.data.fileSize,
-                        fileExtensionInput: response.data.allowedFileTypes,
+                        fileExtensionInput: filteredExtensions,
                         send: response.data.sendToOutsideDomain,
                         receive: response.data.receiveFromOutsideDomain,
                         both: response.data.both,
@@ -73,8 +76,14 @@ const AdminSettings = () => {
     }
 
     const onSubmit = async (data: any) => {
-        console.log(data);
         const userId = settingPayLoad?.isAdmin ? null : settingPayLoad?.userId || null;
+
+        // Validate file extensions for dangerous types before submission
+        const dangerousExtensions = data.fileExtensionInput?.filter((ext: string) => isDangerousExtension(ext)) || [];
+        if (dangerousExtensions.length > 0) {
+            showError(`Cannot save settings. Dangerous file extensions found: ${dangerousExtensions.join(', ')}. Please remove them and try again.`);
+            return;
+        }
 
         let payload = {
             fileSize: data.fileSize,
@@ -101,6 +110,13 @@ const AdminSettings = () => {
             e.preventDefault();
             const input = e.currentTarget.value.trim();
             if (input) {
+                // Check if the extension is dangerous
+                if (isDangerousExtension(input)) {
+                    showError(`Dangerous file extension '${input}' is not allowed for security reasons.`);
+                    e.currentTarget.value = '';
+                    return;
+                }
+
                 const currentExtensions = getValues('fileExtensionInput') || [];
                 if (!currentExtensions.includes(input)) {
                     setValue('fileExtensionInput', [...currentExtensions, input]);
@@ -187,6 +203,11 @@ const AdminSettings = () => {
                                     )}
                                 />
                             </div>
+                            {errors.fileSize &&
+                                <span className="invalid-feedback" style={{ display: 'block' }}>
+                                    {errors.fileSize.message}
+                                </span>
+                            }
                         </div>
                     </div>
                     <div className="col-12 col-p">
@@ -337,6 +358,7 @@ const AdminSettings = () => {
                         className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
                         onClick={handleSubmit(onSubmit, (errors: any) => {
                             console.log('SUBMIT BLOCKED BY ERRORS:', errors);
+                            showError("Please fix the validation errors before submitting");
                         })}
                     >Save</SubmitButton>
                 </div>

@@ -9,43 +9,39 @@ import arrowShrinkIcon from '@images/arrow-outexpand-icon.svg';
 import arrowShrinkIconHover from '@images/arrow-outexpand-icon-hover.svg';
 import closeIcon from '@images/close-icon.svg';
 import closeIconHover from '@images/close-icon-hover.svg';
-import smartMessageIcon from '@images/smart-message-icon.svg';
-import trashIcon from '@images/trash-icon.svg';
-import trashIconHover from '@images/trash-icon-hover.svg';
 import attachmentStrokeRoundedIcon from '@images/attachment-stroke-rounded-icon.svg';
 import attachmentStrokeRoundedIconHover from '@images/attachment-stroke-rounded-icon-hover.svg';
 import generateAiIcon from '@images/generate-ai-icon.svg';
 import scheduledIcon from '@images/scheduled-icon.svg';
+import signatureIconHover from '@images/signature-icon-hover.svg';
 import signatureIcon from "@images/signature-icon.svg";
-import backBtnIcon from "@images/back-btn-icon.svg";
-import backBtnIconHover from "@images/back-btn-icon-hover.svg";
-import signatureIconHover from "@images/signature-icon-hover.svg";
-import { composeSchema, type ComposeFormValues } from '@features/compose/compose.schema';
+import smartMessageIcon from '@images/smart-message-icon.svg';
+import trashIconHover from '@images/trash-icon-hover.svg';
+import trashIcon from '@images/trash-icon.svg';
+import { saveDraft, sendEmail } from '@services/emailSending/emailSendingService';
+import { scheduleEmail } from '@services/scheduleEmail/scheduleEmailService';
+import { getSignatureForActions } from '@services/settings/settingsService';
+import { getBoxNameFromSidebar, verifyBoxName } from '@utils/emailUtil';
+import { useEffect, useRef, useState } from 'react';
+import { Collapse, Dropdown } from "react-bootstrap";
+import { useNavigate } from 'react-router-dom';
+import SimpleBar from 'simplebar-react';
+import { useContacts, useMailUI } from '../../context/index';
+import { useSettings } from '@context/SettingsContext';
+import { useComposeFormContext } from '@context/ComposeFormContext';
+import { useCcBccToggle } from '@hooks/useCcBccToggle';
+import { useSignatureManager } from '@hooks/useSignatureManager';
+import { useAttachmentManager } from '@hooks/useAttachmentManager';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { composeSchema, type ComposeFormValues } from './compose.schema';
+import { useDebounce } from '@hooks/useDebounce';
+import { showError, showInfo, showSuccess } from '@components/ui/toast/toastNotification';
+import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
+import BaseModal from '@components/ui/BaseModal';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
-import { useMailUI, useContacts } from '../../context/index';
-import { useComposeFormContext } from '@context/ComposeFormContext';
-import { sendEmail, saveDraft } from '@services/emailSending/emailSendingService';
-import { scheduleEmail } from '@services/scheduleEmail/scheduleEmailService';
-import SubmitButton from '@components/ui/form/SubmitButton';
 import AttachmentPreview from '@components/ui/AttachmentPreview';
-import { useAttachmentManager } from '@hooks/useAttachmentManager';
-import { useCcBccToggle } from '@hooks/useCcBccToggle';
-import { useDebounce } from '@hooks/useDebounce';
-import { useEffect, useState } from 'react';
-import { Collapse } from "react-bootstrap";
-import BaseModal from '@components/ui/BaseModal';
-import { showSuccess, showError, showInfo } from '@components/ui/toast/toastNotification';
-import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
-import { useSettings } from '@context/SettingsContext';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { getBoxNameFromSidebar, verifyBoxName } from '@utils/emailUtil';
-import SimpleBar from 'simplebar-react';
-import { getSignatureForActions } from '@services/settings/settingsService';
-import { useSignatureManager } from '@hooks/useSignatureManager';
-import { Dropdown } from "react-bootstrap";
-import { useNavigate } from 'react-router-dom';
-import { useRef } from 'react';
+import SubmitButton from '@components/ui/form/SubmitButton';
 
 interface ComposeEmailModalProps {
     modalId: string;
@@ -178,7 +174,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
     useEffect(() => {
         if (error) {
-            alert(error);
+            // alert(error);
         }
     }, [error]);
 
@@ -209,7 +205,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         }
     }, [attachments.length]);
 
-
     const handleManageSignatures = () => {
         navigate('/mail/settings');
     };
@@ -222,15 +217,13 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         setIsComposeExpanded(!isComposeExpanded);
     }
 
-    const prepareFormData = (data: any, isDraft: boolean = false) => {
+    const prepareFormData = (data: ComposeFormValues, isDraft: boolean = false) => {
         const formData = new FormData();
-        console.log('data attachemnt', data.attachments);
-        console.log('data object', JSON.stringify(data));
+
         // Add string fields
         formData.append('subject', data.subject || '');
         formData.append('html', data.body || '');
         formData.append('isDraftMail', isDraft.toString());
-
         if (isDraft) {
             formData.append('draftEmailId', emailData?.draftEmailId || '');
             formData.append('draftMessageId', emailData?.draftMessageId || '');
@@ -248,16 +241,11 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         }
 
         // Add attachments
-        console.log('[prepareFormData] attachments state count:', attachments.length);
-        attachments.forEach((file, index) => {
+        attachments.forEach((file) => {
             if (file instanceof File) {
-                console.log(`[prepareFormData] appending File[${index}]:`, file.name, file.size, file.type);
-                formData.append('attachments', file);
-            } else if ('file' in file && (file as any).file instanceof File) {
-                console.log(`[prepareFormData] appending wrapped File[${index}]:`, (file as any).file.name);
-                formData.append('attachments', (file as any).file);
+                formData.append('attachments', file, file.name);
             } else {
-                console.warn(`[prepareFormData] skipped attachment[${index}] - not a File:`, file);
+                formData.append('existingAttachments', JSON.stringify(file));
             }
         });
 
@@ -265,7 +253,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     };
 
     const onSubmit = async (data: ComposeFormValues) => {
-        console.log('SUBMITTED DATA:', data);
 
         // Check if both subject and body are empty (trim whitespace and HTML tags for body)
         const isSubjectEmpty = !data.subject || data.subject.trim() === '';
@@ -281,7 +268,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         setIsSubmitting(true);
 
         const formData = prepareFormData(data, emailData?.isDraftMail || false);
-        console.log('data sent from client side 276', JSON.stringify(formData.entries()))
         // Add scheduled date if available and use scheduleEmail service
         if (scheduleDateTime) {
             // Create FormData for schedule email with attachments
@@ -311,14 +297,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 }
             });
 
-            console.log('Schedule FormData contents:');
-            for (let [key, value] of scheduleFormData.entries()) {
-                console.log(key, value);
-            }
-
             try {
                 const response: any = await scheduleEmail(scheduleFormData);
-                console.log('Email scheduled successfully:', response);
                 if (response.statusCode === 200) {
                     showSuccess("Email scheduled successfully")
                     onClose();
@@ -328,14 +308,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             } finally {
                 setIsSubmitting(false);
             }
-        }
-        else {
-            for (let [key, value] of formData.entries()) {
-
-                console.log('without schedule event condition',key, value);
-                console.log('without schedule event condition', key, value);
-            }
-
+        } else {
             try {
                 await new Promise<void>((resolve, reject) => {
                     sendEmailWithUndo("Your email is being sent...", settings.undoSendPeriod * 1000 || 3000, () => {
@@ -354,9 +327,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
     const sendMailHandler = async (formData: any) => {
         try {
-            console.log('data sent from client side', JSON.stringify(formData))
             const response: any = await sendEmail(formData);
-            console.log('Email sent successfully:', response);
             if (response.statusCode === 200) {
                 showSuccess("Email sent successfully!");
                 if (verifyBoxName(boxName, 'draft')) {
@@ -769,7 +740,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                         console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                                     })}
                                     loading={isSubmitting}
-                                >Send</SubmitButton>
+                                >Send
+                                </SubmitButton>
                             </div>
                         </div>
                     </div>

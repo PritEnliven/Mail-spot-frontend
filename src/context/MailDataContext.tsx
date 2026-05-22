@@ -1,13 +1,28 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
-import { getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
+import type { FilterEmailFormValues } from '@components/layout/header/filterEmailForm.schema';
 import type { Email } from '@models/Email';
 import type { Pagination } from '@models/Pagination';
-import type { FilterEmailFormValues } from '@components/layout/header/filterEmailForm.schema';
-import { buildParentFolderOptions, resolveAllSidebarItems } from '@utils/emailUtil';
+import { getCounts, getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { getUserPermissions } from '@services/settings/settingsService';
+import { buildParentFolderOptions, resolveAllSidebarItems } from '@utils/emailUtil';
+import {
+    fetchEmailsWithCache,
+    markEmailsReadInCache,
+    removeEmailsFromCache,
+    invalidateMailboxCache,
+} from '@services/email/emailCacheService';
+import {
+    manageCache,
+    enforceSizeLimit,
+    prunePaginationWindow,
+    refreshCache,
+    getCacheStats,
+    PAGINATION_WINDOW_SIZE
+} from '../db/emailCacheRepository';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface BoxCount {
+    isTotal: boolean;
     unreadCount: number;
     totalCount: number;
 }
@@ -29,6 +44,7 @@ interface SidebarStateProps {
     otherMenu: any[];
     boxCounts: Record<string, BoxCount>;
     parentFolderOptions: any[];
+    delimiter: string | null;
 }
 
 type SidebarItemType = {
@@ -66,6 +82,8 @@ interface MailDataType {
     sidebarItems: SidebarItemType[];
     setSidebarItems: (items: SidebarItemType[]) => void;
     socketId: string | null;
+    isSidebarDataReady: boolean;
+    setIsSidebarDataReady: (ready: boolean) => void;
 
     userPermissions: AdminSettingsPermissions | null;
     setUserPermissions: (permissions: AdminSettingsPermissions | null) => void;
@@ -86,7 +104,7 @@ interface MailDataType {
     setSocketId: (socketId: string | null) => void;
 
     /* API */
-    fetchEmails: (page?: number, boxName?: string, isPrevious?: boolean) => Promise<void>;
+    fetchEmails: (page?: number, boxName?: string, isPrevious?: boolean, mailAction?: string, forceRefresh?: boolean) => Promise<void>;
     fetchSearchEmails: (isPrevious?: boolean) => Promise<void>;
 
     /* Mail mutations */
@@ -101,6 +119,19 @@ interface MailDataType {
     addNewEmail: (email: Email | Email[]) => void;
     updateEmail: (email: Email) => void;
     deleteEmail: (emailId: string) => void;
+
+    /* Read/Unread filter */
+    readUnreadFilter: string;
+    setReadUnreadFilter: (filter: string) => void;
+
+    /* Sidebar loading state */
+    isSidebarLoading: boolean;
+    setIsSidebarLoading: (loading: boolean) => void;
+    isSidebarCountLoading: boolean;
+    setIsSidebarCountLoading: (loading: boolean) => void;
+    isTotalCountLoading: boolean;
+    setIsTotalCountLoading: (loading: boolean) => void;
+
 }
 
 const MailDataContext = createContext<MailDataType | undefined>(undefined);
@@ -112,7 +143,7 @@ export const useMailData = () => {
 };
 
 export const MailDataProvider = ({ children }: { children: ReactNode }) => {
-    const [boxName, setBoxName] = useState('');
+    const [boxName, setBoxName] = useState('INBOX');
     const [boxTitle, setBoxTitle] = useState('');
     const [totalEmailBadge, setTotalEmailBadge] = useState(0);
     const [emails, setEmails] = useState<Email[]>([]);
@@ -126,6 +157,16 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [filterForm, setFilterForm] = useState<FilterEmailFormValues | null>(null);
     const [socketId, setSocketId] = useState<string | null>(null);
     const [userPermissions, setUserPermissions] = useState<AdminSettingsPermissions | null>(null);
+    const [readUnreadFilter, setReadUnreadFilter] = useState<string>('all');
+    const [isSidebarLoading, setIsSidebarLoading] = useState<boolean>(false);
+    const [isSidebarCountLoading, setIsSidebarCountLoading] = useState<boolean>(false);
+    const [isTotalCountLoading, setIsTotalCountLoading] = useState<boolean>(false);
+    const [userId, setUserId] = useState<string>('guest');
+
+    useEffect(() => {
+        // Run comprehensive cache management on app startup
+        void manageCache();
+    }, []);
 
     const [sidebarState, setSidebarState] = useState<SidebarStateProps>({
         boxes: [],
@@ -133,9 +174,11 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         otherMenu: [],
         boxCounts: {},
         parentFolderOptions: [],
+        delimiter: null,
     });
 
     const [sidebarItems, setSidebarItems] = useState<SidebarItemType[]>([]);
+    const [isSidebarDataReady, setIsSidebarDataReady] = useState(false);
 
     paginationRef.current = pagination;
 
@@ -145,48 +188,217 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 const response = await getUserPermissions();
                 if (response?.statusCode === 200) {
                     setUserPermissions(response.data ?? null);
+                    // Set userId from permissions response
+                    if (response.data?.userId) {
+                        setUserId(response.data.userId);
+                    }
                 }
             } catch {
                 setUserPermissions(null);
+                // Fallback: try to get userId from JWT token
+                const fallbackUserId = getUserIdFromToken();
+                setUserId(fallbackUserId);
             }
         };
 
         loadUserPermissions();
     }, []);
 
+    // Helper to get userId from JWT token
+    const getUserIdFromToken = () => {
+        const token = localStorage.getItem('access_token');
+        if (!token) return 'guest';
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.sub ?? payload.userId ?? 'guest';
+        } catch {
+            return 'guest';
+        }
+    };
+
     /* -------------------- API Functions -------------------- */
     const fetchEmails = useCallback(
-        async (page = mailListPage, boxName?: string, isPrevious?: boolean) => {
-            if (!boxName) return;
+        async (page = mailListPage, boxNameParam?: string, isPrevious?: boolean, mailAction: string = 'all', forceRefresh = false) => {
+
+            if (!boxNameParam) return;
 
             try {
-                console.log('fetchEmails called with page:', page, 'paginationRef.current:', paginationRef.current);
-                let payload = {
-                    current_active_box: boxName,
-                    vPage: page,
-                    lastMailId: isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
-                    firstMailId: isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
-                    totalCount: page === 1 ? null : (paginationRef.current?.totalEmails ?? 0),
-                };
-                console.log('Payload totalCount:', payload.totalCount);
 
-                if (page === 1) {
-                    payload.lastMailId = "";
-                    payload.firstMailId = "";
+                if (mailAction === 'all') {
+                    setReadUnreadFilter('all');
                 }
 
-                const response = await getEmailsService(payload);
-                if (response.statusCode === 200) {
-                    setEmails(response.data.emailList || []);
-                    setPagination(response.data.pagination);
+                // Determine isReadTotal based on mailAction (not state to avoid closure issue)
+                let isReadTotal: boolean | null = null;
+                if (mailAction === 'unread') isReadTotal = false;
+                else if (mailAction === 'read') isReadTotal = true;
+                // For 'all', isReadTotal remains null
+
+                // Use cache-first approach for 'all' mailAction
+                if (mailAction === 'all') {
+                    const { emails: emailList, pagination: paginationData, fromCache } = await fetchEmailsWithCache({
+                        userId,
+                        boxName: boxNameParam,
+                        page,
+                        lastMailId: isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
+                        firstMailId: isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
+                        totalCount: page === 1 ? null : (paginationRef.current?.totalEmails ?? 0),
+                        mailAction,
+                        isPrevious,
+                        forceRefresh,
+                    });
+
+                    // Optional: log for debugging
+                    console.debug(`[MailData] fetchEmails page=${page} fromCache=${fromCache}`);
+
+                    if (boxNameParam && page === 1) {
+                        setIsTotalCountLoading(true);
+
+                        getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
+                            if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
+                                setPagination(prevPagination => prevPagination ? {
+                                    ...prevPagination,
+                                    totalEmails: boxCountResponse.data.totalCount,
+                                    startCount: 1,
+                                    endCount: emailList.length
+                                } : prevPagination);
+
+                                // Update sidebar state for all boxes returned in sidebarCounts
+                                setSidebarState(prev => {
+                                    const updatedBoxCounts = { ...prev.boxCounts };
+                                    if (boxCountResponse.data.sidebarCounts) {
+                                        Object.entries(boxCountResponse.data.sidebarCounts).forEach(([name, counts]: [string, any]) => {
+                                            updatedBoxCounts[name] = {
+                                                isTotal: counts.isTotal,
+                                                unreadCount: counts.unreadCount ?? updatedBoxCounts[name]?.unreadCount ?? 0,
+                                                totalCount: counts.totalCount ?? updatedBoxCounts[name]?.totalCount ?? 0,
+                                            };
+                                        });
+                                    } else {
+                                        // Fallback for single box if sidebarCounts is missing
+                                        updatedBoxCounts[boxNameParam] = {
+                                            isTotal: boxCountResponse.data.isTotal,
+                                            unreadCount: boxCountResponse.data.unreadCount ?? updatedBoxCounts[boxNameParam]?.unreadCount ?? 0,
+                                            totalCount: boxCountResponse.data.totalCount ?? updatedBoxCounts[boxNameParam]?.totalCount ?? 0,
+                                        };
+                                    }
+                                    return { ...prev, boxCounts: updatedBoxCounts };
+                                });
+                            }
+                        }).finally(() => {
+                            setIsTotalCountLoading(false);
+                        });
+                    }
+                    setEmails(emailList);
+                    setPagination(paginationData);
                     setMailListPage(page);
-                    setTotalEmailBadge(response.data.pagination.totalEmails);
+                    setTotalEmailBadge(paginationData.totalEmails);
+
+                    if (!fromCache) {
+                        void enforceSizeLimit(userId, boxNameParam);
+                        if (page > PAGINATION_WINDOW_SIZE + 5) {
+                            void prunePaginationWindow(userId, boxNameParam, page);
+                        }
+                    }
+
+                } else {
+                    let payload = {
+                        current_active_box: boxNameParam,
+                        vPage: page,
+                        lastMailId: isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
+                        firstMailId: isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
+                        totalCount: page === 1 ? null : (paginationRef.current?.totalEmails ?? 0),
+                        mailAction: mailAction,
+                    };
+
+                    if (page === 1) {
+                        payload.lastMailId = "";
+                        payload.firstMailId = "";
+                    }
+
+                    const response = await getEmailsService(payload);
+                    if (response.statusCode === 200) {
+                        const emailList = response.data.emailList || [];
+                        const paginationData = response.data.pagination;
+
+                        // Calculate start and end counts if they aren't provided correctly by backend
+                        if (page === 1) {
+                            paginationData.startCount = 1;
+                            paginationData.endCount = emailList.length;
+                        } else {
+                            paginationData.startCount = (page - 1) * 25 + 1;
+                            paginationData.endCount = paginationData.startCount + emailList.length - 1;
+                        }
+
+                        setEmails(emailList);
+                        setPagination(paginationData);
+                        setMailListPage(page);
+                        setTotalEmailBadge(paginationData.totalEmails);
+
+                        // If it's page 1, we should also update the counts from the API response if available
+                        // or trigger getCounts for the sidebar
+                        if (page === 1 && boxNameParam) {
+                            setIsTotalCountLoading(true);
+
+                            // Determine isReadTotal based on mailAction
+                            let isReadTotal: boolean | null = null;
+                            if (mailAction === 'unread') isReadTotal = false;
+                            else if (mailAction === 'read') isReadTotal = true;
+
+                            getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
+                                if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
+                                    setPagination(prev => prev ? {
+                                        ...prev,
+                                        totalEmails: boxCountResponse.data.totalCount
+                                    } : prev);
+
+                                    setSidebarState(prev => {
+                                        const updatedBoxCounts = { ...prev.boxCounts };
+                                        if (boxCountResponse.data.sidebarCounts) {
+                                            Object.entries(boxCountResponse.data.sidebarCounts).forEach(([name, counts]: [string, any]) => {
+                                                updatedBoxCounts[name] = {
+                                                    isTotal: counts.isTotal,
+                                                    unreadCount: counts.unreadCount ?? updatedBoxCounts[name]?.unreadCount ?? 0,
+                                                    totalCount: counts.totalCount ?? updatedBoxCounts[name]?.totalCount ?? 0,
+                                                };
+                                            });
+                                        } else {
+                                            // Fallback for single box if sidebarCounts is missing
+                                            updatedBoxCounts[boxNameParam] = {
+                                                isTotal: boxCountResponse.data?.isTotal,
+                                                unreadCount: boxCountResponse.data.unreadCount ?? updatedBoxCounts[boxNameParam]?.unreadCount ?? 0,
+                                                totalCount: updatedBoxCounts[boxNameParam]?.isTotal ? updatedBoxCounts[boxNameParam]?.totalCount : boxCountResponse.data.totalCount ?? 0,
+                                            };
+                                        }
+                                        return { ...prev, boxCounts: updatedBoxCounts };
+                                    });
+                                }
+                            }).finally(() => {
+                                setIsTotalCountLoading(false);
+                            });
+                        }
+
+                        // Update sidebar box unread count when mailAction is read/unread
+                        if (mailAction === 'unread') {
+                            setSidebarState(prev => ({
+                                ...prev,
+                                boxCounts: {
+                                    ...prev.boxCounts,
+                                    [boxNameParam]: {
+                                        ...prev.boxCounts[boxNameParam],
+                                        unreadCount: response.data.pagination.totalEmails
+                                    }
+                                }
+                            }));
+
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch emails:', error);
             }
         },
-        [mailListPage]
+        [mailListPage, readUnreadFilter, userId]
     );
 
     const fetchSearchEmails = useCallback(
@@ -194,9 +406,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             if (!searchTerm && !filterForm) return;
 
             try {
-                const cursor = isPrevious
-                    ? pagination?.firstMailId
-                    : pagination?.lastMailId;
+                const cursor = isPrevious ? pagination?.firstMailId : pagination?.lastMailId;
 
                 const direction = isPrevious ? 'prev' : 'next';
                 const vPage = isPrevious ? Math.max(1, mailListPage - 1) : mailListPage + 1;
@@ -244,22 +454,29 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         if (isRead) {
             // Marking as read: decrement unread count for emails that were unread
             unreadCountChange = emails.filter(email =>
-                messageIds.includes(email.messageId) && !email.flags?.includes('\\Seen')
+                messageIds.includes(email.messageId) && !email.isSeen
             ).length;
         } else {
             // Marking as unread: increment unread count for emails that were read
             unreadCountChange = emails.filter(email =>
-                messageIds.includes(email.messageId) && email.flags?.includes('\\Seen')
+                messageIds.includes(email.messageId) && email.isSeen
             ).length;
         }
 
         setEmails(prev =>
             prev.map(email =>
                 messageIds.includes(email.messageId)
-                    ? { ...email, flags: isRead ? [...email.flags, '\\Seen'] : email.flags.filter(flag => flag !== '\\Seen') }
+                    ? {
+                        ...email,
+                        isSeen: isRead,
+                        flags: isRead ? [...email.flags, '\\Seen'] : email.flags.filter(flag => flag !== '\\Seen'),
+                    }
                     : email
             )
         );
+
+        // Keep IndexedDB consistent — fire-and-forget
+        void markEmailsReadInCache(userId, boxName, messageIds, isRead);
 
         void unreadCountChange;
     };
@@ -267,7 +484,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const deleteEmailState = (messageIds: string[]) => {
         // Count how many unread emails are being deleted
         const unreadDeletedCount = emails
-            .filter(email => messageIds.includes(email.messageId) && !email.flags?.includes('\\Seen'))
+            .filter(email => messageIds.includes(email.messageId) && !email.isSeen)
             .length;
 
         setEmails(prev => prev.filter(email => !messageIds.includes(email.messageId)));
@@ -293,6 +510,9 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 }
             }));
         }
+
+        // Keep IndexedDB consistent — fire-and-forget
+        void removeEmailsFromCache(userId, boxName, messageIds);
     };
 
     /* -------------------- Socket-safe helpers -------------------- */
@@ -321,7 +541,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             const addedEmailsCount = toAdd.length;
             if (addedEmailsCount === 0) return prev;
 
-            const addedUnreadCount = toAdd.filter(email => !email.flags?.includes('\\Seen')).length;
+            const addedUnreadCount = toAdd.filter(email => !email.isSeen).length;
 
             setTotalEmailBadge(prevBadge => prevBadge + addedEmailsCount);
 
@@ -337,6 +557,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     boxCounts: {
                         ...prevSidebar.boxCounts,
                         [boxName]: {
+                            isTotal: false,
                             unreadCount: (prevSidebar.boxCounts[boxName]?.unreadCount || 0) + addedUnreadCount,
                             totalCount: (prevSidebar.boxCounts[boxName]?.totalCount || 0) + addedEmailsCount
                         }
@@ -346,6 +567,10 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
             return [...toAdd, ...prev];
         });
+
+        // After updating React state, invalidate the box cache so page 1
+        // gets re-fetched from the server next time (new email shifted cursors)
+        void invalidateMailboxCache(userId, boxName);
     };
 
     const updateEmail = (email: Email) => {
@@ -368,7 +593,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
             // Calculate unread count for the removed emails
             const unreadCountToDecrement = removedEmails.filter(
-                email => !email.flags?.includes('\\Seen')
+                email => !email.isSeen
             ).length;
 
             // Filter out the deleted emails
@@ -395,6 +620,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         boxCounts: {
                             ...prev.boxCounts,
                             [boxName]: {
+                                isTotal: false,
                                 unreadCount: Math.max(0, currentBox.unreadCount - unreadCountToDecrement),
                                 totalCount: Math.max(0, currentBox.totalCount - removedCount)
                             }
@@ -409,42 +635,76 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
     /* -------------------- Sidebar helpers -------------------- */
     const setSidebarStateFromAPI = async () => {
-        const response = await getBoxes()
-        const boxCounts: Record<string, BoxCount> = {};
+        setIsSidebarLoading(true);
+        try {
+            const response = await getBoxes()
+            const boxCounts: Record<string, BoxCount> = {};
 
-        [...response.boxes, ...response.customBoxes, ...response.otherMenu].forEach(
-            box => {
-                if (box.value) {
-                    boxCounts[box.value] = {
-                        unreadCount: box.count ?? 0,
-                        totalCount: box.totalCount ?? box.count ?? 0,
-                    };
+            [...response.boxes, ...response.customBoxes, ...response.otherMenu].forEach(
+                box => {
+                    if (box.value) {
+                        boxCounts[box.value] = {
+                            isTotal: box.isTotal,
+                            unreadCount: box.count ?? 0,
+                            totalCount: box.totalCount ?? box.count ?? 0,
+                        };
+                    }
                 }
+            );
+
+            // Fire getCounts without blocking - update counts when response arrives
+            if (boxName) {
+                setIsSidebarCountLoading(true);
+                getCounts(boxName, true, null).then((boxCountResponse) => {
+                    if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
+                        setSidebarState(prev => {
+                            const updatedBoxCounts = { ...prev.boxCounts };
+                            Object.entries(boxCountResponse.data.sidebarCounts).forEach(([boxName, box]: [string, any]) => {
+                                updatedBoxCounts[boxName] = {
+                                    isTotal: box.isTotal,
+                                    unreadCount: box.unreadCount ?? 0,
+                                    totalCount: box.totalCount ?? 0,
+                                };
+                            });
+                            return { ...prev, boxCounts: updatedBoxCounts };
+                        });
+                    }
+                }).finally(() => {
+                    setIsSidebarCountLoading(false);
+                });
             }
-        );
 
-        response.boxCounts = boxCounts;
+            response.boxCounts = boxCounts;
 
-        const sidebarItems = resolveAllSidebarItems(
-            response.boxes,
-            response.customBoxes,
-            response.otherMenu,
-            boxCounts
-        );
-
-        setSidebarItems(sidebarItems);
-
-        setSidebarState({
-            boxes: response.boxes,
-            customBoxes: response.customBoxes,
-            otherMenu: response.otherMenu,
-            boxCounts,
-            parentFolderOptions: buildParentFolderOptions(
+            const sidebarItems = resolveAllSidebarItems(
                 response.boxes,
-                response.customBoxes
-            ),
-        });
-        return response;
+                response.customBoxes,
+                response.otherMenu,
+                boxCounts
+            );
+
+            setSidebarItems(sidebarItems);
+
+            setSidebarState({
+                boxes: response.boxes,
+                customBoxes: response.customBoxes,
+                otherMenu: response.otherMenu,
+                boxCounts,
+                parentFolderOptions: buildParentFolderOptions(
+                    response.boxes,
+                    response.customBoxes
+                ),
+                delimiter: response.delimiter
+            });
+
+            setIsSidebarDataReady(true);
+            return response;
+        } catch (error) {
+            console.error('Failed to load sidebar data:', error);
+            throw error;
+        } finally {
+            setIsSidebarLoading(false);
+        }
     };
 
     const updateBoxCount = (
@@ -464,6 +724,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 boxCounts: {
                     ...prev.boxCounts,
                     [boxName]: {
+                        isTotal: false,
                         unreadCount: newUnreadCount,
                         totalCount: newTotalCount,
                     }
@@ -471,6 +732,19 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             };
         });
     };
+
+    // Cache management utilities
+    const refreshMailboxCache = useCallback(async (boxNameParam?: string) => {
+        await refreshCache(userId, boxNameParam);
+        // Refetch current page after cache refresh
+        if (boxNameParam || boxName) {
+            await fetchEmails(mailListPage, boxNameParam || boxName, false, 'all', true);
+        }
+    }, [userId, boxName, mailListPage, fetchEmails]);
+
+    const getCacheStatistics = useCallback(async () => {
+        return await getCacheStats();
+    }, []);
 
     const value = {
         boxName,
@@ -511,7 +785,20 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setSocketId,
         addNewEmail,
         updateEmail,
-        deleteEmail
+        deleteEmail,
+        isSidebarDataReady,
+        setIsSidebarDataReady,
+        readUnreadFilter,
+        setReadUnreadFilter,
+        isSidebarLoading,
+        setIsSidebarLoading,
+        isSidebarCountLoading,
+        setIsSidebarCountLoading,
+        isTotalCountLoading,
+        setIsTotalCountLoading,
+        // Cache management utilities
+        refreshMailboxCache,
+        getCacheStatistics
     };
 
     return (

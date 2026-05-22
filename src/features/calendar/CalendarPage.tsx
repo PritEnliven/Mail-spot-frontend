@@ -1,24 +1,19 @@
-import { useRef, useEffect, useState } from 'react'
-import FullCalendar from '@fullcalendar/react'
-import type {
-    DatesSetArg,
-} from '@fullcalendar/core'
-import {
-    createMainCalendarConfig,
-    createSidebarCalendarConfig,
-} from '../../config/fullCalendar.config'
-import { useMailData } from '@context/MailDataContext'
+import CalendarAllEventList from '@components/ui/calendar/CalendarAllEventList'
 import { useCalendar, type CalendarView } from '@context/CalendarContext'
+import { useMailData } from '@context/MailDataContext'
 import { useMailUI } from '@context/MailUIContext'
+import type { DatesSetArg } from '@fullcalendar/core'
+import FullCalendar from '@fullcalendar/react'
+import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet'
 import { getEventById } from '@services/calendar/calendarService'
 import { focusDate, focusEvent, normalizeEventForModal } from '@utils/calendarUtil'
-import CalendarAllEventList from '@components/ui/calendar/CalendarAllEventList'
-import { usePageStylesheet, pageStyles } from '@hooks/usePageStyleSheet'
+import { useEffect, useRef, useState } from 'react'
+import { createMainCalendarConfig, createSidebarCalendarConfig } from '../../config/fullCalendar.config'
 
 
 function CalendarPage() {
     usePageStylesheet([pageStyles.calendarCss]);
-    
+
     const { setBoxName } = useMailData()
     const { mainCalendarRef, sidebarCalendarRef, setCalendarTitle, setCalendarView, getAllEventList, registerResetLastClickedDate, isCalendarAllSearchActive } = useCalendar()
     const { openModal } = useMailUI()
@@ -226,10 +221,8 @@ function CalendarPage() {
 
     const handleEventClick = async (info: any) => {
         focusEvent(info)
-        console.log(info.event.id);
         const response = await getEventById(info.event.id)
         if (response.statusCode === 200) {
-            console.log(response);
             response.data.event.id = info.event.id;
             const event = normalizeEventForModal(response.data.event)
             event.selectedEventDate = info.event.start;

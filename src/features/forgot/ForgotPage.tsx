@@ -1,26 +1,23 @@
-import { useState } from "react";
-import mailSpotLogo from "@images/mailspot-login-logo.svg";
-import mailIcon from "@images/mail-icon-16.svg";
-import chevronLeftIconBig from "@images/chevron-left-icon-big.svg";
-import lockIcon from "@images/password-icon-16.svg";
-import passwordShowIcon from "@images/password-show-icon-16.svg";
-import passwordHideIcon from "@images/password-hide-icon-16.svg";
-import enlivenLogo from "@images/enliven-logo.svg";
-
-// focuse
-import mailIconfocuse from "@images/mail-icon-16-blue.svg"
-import lockIconfocuse from "@images/password-icon-16-blue.svg"
-
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ForgotPageSchema, type ForgotPageFormValues } from "./ForgotPage.schema";
 import "@assets/styles/header-main-style.css";
 import "@assets/styles/sign-in-style.css";
 import SubmitButton from "@components/ui/form/SubmitButton";
-import { resetPassword, verifyEmailAndSentMail, verifyOtp } from "@services/forgotPassword/forgotPasswordService";
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
+import { zodResolver } from "@hookform/resolvers/zod";
+import chevronLeftIconBig from "@images/chevron-left-icon-big.svg";
+import enlivenLogo from "@images/enliven-logo.svg";
+import mailIconfocuse from "@images/mail-icon-16-blue.svg";
+import mailIcon from "@images/mail-icon-16.svg";
+import mailSpotLogo from "@images/mailspot-login-logo.svg";
+import passwordHideIcon from "@images/password-hide-icon-16.svg";
+import lockIconfocuse from "@images/password-icon-16-blue.svg";
+import lockIcon from "@images/password-icon-16.svg";
+import passwordShowIcon from "@images/password-show-icon-16.svg";
 import type { Response } from "@models/Response";
+import { resetPassword, verifyEmailAndSentMail, verifyOtp } from "@services/forgotPassword/forgotPasswordService";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { ForgotPageSchema, type ForgotPageFormValues } from "./ForgotPage.schema";
 
 const STEPS = {
   EMAIL: 1,
@@ -88,8 +85,6 @@ const ForgotPage = () => {
     else if (currentStep === STEPS.OTP) {
       isValid = await trigger(["otp"]);
       // TODO: Verify OTP via API
-
-      console.log("Verifying OTP:", getValues("otp"));
       const payload = {
         email: getValues('email'),
         action: 'forgotPassword' as const,
@@ -139,7 +134,6 @@ const ForgotPage = () => {
       } else {
         showError(response.data?.data?.message || "Password reset failed!");
       }
-      console.log("Resetting password with:", getValues());
     }
   };
 

@@ -1,9 +1,9 @@
-import sidebarConfig from "../config/sidebar.config";
-import inboxIcon from '@images/inbox-icon.svg';
-import inboxIconActive from '@images/inbox-icon-active.svg';
-import type { BoxCount } from "../context/MailDataContext";
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
-import { getSingleEmailService, type GetSingleEmailPayload } from "@services/email/emailService";
+import inboxIconActive from '@images/inbox-icon-active.svg';
+import inboxIcon from '@images/inbox-icon.svg';
+import { getSingleEmailService } from "@services/email/emailService";
+import sidebarConfig from "../config/sidebar.config";
+import type { BoxCount } from "../context/MailDataContext";
 
 interface ParsedEmailAddress {
     name: string;
@@ -85,7 +85,20 @@ function getBoxNameFromSidebar(sidebarState: any, boxName: string): string {
 }
 
 function verifyBoxName(boxName: string, boxValue: string){
-    return boxName.toLocaleLowerCase().includes(boxValue.toLowerCase());
+    if (!boxName || !boxValue) return false;
+    const normalized = normalizeBoxName(boxName).toLowerCase();
+    const lastSegment = normalized.split(/[./\\]/).pop() ?? normalized;
+    return lastSegment.includes(boxValue.toLowerCase());
+}
+
+function normalizeBoxName(boxName: string): string {
+    if (!boxName) return '';
+    
+    // Decode URI components to handle spaces and special characters
+    const decoded = decodeURIComponent(boxName);
+    
+    // Remove any leading/trailing slashes and normalize
+    return decoded.replace(/^\/+|\/+$/g, '');
 }
 
 function parseEmailAddress(email?: string): ParsedEmailAddress {

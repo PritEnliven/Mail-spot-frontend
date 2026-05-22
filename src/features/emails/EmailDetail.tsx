@@ -1,41 +1,37 @@
-import replyIcon from "@images/arrow-uturn-left-icon.svg";
-import replyAllIcon from "@images/reply-all-icon.svg";
-import replyIconHover from "@images/arrow-uturn-left-icon-hover.svg";
-import replyAllIconHover from "@images/reply-all-icon-hover.svg";
-import forwardIcon from "@images/arrow-uturn-right-icon.svg";
-import forwardIconHover from "@images/arrow-uturn-right-icon-hover.svg";
-import CopyEmail from "@components/ui/email/CopyEmail";
-import editIcon from '@images/edit2-icon.svg';
-import editIconHover from '@images/edit2-icon-hover.svg';
-import closeIcon from "@images/close-icon.svg";
-import closeIconHover from "@images/close-icon-hover.svg";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import EmailRecipientList from "@components/ui/email/EmailRecipientList";
+import CopyEmail from "@components/ui/email/CopyEmail";
 import EmailBody from "@components/ui/email/EmailBody";
 import EmailDetailAttachmentPreview from "@components/ui/email/EmailDetailAttachmentPreview";
-import ThreadEmailItem from "@components/ui/threadEmail/ThreadEmailItem";
-import type { Email } from "@models/Email";
-import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { useAttachmentDownload } from "@hooks/useAttachmentDownload";
-import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
-import { useReplyForward } from "@hooks/useReplyForward";
-import { useState, useEffect, useCallback } from "react";
-import { useMailData, useMailUI } from '../../context/index';
-import { useHorizontalScrollbar } from "@hooks/useHorizontalScrollbar";
-import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
-import { showError, showSuccess } from "@components/ui/toast/toastNotification";
-import type { Response } from "@models/Response";
-import { lazy, Suspense } from "react";
-import { verifyBoxName, mailboxParticipantToString, parseEmailAddress } from "@utils/emailUtil";
+import EmailRecipientList from "@components/ui/email/EmailRecipientList";
 import EmailSendInformation from "@components/ui/email/EmailSendInformationRespon";
+import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import { useScreen } from "@context/ScreenContext";
+import { useAttachmentDownload } from "@hooks/useAttachmentDownload";
+import { useHorizontalScrollbar } from "@hooks/useHorizontalScrollbar";
+import { useReplyForward } from "@hooks/useReplyForward";
+import replyIconHover from "@images/arrow-uturn-left-icon-hover.svg";
+import replyIcon from "@images/arrow-uturn-left-icon.svg";
+import forwardIconHover from "@images/arrow-uturn-right-icon-hover.svg";
+import forwardIcon from "@images/arrow-uturn-right-icon.svg";
+import closeIconHover from "@images/close-icon-hover.svg";
+import closeIcon from "@images/close-icon.svg";
+import editIconHover from '@images/edit2-icon-hover.svg';
+import editIcon from '@images/edit2-icon.svg';
+import replyAllIconHover from "@images/reply-all-icon-hover.svg";
+import replyAllIcon from "@images/reply-all-icon.svg";
+import type { Email } from "@models/Email";
+import type { Response } from "@models/Response";
+import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
+import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
+import { formatDate, TimeFormat } from "@utils/dateUtil";
+import { verifyBoxName, parseEmailAddress, mailboxParticipantToString } from "@utils/emailUtil";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
+
+// Lazy loaded components
+const ThreadEmailItem = lazy(() => import("@components/ui/threadEmail/ThreadEmailItem"));
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
-
-const API_URL = import.meta.env.VITE_API_URL;
-const TOKEN = import.meta.env.VITE_TOKEN;
-
-console.log(API_URL, TOKEN);
 
 export interface RelativeDate {
     isOld: boolean;
@@ -52,7 +48,6 @@ interface Props {
 }
 
 const openAttachment = (customFileName: string, filename: string, isEml: boolean) => {
-    console.log('Opening attachment:', customFileName, filename, isEml);
 };
 
 const EmailDetail = ({ email }: Props) => {
@@ -89,7 +84,7 @@ const EmailDetail = ({ email }: Props) => {
 
     useEffect(() => {
         // Don't load thread emails if current box is schedule
-        if (emailDetailSelected?.isSearchEmail || (!verifyBoxName(boxName, 'schedule') && !verifyBoxName(boxName, 'sent'))) {
+        if (emailDetailSelected?.isSearchEmail || (!verifyBoxName(boxName, 'schedule') && !verifyBoxName(boxName, 'sent') && !verifyBoxName(boxName, 'trash'))) {
             loadThreadEmails();
         }
     }, [loadThreadEmails, boxName, emailDetailSelected?.isSearchEmail, emailDetailSelected?.messageId, emailDetailSelected?.id]);
@@ -336,6 +331,7 @@ const EmailDetail = ({ email }: Props) => {
             )}
 
             {/* Body */}
+{email.body && (
             <div className="mail-content-details-box" id="emailBodySection">
                 <div className="horizontal-scroll-container" >
                     {email.body && (
@@ -350,6 +346,7 @@ const EmailDetail = ({ email }: Props) => {
                     </div>
                 </div>
             </div>
+ )}
 
             {/* Attachments */}
             <EmailDetailAttachmentPreview
@@ -444,9 +441,11 @@ const EmailDetail = ({ email }: Props) => {
             {
                 threadEmails.length > 0 &&
                 <div className="thread-email" id="threadEmailsSection">
-                    {threadEmails.map((email, index) => (
-                        <ThreadEmailItem key={email.messageId} email={email} index={index} />
-                    ))}
+                    <Suspense fallback={null}>
+                        {threadEmails.map((email, index) => (
+                            <ThreadEmailItem key={email.messageId} email={email} index={index} />
+                        ))}
+                    </Suspense>
                 </div>
             }
 

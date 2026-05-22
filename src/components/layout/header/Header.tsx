@@ -17,23 +17,25 @@ import enlivenLogo from "@images/enliven-logo.svg";
 import dateIcon from "@images/date-icon-16.svg";
 import backBtnIcon from "@images/back-btn-icon.svg";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
+import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
+import menuIcon from "@images/menu-icon.svg";
 import { useContacts, useMailData, useMailUI } from '../../../context/index';
-import { useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import { Controller } from 'react-hook-form';
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
-import Flatpickr from 'react-flatpickr';
+const Flatpickr = lazy(() => import('react-flatpickr'));
 import { useNavigate } from "react-router-dom";
 import { getSingleEmailService, searchAndFilterEmailService, filterEmailAndCreateRuleService } from "@services/email/emailService";
 import type { FilterEmailFormValues } from "./filterEmailForm.schema";
 import { useDebounce } from "@hooks/useDebounce";
-import SearchEmailRow from "./SearchEmailRow";
-import CalendarHeader from "@components/ui/calendar/calendarHeader/CalendarHeader";
+const SearchEmailRow = lazy(() => import("./SearchEmailRow"));
+const CalendarHeader = lazy(() => import("@components/ui/calendar/calendarHeader/CalendarHeader"));
 import { useCalendar, type CalendarView } from "@context/CalendarContext";
 import { getUserDetail } from "@services/user/userService";
 import { useProfile } from "@context/userContext";
 import { useMailSelection } from "@context/MailSelectionContext";
-import CreateRuleForm from "@components/layout/header/createRuleForm/CreateRuleForm";
+const CreateRuleForm = lazy(() => import("@components/layout/header/createRuleForm/CreateRuleForm"));
 import type { CreateRuleFormValues } from "./createRuleForm/CreateRuleForm.schema";
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
@@ -48,7 +50,7 @@ const Header = () => {
     const [isCreateRuleModalOpen, setIsCreateRuleModalOpen] = useState(false);
     const [searchText, setSearchText] = useState("");
     const debouncedSearchText = useDebounce(searchText, 1000);
-    const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen } = useMailUI();
+    const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
         setBoxTitle, filterForm, boxName,
@@ -115,6 +117,10 @@ const Header = () => {
         return () => controller.abort();
     }, [debouncedSearchText]);
 
+    const toggleMobileSidebar = () => {
+        setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+    }
+
     const onSubmit = async (data: FilterEmailFormValues) => {
         setAllSearchResult(true);
         setSearchTerm(data.searchTerm || '');
@@ -143,8 +149,6 @@ const Header = () => {
         if (data.dateRange?.length === 2) {
             payload.dateRange = `${formatDate(data.dateRange[0] as Date, TimeFormat.DD_MM_YYYY)} to ${formatDate(data.dateRange[1] as Date, TimeFormat.DD_MM_YYYY)}`;
         }
-
-        console.log('Final Filter Payload:', payload);
 
         try {
             const response = await searchAndFilterEmailService(payload);
@@ -279,7 +283,7 @@ const Header = () => {
             setEmailDetailSelected(data.emailList);
             setSelectedEmails(new Set([messageId]));
             setActiveEmailMessageId(messageId);
-            const isRead = data.emailList.flags.includes("\\Seen");
+            const isRead = data.emailList.isSeen;
             setToolbarState({
                 showBack: isSearch,
                 showSelectAll: false,
@@ -335,7 +339,7 @@ const Header = () => {
         openModal('changePassword')
     }
 
-    const { boxTitle, totalEmailBadge } = useMailData();
+    const { boxTitle, totalEmailBadge, readUnreadFilter } = useMailData();
 
     const toggleFilterDropdown = () => {
         setIsFilterDropdownOpen(!isFilterDropdownOpen);
@@ -356,7 +360,7 @@ const Header = () => {
             if (flatpickrCalendar) return;
 
             if (isFilterDropdownOpen && !isInsideFilterDropdown) {
-                // setIsFilterDropdownOpen(false);
+                setIsFilterDropdownOpen(false);
                 setAllSearchResult(false);
             }
 
@@ -437,7 +441,6 @@ const Header = () => {
         }
 
         const response = await searchAndFilterEmailService(payload);
-
         if (response.statusCode === 200) {
             setEmails(response.data.emailList);
             setPagination(response.data.pagination);
@@ -469,15 +472,36 @@ const Header = () => {
     return (
         <div className={`mail-details-header `}>
             {isCalendar ? (
-                <CalendarHeader />
+                <Suspense fallback={null}>
+                    <CalendarHeader />
+                </Suspense>
             ) : (
                 <>
-                    {/* LEFT: Dynamic header section */}
-                    <div className="d-flex align-items-center two-sc-in" id="dynamicHeaderSection">
-                        <h2 className="box-title" id="boxTitle">{boxTitle}</h2>
-                        {!isSettings && totalEmailBadge > 0 && (
-                            <span className="badge" id="boxBadge">{totalEmailBadge}</span>
-                        )}
+
+
+                    <div className="d-flex align-items-center">
+                        {/* moblie */}
+                        <button
+                            className="btn hover-link nav-collepse-button-mobile me-2"
+                            type="button" onClick={toggleMobileSidebar}
+                        >
+                            <InteractiveIcon
+                                defaultIcon={isSidebarExpandedMobile ? navCollapseIconHover : menuIcon}
+                                activeIcon=""
+                                isActive={false}
+                                alt=""
+                                className="interactive-icon hover-image"
+                                renderAs="img"
+                                tooltip=""
+                            />
+                        </button>
+                        {/* LEFT: Dynamic header section */}
+                        <div className="d-flex align-items-center two-sc-in" id="dynamicHeaderSection">
+                            <h2 className="box-title" id="boxTitle">{boxTitle}</h2>
+                            {!isSettings && totalEmailBadge > 0 && readUnreadFilter !== 'read' && readUnreadFilter !== 'unread' && (
+                                <span className="badge" id="boxBadge">{totalEmailBadge}</span>
+                            )}
+                        </div>
                     </div>
 
                     {!isSettings && (
@@ -529,7 +553,8 @@ const Header = () => {
                                                     <ul>
                                                         {searchResults.length > 0 ? (
                                                             searchResults.map((email) => (
-                                                                <SearchEmailRow
+                                                                <Suspense key={email.uid} fallback={null}>
+                                                                    <SearchEmailRow
                                                                     key={email.uid}
                                                                     email={email}
                                                                     searchTerm={searchText}
@@ -537,6 +562,7 @@ const Header = () => {
                                                                         openEmailDetailHandler(boxName, email.uid, email.messageId, isSearch, (email as { _id?: string })._id)
                                                                     }
                                                                 />
+								</Suspense>
                                                             ))
                                                         ) : noResult ? (
                                                             <li className="no-result">
@@ -708,6 +734,7 @@ const Header = () => {
                                                                     name="dateRange"
                                                                     control={control}
                                                                     render={({ field }) => (
+								<Suspense fallback={<input className="form-control" placeholder="Loading date picker..." readOnly />}>
                                                                         <Flatpickr
                                                                             value={field.value as Date[] | undefined}
                                                                             onChange={(dates) => field.onChange(dates)}
@@ -721,6 +748,7 @@ const Header = () => {
                                                                             className="form-control DateRangePickerStaticTop"
                                                                             placeholder="Select date range"
                                                                         />
+								</Suspense>
                                                                     )}
                                                                 />
                                                             </div>
@@ -742,7 +770,9 @@ const Header = () => {
                                             </div>
 
                                             {/*Create Rule Form */}
-                                            <CreateRuleForm isModalOpen={isCreateRuleModalOpen} onReset={handleCreateRuleModalReset} submitForm={(data) => handleOnSubmitForCreateRule(data)} />
+                                            <Suspense fallback={null}>
+                                                <CreateRuleForm isModalOpen={isCreateRuleModalOpen} onReset={handleCreateRuleModalReset} submitForm={(data) => handleOnSubmitForCreateRule(data)} />
+                                            </Suspense>
                                         </div>
                                     </div>
                                 </div>

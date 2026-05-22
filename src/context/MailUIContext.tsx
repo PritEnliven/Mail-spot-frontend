@@ -1,17 +1,16 @@
-import { createContext, useContext, useState, useMemo, type ReactNode, useEffect } from 'react';
 import type { Email } from '@models/Email';
-import type { ModalType } from '@models/ModalType';
 import type { ModalClosePayload } from '@models/ModalClosePayload';
+import type { ModalType } from '@models/ModalType';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 interface ToolbarState {
-    showBack: boolean | false;
+    showBack: boolean;
     showSelectAll: boolean;
     showRefresh: boolean;
     showDelete: boolean;
     showMarkAsRead: boolean;
     showMarkAsUnread: boolean;
     showMove: boolean;
-    [key: string]: boolean | undefined;
 }
 
 
@@ -31,7 +30,7 @@ interface MailUIType {
     activeModals: ActiveModal[];
     activeEmailMessageId: string | null;
     setIsLoading: (loading: boolean) => void;
-    setToolbarState: (state: ToolbarState) => void;
+    setToolbarState: (state: Partial<ToolbarState> | null) => void;
     openModal: (type: ModalType, props?: any) => string;
     closeModal: (id?: string) => void;
     isSidebarOpen: boolean;
@@ -92,7 +91,7 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
         if (activeEmailMessageId && selectedEmails.size === 0) {
             const activeEmail = emails.find(email => email.messageId === activeEmailMessageId);
             if (activeEmail) {
-                const isRead = activeEmail.flags.includes('\\Seen');
+                const isRead = activeEmail.isSeen;
                 return {
                     showBack: !isMailListOpen,
                     showSelectAll: true,
@@ -108,8 +107,8 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
         // If emails are selected (bulk selection or single selection)
         if (selectedEmails.size > 0) {
             const selectedEmailsData = emails.filter(email => selectedEmails.has(email.messageId));
-            const hasReadEmails = selectedEmailsData.some(email => email.flags.includes('\\Seen'));
-            const hasUnreadEmails = selectedEmailsData.some(email => !email.flags.includes('\\Seen'));
+            const hasReadEmails = selectedEmailsData.some(email => email.isSeen);
+            const hasUnreadEmails = selectedEmailsData.some(email => !email.isSeen);
 
             return {
                 showBack: !isMailListOpen,

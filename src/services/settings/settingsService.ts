@@ -7,6 +7,9 @@ interface saveSettingsPayload {
     signatureId: string;
     enableSignature: boolean;
     enableReplyForwardUse: boolean;
+    threadView: boolean;
+    downloadLocation: string;
+    notification: boolean;
     recoveryEmail: string;
 }
 
@@ -108,20 +111,14 @@ async function getUserPermissions() {
     try {
         const response = await getData('email/get-permissions');
         return response;
-    } 
-    catch (error: any) {
+    } catch (error: any) {
         return error;
     }
 }
 
 export {
-    getSettings,
-    saveSettings,
-    createSignatureName,
-    deleteSignature,
+    createSignatureName, deleteRule, deleteSignature,
     getAllRules,
-    getAllSignatures,
-    deleteRule,
-    getSignatureForActions,
-    getUserPermissions
-}
+    getAllSignatures, getSettings, getSignatureForActions,
+    getUserPermissions, saveSettings
+};

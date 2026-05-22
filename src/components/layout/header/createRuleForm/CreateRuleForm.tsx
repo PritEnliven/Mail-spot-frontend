@@ -1,14 +1,12 @@
-// src/components/layout/header/CreateRuleForm.tsx
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { createRuleSchema, type CreateRuleFormValues } from './CreateRuleForm.schema';
-import { useEffect, useState } from 'react';
-import SubmitButton from '@components/ui/form/SubmitButton';
-import type { SubmitHandler } from 'react-hook-form';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
+import SubmitButton from '@components/ui/form/SubmitButton';
 import { useMailData } from '@context/MailDataContext';
 import { useMailUI } from '@context/MailUIContext';
-
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
+import type { SubmitHandler } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
+import { createRuleSchema, type CreateRuleFormValues } from './CreateRuleForm.schema';
 
 interface CreateRuleFormProps {
     isModalOpen: boolean;
@@ -62,8 +60,6 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
         );
 
         setValidLabels(options);
-
-        console.log(validLabels)
     }
 
     useEffect(() => {
@@ -71,9 +67,7 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
     }, [isModalOpen]);
 
     const onForwardEmailSubmit = (data: any) => {
-        console.log(data)
         setValue('forwardEmails', data.forwardToEmailList || []);
-
     }
 
     const openForwardItModal = () => {
@@ -86,7 +80,7 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
         );
     }
 
-    const forwardItChecked = watch('forwardIt'); 
+    const forwardItChecked = watch('forwardIt');
 
     const onSubmit = (data: any) => {
         submitForm(data);
@@ -97,7 +91,8 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
         reset();
         onReset();
     };
-    
+
+
     return (
         <div className={`dropdown-menu dropdown-menu-end t-filter-dropdown-menu more-list search-create-filter-cmt ${isModalOpen ? 'show' : ''}`}>
             <div className="filter-body">
@@ -120,7 +115,6 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
                             )}
                         />
                     </div>
-                    
                     <label htmlFor="create-filter-check1" className="control-label m-0 create-filter-check">
                         Mark As Read
                     </label>
@@ -262,7 +256,7 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
                         console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                     })}
                 >
-                Save
+                    Save
                 </SubmitButton>
             </div>
         </div>

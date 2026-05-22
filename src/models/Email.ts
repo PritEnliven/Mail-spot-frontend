@@ -1,5 +1,5 @@
 export interface Email {
-    id?: string;
+    id: string;
     _id?: string;
     uid: number;
     messageId: string;
@@ -10,6 +10,7 @@ export interface Email {
     bcc: string[];
     subject: string;
     flags: string[];
+    isSeen: boolean;
     body: string;
     bodyText: string;
     threadCount: number;

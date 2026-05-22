@@ -1,4 +1,3 @@
-
 import { postData } from '../apiService';
 
 interface createCustomBoxPayload {

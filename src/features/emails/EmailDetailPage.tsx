@@ -1,8 +1,8 @@
+import type { Email } from '@models/Email';
+import { getSingleEmailService } from '@services/email/emailService';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EmailDetail from './EmailDetail';
-import { getSingleEmailService } from '@services/email/emailService';
-import type { Email } from '@models/Email';
 
 const EmailDetailPage = () => {
   const { boxName, messageId } = useParams();
@@ -12,10 +12,9 @@ const EmailDetailPage = () => {
     if (!boxName || !messageId) return;
 
     const fetchEmail = async () => {
-      const decodedMessageId = decodeURIComponent(messageId);
       const payload = {
         current_active_box: boxName,
-        messageId: decodedMessageId,
+        messageId: messageId,
         isSearch: false,
       };
 

@@ -1,6 +1,6 @@
 import type { CalendarEvent } from '@models/CalendarModels';
-import { deleteData, getData, postData } from '../apiService';
 import type { ApiResponse } from '@models/Response';
+import { deleteData, getData, postData } from '../apiService';
 
 interface getAlLEventPayload {
     start: string;
@@ -145,12 +145,5 @@ async function getAllSearchEventList(payload: FilterEventPayload): Promise<ApiRe
 }
 
 export {
-    getAllEvents,
-    createEvent,
-    getEventById,
-    editEvent,
-    deleteEvent,
-    searchEvent,
-    filterEvents,
-    getAllSearchEventList
+    createEvent, deleteEvent, editEvent, filterEvents, getAllEvents, getAllSearchEventList, getEventById, searchEvent
 };

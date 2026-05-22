@@ -1,38 +1,38 @@
-import { useRef, useEffect } from "react";
-import InteractiveIcon from "@components/ui/InteractiveIcon";
-import arrowPointingOutIcon from "@assets/images/arrows-pointing-out-icon.svg";
-import arrowPointingOutIconHover from "@assets/images/arrows-pointing-out-icon-hover.svg";
-import closeIcon from "@assets/images/close-icon.svg";
-import closeIconHover from "@assets/images/close-icon-hover.svg";
 import addTitleIcon from "@assets/images/add-title-icon-16.svg";
+import arrowPointingOutIconHover from "@assets/images/arrows-pointing-out-icon-hover.svg";
+import arrowPointingOutIcon from "@assets/images/arrows-pointing-out-icon.svg";
+import closeIconHover from "@assets/images/close-icon-hover.svg";
+import closeIcon from "@assets/images/close-icon.svg";
 import dateIcon from "@assets/images/date-icon-16.svg";
-import timeIcon from "@assets/images/time-icon-16.svg";
 import earthTimeIcon from "@assets/images/erth-time-icon.svg";
 import refreshIcon from "@assets/images/refresh-icon.svg";
-import addPesionIcon from "@images/add-pesion-icon.svg";
-import locationIcon from "@images/location-icon.svg";
-import linkIcon from "@images/link-icon-16.svg";
-import descriptionIcon from "@images/description-icon-16.svg";
-import { Controller, useWatch } from "react-hook-form";
-import { useCalendarEventForm } from "@hooks/useCalendarEventForm";
-import { colorListConfi } from "../../../../config/fullCalendar.config";
-import Select2Wrapper from "@components/ui/form/Select2Wrapper";
-import { useContacts } from "@context/index";
-import { useCalendar } from "@context/CalendarContext";
-import Flatpickr from 'react-flatpickr';
-import SubmitButton from "@components/ui/form/SubmitButton";
-import { createEvent, editEvent } from "@services/calendar/calendarService";
-import { useMailUI } from "@context/MailUIContext";
-import { formatDate, TimeFormat, formatTime24HrFrom12HrString, parseDateForFlatpickr } from "@utils/dateUtil";
-import GuestTag, { type Guest } from "@components/ui/calendar/GuestTag";
-import { normalizeGuests, filterGuestByEmail } from "@utils/guestUtil";
+import timeIcon from "@assets/images/time-icon-16.svg";
 import BaseModal from "@components/ui/BaseModal";
-import { useRecurrence } from "@hooks/useRecurringForm";
-import { generateTimeOptions } from "@utils/calendarUtil";
+import GuestTag, { type Guest } from "@components/ui/calendar/GuestTag";
+import ColorSingleSelect from "@components/ui/form/Select2ColorOption";
+import Select2Wrapper from "@components/ui/form/Select2Wrapper";
+import SubmitButton from "@components/ui/form/SubmitButton";
+import InteractiveIcon from "@components/ui/InteractiveIcon";
 import TimerList from "@components/ui/Modals/CalendarEventModal/TimerList";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
-import ColorSingleSelect from "@components/ui/form/Select2ColorOption";
+import { useCalendar } from "@context/CalendarContext";
+import { useContacts } from "@context/index";
+import { useMailUI } from "@context/MailUIContext";
+import { useCalendarEventForm } from "@hooks/useCalendarEventForm";
+import { useRecurrence } from "@hooks/useRecurringForm";
+import addPesionIcon from "@images/add-pesion-icon.svg";
+import descriptionIcon from "@images/description-icon-16.svg";
+import linkIcon from "@images/link-icon-16.svg";
+import locationIcon from "@images/location-icon.svg";
+import { createEvent, editEvent } from "@services/calendar/calendarService";
+import { generateTimeOptions } from "@utils/calendarUtil";
+import { formatDate, formatTime24HrFrom12HrString, parseDateForFlatpickr, TimeFormat } from "@utils/dateUtil";
+import { filterGuestByEmail, normalizeGuests } from "@utils/guestUtil";
+import { useEffect, useRef } from "react";
+import Flatpickr from 'react-flatpickr';
+import { Controller, useWatch } from "react-hook-form";
 import SimpleBar from 'simplebar-react';
+import { colorListConfi } from "../../../../config/fullCalendar.config";
 
 const timezoneOptions = [
     { value: "UTC", label: "GMT +00:00 — UTC" },
@@ -521,7 +521,6 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                 name="eventEndDate"
                                                                 control={control}
                                                                 render={({ field }) => {
-                                                                    console.log('End date field.value:', field.value, 'parsed:', parseDateForFlatpickr(field.value));
                                                                     return (
                                                                         <Flatpickr
                                                                             value={parseDateForFlatpickr(field.value)}
@@ -533,10 +532,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                                     const localMonth = String(date.getMonth() + 1).padStart(2, '0');
                                                                                     const localDay = String(date.getDate()).padStart(2, '0');
                                                                                     const localDateString = `${localYear}-${localMonth}-${localDay}`;
-                                                                                    console.log('End date onChange - setting:', localDateString);
                                                                                     field.onChange(localDateString);
                                                                                 } else {
-                                                                                    console.log('End date onChange - clearing');
                                                                                     field.onChange('');
                                                                                 }
                                                                             }}

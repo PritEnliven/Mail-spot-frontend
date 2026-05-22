@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useMailData } from "@context/MailDataContext";
 import { showError } from "@components/ui/toast/toastNotification";
+import { useMailData } from "@context/MailDataContext";
+import { useState } from "react";
 
 export type ExistingAttachment = {
     _id: string;

@@ -1,9 +1,7 @@
-import { useState, useCallback } from 'react';
 import type { Email } from '@models/Email';
-import { normalizeMailboxList, normalizeMailboxParticipantsToEmails } from '@utils/emailUtil';
-import { useContacts } from '../context/index';
 import { formatDate, TimeFormat } from '@utils/dateUtil';
-import { Time } from 'rrule/dist/esm/datetime';
+import { useCallback, useState } from 'react';
+import { useContacts } from '../context/index';
 
 export type ReplyForwardType = 'reply' | 'replyAll' | 'forward';
 
@@ -65,10 +63,10 @@ export const useReplyForward = () => {
             return list.filter(v => v.toLowerCase() !== currentUserEmail);
         };
 
-        const from = normalizeMailboxParticipantsToEmails(email.from);
-        const to = normalizeMailboxParticipantsToEmails(email.to);
-        const cc = normalizeMailboxParticipantsToEmails(email.cc);
-        const bcc = normalizeMailboxParticipantsToEmails(email.bcc);
+        const from = email.from || [];
+        const to = email.to || [];
+        const cc = email.cc || [];
+        const bcc = email.bcc || [];
 
         const fromHasCurrentUser = currentUserEmail ? normalize(from).includes(currentUserEmail) : false;
 
@@ -110,30 +108,24 @@ export const useReplyForward = () => {
 
     const getBody = useCallback((type: ReplyForwardType, email: Email) => {
         const isForward = type === 'forward';
-        const fromJoined = normalizeMailboxList(email.from).join(', ');
-        const toJoined = normalizeMailboxList(email.to).join(', ');
-        const ccList = normalizeMailboxList(email.cc);
-        const ccJoined = ccList.join(', ');
-        const ccBlock =
-            ccList.length > 0 ? `<div><strong>CC:</strong> ${ccJoined}</div>` : '';
-
+        
         // Create the quoted message header
         const header = isForward 
             ? `<div id="forwarded-message" class="forwarded-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
               `<div style="font-weight: bold; margin-bottom: 10px;">-------- Forwarded Message --------</div>` +
-              `<div><strong>From:</strong> ${fromJoined}</div>` +
+              `<div><strong>From:</strong> ${email.from.join(', ')}</div>` +
               `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
               `<div><strong>Subject:</strong> ${email.subject}</div>` +
-              `<div><strong>To:</strong> ${toJoined}</div>` +
-              ccBlock +
+              `<div><strong>To:</strong> ${email.to.join(', ')}</div>` +
+              `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.join(', ')}</div>` : ''}` +
               `</div>`
             : `<br><br><div id="quoted-message" class="quoted-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
               `<div style="font-weight: bold; margin-bottom: 10px;">-------- Original Message --------</div>` +
-              `<div><strong>From:</strong> ${fromJoined}</div>` +
+              `<div><strong>From:</strong> ${email.from.join(', ')}</div>` +
               `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
               `<div><strong>Subject:</strong> ${email.subject}</div>` +
-              `<div><strong>To:</strong> ${toJoined}</div>` +
-              ccBlock +
+              `<div><strong>To:</strong> ${email.to.join(', ')}</div>` +
+              `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.join(', ')}</div>` : ''}` +
               `</div>`;
         
         let bodyContent: string;

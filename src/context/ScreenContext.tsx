@@ -1,5 +1,3 @@
-// context/ScreenContext.tsx
-
 import { createContext, useContext } from "react";
 import { useResponsive } from "../hooks/useResponsive";
 

@@ -1,6 +1,6 @@
-import { useMailData } from '../context/index';
 import { downloadAttachmentFunc } from '@services/email/emailService';
 import { useState } from 'react';
+import { useMailData } from '../context/index';
 
 interface DownloadOptions {
     downloadType: 'single' | 'all';

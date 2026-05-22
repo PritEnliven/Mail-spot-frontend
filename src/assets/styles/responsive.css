@@ -62,6 +62,7 @@
             .mail-message-send--information-details-box-mobile .react-dropdown .dropdown-menu{margin-top: 4px;margin-right: -5px;}
             .mail-received-table-news{height: calc(100vh - 108px);}
             .mailReceivedTableNewsSimpleBar {height: calc(100vh - 108px);}
+            .mail-message-box .mail-list-filter + .mail-received-table-news .mailReceivedTableNewsSimpleBar {height: calc(100vh - 148px);}
         /* END::right side bar */
 
 
@@ -105,7 +106,7 @@
         
     }
 
-    @media screen and (max-width:576px){
+    @media screen and (max-width:575px){
         /* START:: Button */
             .btn-new-icon-mobile {border: 0;padding: 2px !important;min-width: unset !important;}
             .btn-new-icon-mobile:hover{background-color: #E5E8EA;}
@@ -118,7 +119,7 @@
         /* END:: Button */
 
         /* STRAT:: header */
-            .mail-details-header {padding: 6px 10px 6px 45px;}
+            .mail-details-header {padding: 6px 12px;}
             .mail-profile-dropdown .dropdown-menu.dropdown-menu-lg-end.mail-profile-box.p-0.dropdown-menu {position: fixed !important;top: 0 !important;left: 0  !important;width: 100%;height: 100%;display: flex;align-items: center;justify-content: center; transform:unset !important;border: 0;border-radius: 0;}
             .mail-profile-close-btn-mobile{display: flex !important;}
             .mail-profile-close-btn-mobile {position: absolute;top: 10px;right: 10px;}    
@@ -142,14 +143,13 @@
         /* STRATT:: left side bar */
             .compose-box {position: fixed;right: 10px;bottom: 10px;margin: 0;}
             .left-side-bar-main nav{height: calc(100vh - 71px);}
-            .left-side-bar-main {position: absolute !important;z-index: 5;left: -200px;border-right:0;box-shadow: none;  transition: left 0.4s ease;}
+            .left-side-bar-main {position: absolute !important;z-index: 30;left: -200px;border-right:0;box-shadow: none;  transition: left 0.4s ease;}
             .left-sidebar-main-collapsed-mobile{left: 0;transition: all 0.4s ease; border-right:1px solid #BBC0C4;box-shadow: 1px 0px 4px 0px #0000001F;}
             .left-sidebar-main-collapsed {width: 200px;min-width: 200px;max-width: 200px;left: -200px;z-index: 50;border: 0;box-shadow: none;}
             .nav-collepse-button{display: none;}
             .nav-collepse-button-mobile{display: flex;}
-            .single-navbar-collapse-sec{top: 50%; }
-            .single-navbar-collapse-sec-mobile{width: 45px; right: -45px; background: transparent;box-shadow: none;top: 27px;}
-            .single-navbar-collapse-sec-mobile button::after{content: none !important;}      
+            .single-navbar-collapse-sec{top: 50%; display: none;}
+            .single-navbar-collapse-sec-mobile{width: 45px; right: -45px; background: transparent;box-shadow: none;top: 27px; display: none;}
         /* END:: left side bar */
 
         /* START::right side bar*/
@@ -161,7 +161,7 @@
             .modal-header {background-color: transparent;border-bottom: 0;}
             .modal-content {background-color: #ffff ;border: 0;border-radius: 18px 18px 0 0;box-shadow: 0px -6px 12px 0px rgba(0, 0, 0, 0.1);}
             .modal.fade{overflow: hidden;}
-            .modal-content-shadow{margin:0 !important;max-width:100% !important;inset: unset !important; bottom: 0 !important;width: 100%}
+            .modal-content-shadow{margin:0 !important;max-width:100% !important;inset: unset !important; bottom: 0 !important;width: 100% !important;}
             .modal-content-shadow.modal-show-open > div { animation: fadeUp 0.3s ease-out forwards;}
             @keyframes fadeUp {from {opacity: 0;transform: translateY(100%);}to {opacity: 1;transform: translateY(0);}}
         /* END: General modal */

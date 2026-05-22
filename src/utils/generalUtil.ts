@@ -36,4 +36,4 @@ async function copyEmailToClipBoard(email: string) {
     }
 };
 
-export { copyEmailToClipBoard, createModalCloseHandler }
+export { copyEmailToClipBoard, createModalCloseHandler };

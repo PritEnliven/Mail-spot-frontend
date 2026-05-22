@@ -1,9 +1,5 @@
 import { postData, getData } from '../apiService';
 
-/* =======================
-   Payload Types
-======================= */
-
 export interface BasicInformationPayload {
     name: string;
     email: string;

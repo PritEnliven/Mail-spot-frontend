@@ -1,10 +1,6 @@
-import { parseEmailAddress } from './emailUtil';
 import type { Guest } from '@components/ui/calendar/GuestTag';
+import { parseEmailAddress } from './emailUtil';
 
-/**
- * Normalizes guest data from various formats into Guest objects
- * Handles strings, objects, and arrays consistently
- */
 export const normalizeGuests = (guestList: any): Guest[] => {
     if (!Array.isArray(guestList)) return [];
 

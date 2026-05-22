@@ -80,7 +80,6 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
     });
 
     const handleScheduleClick = (dateTime: string, option: string) => {
-        console.log('Schedule clicked:', dateTime, option);
         setSelectedOption(option);
         // Update the form value with the selected date
         setValue('scheduleDateTime', dateTime, { shouldValidate: true });
@@ -92,8 +91,6 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
     }
 
     const onSubmit = async (data: ScheduleFormValues) => {
-        console.log('Schedule data:', data);
-
         const formattedDate = data.scheduleDateTime;
         // First validate the compose email form
         const isComposeFormValid = await validateForm();
@@ -200,14 +197,17 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
                                                 return (
                                                     <Flatpickr
                                                         value={field.value}
-                                                        // onChange={(dates: any) => field.onChange(dates[0])}
                                                         onChange={(dates: Date[]) => {
                                                             const date = dates?.[0];
                                                             field.onChange(date ? date.toISOString() : '');
                                                         }}
                                                         options={{
-                                                            dateFormat: 'd-m-Y',
+                                                            dateFormat: 'd-m-Y H:i',
+                                                            enableTime: true,
+                                                            time_24hr: true,
                                                             allowInput: false,
+                                                            minDate: 'today',
+                                                            minTime: new Date().toTimeString().slice(0, 5),
                                                             onReady: (_, __, instance) => mountMonthDropdown(instance),
                                                         }}
                                                         className="form-control DateRangePickerStaticTop"

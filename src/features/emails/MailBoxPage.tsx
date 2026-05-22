@@ -1,23 +1,23 @@
-import { useParams } from 'react-router-dom';
-import { useEffect, useRef, Suspense, lazy, useCallback } from 'react';
-import { getSingleEmailService } from '../../services/email/emailService';
-import EmailRow from '../../features/emails/EmailRow';
-import { useMailData, useMailSelection, useMailUI } from '../../context/index';
+import NoEmailList from '@components/ui/email/NoEmailList';
 import EmailSkeletonLoader from '@components/ui/EmailSkeletonLoader';
-import SimpleBar from 'simplebar-react';
+import { useScreen } from '@context/ScreenContext';
 import { useEmailAction } from '@hooks/useEmailAction';
 import { handleEmailDeletion, verifyBoxName } from '@utils/emailUtil';
-import NoEmailList from '@components/ui/email/NoEmailList';
-import { useScreen } from '@context/ScreenContext';
+import { Suspense, lazy, useEffect, useRef } from 'react';
+import SimpleBar from 'simplebar-react';
+import { useMailData, useMailSelection, useMailUI } from '../../context/index';
+import EmailRow from '../../features/emails/EmailRow';
+import { MAIL_ACTION } from '../../constants/mailAction';
+import { getSingleEmailService } from '../../services/email/emailService';
 
 // Lazy loaded components
 const EmailDetail = lazy(() => import('../../features/emails/EmailDetail'));
 
 const MailBoxPage = () => {
     const emailScrollRef = useRef<HTMLDivElement | null>(null);
-    const { boxName } = useParams<{ boxName: string }>();
-    const { setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, allSearchResult } = useMailData();
-    const { selectedEmails, toggleEmailSelection } = useMailSelection();
+    // const { boxName } = useParams<{ boxName: string }>();
+    const { boxName, sidebarState, sidebarItems, setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, isSidebarDataReady, isSidebarLoading, readUnreadFilter, setReadUnreadFilter } = useMailData();
+    const { selectedEmails } = useMailSelection();
     const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
 
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
@@ -28,35 +28,16 @@ const MailBoxPage = () => {
     // Ref to track the current markAsRead timeout
     const markAsReadTimeoutRef = useRef<number | null>(null);
 
-    /**
-     * Holds the latest versions of every value that the stable row callbacks need.
-     * Updated synchronously on every render — never triggers a re-render itself.
-     * This is the standard "latest-ref" pattern for creating stable useCallback
-     * wrappers that still see fresh values at call-time.
-     */
-    const latestRef = useRef<Record<string, any>>({});
-    latestRef.current = {
-        markAsRead,
-        markAsUnread,
-        deleteEmail,
-        activeEmailMessageId,
-        openModal,
-        closeModal,
-        setToolbarState,
-        activeModals,
-        toggleEmailSelection,
-        isDesktop,
-        setEmailDetailSelected,
-        setActiveEmailMessageId,
-        setIsMailListOpen,
-        currentActiveBox,
-        boxName,
-        isDraftBox,
-        allSearchResult,
-    };
-
     useEffect(() => {
-        if (!boxName) return;
+        if (!boxName || !isSidebarDataReady) return;
+
+        // here fetch boxName from url
+        const decodedBoxName = decodeURIComponent(boxName);
+        //find that boxName from sidebarItems
+        const box = sidebarItems.find((item) => item.id === decodedBoxName);
+        if (box) {
+            setBoxName(box.id);
+        }
 
         let isCancelled = false;
         let isLoading = false;
@@ -67,8 +48,28 @@ const MailBoxPage = () => {
             setIsLoading(true);
             isLoading = true;
 
+            const pathParts = location.pathname.split('/');
+            let urlBoxName: string;
+
+            if (sidebarState.delimiter === '/') {
+                // For '/' delimiter, join all parts after '/mail/'
+                const mailIndex = pathParts.indexOf('mail');
+                if (mailIndex !== -1 && mailIndex + 1 < pathParts.length) {
+                    urlBoxName = pathParts.slice(mailIndex + 1).join('/');
+                } else {
+                    urlBoxName = pathParts[pathParts.length - 1];
+                }
+            } else {
+                // Default behavior - take the last part
+                urlBoxName = pathParts[pathParts.length - 1];
+            }
+
+            // Decode URL-encoded characters (like %20 to space)
+            urlBoxName = decodeURIComponent(urlBoxName);
+
+
             try {
-                await fetchEmails(1, boxName);
+                await fetchEmails(1, urlBoxName || boxName);
             } finally {
                 if (!isCancelled) {
                     setIsLoading(false);
@@ -105,98 +106,24 @@ const MailBoxPage = () => {
 
         return () => {
             isCancelled = true;
-            isLoading = false;
+            isLoading = false; // Reset flag when component unmounts
+            // Clear any pending markAsRead timeout
             if (markAsReadTimeoutRef.current) {
                 clearTimeout(markAsReadTimeoutRef.current);
                 markAsReadTimeoutRef.current = null;
             }
         };
-    }, [boxName]);
+    }, [boxName, isSidebarDataReady]);
 
-    // ---------------------------------------------------------------------------
-    // Stable row callbacks — empty dependency arrays are intentional.
-    // All dynamic values are read from latestRef.current at call-time so that
-    // React.memo on EmailRow can skip re-renders when unrelated state changes.
-    // ---------------------------------------------------------------------------
-
-    const onOpenEmail = useCallback(async (
-        uid: number,
-        messageId: string,
-        isSearch: boolean,
-        mongoId?: string
-    ) => {
-        try {
-            const l = latestRef.current;
-            const isSearchOpen = isSearch || l.allSearchResult;
-            const payload = {
-                current_active_box: l.currentActiveBox,
-                uid,
-                messageId,
-                isSearch: isSearchOpen,
-                ...(mongoId ? { id: mongoId } : {}),
-            };
-
-            let data = await getSingleEmailService(payload);
-            if (isSearchOpen) {
-                data.emailList.isSearchEmail = true;
-            }
-            if (data.isScheduled) {
-                data.emailList.isSchedule = true;
-            }
-
-            if (l.boxName && verifyBoxName(l.boxName, 'draft')) {
-                data.emailList.isDraftMail = true;
-                data.emailList.draftEmailId = data.emailList.id;
-                data.emailList.draftMessageId = data.emailList.messageId;
-                console.log("Open Compose Modal");
-                l.openModal('compose', { emailData: data.emailList });
-            }
-
-            l.setEmailDetailSelected(data.emailList);
-            l.setActiveEmailMessageId(messageId);
-            const isRead = data.emailList.flags.includes("\\Seen");
-
-            if (!l.isDesktop) {
-                l.setIsMailListOpen(false);
-            }
-
-            l.setToolbarState({
-                showBack: !l.isDesktop,
-                showSelectAll: l.isDesktop,
-                showRefresh: false,
-                showDelete: true,
-                showMarkAsRead: !isRead,
-                showMarkAsUnread: isRead,
-                showMove: true,
-            });
-
-            if (l.boxName && verifyBoxName(l.boxName, 'schedule')) {
-                return;
-            }
-
-            if (!isRead) {
-                if (markAsReadTimeoutRef.current) {
-                    clearTimeout(markAsReadTimeoutRef.current);
-                }
-                markAsReadTimeoutRef.current = window.setTimeout(() => {
-                    latestRef.current.markAsRead([messageId]);
-                    markAsReadTimeoutRef.current = null;
-                }, 3000);
-            }
-        } catch (error) {
-            console.error('Failed to fetch email detail', error);
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const onMarkReadUnread = useCallback((messageIds: string[], shouldMarkAsRead: boolean) => {
-        const l = latestRef.current;
+    const markAsReadUnreadEmailHandler = (messageIds: string[], shouldMarkAsRead: boolean) => {
         if (shouldMarkAsRead) {
-            l.markAsRead(messageIds);
+            markAsRead(messageIds);
         } else {
-            l.markAsUnread(messageIds);
+            markAsUnread(messageIds);
         }
-        if (l.activeEmailMessageId) {
-            l.setToolbarState({
+
+        if (activeEmailMessageId) {
+            setToolbarState({
                 showBack: false,
                 showSelectAll: true,
                 showRefresh: false,
@@ -206,32 +133,106 @@ const MailBoxPage = () => {
                 showMove: true,
             });
         }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }
 
-    const onDelete = useCallback((messageIds: string[], isDraftEmail: boolean) => {
-        const l = latestRef.current;
-        l.openModal('confirmDelete', {
-            onConfirm: async () => {
-                if (l.isDraftBox) {
-                    const composeModal = l.activeModals.find((modal: any) => modal.type === 'compose');
-                    if (composeModal) {
-                        l.closeModal(composeModal.id);
-                    }
-                }
-                return handleEmailDeletion(messageIds, isDraftEmail, {
-                    deleteFn: l.deleteEmail,
-                    successMessage: 'Email deleted successfully',
-                    errorMessage: 'Failed to delete email',
-                });
+    const setupDeleteConfirmation = (mesageIds: string[], isDraftEmail: boolean) => {
+        // TODO: implement add forward email address modal logic
+        openModal('confirmDelete', {
+            onConfirm: () => deleteEmailHandler(mesageIds, isDraftEmail)
+        })
+    }
+
+    const deleteEmailHandler = async (messageIds: string[], isDraftEmail: boolean) => {
+        // Check if current box is draft and compose modal is open, then close it
+        if (isDraftBox) {
+            const composeModal = activeModals.find(modal => modal.type === 'compose');
+            if (composeModal) {
+                closeModal(composeModal.id);
             }
+        }
+
+        return handleEmailDeletion(messageIds, isDraftEmail, {
+            deleteFn: deleteEmail,
+            successMessage: 'Email deleted successfully',
+            errorMessage: 'Failed to delete email'
         });
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }
 
-    const onToggleSelection = useCallback((messageId: string) => {
-        latestRef.current.toggleEmailSelection(messageId);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const openEmailDetailHandler = async (
+        currentActiveBox: string,
+        uid: number,
+        messageId: string,
+        isSearch: boolean
+    ) => {
+        try {
 
-    // ---------------------------------------------------------------------------
+            const payload = {
+                current_active_box: currentActiveBox,
+                uid,
+                messageId,
+                isSearch
+            };
+
+            let data = await getSingleEmailService(payload);
+            console.log(data);
+            if (data.isScheduled) {
+                data.emailList.isSchedule = true;
+            }
+
+            if (boxName && verifyBoxName(boxName, 'draft')) {
+                data.emailList.isDraftMail = true;
+                data.emailList.draftEmailId = data.emailList.id;
+                data.emailList.draftMessageId = data.emailList.messageId;
+                openModal('compose', {
+                    emailData: data.emailList
+                })
+            }
+
+            setEmailDetailSelected(data.emailList);
+            setActiveEmailMessageId(messageId);
+            // setSelectedEmails(new Set([messageId]));
+            const isRead = data.emailList.isSeen;
+
+            // On mobile, hide mail list and show email detail
+            if (!isDesktop) {
+                setIsMailListOpen(false);
+            }
+
+            setToolbarState({
+                showBack: !isDesktop,
+                showSelectAll: isDesktop,
+                showRefresh: false,
+                showDelete: true,
+                showMarkAsRead: !isRead,
+                showMarkAsUnread: isRead,
+                showMove: true,
+            });
+
+            // here after 3 seconds this mail should mark as read
+            if (boxName && verifyBoxName(boxName, 'schedule')) {
+                return;
+            }
+            if (boxName && verifyBoxName(boxName, 'draft')) {
+                return;
+            }
+            if (!isRead) {
+                // Clear any existing timeout
+                if (markAsReadTimeoutRef.current) {
+                    clearTimeout(markAsReadTimeoutRef.current);
+                }
+
+                // Set new timeout for this email
+
+                markAsReadTimeoutRef.current = window.setTimeout(() => {
+                    markAsRead([messageId]);
+                    markAsReadTimeoutRef.current = null;
+                }, 3000);
+            }
+
+        } catch (error) {
+            console.error('Failed to fetch email detail', error);
+        }
+    };
 
     const isSchedule = boxName?.toLocaleLowerCase().includes('schedule');
     const mailListStyleOpenViaSearch = !isMailListOpen ? { width: '0px', 'min-width': '0px', 'border-right': '0px', overflow: 'hidden', opacity: '0' } : {};
@@ -261,12 +262,41 @@ const MailBoxPage = () => {
         }
     }, [emailDetailSelected]);
 
+    const handleMailListFilter = async (action: string) => {
+        if (readUnreadFilter === action) return;
+
+        setReadUnreadFilter(action);
+        setIsLoading(true);
+
+        try {
+            await fetchEmails(1, boxName, false, action);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <>
             {/* START:: Mail received box */}
             <div className={`mail-message-box ${isSchedule ? 'schedule-message-box' : ''}`} id="mailMessageBoxSection" style={mailListStyleOpenViaSearch}>
+                <div className="mail-list-filter">
+                    <button
+                        type="button"
+                        className={`mail-list-filter__segment ${readUnreadFilter === MAIL_ACTION.ALL ? 'mail-list-filter__segment--active' : ''}`}
+                        onClick={() => handleMailListFilter(MAIL_ACTION.ALL)}
+                    >
+                        All
+                    </button>
+                    <button
+                        type="button"
+                        className={`mail-list-filter__segment ${readUnreadFilter === MAIL_ACTION.UNREAD ? 'mail-list-filter__segment--active' : ''}`}
+                        onClick={() => handleMailListFilter(MAIL_ACTION.UNREAD)}
+                    >
+                        Unread
+                    </button>
+                </div>
                 <div className="mail-received-table-news">
-                    {emails.length === 0 && !isLoading ? (
+                    {emails.length === 0 && !isLoading && !isSidebarLoading ? (
                         <NoEmailList />
                     ) : (
                         <SimpleBar
@@ -277,28 +307,27 @@ const MailBoxPage = () => {
                         >
                             <table className="table" id="email-list-table">
                                 <tbody id="email-list">
-                                    {isLoading ? (
+                                    {isLoading || isSidebarLoading ? (
                                         <EmailSkeletonLoader count={10} />
                                     ) :
                                         emails.length > 0 ? (
-                                            emails.map((email: any) => {
-                                                const isRead = email.flags.includes("\\Seen");
+                                            emails.map((email: any, index: number) => {
+                                                const isRead = email.isSeen;
                                                 const isSelected = selectedEmails.has(email.messageId);
-                                                const isActive = activeEmailMessageId === (isSchedule ? email._id : email.messageId);
                                                 return (
                                                     <EmailRow
                                                         key={email.messageId}
                                                         email={email}
                                                         isRead={isRead}
                                                         isSelected={isSelected}
-                                                        isActive={isActive}
                                                         isSearch={false}
-                                                        boxName={currentActiveBox}
-                                                        onOpenEmail={onOpenEmail}
-                                                        onMarkReadUnread={onMarkReadUnread}
-                                                        onDelete={onDelete}
-                                                        onToggleSelection={onToggleSelection}
-                                                    />
+                                                        index={index}
+                                                        emails={emails as any}
+                                                        onOpenEmail={(uid: number, messageId: string, isSearch: boolean) => openEmailDetailHandler(currentActiveBox, uid, messageId, isSearch)}
+                                                        onMarkReadUnread={markAsReadUnreadEmailHandler}
+                                                        onDelete={setupDeleteConfirmation} isActive={false} boxName={''} onToggleSelection={function (messageId: string): void {
+                                                            throw new Error('Function not implemented.');
+                                                        } }                                                    />
                                                 );
                                             })
                                         ) : (
@@ -324,7 +353,6 @@ const MailBoxPage = () => {
                     )}
                 </div>
             )}
-
         </>
     )
 }

@@ -1,24 +1,26 @@
-import { useState } from "react";
 import CopyEmail from "@components/ui/email/CopyEmail";
-import replyIcon from "@images/arrow-uturn-left-icon.svg";
-import replyAllIcon from "@images/reply-all-icon.svg";
-import replyIconHover from "@images/arrow-uturn-left-icon-hover.svg";
-import replyAllIconHover from "@images/reply-all-icon-hover.svg";
-import forwardIcon from "@images/arrow-uturn-right-icon.svg";
-import forwardIconHover from "@images/arrow-uturn-right-icon-hover.svg";
-import { useAttachmentDownload } from "@hooks/useAttachmentDownload";
-import { formatDate, TimeFormat } from "@utils/dateUtil";
-import attachmentStrokesRoundedIcon from "@images/attachment-stroke-rounded-icon.svg";
-import attachmentStrokesRoundedIconHover from "@images/attachment-stroke-rounded-icon-hover.svg";
+import EmailBody from "@components/ui/email/EmailBody";
+import EmailDetailAttachmentPreview from "@components/ui/email/EmailDetailAttachmentPreview";
 import EmailRecipientList from "@components/ui/email/EmailRecipientList";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import { mailboxParticipantToString, parseEmailAddress } from "@utils/emailUtil";
-import EmailDetailAttachmentPreview from "@components/ui/email/EmailDetailAttachmentPreview";
-import EmailBody from "@components/ui/email/EmailBody";
-import ReplyForwardComposer from "@components/ui/ReplyForwardComposer";
-import { useReplyForward } from "@hooks/useReplyForward";
+import { useAttachmentDownload } from "@hooks/useAttachmentDownload";
 import { useHorizontalScrollbar } from "@hooks/useHorizontalScrollbar";
+import { useReplyForward } from "@hooks/useReplyForward";
+import replyIconHover from "@images/arrow-uturn-left-icon-hover.svg";
+import replyIcon from "@images/arrow-uturn-left-icon.svg";
+import forwardIconHover from "@images/arrow-uturn-right-icon-hover.svg";
+import forwardIcon from "@images/arrow-uturn-right-icon.svg";
+import attachmentStrokesRoundedIconHover from "@images/attachment-stroke-rounded-icon-hover.svg";
+import attachmentStrokesRoundedIcon from "@images/attachment-stroke-rounded-icon.svg";
+import replyAllIconHover from "@images/reply-all-icon-hover.svg";
+import replyAllIcon from "@images/reply-all-icon.svg";
+import { formatDate, TimeFormat } from "@utils/dateUtil";
+import { parseEmailAddress } from "@utils/emailUtil";
 import moment from 'moment';
+import { lazy, Suspense, useState } from "react";
+
+// Lazy loaded components
+const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
 
 // Helper function to check if date is in current week
 const isDateInCurrentWeek = (date: Date | string | number): boolean => {
@@ -53,9 +55,7 @@ const ThreadEmailItem = ({ index, email }: ThreadEmailItemProps) => {
     const openAttachment = () => {
     };
 
-    const { email: fromEmail, name: fromName, initial: fromInitial } = parseEmailAddress(
-        mailboxParticipantToString(email.from?.[0])
-    );
+    const { email: fromEmail, name: fromName, initial: fromInitial } = parseEmailAddress(email.from[0]);
 
     return (
         <div className={`accordion-item pb-0 ${isThreadItemOpen ? 'open' : ''}`} id={`thread-${index}`}
@@ -205,11 +205,13 @@ const ThreadEmailItem = ({ index, email }: ThreadEmailItemProps) => {
                     )}
                     <div className="thread-reply-mail-section pb-3" id={`threadReplyForwardSection${index}`}>
                         {replyForwardState.isOpen && replyForwardState.sourceEmail?.messageId === email.messageId && replyForwardState.sourceEmail && (
-                            <ReplyForwardComposer
-                                email={replyForwardState.sourceEmail}
-                                type={replyForwardState.type!}
-                                onClose={closeReplyForward}
-                            />
+                            <Suspense fallback={null}>
+                                <ReplyForwardComposer
+                                    email={replyForwardState.sourceEmail}
+                                    type={replyForwardState.type!}
+                                    onClose={closeReplyForward}
+                                />
+                            </Suspense>
                         )}
                     </div>
                 </div>

@@ -1,21 +1,33 @@
-import { Controller, useForm } from 'react-hook-form';
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
-import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
-import plusIcon from "@images/plus-icon.svg"
-import plusIconHover from "@images/plus-icon-hover.svg"
-import { SettingsSchema, type SettingPageFormValues, type Signature } from './settings.schema';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMailData } from '@context/MailDataContext';
-import { useEffect, useState } from 'react';
-import { deleteSignature, getSettings, saveSettings, getAllRules, deleteRule } from '@services/settings/settingsService';
-import SignatureList from '@components/ui/settings/SignatureList';
 import SubmitButton from '@components/ui/form/SubmitButton';
-import { showSuccess, showError } from '@components/ui/toast/toastNotification';
-import { useMailUI } from '@context/MailUIContext';
 import RulesList from '@components/ui/settings/RulesList';
+import SignatureList from '@components/ui/settings/SignatureList';
+import { showError, showSuccess } from '@components/ui/toast/toastNotification';
+import { useMailData } from '@context/MailDataContext';
+import { useMailUI } from '@context/MailUIContext';
 import { useSettings } from '@context/SettingsContext';
-import { usePageStylesheet, pageStyles } from '@hooks/usePageStyleSheet';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
+import fileIcon from "@images/file-icon.svg";
+import plusIconHover from "@images/plus-icon-hover.svg";
+import plusIcon from "@images/plus-icon.svg";
+import { deleteRule, deleteSignature, getAllRules, getSettings,   saveSettings } from '@services/settings/settingsService';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { SettingsSchema, type SettingPageFormValues, type Signature } from './settings.schema';
+
+const CkEditorRichText = lazy(() => import('@components/ui/CkEditor/CkEditorRichText'));
+
+declare global {
+    interface Window {
+        electron?: {
+            ipcRenderer?: {
+                invoke: (channel: string, ...args: any[]) => Promise<any>;
+            };
+        };
+    }
+}
 
 function SettingsPage() {
     usePageStylesheet([pageStyles.settingsCss]);
@@ -25,11 +37,13 @@ function SettingsPage() {
     const [signatures, setSignatures] = useState<Signature[]>([]);
     const [selectedSignature, setSelectedSignature] = useState<Signature | null>(null);
     const [rules, setRules] = useState<any[]>([]);
+    const folderInputRef = useRef<HTMLInputElement>(null);
 
     const {
         control,
         handleSubmit,
         reset,
+        setValue
     } = useForm<SettingPageFormValues>({
         resolver: zodResolver(SettingsSchema as any),
         mode: "onSubmit",
@@ -39,6 +53,9 @@ function SettingsPage() {
             recoveryEmail: "",
             enableSignature: false,
             enableReplyForwardUse: false,
+            threadView: true,
+            downloadLocation: "",
+            notification: true,
             body: "",
         },
     });
@@ -61,6 +78,9 @@ function SettingsPage() {
                 pageSize: safePageSize,
                 enableSignature: response.data.enableSignature ?? false,
                 enableReplyForwardUse: response.data.enableReplyForwardUse ?? false,
+                threadView: response.data.threadView ?? true,
+                downloadLocation: response.data.downloadLocation ?? '',
+                notification: response.data.notification ?? true,
                 recoveryEmail: response.data.recoveryEmail ?? '',
             });
 
@@ -71,6 +91,9 @@ function SettingsPage() {
                 enableSignature: response.data.enableSignature ?? false,
                 signatureId: defaultSignature?.id ?? '',
                 enableReplyForwardUse: response.data.enableReplyForwardUse ?? false,
+                threadView: response.data.threadView ?? true,
+                downloadLocation: response.data.downloadLocation ?? '',
+                notification: response.data.notification ?? true,
                 body: defaultSignature?.body ?? response.data.body ?? ''
             });
         } catch (error) {
@@ -122,7 +145,6 @@ function SettingsPage() {
     };
 
     function handleEdit(id: string) {
-        console.log("Edit signature", id);
         let signature: any = signatures.find(sig => sig.id === id) || null;
         signature.isEdit = true;
         const editSignatureProps = {
@@ -139,12 +161,10 @@ function SettingsPage() {
         })
     }
 
-    async function handleEditRule(id: string) {
-        console.log("Edit rule", id);
+    async function handleEditRule() {
     }
 
     async function handleDelete(id: string) {
-        console.log("Delete signature", id);
         const response = await deleteSignature({ signatureId: id });
         if (response.statusCode === 200) {
             showSuccess("Signature deleted successfully");
@@ -164,7 +184,10 @@ function SettingsPage() {
                 signatureBody: data.body || '',
                 signatureId: data.signatureId || '',
                 recoveryEmail: data.recoveryEmail || '',
-                signatures: undefined
+                signatures: undefined,
+                threadView: data.threadView,
+                downloadLocation: data.downloadLocation || '',
+                notification: data.notification
             };
             payload.signatureId = selectedSignature?.id || '';
             const response = await saveSettings(payload);
@@ -176,6 +199,9 @@ function SettingsPage() {
                     pageSize: data.maximumPageSize,
                     enableSignature: data.enableSignature,
                     enableReplyForwardUse: data.enableReplyForwardUse,
+                    threadView: data.threadView,
+                    downloadLocation: data.downloadLocation || '',
+                    notification: data.notification,
                     recoveryEmail: data.recoveryEmail || '',
                 });
             } else {
@@ -199,11 +225,69 @@ function SettingsPage() {
     }
 
     const setupDeleteConfirmation = (ruleId: string) => {
-        console.log("Open delete confirmation for rule:", ruleId);
         openModal('confirmDelete', {
             onConfirm: () => handleDeleteRule(ruleId)
         })
     }
+
+    // ─── Folder Picker Logic ───────────────────────────────────────────
+    let selectedDirHandle: FileSystemDirectoryHandle | null = null;
+
+    const handleFolderPick = async () => {
+        // 1. Browser FIRST
+        if ('showDirectoryPicker' in window) {
+            try {
+                const dirHandle = await (window as Window & {
+                    showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>;
+                }).showDirectoryPicker();
+
+                // store in memory only
+                selectedDirHandle = dirHandle;
+
+                // UI
+                setValue('downloadLocation', dirHandle.name, { shouldDirty: true });
+
+                showSuccess(`Download folder set to "${dirHandle.name}"`);
+
+                return;
+            } catch (err: any) {
+                if (err?.name !== 'AbortError') {
+                    console.error(err);
+                    showError('Could not open folder picker');
+                }
+                return;
+            }
+        }
+
+        // 2. Electron (no restriction)
+        if (window.electron?.ipcRenderer) {
+            try {
+                const result = await window.electron.ipcRenderer.invoke('show-open-dialog', {
+                    properties: ['openDirectory'],
+                    title: 'Select Download Folder',
+                });
+
+                if (!result.canceled && result.filePaths.length > 0) {
+                    const fullPath = result.filePaths[0];
+
+                    // Electron → can persist
+                    localStorage.setItem('downloadDirPath', fullPath);
+
+                    setValue('downloadLocation', fullPath, { shouldDirty: true });
+
+                    showSuccess(`Download folder set`);
+                }
+            } catch (err) {
+                console.error(err);
+                showError('Could not open folder picker');
+            }
+            return;
+        }
+
+        // 3. Fallback
+        folderInputRef.current?.click();
+    };
+    // ──────────────────────────────────────────────────────────────────
 
     return (
         <div id="settingsContainer" className="settings-container setting-main-section-left">
@@ -286,6 +370,28 @@ function SettingsPage() {
                                 </div>
                             </div>
                         </form>
+                    </div>
+                    <div className="col-lg-3 col-md-4">
+                        <div className="form-group form-row ">
+                            <label className="control-label">Download location</label>
+                            <div className="input-icon-add">
+                                <img src={fileIcon} alt="" width={16} height={16}
+                                    className="input-icon-1"
+                                    onClick={handleFolderPick}
+                                />
+                                <Controller
+                                    name="downloadLocation" control={control}
+                                    render={({ field }) => (
+                                        <input
+                                            type="text"
+                                            id="downloadLocation"
+                                            className={`form-control`}
+                                            {...field}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -389,6 +495,50 @@ function SettingsPage() {
                                     </label>
                                 </div>
                             </div>
+                            <div className="d-flex align-items-center justify-content-between mt-3">
+                                <span className="fs-12-commom">Enable Thread View</span>
+                                <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                    <Controller
+                                        name="threadView"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={(e) => field.onChange(e.target.checked)}
+                                                ref={field.ref}
+                                                name={field.name}
+                                                id="threadView"
+                                            />
+                                        )}
+                                    />
+                                    <label htmlFor="threadView" className="switch-label">
+                                        Toggle
+                                    </label>
+                                </div>
+                            </div>
+                            <div className="d-flex align-items-center justify-content-between mt-3">
+                                <span className="fs-12-commom">Enable Notification</span>
+                                <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                    <Controller
+                                        name="notification"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={(e) => field.onChange(e.target.checked)}
+                                                ref={field.ref}
+                                                name={field.name}
+                                                id="notification"
+                                            />
+                                        )}
+                                    />
+                                    <label htmlFor="notification" className="switch-label">
+                                        Toggle
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="setting-quill w-100">
@@ -396,11 +546,13 @@ function SettingsPage() {
                             name="body"
                             control={control}
                             render={({ field }) => (
-                                <CkEditorRichText
-                                    id="compose-email-body"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                />
+                                <Suspense fallback={<div className="form-control" style={{height: '200px'}}>Loading editor...</div>}>
+                                    <CkEditorRichText
+                                        id="compose-email-body"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                    />
+                                </Suspense>
                             )}
                         />
                     </div>

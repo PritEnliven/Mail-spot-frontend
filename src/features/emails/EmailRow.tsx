@@ -11,6 +11,7 @@ import AttachmentList from "@components/ui/email/AttachmentList";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { verifyBoxName, normalizeMailboxList } from "@utils/emailUtil";
+import { useMailData, useMailSelection } from "../../context/index";
 
 interface EmailRowProps {
     email: EmailDetail;
@@ -20,6 +21,8 @@ interface EmailRowProps {
     isSearch: boolean;
     isScheduled?: boolean;
     boxName: string;
+    index: number;
+    emails: EmailDetail[];
     onOpenEmail: (uid: number, messageId: string, isSearch: boolean, mongoId?: string) => void;
     onMarkReadUnread: (messageIds: string[], markAsRead: boolean) => void;
     onDelete: (messageIds: string[], isDraftEmail: boolean) => void;
@@ -48,30 +51,33 @@ const EmailRow = memo(({
     email,
     isRead,
     isSelected,
-    isActive,
+    isActive, 
     isSearch,
     isScheduled = false,
-    boxName,
+    index,
+    emails,
     onOpenEmail,
     onMarkReadUnread,
     onDelete,
     onToggleSelection,
 }: EmailRowProps) => {
-    const emailNameOrEmail = useMemo(() => {
-        const fromStrings = normalizeMailboxList(email.from as unknown[]);
-        if (verifyBoxName(boxName, 'draft') || verifyBoxName(boxName, 'sent')) {
-            const recipientStrings = normalizeMailboxList(email.to as unknown[]);
-            return recipientStrings.length ? recipientStrings.join(', ') : 'No Recipients';
-        }
-        return fromStrings[0] ?? 'Unknown';
-    }, [email.from, email.to, boxName]);
-
-    const emailDate = useMemo(() => formatDate(email.date, TimeFormat.MONTH_DAY), [email.date]);
-
-    const attachments = useMemo(
-        () => email.attachments?.attachments ?? email.attachments ?? [],
-        [email.attachments]
-    );
+    const { boxName } = useMailData();
+    let emailNameOrEmail = email.from?.[0] ?? "Unknown";
+    if (verifyBoxName(boxName, 'draft') || verifyBoxName(boxName, 'sent')) {
+        const recipients = email.to;
+        emailNameOrEmail = recipients && recipients.length
+            ? recipients.join(', ')
+            : 'No Recipients';
+    }
+    const emailDate = formatDate(email.date, TimeFormat.MONTH_DAY)
+    const { toggleEmailSelection, toggleEmailSelectionWithShift, setLastSelectedIndex } = useMailSelection();
+    const { activeEmailMessageId } = useMailData();
+    isActive = activeEmailMessageId === (isScheduled ? email._id : email.messageId);
+    const safeAttachments = email.attachments
+        ? Array.isArray(email.attachments)
+            ? email.attachments
+            : email.attachments.attachments || []
+        : [];
 
     return (
         <tr
@@ -88,14 +94,17 @@ const EmailRow = memo(({
                     <div className="mail-received-first">
                         <div className="d-flex align-items-start">
                             {/* Checkbox */}
-                            <div
-                                className="mail-received-check-btn"
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.nativeEvent.stopImmediatePropagation();
-                                }}
-                            >
+                            <div className="mail-received-check-btn" onMouseDown={(e) => {
+                                e.stopPropagation();
+                                // Prevent text selection when shift+clicking
+                                if ((e.nativeEvent as any).shiftKey) {
+                                    e.preventDefault();
+                                    window.getSelection()?.removeAllRanges();
+                                }
+                            }} onClick={(e) => {
+                                e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
+                            }}>
                                 <div className="checkbox-custom table-check">
                                     <input
                                         className="list-child list-child-maillist"
@@ -105,7 +114,18 @@ const EmailRow = memo(({
                                         name="checkbox"
                                         checked={isSelected}
                                         onClick={(e) => e.stopPropagation()}
-                                        onChange={() => onToggleSelection(email.messageId)}
+                                        onChange={(event) => {
+                                            // Only toggle selection here; propagation is already stopped on click
+                                            if ((event.nativeEvent as any).shiftKey) {
+                                                // Prevent text selection when shift-clicking
+                                                event.preventDefault();
+                                                window.getSelection()?.removeAllRanges();
+                                                toggleEmailSelectionWithShift(email.messageId, emails as any);
+                                            } else {
+                                                toggleEmailSelection(email.messageId);
+                                                setLastSelectedIndex(index);
+                                            }
+                                        }}
                                     />
                                     <label
                                         onClick={(e) => e.stopPropagation()}
@@ -118,6 +138,7 @@ const EmailRow = memo(({
                             {/* Main Content */}
                             <div className="mail-received-info-details-box w-100">
                                 <div className="d-flex align-items-center justify-content-between c-mb-2">
+                                    { /* Thread Count */}
                                     <div className="d-flex align-items-center">
                                         <div className="mail-received-name mb-0">{emailNameOrEmail}</div>
                                         {email.threadCount > 1 && (
@@ -126,6 +147,8 @@ const EmailRow = memo(({
                                             </span>
                                         )}
                                     </div>
+
+                                    { /* Date */}
                                     <div className="d-flex align-items-center justify-content-end" style={{ minWidth: "93px" }}>
                                         <a href="javascript:;" className="d-flex align-items-center justify-content-center me-2 event-icon-mail-box">
                                             <img className="d-none" style={{ minWidth: "20px" }} src={eventIcon} alt="" />
@@ -136,7 +159,7 @@ const EmailRow = memo(({
 
                                 <div className="d-flex align-items-center justify-content-between c-mb-2">
                                     <div className="mail-received-subject"> {email.subject} </div>
-                                    {attachments.length > 0 && (
+                                    {safeAttachments.length > 0 && (
                                         <a href="javascript:;"
                                             className="hover-link d-inline-flex align-items-center justify-content-end"
                                         >
@@ -148,9 +171,9 @@ const EmailRow = memo(({
                         </div>
                     </div>
 
-                    {attachments.length > 0 && (
+                    {safeAttachments.length > 0 && (
                         <div className="mail-received-attachment-box d-flex align-items-center">
-                            <AttachmentList attachments={attachments} maxVisible={2} />
+                            <AttachmentList attachments={safeAttachments} maxVisible={2} />
                         </div>
                     )}
 
@@ -158,10 +181,13 @@ const EmailRow = memo(({
                     <div className="mail-received-hover-btn justify-content-end">
                         <div className="mail-received-hover-btn-sub">
                             <div className="d-flex" onClick={(e) => e.stopPropagation()}>
+                                {/* Mark Read/Unread - Single element to prevent tooltip traveling */}
                                 <a
                                     className="hover-link align-items-center mail-received-hover-btn-link"
                                     title={isRead ? "Mark as unread" : "Mark as read"}
-                                    onClick={() => onMarkReadUnread([email.messageId], !isRead)}
+                                    onClick={() =>
+                                        onMarkReadUnread([email.messageId], !isRead)
+                                    }
                                 >
                                     <InteractiveIcon
                                         defaultIcon={isRead ? mailIcon : envelopOpenIcon}
@@ -175,10 +201,13 @@ const EmailRow = memo(({
                                     />
                                 </a>
 
+                                {/* Delete */}
                                 <a
                                     className="hover-link mail-received-hover-btn-link"
                                     title="Delete"
-                                    onClick={() => onDelete([email.messageId], false)}
+                                    onClick={() =>
+                                        onDelete([email.messageId], false)
+                                    }
                                 >
                                     <InteractiveIcon
                                         defaultIcon={trashIcon}
@@ -200,4 +229,4 @@ const EmailRow = memo(({
     );
 });
 
-export default EmailRow;
+export default memo(EmailRow);

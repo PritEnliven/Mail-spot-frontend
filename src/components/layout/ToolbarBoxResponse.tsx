@@ -56,12 +56,12 @@ const ToolbarBox = () => {
                 updateBoxCount(folderName, 0, movedEmails.length);
             } else {
                 // For other folders: update unread count based on read/unread status of moved emails
-                const unreadMovedCount = movedEmails.filter(email => !email.flags.includes('\\Seen')).length;
+                const unreadMovedCount = movedEmails.filter(email => !email.isSeen).length;
                 updateBoxCount(folderName, unreadMovedCount, movedEmails.length);
             }
 
             // Update counts for the source folder (current box)
-            const unreadRemovedCount = movedEmails.filter(email => !email.flags.includes('\\Seen')).length;
+            const unreadRemovedCount = movedEmails.filter(email => !email.isSeen).length;
             updateBoxCount(boxName, -unreadRemovedCount, -movedEmails.length);
 
             // Remove moved emails from the current list

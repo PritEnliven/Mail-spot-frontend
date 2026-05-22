@@ -1,5 +1,10 @@
-import { showError } from '@components/ui/toast/toastNotification';
+import { clearAllToasts, showError } from '@components/ui/toast/toastNotification';
 import axios from 'axios';
+
+// Network error notification throttling
+let lastNetworkErrorTime = 0;
+let lastTimeoutErrorTime = 0;
+const NETWORK_ERROR_THROTTLE = 5000; // Show same network error only once every 5 seconds
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -53,9 +58,19 @@ ApiInterceptor.init();
 api.interceptors.request.use(
   (config: any) => {
     let token = localStorage.getItem('token');
+    const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
 
     if (config.url?.includes('admin')) {
       token = localStorage.getItem('adminToken');
+    }
+
+    if (isFormData && config.headers) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type');
+      } else {
+        delete config.headers['Content-Type'];
+        delete config.headers['content-type'];
+      }
     }
 
     if (token) {
@@ -74,15 +89,34 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: any) => response,
   (error) => {
+    clearAllToasts();
     if (!error.response) {
-      // Handle different types of network errors
+      // Handle different types of network errors with throttling
+      const currentTime = Date.now();
+
       if (error.code === 'ECONNABORTED') {
-        showError("Request timeout. The operation is taking longer than expected.");
+        // Throttle timeout error notifications
+        if (currentTime - lastTimeoutErrorTime > NETWORK_ERROR_THROTTLE) {
+          lastTimeoutErrorTime = currentTime;
+          showError("Request timeout. The operation is taking longer than expected.");
+        }
         return Promise.reject({ message: 'Request timeout. The operation is taking longer than expected.', statusCode: 408 });
       } else {
-        showError("Network error. Please check your connection and try again.");
+        // Throttle network error notifications
+        if (currentTime - lastNetworkErrorTime > NETWORK_ERROR_THROTTLE) {
+          lastNetworkErrorTime = currentTime;
+          showError("Network error. Please check your connection and try again.");
+        }
         return Promise.reject({ message: 'Network error. Please check your connection and try again.', statusCode: 500 });
       }
+    }
+    if (error.response.status === 429) {
+      // Handle rate limiting specifically
+      return Promise.reject({
+        message: error.response.data?.message || 'Too many requests. Please try again later.',
+        statusCode: 429,
+        isRateLimit: true,
+      });
     }
     if (error.response.status === 401) {
       // Don't redirect for login endpoints - let the login component handle the error
@@ -116,10 +150,7 @@ export const getData = async (endpoint: string, config = {}): Promise<any> => {
 };
 
 export const postData = async (endpoint: string, data: any): Promise<any> => {
-  const config = data instanceof FormData
-    ? { headers: { 'Content-Type': undefined } }
-    : {};
-  const response = await api.post(endpoint, data, config);
+  const response = await api.post(endpoint, data);
   return response.data;
 };
 
@@ -139,7 +170,6 @@ export const longRunningRequest = async (endpoint: string, config = {}): Promise
     ...config,
     timeout: 300000, // 5 minutes for email fetching operations
   });
-  
   return response.data;
 };
 

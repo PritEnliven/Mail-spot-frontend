@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 interface ProfileContextType {
     profileName: string;

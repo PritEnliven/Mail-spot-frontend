@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { getAllSignatures } from "@services/settings/settingsService";
+import { useEffect, useState } from "react";
 
 export interface Signature {
     _id: string;
@@ -44,8 +44,6 @@ export const useSignatureManager = () => {
         setSelectedSignatureId(signature._id);
 
         const body = getCurrentBody() || "";
-
-        console.log("Signature Manager: switching signature");
 
         // Remove existing signature
         const cleanedBody = body.replace(
@@ -105,8 +103,6 @@ export const useSignatureManager = () => {
                 ${typingArea.trim()}
                 ${quotedPart}
                 `;
-
-        console.log("Signature Manager: updated body length", updatedBody.length);
 
         setBodyValue(updatedBody);
     };

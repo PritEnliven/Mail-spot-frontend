@@ -141,14 +141,50 @@
 .mail-received-table-news {
     border-radius: 0 0 0 11px;
     width: 100%;
-    
+
     overflow-x: auto;
     padding-left: 1px;
     margin-left: -1px;
 }
 
-.mailReceivedTableNewsSimpleBar{
+.mailReceivedTableNewsSimpleBar {
     height: calc(100vh - 99px);
+}
+
+.mail-list-filter {
+    display: flex;
+    width: 100%;
+    background-color: #F5F5F5;
+    border-bottom: 1px solid #D0D9DE;
+    padding: 5px 5px 4px 5px;
+    gap: 8px;
+}
+
+.mail-list-filter__segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    padding: 5px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #717D84;
+    cursor: pointer;
+    border-radius: 5px;
+    line-height: 18px;
+    border: 1px solid transparent;
+}
+
+.mail-list-filter__segment--active {
+    background-color: #fff;
+    border: 1px solid #BBC0C4;
+    color: #212121;
+    box-shadow: 0px 1px 3px 0px #0000001F;
+}
+
+.mail-message-box .mail-list-filter+.mail-received-table-news .mailReceivedTableNewsSimpleBar {
+    height: calc(100vh - 139px);
 }
 
 .mail-received-table-news .table tr td {
@@ -235,16 +271,16 @@
 }
 
 .mail-received-hover-btn {
-   position: absolute;
-  inset: 0;                   
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.15s ease;   
-  z-index: 0;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 0;
 }
 
 .mail-received-hover-btn-sub {
@@ -270,8 +306,8 @@
 
 .mail-message-list:hover .mail-received-hover-btn {
     opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .mail-received-hover-btn .mail-received-hover-btn-link {
@@ -387,6 +423,7 @@ tr:has(+ tr .mail-message-list.mail-message-active) .mail-message-list {
     margin: 0 0 4px 0;
     max-width: 230px;
 }
+
 .mail-details-information-details-box .mail-profile-id {
     max-width: 230px;
 }
@@ -572,11 +609,11 @@ tr:has(+ tr .mail-message-list.mail-message-active) .mail-message-list {
     position: relative;
 }
 
-.thread-email .mail-content-details-box{
+.thread-email .mail-content-details-box {
     border: 0;
 }
 
-.thread-email .accordion-item:has(.custom-accordion-body-border) > .accordion-header {
+.thread-email .accordion-item:has(.custom-accordion-body-border)>.accordion-header {
     border-bottom: 1px solid #BBC0C4 !important;
 }
 
@@ -785,21 +822,24 @@ button.accordion-button.collapsed {
     height: 519px !important;
 } */
 
-.compose-email-modal .ck.ck-editor__editable:not(.ck-editor__nested-editable), #reply-mail-btn .ck.ck-editor__editable:not(.ck-editor__nested-editable), .compose-modal-body .ck.ck-editor__editable:not(.ck-editor__nested-editable) {
+.compose-email-modal .ck.ck-editor__editable:not(.ck-editor__nested-editable),
+#reply-mail-btn .ck.ck-editor__editable:not(.ck-editor__nested-editable),
+.compose-modal-body .ck.ck-editor__editable:not(.ck-editor__nested-editable) {
     outline: none;
     border: 1px;
     box-shadow: none;
     outline: none;
 }
 
-.compose-email-modal .ck .ck-sticky-panel__content  {
+.compose-email-modal .ck .ck-sticky-panel__content {
     background: rgba(33, 33, 33, 1);
     box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.16);
     border: 1px solid rgba(0, 0, 0, 0.16) !important;
     padding: 3px 4px;
     border-radius: 5px !important;
 }
-.reply-mail-box  .compose-modal-body .ck .ck-sticky-panel__content{
+
+.reply-mail-box .compose-modal-body .ck .ck-sticky-panel__content {
     border-radius: 5px !important;
 }
 
@@ -850,7 +890,8 @@ button.accordion-button.collapsed {
 .forward-it-modal .form-group.select2-profile .select2-container--default .select2-selection--multiple .select2-selection__choice {
     display: none;
 }
-.INBOX-main .compose-btn-box{
+
+.INBOX-main .compose-btn-box {
     padding: 16px;
     bottom: -16px;
 }

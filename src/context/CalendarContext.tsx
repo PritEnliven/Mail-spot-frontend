@@ -1,16 +1,16 @@
+import FullCalendar from '@fullcalendar/react';
+import type { CalendarEvent, EventDetail } from '@models/CalendarModels';
+import type { ApiResponse } from '@models/Response';
+import { getAllEvents } from '@services/calendar/calendarService';
+import { formatCalendarEvents } from '@utils/calendarUtil';
 import {
     createContext,
+    useCallback,
     useContext,
     useRef,
-    useCallback,
     useState,
     type ReactNode,
-} from 'react'
-import FullCalendar from '@fullcalendar/react'
-import { getAllEvents } from '@services/calendar/calendarService'
-import type { ApiResponse } from '@models/Response';
-import type { CalendarEvent, EventDetail } from '@models/CalendarModels';
-import { formatCalendarEvents } from '@utils/calendarUtil';
+} from 'react';
 export type CalendarView = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'
 
 interface CalendarContextType {

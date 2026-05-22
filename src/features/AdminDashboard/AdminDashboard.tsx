@@ -1,21 +1,19 @@
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
-import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
-
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import searchIcon from "@images/search-icon.svg";
+import ActionCell from '@components/ui/AdminDashboard/ActionCell';
+import StatusCell from "@components/ui/AdminDashboard/StatusCell";
+import UserCell from '@components/ui/AdminDashboard/UserCell';
+import Select2Wrapper, { type SingleOption } from '@components/ui/form/Select2Wrapper';
+import { showError, showSuccess } from '@components/ui/toast/toastNotification';
+import { useAdmin } from "@context/AdminDataContext";
+import { useAdminUI } from "@context/AdminUIContext";
+import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import chevronLeftIconBig from "@images/chevron-left-icon-big.svg";
 import chevronRightIconBig from "@images/chevron-right-icon-big.svg";
-
-import Select2Wrapper, { type SingleOption } from '@components/ui/form/Select2Wrapper';
-import UserCell from '@components/ui/AdminDashboard/UserCell';
-import ActionCell from '@components/ui/AdminDashboard/ActionCell';
-import StatusCell from "@components/ui/AdminDashboard/StatusCell"
-import { useAdminUI } from "@context/AdminUIContext";
-import { useAdmin } from "@context/AdminDataContext";
+import searchIcon from "@images/search-icon.svg";
 import { adminGetUserList, loginAdminAsUser } from '@services/adminService/adminService';
-import { showError, showSuccess } from '@components/ui/toast/toastNotification';
-import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Register all Community features
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -89,7 +87,7 @@ const AdminDashboard = () => {
             sortable: true
         },
         {
-            headerName: 'Size',
+            headerName: 'Size (MB)',
             field: 'size',
             sortable: true,
             minWidth: 100,
@@ -123,14 +121,12 @@ const AdminDashboard = () => {
 
     // Action handlers
     const handleChangePassword = (userId: string) => {
-        console.log('Change password for user:', userId);
         openModal('changePassword', {
             userId
         });
     };
 
     const handleEditUser = async (userId: string) => {
-        console.log('Edit user:', userId);
         try {
             setSettingPayLoad({
                 userId,
@@ -144,12 +140,10 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleDeleteUser = (userId: string) => {
-        console.log('Delete user:', userId);
+    const handleDeleteUser = () => {
     };
 
     const handleLoginAsUser = async (userId: string) => {
-        console.log('Login as user:', userId);
         const response = await loginAdminAsUser({ userId });
         if (response.statusCode === 200) {
             localStorage.setItem('token', response.data.token);

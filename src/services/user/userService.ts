@@ -1,4 +1,3 @@
-
 import { getData, postData } from '../apiService';
 
 interface UpdateImapSmtpDetailsPayload {

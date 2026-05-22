@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export type UseSidebarFadeScrollbarReturn = {
     scrollRef: React.RefObject<HTMLDivElement | null>;

@@ -1,10 +1,10 @@
+import { CalendarProvider } from '@context/CalendarContext';
+import { ComposeFormProvider } from '@context/ComposeFormContext';
+import { ContactsProvider } from '@context/ContactsContext';
+import { MailUIProvider } from '@context/MailUIContext';
 import { type ReactNode } from 'react';
 import { MailDataProvider, useMailData } from './MailDataContext';
 import { MailSelectionProvider, useMailSelection } from './MailSelectionContext';
-import { MailUIProvider } from '@context/MailUIContext';
-import { ContactsProvider } from '@context/ContactsContext';
-import { ComposeFormProvider } from '@context/ComposeFormContext';
-import { CalendarProvider } from '@context/CalendarContext';
 
 interface MailProvidersProps {
     children: ReactNode;
@@ -13,7 +13,6 @@ interface MailProvidersProps {
 const MailProvidersInner = ({ children }: { children: ReactNode }) => {
     const { emails, activeEmailMessageId } = useMailData();
     const { selectedEmails } = useMailSelection();
-    
     return (
         <MailUIProvider
             emails={emails}

@@ -1,18 +1,18 @@
-import mailSpotLogo from "@images/mailspot-login-logo.svg";
+import SubmitButton from "@components/ui/form/SubmitButton";
+import { showError, showSuccess } from "@components/ui/toast/toastNotification";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { pageStyles, usePageStylesheet } from "@hooks/usePageStyleSheet";
+import enlivenLogo from "@images/enliven-logo.svg";
 import mailIcon from "@images/mail-icon-16.svg";
+import mailSpotLogo from "@images/mailspot-login-logo.svg";
+import passwordHideIcon from "@images/password-hide-icon-16.svg";
 import lockIcon from "@images/password-icon-16.svg";
 import passwordShowIcon from "@images/password-show-icon-16.svg";
-import passwordHideIcon from "@images/password-hide-icon-16.svg";
-import enlivenLogo from "@images/enliven-logo.svg";
-import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { adminLoginSchema, type AdminLoginFormValues } from "./adminLogin.schema";
 import { adminLogin } from "@services/adminService/adminService";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import SubmitButton from "@components/ui/form/SubmitButton";
-import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
-import { showSuccess, showError } from "@components/ui/toast/toastNotification";
+import { adminLoginSchema, type AdminLoginFormValues } from "./adminLogin.schema";
 
 const LoginPage = () => {
     usePageStylesheet([pageStyles.adminCss, pageStyles.headerCss, pageStyles.signInCss]);
@@ -25,11 +25,9 @@ const LoginPage = () => {
     };
 
     const onSubmit = async (data: AdminLoginFormValues) => {
-        console.log('SUBMITTED DATA:', data);
         try {
             const response = await adminLogin(data);
             if (response.statusCode === 200) {
-                console.log('LOGIN RESPONSE:', response);
                 localStorage.setItem("adminToken", response.data.token);
                 localStorage.setItem("username", response.data.username);
                 localStorage.setItem("id", response.data.id);

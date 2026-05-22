@@ -1,37 +1,45 @@
-import backBtnIcon from "@images/back-btn-icon.svg";
-import backBtnIconHover from "@images/back-btn-icon-hover.svg";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import refreshIcon from "@images/refresh-icon.svg";
-import refreshIconHover from "@images/refresh-icon-hover.svg";
-import markAsUnreadIcon from "@images/mail-icon.svg";
-import markAsUnreadIconHover from "@images/mail-icon-hover.svg";
-import markAsReadIcon from "@images/envelope-open-icon.svg";
-import markAsReadIconHover from "@images/envelope-open-icon-hover.svg";
-import deleteIcon from "@images/trash-icon.svg";
-import deleteIconHover from "@images/trash-icon-hover.svg";
-import moreActionIcon from "@images/ellipsis-vertical-icon.svg";
-import moreActionIconHover from "@images/ellipsis-vertical-icon-hover.svg";
-import leftArrowPaginationIcon from "@images/chevron-left-icon-big.svg";
-import leftArrowPaginationIconHover from "@images/chevron-left-icon-big-hover.svg";
-import rightArrowPaginationIcon from "@images/chevron-right-icon-big.svg";
-import rightArrowPaginationIconHover from "@images/chevron-right-icon-big-hover.svg";
-import { useMailData, useMailSelection, useMailUI } from '../../context/index';
-import { useEmailAction } from "@hooks/useEmailAction";
-import { handleEmailDeletion, verifyBoxName } from "@utils/emailUtil";
-import { markedAsLabel, refreshMailBox } from "@services/emailAction/emailActionService";
-import { showSuccess } from "@components/ui/toast/toastNotification";
-import { Dropdown } from "react-bootstrap";
-import { useEffect, useState } from "react";
-import SimpleBar from 'simplebar-react';
+import { clearAllToasts, showSuccess } from "@components/ui/toast/toastNotification";
 import { useScreen } from "@context/ScreenContext";
+import { useEmailAction } from "@hooks/useEmailAction";
+import backBtnIconHover from "@images/back-btn-icon-hover.svg";
+import backBtnIcon from "@images/back-btn-icon.svg";
+import leftArrowPaginationIconHover from "@images/chevron-left-icon-big-hover.svg";
+import leftArrowPaginationIcon from "@images/chevron-left-icon-big.svg";
+import rightArrowPaginationIconHover from "@images/chevron-right-icon-big-hover.svg";
+import rightArrowPaginationIcon from "@images/chevron-right-icon-big.svg";
+import moreActionIconHover from "@images/ellipsis-vertical-icon-hover.svg";
+import moreActionIcon from "@images/ellipsis-vertical-icon.svg";
+import markAsReadIconHover from "@images/envelope-open-icon-hover.svg";
+import markAsReadIcon from "@images/envelope-open-icon.svg";
+import markAsUnreadIconHover from "@images/mail-icon-hover.svg";
+import markAsUnreadIcon from "@images/mail-icon.svg";
+import refreshIconHover from "@images/refresh-icon-hover.svg";
+import refreshIcon from "@images/refresh-icon.svg";
+import deleteIconHover from "@images/trash-icon-hover.svg";
+import deleteIcon from "@images/trash-icon.svg";
+import { moveToFolder, refreshMailBox } from "@services/emailAction/emailActionService";
+import { handleEmailDeletion, verifyBoxName } from "@utils/emailUtil";
+import { useEffect, useState } from "react";
+import { Dropdown } from "react-bootstrap";
+import SimpleBar from 'simplebar-react';
+import { MAIL_ACTION } from "../../constants/mailAction";
+import { useMailData, useMailSelection, useMailUI } from '../../context/index';
+import CountSkeleton from "@components/ui/CountSkeletonLoader";
 
 const ToolbarBox = () => {
-    const { pagination, boxName, sidebarState, mailListPage, fetchEmails, fetchSearchEmails, allSearchResult, emailDetailSelected, emails, addNewEmail, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId } = useMailData();
+    const { pagination, boxName, sidebarState, mailListPage, fetchEmails, readUnreadFilter, fetchSearchEmails, allSearchResult, emailDetailSelected, emails,
+        addNewEmail, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId, isTotalCountLoading } = useMailData();
     const { selectAllEmails, selectedEmails, clearEmailSelection } = useMailSelection();
     const { toolbarState, activeEmailMessageId, setToolbarState, openModal, setIsMailListOpen, setIsLoading } = useMailUI();
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
     const [moveToFolderOptions, setMoveToFolderOptions] = useState<any>({});
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const { isDesktop } = useScreen();
+
+    // Hide pagination when mailbox is empty (all counts are 0)
+    const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
+        && (emails.length > 0);
 
     //create moveTo folder options list from sidebarSteate
 
@@ -56,9 +64,8 @@ const ToolbarBox = () => {
 
     const handleBack = () => {
         // TODO: implement back logic
-        console.log("Back", boxName);
         setIsMailListOpen(true);
-        const isRead = emailDetailSelected?.flags.includes("\\Seen") ? true : false;
+        const isRead = emailDetailSelected?.isSeen ? true : false;
         setToolbarState({
             showBack: false,
             showSelectAll: true,
@@ -68,7 +75,7 @@ const ToolbarBox = () => {
             showMarkAsUnread: isRead,
             showMove: false,
         });
-        if(!isDesktop){
+        if (!isDesktop) {
             setEmailDetailSelected(null);
             setActiveEmailMessageId(null);
         }
@@ -81,7 +88,7 @@ const ToolbarBox = () => {
                 await fetchSearchEmails(isPrevious);
             } else {
                 const newPage = isPrevious ? mailListPage - 1 : mailListPage + 1;
-                await fetchEmails(newPage, boxName, isPrevious);
+                await fetchEmails(newPage, boxName, isPrevious, readUnreadFilter);
             }
         } finally {
             setIsLoading(false);
@@ -89,17 +96,29 @@ const ToolbarBox = () => {
     };
 
     const refreshMailBoxHandler = async () => {
-        const payLoad = {
-            current_active_box: boxName,
-            lastEmailMessageId: emails[0].messageId
-        }
-        const response = await refreshMailBox(payLoad);
-        if (response.statusCode === 200) {
-            addNewEmail(response.data.emailList);
-            console.log(emails);
-            showSuccess("loading...")
-        }
+        // Clear any existing toast notifications immediately
+        clearAllToasts();
 
+        // Prevent multiple clicks if already refreshing
+        if (isRefreshing) return;
+
+        setIsRefreshing(true);
+
+        try {
+            const payLoad = {
+                current_active_box: boxName,
+                lastEmailMessageId: emails[0].messageId
+            }
+            const response = await refreshMailBox(payLoad);
+            if (response.statusCode === 200) {
+                addNewEmail(response.data.emailList);
+                showSuccess("loading new emails...")
+            }
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setIsRefreshing(false);
+        }
     }
 
     const markAsReadUnreadHandler = (isRead: boolean) => {
@@ -110,7 +129,6 @@ const ToolbarBox = () => {
             messageIds = [emailDetailSelected.messageId];
         }
 
-        console.log("Mark as read/unread", messageIds, isRead);
         if (messageIds.length > 0) {
             if (isRead) {
                 markAsRead(messageIds);
@@ -166,10 +184,11 @@ const ToolbarBox = () => {
         const payload = {
             messageIds: messageIds as string[],
             current_active_box: boxName,
-            label: folderName
+            folder: folderName
         }
 
-        const response = await markedAsLabel(payload);
+        // const response = await markedAsLabel(payload);
+        const response = await moveToFolder(payload);
         if (response.statusCode === 200) {
             showSuccess("Email moved successfully");
 
@@ -183,12 +202,12 @@ const ToolbarBox = () => {
                 updateBoxCount(folderName, 0, movedEmails.length);
             } else {
                 // For other folders: update unread count based on read/unread status of moved emails
-                const unreadMovedCount = movedEmails.filter(email => !email.flags.includes('\\Seen')).length;
+                const unreadMovedCount = movedEmails.filter(email => !email.isSeen).length;
                 updateBoxCount(folderName, unreadMovedCount, movedEmails.length);
             }
 
             // Update counts for the source folder (current box)
-            const unreadRemovedCount = movedEmails.filter(email => !email.flags.includes('\\Seen')).length;
+            const unreadRemovedCount = movedEmails.filter(email => !email.isSeen).length;
             updateBoxCount(boxName, -unreadRemovedCount, -movedEmails.length);
 
             // Remove moved emails from the current list
@@ -237,8 +256,9 @@ const ToolbarBox = () => {
                         <a
                             href="javascript:;"
                             id="refreshEmailBtn"
-                            className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showRefresh ? '' : 'd-none'}`}
+                            className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showRefresh ? '' : 'd-none'} ${isRefreshing ? 'disabled' : ''}`}
                             onClick={refreshMailBoxHandler}
+                            style={{ opacity: isRefreshing ? 0.5 : 1, pointerEvents: isRefreshing ? 'none' : 'auto' }}
                         >
                             <InteractiveIcon
                                 defaultIcon={refreshIcon}
@@ -252,216 +272,190 @@ const ToolbarBox = () => {
                             />
                         </a>
 
-                        <div id="actionButtons" className="d-flex align-items-center">
-                            {/* <a
-                                href="javascript:;" id="markAsUnreadBtn"
-                                className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showMarkAsUnread ? '' : 'd-none'}`}
-                                onClick={() => { markAsReadUnreadHandler(false); }}
-                            >
-                                <InteractiveIcon
-                                    defaultIcon={markAsUnreadIcon}
-                                    hoverIcon={markAsUnreadIconHover}
-                                    activeIcon=""
-                                    isActive={false}
-                                    alt=""
-                                    className="interactive-icon hover-image"
-                                    renderAs="img"
-                                    tooltip="Mark as unread"
-                                />
-                            </a>
-
-                            <a
-                                href="javascript:;"
-                                id="markAsReadBtn"
-                                className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showMarkAsRead ? '' : 'd-none'}`}
-                                onClick={() => { markAsReadUnreadHandler(true); }}
-                            >
-                                <InteractiveIcon
-                                    defaultIcon={markAsReadIcon}
-                                    hoverIcon={markAsReadIconHover}
-                                    activeIcon=""
-                                    isActive={false}
-                                    alt=""
-                                    className="interactive-icon hover-image"
-                                    renderAs="img"
-                                    tooltip="Mark as read"
-                                />
-                            </a> */}
-                            <a
-                                href="javascript:;"
-                                id="markAsReadUnreadBtn"
-                                className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showMarkAsUnread || toolbarState.showMarkAsRead ? '' : 'd-none'
-                                    }`}
-                                onClick={() => {
-                                    if (toolbarState.showMarkAsUnread) {
-                                        markAsReadUnreadHandler(false); // mark unread
-                                    } else if (toolbarState.showMarkAsRead) {
-                                        markAsReadUnreadHandler(true); // mark read
-                                    }
-                                }}
-                            >
-                                <InteractiveIcon
-                                    defaultIcon={
-                                        toolbarState.showMarkAsUnread
-                                            ? markAsUnreadIcon
-                                            : markAsReadIcon
-                                    }
-                                    hoverIcon={
-                                        toolbarState.showMarkAsUnread
-                                            ? markAsUnreadIconHover
-                                            : markAsReadIconHover
-                                    }
-                                    activeIcon=""
-                                    isActive={false}
-                                    alt=""
-                                    className="interactive-icon hover-image"
-                                    renderAs="img"
-                                    tooltip={
-                                        toolbarState.showMarkAsUnread
-                                            ? "Mark as unread"
-                                            : "Mark as read"
-                                    }
-                                />
-                            </a>
-
-                            <a
-                                href="javascript:;"
-                                id="toolbarDeleteBtn"
-                                className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showDelete ? '' : 'd-none'}`}
-                                onClick={deleteMailHandler}
-                            >
-                                <InteractiveIcon
-                                    defaultIcon={deleteIcon}
-                                    hoverIcon={deleteIconHover}
-                                    activeIcon=""
-                                    isActive={false}
-                                    alt=""
-                                    className="interactive-icon hover-image"
-                                    renderAs="img"
-                                    tooltip="Delete"
-                                />
-                            </a>
-
-                            <Dropdown
-                                className={`more-actions-dropdown react-dropdown ${toolbarState.showMove ? '' : 'd-none'}`}
-                            >
-                                <Dropdown.Toggle
-                                    as="a"
-                                    className="hover-link d-flex align-items-center icon-hover-effect"
+                        {hasEmails && (
+                            <div id="actionButtons" className="d-flex align-items-center action-buttons">
+                                <a
+                                    href="javascript:;"
+                                    id="markAsReadUnreadBtn"
+                                    className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showMarkAsUnread || toolbarState.showMarkAsRead ? '' : 'd-none'
+                                        }`}
+                                    onClick={() => {
+                                        if (toolbarState.showMarkAsUnread) {
+                                            markAsReadUnreadHandler(false); // mark unread
+                                        } else if (toolbarState.showMarkAsRead) {
+                                            markAsReadUnreadHandler(true); // mark read
+                                        }
+                                    }}
                                 >
                                     <InteractiveIcon
-                                        defaultIcon={moreActionIcon}
-                                        hoverIcon={moreActionIconHover}
+                                        defaultIcon={
+                                            toolbarState.showMarkAsUnread
+                                                ? markAsUnreadIcon
+                                                : markAsReadIcon
+                                        }
+                                        hoverIcon={
+                                            toolbarState.showMarkAsUnread
+                                                ? markAsUnreadIconHover
+                                                : markAsReadIconHover
+                                        }
                                         activeIcon=""
                                         isActive={false}
                                         alt=""
                                         className="interactive-icon hover-image"
                                         renderAs="img"
-                                        tooltip="More"
+                                        tooltip={
+                                            toolbarState.showMarkAsUnread
+                                                ? "Mark as unread"
+                                                : "Mark as read"
+                                        }
                                     />
-                                </Dropdown.Toggle>
+                                </a>
 
-                                <Dropdown.Menu>
-                                    {/* Move To Submenu */}
-                                    <Dropdown drop="end">
-                                        <Dropdown.Toggle
-                                            as="div"
-                                            className="dropdown-item react-subdropdown-menu  d-flex justify-content-between align-items-center"
-                                        >
-                                            Move to
-                                        </Dropdown.Toggle>
+                                <a
+                                    href="javascript:;"
+                                    id="toolbarDeleteBtn"
+                                    className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showDelete ? '' : 'd-none'}`}
+                                    onClick={deleteMailHandler}
+                                >
+                                    <InteractiveIcon
+                                        defaultIcon={deleteIcon}
+                                        hoverIcon={deleteIconHover}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip="Delete"
+                                    />
+                                </a>
 
-                                        <Dropdown.Menu className="react-subdropdown">
-                                            <SimpleBar
-                                                className="eventInfoModalSimpleBar"
-                                                autoHide={false}
-                                                forceVisible="y"
-                                                style={{ maxHeight: '300px' }}
+                                <Dropdown
+                                    className={`more-actions-dropdown me-2 react-dropdown ${toolbarState.showMove ? '' : 'd-none'}`}
+                                >
+                                    <Dropdown.Toggle
+                                        as="a"
+                                        className="hover-link d-flex align-items-center icon-hover-effect"
+                                    >
+                                        <InteractiveIcon
+                                            defaultIcon={moreActionIcon}
+                                            hoverIcon={moreActionIconHover}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip="More"
+                                        />
+                                    </Dropdown.Toggle>
+
+                                    <Dropdown.Menu>
+                                        {/* Move To Submenu */}
+                                        <Dropdown drop="end">
+                                            <Dropdown.Toggle
+                                                as="div"
+                                                className="dropdown-item react-subdropdown-menu  d-flex justify-content-between align-items-center"
                                             >
-                                                {moveToFolderOptions.boxes && moveToFolderOptions.boxes.map((box: any) => (
-                                                    <Dropdown.Item key={box.value} onClick={() => moveToFolderHandler(box.value)}>
-                                                        {box.key}
+                                                Move to
+                                            </Dropdown.Toggle>
+
+                                            <Dropdown.Menu className="react-subdropdown">
+                                                <SimpleBar
+                                                    className="eventInfoModalSimpleBar"
+                                                    autoHide={false}
+                                                    forceVisible="y"
+                                                    style={{ maxHeight: '300px' }}
+                                                >
+                                                    {moveToFolderOptions.boxes && moveToFolderOptions.boxes.map((box: any) => (
+                                                        <Dropdown.Item key={box.value} onClick={() => moveToFolderHandler(box.value)}>
+                                                            {box.key}
+                                                        </Dropdown.Item>
+                                                    ))}
+
+                                                    <Dropdown.Divider />
+
+                                                    {moveToFolderOptions.customBoxes && moveToFolderOptions.customBoxes.map((box: any) => (
+                                                        <Dropdown.Item key={box.value.value} onClick={() => moveToFolderHandler(box.value.value)}>
+                                                            {box.key}
+                                                        </Dropdown.Item>
+                                                    ))}
+
+                                                    <Dropdown.Divider />
+
+                                                    <Dropdown.Item onClick={() => createFolderHandler()}>
+                                                        Create folder
                                                     </Dropdown.Item>
-                                                ))}
-
-                                                <Dropdown.Divider />
-
-                                                {moveToFolderOptions.customBoxes && moveToFolderOptions.customBoxes.map((box: any) => (
-                                                    <Dropdown.Item key={box.value.value} onClick={() => moveToFolderHandler(box.value.value)}>
-                                                        {box.key}
-                                                    </Dropdown.Item>
-                                                ))}
-
-                                                <Dropdown.Divider />
-
-                                                <Dropdown.Item onClick={() => createFolderHandler()}>
-                                                    Create folder
-                                                </Dropdown.Item>
-                                            </SimpleBar>
-                                        </Dropdown.Menu>
-                                    </Dropdown>
-                                </Dropdown.Menu>
-                            </Dropdown>
-                        </div>
+                                                </SimpleBar>
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Pagination */}
                 <div className="pagination-box d-flex align-items-center">
                     <ul className="pagination-cus me-3">
-                        <li className="pagination-count">
+                        <li className="pagination-count pagination-count-skeleton">
                             <span id="emailRange" className="email-count" />
-                            {pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null && (
+                            {hasEmails && (
                                 <>
-                                    <span className="of">{pagination.startCount} - {pagination.endCount}</span>
-                                    <span className="of"> of </span>
-                                    <span id="totalEmailCount" className="total-email-count"> {pagination.totalEmails} </span>
+                                    <span className="of me-1">{pagination.startCount} - {pagination.endCount}</span>
+                                    <span className="of me-1"> of </span>
+                                    {isTotalCountLoading ? (
+                                        <CountSkeleton isTotal={true} />
+                                    ) : (
+                                        <span id="totalEmailCount" className="total-email-count"> {pagination.totalEmails} </span>
+                                    )}
                                 </>
                             )}
                         </li>
                     </ul>
 
-                    <div className="d-flex align-items-center pagination-btn-box">
-                        <button
-                            id="previousPageBtn"
-                            className="btn hover-link icon-hover-effect"
-                            onClick={() => handlePagination(true)}
-                            disabled={!pagination?.hasPreviousPage}
-                        >
-                            <InteractiveIcon
-                                defaultIcon={leftArrowPaginationIcon}
-                                hoverIcon={leftArrowPaginationIconHover}
-                                activeIcon=""
-                                isActive={false}
-                                alt=""
-                                className="interactive-icon hover-image"
-                                renderAs="img"
-                                tooltip="Previous"
-                            />
-                        </button>
+                    {hasEmails && (
+                        <div className="d-flex align-items-center pagination-btn-box">
+                            <button
+                                id="previousPageBtn"
+                                className="btn hover-link icon-hover-effect"
+                                onClick={() => handlePagination(true)}
+                                disabled={!pagination?.hasPreviousPage}
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={leftArrowPaginationIcon}
+                                    hoverIcon={leftArrowPaginationIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="interactive-icon hover-image"
+                                    renderAs="img"
+                                    tooltip="Previous"
+                                />
+                            </button>
 
-                        <button
-                            id="nextPageBtn"
-                            className="btn hover-link icon-hover-effect"
-                            onClick={() => handlePagination(false)}
-                            disabled={!pagination?.hasNextPage}
-                        >
-                            <InteractiveIcon
-                                defaultIcon={rightArrowPaginationIcon}
-                                hoverIcon={rightArrowPaginationIconHover}
-                                activeIcon=""
-                                isActive={false}
-                                alt=""
-                                className="interactive-icon hover-image"
-                                renderAs="img"
-                                tooltip="Next"
-                            />
-                        </button>
-                    </div>
+                            <button
+                                id="nextPageBtn"
+                                className="btn hover-link icon-hover-effect"
+                                onClick={() => handlePagination(false)}
+                                disabled={!pagination?.hasNextPage}
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={rightArrowPaginationIcon}
+                                    hoverIcon={rightArrowPaginationIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="interactive-icon hover-image"
+                                    renderAs="img"
+                                    tooltip="Next"
+                                />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </>
-  );
+    );
 }
 
 export default ToolbarBox;
