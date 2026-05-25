@@ -224,6 +224,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
             try {
 
+                setEmailDetailSelected(null);
+                setActiveEmailMessageId(null);
                 if (mailAction === 'all') {
                     setReadUnreadFilter('all');
                 }
@@ -398,7 +400,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 console.error('Failed to fetch emails:', error);
             }
         },
-        [mailListPage, readUnreadFilter, userId]
+        // [mailListPage, readUnreadFilter, userId, boxName]
+        [userId, boxName]
     );
 
     const fetchSearchEmails = useCallback(

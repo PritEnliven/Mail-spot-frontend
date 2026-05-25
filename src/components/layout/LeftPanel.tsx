@@ -5,9 +5,6 @@ import navCollapseIcon from '@images/nav-collepse-icon.svg';
 import navExpandIconHover from '@images/nav-collepse-icon-hover.svg';
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import menuIcon from "@images/menu-icon.svg";
-import menuIconHover from "@images/menu-icon-hover.svg";
-import closeIcon from '@images/close-icon.svg';
-import closeIconHover from '@images/close-icon-hover.svg'
 import { useState, useEffect, useMemo } from 'react';
 import SidebarItem from '../../features/emails/SidebarItem';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -29,14 +26,14 @@ const LeftPanel = () => {
     const { setIsCalendarAllSearchActive } = useCalendar();
 
     const [activeBoxId, setActiveBoxId] = useState<string>('box-li-0');
-    const { boxName, setPagination, setBoxTitle, fetchEmails,
+    const { boxName, setBoxName, setPagination, setBoxTitle, fetchEmails,
         sidebarState,
         sidebarItems,
         setSidebarItems,
         setEmailDetailSelected,
         setActiveEmailMessageId,
         setSidebarStateFromAPI } = useMailData();
-    const { setToolbarState, openModal, closeModal, activeModals, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
+    const { setToolbarState, openModal, closeModal, activeModals, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, setIsMailListOpen } = useMailUI();
     const { fetchContacts } = useContacts();
 
     const customFolders = useMemo(() => {
@@ -96,7 +93,7 @@ const LeftPanel = () => {
         };
 
         loadBoxes();
-    }, [location.pathname, setBoxTitle]);
+    }, []);
 
     const openComposeModal = () => {
         fetchContacts();
@@ -109,7 +106,7 @@ const LeftPanel = () => {
         activeModals
             .filter(modal => modal.type !== 'compose')
             .forEach(modal => closeModal(modal.id));
-
+        setBoxName(boxName);
         setActiveBoxId(boxId);
         setPagination(null);
         setActiveEmailMessageId(null);
@@ -131,7 +128,7 @@ const LeftPanel = () => {
 
         // If already on the same box, force refresh by navigating with a timestamp
         if (currentBoxName === boxName) {
-            if(boxName === 'calendar') {
+            if (boxName === 'calendar') {
                 setIsCalendarAllSearchActive(false);
             }
             else {
@@ -139,7 +136,11 @@ const LeftPanel = () => {
                 fetchEmails(1, boxName, false);
             }
         } else {
+            setActiveEmailMessageId(null);
+            setEmailDetailSelected(null);
+            setBoxName(boxName);
             navigate(`/mail/${boxName}`);
+            // fetchEmails(1, boxName, false);
         }
     };
 
@@ -193,8 +194,8 @@ const LeftPanel = () => {
 
     // Mobile
     const toggleMobileSidebar = () => {
-    setIsSidebarExpandedMobile(!isSidebarExpandedMobile); 
-}
+        setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+    }
 
     return (
         <>
@@ -220,11 +221,11 @@ const LeftPanel = () => {
                     {/* moblie */}
                     <button
                         className="btn hover-link nav-collepse-button-mobile"
-                        type="button"  onClick={toggleMobileSidebar}
+                        type="button" onClick={toggleMobileSidebar}
                     >
                         <InteractiveIcon
                             defaultIcon={isSidebarExpandedMobile ? navCollapseIconHover : menuIcon}
-                            
+
                             activeIcon=""
                             isActive={false}
                             alt=""
@@ -260,52 +261,52 @@ const LeftPanel = () => {
 
                 {/* START:: Compose box */}
                 <div className="compose-box" id="composeBoxSection">
-                    {!isCalendar ? 
-                    (<a
-                        onClick={openComposeModal}
-                        id="composeEmailBtn"
-                        className="compose-btn tooltips-ds"
-                        {...(
-                            isSidebarOpen
-                                ? {}
-                                : {
-                                    "data-tooltip-id": "my-tooltip",
-                                    "data-tooltip-content": "Compose",
-                                    "data-tooltip-place": "top"
-                                })
-                        }
-                    >
-                        <img
-                            src={composeIcon}
-                            alt="Compose"
-                            className="me-2"
-
-                        />
-                        <span className="compose-btn-collepse">Compose</span>
-                    </a>) : (
-                        <a
-                            onClick={openCalendarModal}
-                            id="createEventBtn"
-                            className="compose-btn event-btn"
+                    {!isCalendar ?
+                        (<a
+                            onClick={openComposeModal}
+                            id="composeEmailBtn"
+                            className="compose-btn tooltips-ds"
                             {...(
                                 isSidebarOpen
                                     ? {}
                                     : {
                                         "data-tooltip-id": "my-tooltip",
-                                        "data-tooltip-content": "Create Event",
+                                        "data-tooltip-content": "Compose",
                                         "data-tooltip-place": "top"
                                     })
                             }
                         >
                             <img
-                                src={eventIcon}
+                                src={composeIcon}
                                 alt="Compose"
                                 className="me-2"
 
                             />
-                            <span className="compose-btn-collepse">Create Event</span>
-                        </a>
-                    )}
+                            <span className="compose-btn-collepse">Compose</span>
+                        </a>) : (
+                            <a
+                                onClick={openCalendarModal}
+                                id="createEventBtn"
+                                className="compose-btn event-btn"
+                                {...(
+                                    isSidebarOpen
+                                        ? {}
+                                        : {
+                                            "data-tooltip-id": "my-tooltip",
+                                            "data-tooltip-content": "Create Event",
+                                            "data-tooltip-place": "top"
+                                        })
+                                }
+                            >
+                                <img
+                                    src={eventIcon}
+                                    alt="Compose"
+                                    className="me-2"
+
+                                />
+                                <span className="compose-btn-collepse">Create Event</span>
+                            </a>
+                        )}
                 </div>
                 {/* END:: Compose box */}
             </div>
