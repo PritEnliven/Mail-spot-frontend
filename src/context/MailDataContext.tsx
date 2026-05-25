@@ -142,8 +142,24 @@ export const useMailData = () => {
     return ctx;
 };
 
+const getInitialBoxName = (): string => {
+    const pathParts = window.location.pathname.split('/');
+    const mailIndex = pathParts.indexOf('mail');
+    if (mailIndex !== -1 && mailIndex + 1 < pathParts.length) {
+        const raw = pathParts.slice(mailIndex + 1).join('/');
+        const decoded = decodeURIComponent(raw).trim();
+        if (decoded) return decoded;
+    }
+    return 'INBOX';
+};
+
+const getNumericCount = (count: unknown): number | null => {
+    const parsedCount = Number(count);
+    return Number.isFinite(parsedCount) ? parsedCount : null;
+};
+
 export const MailDataProvider = ({ children }: { children: ReactNode }) => {
-    const [boxName, setBoxName] = useState('INBOX');
+    const [boxName, setBoxName] = useState(getInitialBoxName());
     const [boxTitle, setBoxTitle] = useState('');
     const [totalEmailBadge, setTotalEmailBadge] = useState(0);
     const [emails, setEmails] = useState<Email[]>([]);
@@ -258,9 +274,15 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
                         getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
                             if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
+                                const totalCount = getNumericCount(boxCountResponse.data.totalCount);
+
+                                if (totalCount !== null) {
+                                    setTotalEmailBadge(totalCount);
+                                }
+
                                 setPagination(prevPagination => prevPagination ? {
                                     ...prevPagination,
-                                    totalEmails: boxCountResponse.data.totalCount,
+                                    totalEmails: totalCount ?? prevPagination.totalEmails,
                                     startCount: 1,
                                     endCount: emailList.length
                                 } : prevPagination);
@@ -294,7 +316,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     setEmails(emailList);
                     setPagination(paginationData);
                     setMailListPage(page);
-                    setTotalEmailBadge(paginationData.totalEmails);
 
                     if (!fromCache) {
                         void enforceSizeLimit(userId, boxNameParam);
@@ -335,7 +356,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         setEmails(emailList);
                         setPagination(paginationData);
                         setMailListPage(page);
-                        setTotalEmailBadge(paginationData.totalEmails);
 
                         // If it's page 1, we should also update the counts from the API response if available
                         // or trigger getCounts for the sidebar
@@ -349,9 +369,15 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
                             getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
                                 if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
+                                    const totalCount = getNumericCount(boxCountResponse.data.totalCount);
+
+                                    if (totalCount !== null) {
+                                        setTotalEmailBadge(totalCount);
+                                    }
+
                                     setPagination(prev => prev ? {
                                         ...prev,
-                                        totalEmails: boxCountResponse.data.totalCount
+                                        totalEmails: totalCount ?? prev.totalEmails
                                     } : prev);
 
                                     setSidebarState(prev => {
@@ -497,7 +523,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             totalEmails: pagination.totalEmails - messageIds.length
         } : null;
         setPagination(newPagination);
-        setTotalEmailBadge(newPagination ? newPagination.totalEmails : 0);
+        setTotalEmailBadge(prevBadge => Math.max(0, prevBadge - messageIds.length));
 
         // Update sidebar state with new unread counts if we have unread emails being deleted
         if (boxName && (unreadDeletedCount > 0 || messageIds.length > 0)) {

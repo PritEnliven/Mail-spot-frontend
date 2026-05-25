@@ -327,7 +327,7 @@ const MailBoxPage = () => {
                                                         onMarkReadUnread={markAsReadUnreadEmailHandler}
                                                         onDelete={setupDeleteConfirmation} isActive={false} boxName={''} onToggleSelection={function (messageId: string): void {
                                                             throw new Error('Function not implemented.');
-                                                        } }                                                    />
+                                                        }} />
                                                 );
                                             })
                                         ) : (

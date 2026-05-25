@@ -28,7 +28,6 @@ function createModalCloseHandler({
     };
 }
 
-
 async function copyEmailToClipBoard(email: string) {
     try {
         await navigator.clipboard.writeText(email);
