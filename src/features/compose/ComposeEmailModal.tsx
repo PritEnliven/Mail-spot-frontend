@@ -70,7 +70,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const { updateBoxCount, sidebarState, boxName, setMailListPage, fetchEmails } = useMailData();
     const {
         setFormData,
-        setHandleSubmit,
+        registerSubmitHandler,
         setTriggerValidation,
         scheduleDateTime,
         setScheduleDateTime
@@ -81,6 +81,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const [isGenerateEmailCardOpen, setIsGenerateEmailCardOpen] = useState(false);
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const attachmentsRef = useRef<HTMLDivElement>(null);
+    const onSubmitRef = useRef<(data: ComposeFormValues, scheduleAt?: string) => Promise<void>>(async () => {});
 
     const {
         control,
@@ -116,13 +117,18 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     // Fetch and set default signature when component mounts
     useEffect(() => {
         const setDefaultSignature = async () => {
-            const response = await getSignatureForActions();
+            try {
+                const response = await getSignatureForActions();
+                if (response.statusCode !== 200) return;
 
-            if (response.statusCode === 200) {
-                if (!emailData?.body && response.data.body) {
-                    const signatureWithId = `<br><br><br><div id="email-signature" data-signature-id="default">${response.data.body}</div>`;
+                // `response.data` can be null even when statusCode is 200.
+                const signatureBody = response?.data?.body;
+                if (!emailData?.body && signatureBody) {
+                    const signatureWithId = `<br><br><br><div id="email-signature" data-signature-id="default">${signatureBody}</div>`;
                     setValue('body', signatureWithId);
                 }
+            } catch (e) {
+                console.error('Failed to fetch default signature:', e);
             }
         };
 
@@ -181,17 +187,14 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     useEffect(() => {
         setTriggerValidation(async () => {
             const isValid = await trigger();
-            if (isValid) {
-                const currentFormData = getValues();
-                setFormData(currentFormData);
+            if (!isValid) {
+                return null;
             }
-            return isValid;
+            const currentFormData = getValues();
+            setFormData(currentFormData);
+            return currentFormData;
         });
     }, [trigger, getValues, setFormData, setTriggerValidation]);
-
-    useEffect(() => {
-        setHandleSubmit(() => onSubmit);
-    }, [setHandleSubmit]);
 
     // Auto-scroll to attachments when they are added
     useEffect(() => {
@@ -252,7 +255,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         return formData;
     };
 
-    const onSubmit = async (data: ComposeFormValues) => {
+    const onSubmit = async (data: ComposeFormValues, scheduleAtOverride?: string) => {
+        const scheduleAt = scheduleAtOverride ?? scheduleDateTime;
 
         // Check if both subject and body are empty (trim whitespace and HTML tags for body)
         const isSubjectEmpty = !data.subject || data.subject.trim() === '';
@@ -269,7 +273,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
         const formData = prepareFormData(data, emailData?.isDraftMail || false);
         // Add scheduled date if available and use scheduleEmail service
-        if (scheduleDateTime) {
+        if (scheduleAt) {
             // Create FormData for schedule email with attachments
             const scheduleFormData = new FormData();
 
@@ -285,7 +289,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             }
 
             // Add schedule date
-            scheduleFormData.append('scheduleAt', scheduleDateTime);
+            scheduleFormData.append('scheduleAt', scheduleAt);
             scheduleFormData.append('isSchedule', 'true');
 
             // Add attachments as files
@@ -310,13 +314,14 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             }
         } else {
             try {
-                await new Promise<void>((resolve, reject) => {
-                    sendEmailWithUndo("Your email is being sent...", settings.undoSendPeriod * 1000 || 3000, () => {
-                        sendMailHandler(formData)
-                            .then(resolve)
-                            .catch(reject);
-                    });
-                });
+                const outcome = await sendEmailWithUndo(
+                    "Your email is being sent...",
+                    settings.undoSendPeriod * 1000 || 3000,
+                    () => sendMailHandler(formData)
+                );
+                if (outcome === 'cancelled') {
+                    showSuccess('Undo successful. Your email was not sent.');
+                }
             } catch (error) {
                 console.error('Failed to send email:', error);
             } finally {
@@ -354,6 +359,12 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         setScheduleDateTime(null);
         setIsComposeExpanded(false);
     }
+
+    onSubmitRef.current = onSubmit;
+
+    useEffect(() => {
+        registerSubmitHandler((data, scheduleAt) => onSubmitRef.current(data, scheduleAt));
+    }, [registerSubmitHandler]);
 
     const onCloseSaveAsDraft = async () => {
         try {
@@ -736,7 +747,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                 </button>
                                 <SubmitButton
                                     className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
-                                    onClick={handleSubmit(onSubmit, (errors: any) => {
+                                    onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
                                         console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                                     })}
                                     loading={isSubmitting}

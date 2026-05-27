@@ -189,6 +189,7 @@ const ToolbarBox = () => {
 
         // const response = await markedAsLabel(payload);
         const response = await moveToFolder(payload);
+        
         if (response.statusCode === 200) {
             showSuccess("Email moved successfully");
 
@@ -200,7 +201,9 @@ const ToolbarBox = () => {
             if (verifyBoxName(folderName, 'trash') || verifyBoxName(folderName, 'junk')) {
                 // For trash: increase total count by number of moved emails
                 updateBoxCount(folderName, 0, movedEmails.length);
-            } else {
+            } 
+
+            else {
                 // For other folders: update unread count based on read/unread status of moved emails
                 const unreadMovedCount = movedEmails.filter(email => !email.isSeen).length;
                 updateBoxCount(folderName, unreadMovedCount, movedEmails.length);

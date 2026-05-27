@@ -12,6 +12,7 @@ import SubmitButton from '@components/ui/form/SubmitButton';
 import Flatpickr from 'react-flatpickr';
 import { useMailUI } from '@context/MailUIContext';
 import { useComposeFormContext } from '@context/ComposeFormContext';
+import { showError } from '@components/ui/toast/toastNotification';
 import { useState, useEffect } from 'react';
 import { formatDate, formatTime, TimeFormat } from '@utils/dateUtil';
 import BaseModal from "@components/ui/BaseModal";
@@ -24,7 +25,7 @@ interface ScheduleProps {
 
 function Schedule({ modalId, zIndex }: ScheduleProps) {
     const { closeModal } = useMailUI();
-    const { validateForm, setScheduleDateTime } = useComposeFormContext();
+    const { validateForm, setScheduleDateTime, submitComposeForm } = useComposeFormContext();
 
     const [scheduleOptions, setScheduleOptions] = useState({
         tomorrowMorning: { date: '', time: '', dateTime: '' },
@@ -92,15 +93,21 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
 
     const onSubmit = async (data: ScheduleFormValues) => {
         const formattedDate = data.scheduleDateTime;
-        // First validate the compose email form
-        const isComposeFormValid = await validateForm();
+        const validatedComposeData = await validateForm();
 
-        if (isComposeFormValid) {
-            // If validation successful, set the schedule date/time
-            setScheduleDateTime(formattedDate);
+        if (!validatedComposeData) {
+            showError('Please complete the required fields in your email before scheduling.');
+            return;
+        }
+
+        setScheduleDateTime(formattedDate);
+
+        try {
+            await submitComposeForm(validatedComposeData, formattedDate);
             closeModal(modalId);
-        } else {
-            closeModal(modalId);
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            showError('Unable to schedule email. Please try again.');
         }
     };
     const startFromMonth = new Date().getMonth();
