@@ -59,13 +59,18 @@ const EmailDetail = ({ email }: Props) => {
     const [threadEmails, setThreadEmails] = useState<any[]>([]);
     const { isDesktop } = useScreen();
 
-    const fromStr = mailboxParticipantToString(email.from?.[0]);
-    const parsedFrom = parseEmailAddress(fromStr);
-    const fromEmail = parsedFrom.email || fromStr;
-    const fromName =
-        parsedFrom.name ||
-        (fromEmail.includes("@") ? fromEmail.split("@")[0] : fromEmail);
-    const initial = parsedFrom.initial;
+    // const fromStr = mailboxParticipantToString(email.from?.[0]);
+    // const parsedFrom = parseEmailAddress(fromStr);
+    // const fromEmail = parsedFrom.email || fromStr;
+    // const fromName =
+    //     parsedFrom.name ||
+    //     (fromEmail.includes("@") ? fromEmail.split("@")[0] : fromEmail);
+    // const initial = parsedFrom.initial;
+
+    const fromAddr = email.from?.[0];
+    const fromEmail = fromAddr?.email || "";
+    const fromName = fromAddr?.name || fromEmail.split("@")[0] || fromEmail;
+    const initial = fromName.charAt(0).toUpperCase();
 
     const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
     const highlightTerm = email.isSearchEmail || allSearchResult ? searchTerm : "";
@@ -81,13 +86,6 @@ const EmailDetail = ({ email }: Props) => {
             console.error('Error loading thread emails:', error);
         }
     }, [email.messageId, email.threadId]);
-
-    // useEffect(() => {
-    //     // Don't load thread emails if current box is schedule
-    //     if (emailDetailSelected?.isSearchEmail || (!verifyBoxName(boxName, 'schedule') && !verifyBoxName(boxName, 'sent') && !verifyBoxName(boxName, 'trash'))) {
-    //         loadThreadEmails();
-    //     }
-    // }, [loadThreadEmails, boxName, emailDetailSelected?.isSearchEmail, emailDetailSelected?.messageId, emailDetailSelected?.id]);
 
     useEffect(() => {
         const isExcludedBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'sent') || verifyBoxName(boxName, 'trash');
@@ -127,7 +125,6 @@ const EmailDetail = ({ email }: Props) => {
             showError("Error while cancel schedule email")
         }
     }
-
     const handleEmailReplyForward = () => {
         if (!boxName.toLocaleLowerCase().includes('schedule')) {
             setEmails(prevEmails =>

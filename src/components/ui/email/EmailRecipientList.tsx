@@ -2,8 +2,13 @@ import CopyEmail from "@components/ui/email/CopyEmail";
 import { HighlightText } from "@components/ui/HighlightText";
 import { mailboxParticipantToString, parseEmailAddress } from "@utils/emailUtil";
 
+interface Recipient {
+    name?: string;
+    email: string;
+}
+
 interface EmailRecipientsRowProps {
-    emails: unknown[];
+    emails: Recipient[];
     searchTerm?: string;
 }
 
@@ -12,10 +17,15 @@ function EmailRecipientsList({ emails, searchTerm = "" }: EmailRecipientsRowProp
 
     return (
         <>
-            {emails.map((entry: unknown, index: number) => {
-                const str = mailboxParticipantToString(entry);
-                const { name, email: emailAddr, initial } = parseEmailAddress(str);
-                const key = emailAddr || str || `recipient-${index}`;
+            {emails.map((recipient: Recipient, index: number) => {
+                // const str = mailboxParticipantToString(entry);
+                // const { name, email: emailAddr, initial } = parseEmailAddress(str);
+                // const key = emailAddr || str || `recipient-${index}`;
+
+                const emailAddr = recipient.email || "";
+                const name = recipient.name || emailAddr.split("@")[0] || emailAddr;
+                const initial = name.charAt(0).toUpperCase();
+                const key = emailAddr || `recipient-${index}`;
                 return (
                     <div key={key} className="from-cc-details position-relative">
                         <span className="email-address">
