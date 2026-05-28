@@ -1,5 +1,4 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import { showError } from "@components/ui/toast/toastNotification";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
 import { useCalendar } from "@context/CalendarContext";
 import { useContacts } from "@context/ContactsContext";
@@ -20,13 +19,8 @@ import { Controller } from 'react-hook-form';
 import { useCalendarFilterForm } from "../../../../hooks/useCalendarFilterForm";
 import Select2Wrapper from "../../form/Select2Wrapper";
 import CalendarEventRow from "../CalendarEventRow";
-import { useDebounce } from "@hooks/useDebounce";
-import type { Response } from "@models/Response";
-import { useRef } from "react";
-import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { showError } from "@components/ui/toast/toastNotification";
-import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
-import { useScreen } from "@context/ScreenContext";
+import type { CalendarFilterFormValues } from "./calendarFilterForm.schema";
 
 function CalendarHeader() {
     const { goPrev, goNext, goToday, calendarTitle, mainCalendarRef, searchText, setSearchText, searchResults, setSearchResults, noResult, setNoResult, isSearchResultDropdownOpen, setIsSearchResultDropdownOpen, resetSearchState } = useCalendar();
@@ -209,7 +203,7 @@ function CalendarHeader() {
     const toggleSidebarCalendar = () => {
         if (!isDesktop) {
             setIsSidebarCalendarOpen(!isSidebarCalendarOpen);
-        }else{
+        } else {
             setIsSidebarCalendarOpen(true);
         }
     };

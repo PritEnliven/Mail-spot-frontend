@@ -40,7 +40,7 @@ export interface RelativeDate {
 
 export interface CustomBox {
     key: string;
-    value: string;  
+    value: string;
 }
 
 interface Props {
@@ -82,12 +82,26 @@ const EmailDetail = ({ email }: Props) => {
         }
     }, [email.messageId, email.threadId]);
 
+    // useEffect(() => {
+    //     // Don't load thread emails if current box is schedule
+    //     if (emailDetailSelected?.isSearchEmail || (!verifyBoxName(boxName, 'schedule') && !verifyBoxName(boxName, 'sent') && !verifyBoxName(boxName, 'trash'))) {
+    //         loadThreadEmails();
+    //     }
+    // }, [loadThreadEmails, boxName, emailDetailSelected?.isSearchEmail, emailDetailSelected?.messageId, emailDetailSelected?.id]);
+
     useEffect(() => {
-        // Don't load thread emails if current box is schedule
-        if (emailDetailSelected?.isSearchEmail || (!verifyBoxName(boxName, 'schedule') && !verifyBoxName(boxName, 'sent') && !verifyBoxName(boxName, 'trash'))) {
+        const isExcludedBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'sent') || verifyBoxName(boxName, 'trash');
+
+        const hasThread = (emailDetailSelected?.threadCount ?? 0) > 1;
+
+        const shouldLoad = !isExcludedBox
+            && hasThread
+            && !emailDetailSelected?.isSearchEmail;
+
+        if (shouldLoad) {
             loadThreadEmails();
         }
-    }, [loadThreadEmails, boxName, emailDetailSelected?.isSearchEmail, emailDetailSelected?.messageId, emailDetailSelected?.id]);
+    }, [loadThreadEmails, boxName, emailDetailSelected?.isSearchEmail, emailDetailSelected?.messageId, emailDetailSelected?.threadCount]);
 
     const handleCancelScheduleEmail = async (id: string) => {
         try {
@@ -331,22 +345,22 @@ const EmailDetail = ({ email }: Props) => {
             )}
 
             {/* Body */}
-{email.body && (
-            <div className="mail-content-details-box" id="emailBodySection">
-                <div className="horizontal-scroll-container" >
-                    {email.body && (
-                        <div className="horizontal-scroll-content" ref={contentRef}>
-                            <div>
-                                <EmailBody html={email.body} searchTerm={highlightTerm} />
+            {email.body && (
+                <div className="mail-content-details-box" id="emailBodySection">
+                    <div className="horizontal-scroll-container" >
+                        {email.body && (
+                            <div className="horizontal-scroll-content" ref={contentRef}>
+                                <div>
+                                    <EmailBody html={email.body} searchTerm={highlightTerm} />
+                                </div>
                             </div>
+                        )}
+                        <div className="custom-horizontal-scrollbar-sticky-top" ref={scrollbarRef}>
+                            <div className="custom-scrollbar-thumb-horizontal" ref={thumbRef}></div>
                         </div>
-                    )}
-                    <div className="custom-horizontal-scrollbar-sticky-top" ref={scrollbarRef}>
-                        <div className="custom-scrollbar-thumb-horizontal" ref={thumbRef}></div>
                     </div>
                 </div>
-            </div>
- )}
+            )}
 
             {/* Attachments */}
             <EmailDetailAttachmentPreview
