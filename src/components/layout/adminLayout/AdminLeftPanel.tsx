@@ -1,12 +1,12 @@
-import mailBoxLogoImage from '@images/mailspot-login-logo.svg';
-import mailBoxLogo40 from '@images/mail-spot-40-logo.svg';
-import navCollapseIcon from '@images/nav-collepse-icon.svg';
-import navExpandIconHover from '@images/nav-collepse-icon-hover.svg';
-import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
-import { useEffect, useState } from 'react';
+import AdminSidebarItems from '@components/ui/admin/AdminSidebarItem';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import { useAdmin } from '@context/AdminDataContext';
-import AdminSidebarItems from '@components/ui/admin/AdminSidebarItem';
+import mailBoxLogo40 from '@images/mail-spot-40-logo.svg';
+import mailBoxLogoImage from '@images/mailspot-login-logo.svg';
+import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
+import navExpandIconHover from '@images/nav-collepse-icon-hover.svg';
+import navCollapseIcon from '@images/nav-collepse-icon.svg';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const AdminLeftPanel = () => {

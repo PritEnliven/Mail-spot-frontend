@@ -1,8 +1,8 @@
-import { createContext, useContext, type ReactNode, useState, useEffect } from "react";
-import userManagementIcon from "@images/add-pesion-icon.svg";
 import userManagementIconHover from "@images/add-pesion-icon-active.svg";
-import settingsIcon from "@images/setting-icon.svg";
+import userManagementIcon from "@images/add-pesion-icon.svg";
 import settingsIconHover from "@images/setting-icon-active.svg";
+import settingsIcon from "@images/setting-icon.svg";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 interface AdminSettingsType {
     userId: string | null;

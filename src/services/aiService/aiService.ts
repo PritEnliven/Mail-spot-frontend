@@ -1,5 +1,5 @@
 
-import { getData, postData } from '../apiService';
+import { postData } from '../apiService';
 
 interface GenerateEmailPayload {
     description: string,
@@ -31,4 +31,4 @@ async function getSmartReplies(payload: GetSmartRepliesPayload) {
 export {
     generateEmail,
     getSmartReplies
-}
+};

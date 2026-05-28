@@ -47,7 +47,6 @@ function AdminChangePassword({ modalId, zIndex, userId }: ChangePasswordProps) {
     };
 
     const onSubmit = async (data: AdminChangePasswordFormValues) => {
-        console.log(data);
         const payload = {
             userId,
             password: data.password,

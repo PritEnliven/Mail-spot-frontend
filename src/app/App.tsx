@@ -9,7 +9,7 @@ import { ScreenProvider } from '@context/ScreenContext';
 function App() {
   const location = useLocation();
   useParentHoverIconSwap();
-  useNotifications(); // Initialize notification permissions
+  useNotifications();
 
   useEffect(() => {
     // Check if current route is calendar

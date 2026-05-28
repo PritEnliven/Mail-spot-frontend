@@ -1,7 +1,7 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
 import { AdminUIProvider } from '@context/AdminUIContext';
 import { ProfileProvider } from '@context/userContext';
+import { Suspense, lazy } from 'react';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
 // Lazy loaded components
 const AdminSettings = lazy(() => import('@features/AdminSettings/AdminSettings'));

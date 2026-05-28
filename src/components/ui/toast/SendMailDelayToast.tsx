@@ -48,65 +48,96 @@ const SendMailDelayToast = ({ timeout, onUndo }: SendMailDelayToastProps) => {
     );
 };
 
-// Using the provided delay parameter for the timeout
+export type SendEmailWithUndoResult = 'sent' | 'cancelled';
 
-const sendEmailWithUndo = (message: string, delay: number, onSend: () => void) => {
-    let toastId: string | number | null = null;
-    let timeoutId: any;
-    let isSent = false; // Flag to track if email has been sent
-    message = "";
-    const sendEmail = () => {
-        if (!isSent) {
-            isSent = true;
-            onSend();
-        }
-    };
+/**
+ * Shows an undo toast; resolves when the email is sent or the user cancels.
+ * The returned Promise must settle so callers can clear loading state.
+ */
+const sendEmailWithUndo = (
+    _message: string,
+    delay: number,
+    onSend: () => Promise<void>
+): Promise<SendEmailWithUndoResult> => {
+    return new Promise<SendEmailWithUndoResult>((resolve, reject) => {
+        let toastId: string | number | null = null;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        let isCancelled = false;
+        let settled = false;
+        let sendStarted = false;
 
-    const onUndo = () => {
-        if (toastId) {
-            toast.dismiss(toastId);
-        }
-    };
+        const settle = (result: SendEmailWithUndoResult) => {
+            if (settled) return;
+            settled = true;
+            resolve(result);
+        };
 
-    toastId = toast(
-        <div>
-            <SendMailDelayToast
-                timeout={delay}
-                onUndo={onUndo}
-            />
-        </div>,
-        {
-            className: "undo-email-toast",
-            progressClassName: "undo-email-progress",
-            position: "bottom-left",
-            autoClose: delay,
-            hideProgressBar: false,
-            closeOnClick: false,
-            rtl: false,
-            pauseOnFocusLoss: true,
-            draggable: false,
-            theme: "dark",
-            closeButton: true,
-            onClose: () => {
+        const runSend = async () => {
+            if (settled || isCancelled || sendStarted) return;
+            sendStarted = true;
+            try {
+                await onSend();
+                settle('sent');
+            } catch (e) {
+                settled = true;
+                reject(e);
+            }
+        };
+
+        const onUndo = () => {
+            if (settled) return;
+            isCancelled = true;
+            if (timeoutId) {
                 clearTimeout(timeoutId);
-                sendEmail();
-            },
-        }
-    );
+                timeoutId = undefined;
+            }
+            settle('cancelled');
+            if (toastId) {
+                toast.dismiss(toastId);
+            }
+        };
 
-    timeoutId = setTimeout(() => {
-        if (toastId && toast.isActive(toastId)) {
-            toast.dismiss(toastId);
-            sendEmail();
-        }
-    }, delay);
+        toastId = toast(
+            <div>
+                <SendMailDelayToast
+                    timeout={delay}
+                    onUndo={onUndo}
+                />
+            </div>,
+            {
+                className: "undo-email-toast",
+                progressClassName: "undo-email-progress",
+                position: "bottom-left",
+                autoClose: delay,
+                hideProgressBar: false,
+                closeOnClick: false,
+                rtl: false,
+                pauseOnFocusLoss: true,
+                draggable: false,
+                theme: "dark",
+                closeButton: true,
+                onClose: () => {
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                        timeoutId = undefined;
+                    }
+                    if (isCancelled) {
+                        return;
+                    }
+                    void runSend();
+                },
+            }
+        );
 
-    return () => {
-        if (toastId) {
-            toast.dismiss(toastId);
-        }
-        clearTimeout(timeoutId);
-    };
+        timeoutId = setTimeout(() => {
+            if (settled || isCancelled) return;
+            if (toastId && toast.isActive(toastId)) {
+                toast.dismiss(toastId);
+            } else {
+                void runSend();
+            }
+        }, delay);
+    });
 };
 
 export { SendMailDelayToast, sendEmailWithUndo };

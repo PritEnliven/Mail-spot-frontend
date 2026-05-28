@@ -18,6 +18,13 @@ interface MarkedAsLabelPayload {
     label: string;
 }
 
+
+interface MoveToFolderPayload {
+    messageIds: string[];
+    current_active_box: string;
+    folder: string;
+}
+
 interface RefreshMailBoxPayload {
     current_active_box: string;
     lastEmailMessageId: string;
@@ -59,6 +66,15 @@ async function markedAsLabel(payload: MarkedAsLabelPayload) {
     }
 }
 
+async function moveToFolder(payload: MoveToFolderPayload) {
+    try {
+        const response = await postData('email/moveToFolder', payload);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 async function removeLabel(payload: MarkedAsLabelPayload) {
     try {
         const response = await postData('email/removeLabel', payload);
@@ -73,5 +89,6 @@ export {
     readUnreadEmails,
     deleteEmails,
     markedAsLabel,
+    moveToFolder,
     removeLabel
 };

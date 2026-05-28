@@ -12,6 +12,7 @@ import SubmitButton from '@components/ui/form/SubmitButton';
 import Flatpickr from 'react-flatpickr';
 import { useMailUI } from '@context/MailUIContext';
 import { useComposeFormContext } from '@context/ComposeFormContext';
+import { showError } from '@components/ui/toast/toastNotification';
 import { useState, useEffect } from 'react';
 import { formatDate, formatTime, TimeFormat } from '@utils/dateUtil';
 import BaseModal from "@components/ui/BaseModal";
@@ -24,7 +25,7 @@ interface ScheduleProps {
 
 function Schedule({ modalId, zIndex }: ScheduleProps) {
     const { closeModal } = useMailUI();
-    const { validateForm, setScheduleDateTime } = useComposeFormContext();
+    const { validateForm, setScheduleDateTime, submitComposeForm } = useComposeFormContext();
 
     const [scheduleOptions, setScheduleOptions] = useState({
         tomorrowMorning: { date: '', time: '', dateTime: '' },
@@ -80,7 +81,6 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
     });
 
     const handleScheduleClick = (dateTime: string, option: string) => {
-        console.log('Schedule clicked:', dateTime, option);
         setSelectedOption(option);
         // Update the form value with the selected date
         setValue('scheduleDateTime', dateTime, { shouldValidate: true });
@@ -92,18 +92,22 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
     }
 
     const onSubmit = async (data: ScheduleFormValues) => {
-        console.log('Schedule data:', data);
-
         const formattedDate = data.scheduleDateTime;
-        // First validate the compose email form
-        const isComposeFormValid = await validateForm();
+        const validatedComposeData = await validateForm();
 
-        if (isComposeFormValid) {
-            // If validation successful, set the schedule date/time
-            setScheduleDateTime(formattedDate);
+        if (!validatedComposeData) {
+            showError('Please complete the required fields in your email before scheduling.');
+            return;
+        }
+
+        setScheduleDateTime(formattedDate);
+
+        try {
+            await submitComposeForm(validatedComposeData, formattedDate);
             closeModal(modalId);
-        } else {
-            closeModal(modalId);
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            showError('Unable to schedule email. Please try again.');
         }
     };
     const startFromMonth = new Date().getMonth();
@@ -200,14 +204,17 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
                                                 return (
                                                     <Flatpickr
                                                         value={field.value}
-                                                        // onChange={(dates: any) => field.onChange(dates[0])}
                                                         onChange={(dates: Date[]) => {
                                                             const date = dates?.[0];
                                                             field.onChange(date ? date.toISOString() : '');
                                                         }}
                                                         options={{
-                                                            dateFormat: 'd-m-Y',
+                                                            dateFormat: 'd-m-Y H:i',
+                                                            enableTime: true,
+                                                            time_24hr: true,
                                                             allowInput: false,
+                                                            minDate: 'today',
+                                                            minTime: new Date().toTimeString().slice(0, 5),
                                                             onReady: (_, __, instance) => mountMonthDropdown(instance),
                                                         }}
                                                         className="form-control DateRangePickerStaticTop"

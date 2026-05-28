@@ -1,7 +1,7 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { calendarEventModalSchema } from '@components/ui/Modals/CalendarEventModal/calendarEventModal.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 export type CalendarEventFormValues = z.infer<typeof calendarEventModalSchema>;
 

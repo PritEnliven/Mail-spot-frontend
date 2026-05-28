@@ -1,4 +1,3 @@
-
 import { putData } from '../apiService';
 
 interface updateSocketPayload {

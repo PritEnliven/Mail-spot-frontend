@@ -1,4 +1,3 @@
-// filterEmailForm.schema.ts
 import { z } from 'zod';
 
 export const filterEmailForm = z.object({

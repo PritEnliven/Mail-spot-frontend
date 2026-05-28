@@ -17,9 +17,10 @@ interface SidebarProps {
     activeBoxId: string;
     onChangeBox: (boxName: string, boxId: string, label: string) => void;
     isLoading?: boolean;
+    isCountLoading?: boolean;
 }
 
-const Sidebar = ({ items, boxCounts, activeBoxId, onChangeBox, isLoading = false }: SidebarProps) => {
+const Sidebar = ({ items, boxCounts, activeBoxId, onChangeBox, isLoading = false, isCountLoading = false }: SidebarProps) => {
     return (
         <>
             {isLoading ? (
@@ -28,7 +29,6 @@ const Sidebar = ({ items, boxCounts, activeBoxId, onChangeBox, isLoading = false
                 items.map(item => {
                     const isActive = activeBoxId === item.id;
                     const specificBoxCount = boxCounts[item.boxName];
-                    const isDraft = item.boxName.toLocaleLowerCase().includes('draft');
                     return (
                         <li
                             key={item.id}
@@ -52,11 +52,14 @@ const Sidebar = ({ items, boxCounts, activeBoxId, onChangeBox, isLoading = false
                                 <span className="active-line-t"></span>
                                 <div className="nav-link-before-collapse">
                                     <span id="boxName">{item.label}</span>
-                                    {specificBoxCount && specificBoxCount.unreadCount > 0 && (
-                                        <span className="badge" data-boxname={item.boxName} id={`${item.boxName}-unreadCount`}>
-                                            {isDraft ? specificBoxCount.totalCount : specificBoxCount.unreadCount}
-                                        </span>
-                                    )}
+                                    {!isCountLoading && (() => {
+                                        const displayCount = specificBoxCount?.isTotal ? specificBoxCount.totalCount : specificBoxCount?.unreadCount;
+                                        return displayCount > 0 ? (
+                                            <span className="badge" data-boxname={item.boxName} id={`${item.boxName}-unreadCount`}>
+                                                {displayCount}
+                                            </span>
+                                        ) : null;
+                                    })()}
                                 </div>
                             </a>
                         </li>

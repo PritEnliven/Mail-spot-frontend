@@ -1,7 +1,7 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { RegisterPageSchema } from '@features/register/RegisterPage.schema';
 import type { RegisterPageFormValues } from '@features/register/RegisterPage.schema';
+import { RegisterPageSchema } from '@features/register/RegisterPage.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 
 export function useRegisterForm() {
   return useForm<RegisterPageFormValues>({

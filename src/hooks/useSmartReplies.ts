@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
 import { getSmartReplies } from '@services/aiService/aiService';
+import { useCallback, useEffect, useState } from 'react';
 
 interface UseSmartRepliesProps {
     emailContent?: string;

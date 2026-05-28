@@ -6,7 +6,6 @@ import { useMailUI } from "@context/MailUIContext";
 import { SettingsProvider } from "@context/SettingsContext";
 import { useMailSocket } from "@hooks/useSocket";
 import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
-
 // Create a new component that will be wrapped by MailProviders
 const AppContent = () => {
     useMailSocket();

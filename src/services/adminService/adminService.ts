@@ -95,10 +95,5 @@ async function adminSaveSettings(payload: adminSaveSettingsPayload) {
 
 
 export {
-    adminLogin,
-    adminGetUserList,
-    resetPasswordByAdmin,
-    loginAdminAsUser,
-    getAdminSettings,
-    adminSaveSettings
-}
+    adminGetUserList, adminLogin, adminSaveSettings, getAdminSettings, loginAdminAsUser, resetPasswordByAdmin
+};

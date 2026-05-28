@@ -1,6 +1,5 @@
-import moment from 'moment';
 import type { Moment } from 'moment';
-
+import moment from 'moment';
 
 export const TimeFormat = {
     // canonical | storage

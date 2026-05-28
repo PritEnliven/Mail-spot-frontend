@@ -1,26 +1,22 @@
-import mailSpotLogo from "@images/mailspot-login-logo.svg";
-import mailIcon from "@images/mail-icon-16.svg";
-import lockIcon from "@images/password-icon-16.svg";
-import passwordShowIcon from "@images/password-show-icon-16.svg";
-import passwordHideIcon from "@images/password-hide-icon-16.svg";
-import successfullyIcon from "@images/successfully-icon-red.svg";
-import enlivenLogo from "@images/enliven-logo.svg";
-import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { loginSchema, type LoginFormValues } from "./login.schema";
-import { loginUser } from "@services/login/loginService";
-import { useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
 import "@assets/styles/header-main-style.css";
 import "@assets/styles/sign-in-style.css";
 import SubmitButton from "@components/ui/form/SubmitButton";
 import { showError } from "@components/ui/toast/toastNotification";
+import { zodResolver } from "@hookform/resolvers/zod";
+import enlivenLogo from "@images/enliven-logo.svg";
+import mailIcon from "@images/mail-icon-16.svg";
+import mailSpotLogo from "@images/mailspot-login-logo.svg";
+import passwordHideIcon from "@images/password-hide-icon-16.svg";
+import lockIcon from "@images/password-icon-16.svg";
+import passwordShowIcon from "@images/password-show-icon-16.svg";
+import successfullyIcon from "@images/successfully-icon-red.svg";
+import { loginUser } from "@services/login/loginService";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { loginSchema, type LoginFormValues } from "./login.schema";
 
 const LoginPage = () => {
-    // useEffect(() => {
-    //     import("@assets/styles/sign-in-style.css");
-    // }, []);
-
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(true);
 
@@ -37,11 +33,9 @@ const LoginPage = () => {
     };
 
     const onSubmit = async (data: LoginFormValues) => {
-        console.log('SUBMITTED DATA:', data);
         try {
             const response = await loginUser(data);
             if (response.statusCode === 200) {
-                console.log('LOGIN RESPONSE:', response);
                 localStorage.setItem("email", response.data.email);
                 localStorage.setItem("token", response.data.token);
                 localStorage.setItem("username", response.data.username);
@@ -51,10 +45,15 @@ const LoginPage = () => {
                 window.location.reload();
             }
             else {
-                showError(response.data.data.error  || "Something went wrong!")
+                showError(response.data?.data?.error || response.message || "Something went wrong!")
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('LOGIN ERROR:', error);
+            if (error?.isRateLimit) {
+                showError(error.message || "Too many requests. Please try again later.");
+            } else {
+                showError(error.message || "Invalid credentials or something went wrong!");
+            }
         }
 
     };

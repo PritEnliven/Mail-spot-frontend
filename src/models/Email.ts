@@ -1,15 +1,16 @@
 export interface Email {
-    id?: string;
+    id: string;
     _id?: string;
     uid: number;
     messageId: string;
     threadId: string;
-    from: string[];
-    to: string[];
-    cc: string[];
-    bcc: string[];
+    from: EmailAddress[];
+    to: EmailAddress[];
+    cc: EmailAddress[];
+    bcc: EmailAddress[];
     subject: string;
     flags: string[];
+    isSeen: boolean;
     body: string;
     bodyText: string;
     threadCount: number;
@@ -24,4 +25,9 @@ export interface Email {
     relativeDate: any;
     isSchedule?: boolean;
     isSearchEmail?: boolean;
+}
+
+export interface EmailAddress {
+    name: string;
+    email: string;
 }

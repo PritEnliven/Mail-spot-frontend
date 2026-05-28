@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
+import { useMailUI } from '../../context/index';
 const ComposeEmailModal = lazy(() => import('@features/compose/ComposeEmailModal'));
 const ConfirmDelete = lazy(() => import('./Modals/ConfirmDelete'));
-import { useMailUI } from '../../context/index';
 const Schedule = lazy(() => import('@components/ui/Modals/schedule/Schedule'));
 const CalendarEventModal = lazy(() => import('@components/ui/Modals/CalendarEventModal/CalendarEventModal'));
 const EventInfoModal = lazy(() => import('@components/ui/Modals/EventInfoModal'));

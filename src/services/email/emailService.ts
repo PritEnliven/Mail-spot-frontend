@@ -62,6 +62,19 @@ async function downloadAttachmentFunc(payLoad: downloadAttachmentPayload) {
     }
 }
 
+async function getCounts(boxName: string, isSidebarCount = false, isReadTotal: boolean | null = null) {
+    try {
+        const queryParams = new URLSearchParams({ 
+            isSidebarCount: String(isSidebarCount),
+            isReadTotal: isReadTotal === null ? 'null' : String(isReadTotal)
+        }).toString();
+        const response = await getData(`email/counts/${encodeURIComponent(boxName)}?${queryParams}`);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 async function getEmailsService(payload: GetEmailsPayload) {
     try {
         const response = await postData('email/get-emails', payload);
@@ -107,5 +120,6 @@ export {
     getSingleEmailService,
     downloadAttachmentFunc,
     searchAndFilterEmailService,
-    filterEmailAndCreateRuleService
+    filterEmailAndCreateRuleService,
+    getCounts
 }

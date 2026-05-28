@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { getAllContacts } from '@services/contact/contactService';
+import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 
 interface ContactsType {
     contacts: any[];

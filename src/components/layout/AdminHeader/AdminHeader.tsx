@@ -1,7 +1,6 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import enlivenLogo from "@images/enliven-logo.svg";
-import logoutIcon from "@images/logout-icon.svg";
-import logoutIconHover from "@images/logout-icon.svg";
+import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
 import { useNavigate } from "react-router-dom";
 
 interface adminHeaderProps {

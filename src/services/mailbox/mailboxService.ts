@@ -10,5 +10,5 @@ async function getBoxes() {
 }
 
 export {
-    getBoxes,
+    getBoxes
 };

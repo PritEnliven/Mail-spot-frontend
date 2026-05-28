@@ -1,5 +1,5 @@
-import { postData } from '../apiService';
 import type { Response } from '@models/Response';
+import { postData } from '../apiService';
 
 interface EmailPayload {
     subject: string;
@@ -38,16 +38,14 @@ async function saveDraft(payload: EmailPayload): Promise<Response> {
     try {
         const response = await postData('email/save-as-draft', payload);
         return response;
-    } 
-    catch (error: any) {
+    } catch (error: any) {
         return error;
     }
 }
 
 export {
-    sendEmail,
-    sendReply,
-    saveDraft
+    saveDraft, sendEmail,
+    sendReply
 };
 
-export type { EmailPayload, Response };
+    export type { EmailPayload, Response };

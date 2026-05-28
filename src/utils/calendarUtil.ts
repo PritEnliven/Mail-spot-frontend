@@ -1,8 +1,8 @@
-import { formatDate, formatTime12HrFrom24HrString, TimeFormat } from "./dateUtil";
-import moment from 'moment';
-import type { EventDetail } from "@models/CalendarModels";
-import { parseEmailAddress } from './emailUtil';
 import type { Guest } from '@components/ui/calendar/GuestTag';
+import type { EventDetail } from "@models/CalendarModels";
+import moment from 'moment';
+import { formatDate, formatTime12HrFrom24HrString, TimeFormat } from "./dateUtil";
+import { parseEmailAddress } from './emailUtil';
 
 interface RecurrenceCustomData {
     type: string;
@@ -314,4 +314,4 @@ const generateTimeOptions = ({
 };
 
 
-export { focusEvent, focusDate, removeFocusEvent, normalizeEventForModal, buildRecurrencePayload, formatCalendarEvents, normalizeGuests, filterGuestByEmail, generateTimeOptions };
+export { buildRecurrencePayload, filterGuestByEmail, focusDate, focusEvent, formatCalendarEvents, generateTimeOptions, normalizeEventForModal, normalizeGuests, removeFocusEvent };

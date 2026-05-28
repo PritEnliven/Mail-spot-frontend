@@ -1,27 +1,26 @@
-import { useCalendar } from "@context/CalendarContext";
-import { useCalendarFilterForm } from "../../../../hooks/useCalendarFilterForm";
-import { Controller } from 'react-hook-form';
-import Flatpickr from 'react-flatpickr';
-import searchIcon from "@images/search-icon.svg";
-import btnCloseIcon from "@images/btn-close-icon.svg";
-import btnCloseIconHover from "@images/btn-close-icon-hover.svg";
-import functionIcon from "@images/function-icon.svg";
-import functionIconHover from "@images/function-icon-hover.svg";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import dateIcon from "@images/date-icon-16.svg";
-import Select2Wrapper from "../../form/Select2Wrapper";
-import { filterEvents, getAllSearchEventList, searchEvent } from "@services/calendar/calendarService";
-import type { CalendarFilterFormValues } from "./calendarFilterForm.schema";
-import { useEffect, useState } from "react";
-import { useContacts } from "@context/ContactsContext";
-import CalendarEventRow from "../CalendarEventRow";
-import { useDebounce } from "@hooks/useDebounce";
-import type { Response } from "@models/Response";
-import { useRef } from "react";
-import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { showError } from "@components/ui/toast/toastNotification";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
+import { useCalendar } from "@context/CalendarContext";
+import { useContacts } from "@context/ContactsContext";
 import { useScreen } from "@context/ScreenContext";
+import { useDebounce } from "@hooks/useDebounce";
+import btnCloseIconHover from "@images/btn-close-icon-hover.svg";
+import btnCloseIcon from "@images/btn-close-icon.svg";
+import dateIcon from "@images/date-icon-16.svg";
+import functionIconHover from "@images/function-icon-hover.svg";
+import functionIcon from "@images/function-icon.svg";
+import searchIcon from "@images/search-icon.svg";
+import type { Response } from "@models/Response";
+import { filterEvents, getAllSearchEventList, searchEvent } from "@services/calendar/calendarService";
+import { formatDate, TimeFormat } from "@utils/dateUtil";
+import { useEffect, useRef, useState } from "react";
+import Flatpickr from 'react-flatpickr';
+import { Controller } from 'react-hook-form';
+import { useCalendarFilterForm } from "../../../../hooks/useCalendarFilterForm";
+import Select2Wrapper from "../../form/Select2Wrapper";
+import CalendarEventRow from "../CalendarEventRow";
+import { showError } from "@components/ui/toast/toastNotification";
+import type { CalendarFilterFormValues } from "./calendarFilterForm.schema";
 
 function CalendarHeader() {
     const { goPrev, goNext, goToday, calendarTitle, mainCalendarRef, searchText, setSearchText, searchResults, setSearchResults, noResult, setNoResult, isSearchResultDropdownOpen, setIsSearchResultDropdownOpen, resetSearchState } = useCalendar();
@@ -204,7 +203,7 @@ function CalendarHeader() {
     const toggleSidebarCalendar = () => {
         if (!isDesktop) {
             setIsSidebarCalendarOpen(!isSidebarCalendarOpen);
-        }else{
+        } else {
             setIsSidebarCalendarOpen(true);
         }
     };

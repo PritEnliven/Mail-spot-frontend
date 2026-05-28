@@ -1,36 +1,34 @@
-import { Controller } from "react-hook-form"
-import smartMessageIcon from '@images/smart-message-icon.svg';
-import InteractiveIcon from '@components/ui/InteractiveIcon';
-import trashIcon from '@images/trash-icon.svg';
-import trashIconHover from '@images/trash-icon-hover.svg';
-import attachmentStrokeRoundedIcon from '@images/attachment-stroke-rounded-icon.svg';
-import attachmentStrokeRoundedIconHover from '@images/attachment-stroke-rounded-icon-hover.svg';
-import generateAiIcon from '@images/generate-ai-icon.svg';
-import scheduledIcon from '@images/scheduled-icon.svg';
-import Select2Wrapper from "@components/ui/form/Select2Wrapper";
-import { useMailUI, useContacts } from '../../context/index';
-import { useComposeFormContext } from '@context/ComposeFormContext';
-import { useComposeForm } from "@hooks/useComposeForm";
-import { useCcBccToggle } from "@hooks/useCcBccToggle";
-import { Collapse } from "react-bootstrap";
-import CkEditorRichText from "@components/ui/CkEditor/CkEditorRichText";
-import { useAttachmentManager } from "@hooks/useAttachmentManager";
 import AttachmentPreview from "@components/ui/AttachmentPreview";
+import CkEditorRichText from "@components/ui/CkEditor/CkEditorRichText";
+import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import SubmitButton from '@components/ui/form/SubmitButton';
-import { useEffect, useState } from "react";
-import type { Email } from "@models/Email";
+import InteractiveIcon from '@components/ui/InteractiveIcon';
+import { useComposeFormContext } from '@context/ComposeFormContext';
+import { useAttachmentManager } from "@hooks/useAttachmentManager";
+import { useCcBccToggle } from "@hooks/useCcBccToggle";
+import { useComposeForm } from "@hooks/useComposeForm";
 import type { ReplyForwardType } from "@hooks/useReplyForward";
 import { useReplyForward } from "@hooks/useReplyForward";
+import { useSignatureManager } from '@hooks/useSignatureManager';
+import attachmentStrokeRoundedIconHover from '@images/attachment-stroke-rounded-icon-hover.svg';
+import attachmentStrokeRoundedIcon from '@images/attachment-stroke-rounded-icon.svg';
+import generateAiIcon from '@images/generate-ai-icon.svg';
+import scheduledIcon from '@images/scheduled-icon.svg';
+import signatureIconHover from "@images/signature-icon-hover.svg";
+import signatureIcon from "@images/signature-icon.svg";
+import smartMessageIcon from '@images/smart-message-icon.svg';
+import trashIconHover from '@images/trash-icon-hover.svg';
+import trashIcon from '@images/trash-icon.svg';
+import type { Email } from "@models/Email";
 import { sendReply } from "@services/emailSending/emailSendingService";
 import { scheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getSignatureForActions } from "@services/settings/settingsService";
-import { useSignatureManager } from '@hooks/useSignatureManager';
-import signatureIcon from "@images/signature-icon.svg";
-import signatureIconHover from "@images/signature-icon-hover.svg";
-import { Dropdown } from "react-bootstrap";
+import { useEffect, useRef, useState } from "react";
+import { Collapse, Dropdown } from "react-bootstrap";
+import { Controller } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
-import { resolveThreadIdForReply } from '@utils/emailUtil';
 import SimpleBar from "simplebar-react";
+import { useContacts, useMailUI } from '../../context/index';
 
 interface ReplyForwardComposerProps {
     email: Email;
@@ -46,7 +44,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const {
         setFormData,
-        setHandleSubmit,
+        registerSubmitHandler,
         setTriggerValidation,
         setScheduleDateTime,
         scheduleDateTime,
@@ -67,6 +65,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
     const [defaultSignature, setDefaultSignature] = useState<string>("");
     const [isInitialized, setIsInitialized] = useState(false);
     const [signatureInserted, setSignatureInserted] = useState(false);
+    const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => {});
 
     useEffect(() => {
         if (error) {
@@ -76,9 +75,15 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
 
     useEffect(() => {
         const fetchDefaultSignature = async () => {
-            const response = await getSignatureForActions();
-            if (response.statusCode === 200) {
-                setDefaultSignature(response.data.body || "");
+            try {
+                const response = await getSignatureForActions();
+                if (response.statusCode !== 200) return;
+
+                // `response.data` can be null even when statusCode is 200.
+                const signatureBody = response?.data?.body;
+                setDefaultSignature(signatureBody || "");
+            } catch (e) {
+                console.error('Failed to fetch default signature:', e);
             }
         };
 
@@ -89,27 +94,18 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
         // Set up the validation trigger function for the schedule modal
         setTriggerValidation(async () => {
             const isValid = await trigger();
-            if (isValid) {
-                const currentFormData = getValues();
-                setFormData(currentFormData);
+            if (!isValid) {
+                return null;
             }
-            return isValid;
+            const currentFormData = getValues();
+            setFormData(currentFormData);
+            return currentFormData;
         });
     }, [trigger, getValues, setFormData, setTriggerValidation]);
 
-    useEffect(() => {
-        // Set up the submit handler
-        setHandleSubmit(() => onSubmit);
-    }, [setHandleSubmit]);
-
     // Create wrapper for signature selection with proper parameters
     const handleSignatureSelectWrapper = (signature: any) => {
-        console.log('ReplyForwardComposer: Selecting signature', signature._id);
-        const currentBody = getValues('body') || '';
-        console.log('ReplyForwardComposer: Current body before signature:', currentBody);
-
         handleSignatureSelect(signature, (value: string) => {
-            console.log('ReplyForwardComposer: New body after signature:', value);
             setValue('body', value);
         }, () => getValues('body') || '');
     };
@@ -175,13 +171,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
 
     }, [defaultSignature, isInitialized]);
 
-    const onSubmit = async (data: any) => {
-        console.log('REPLY/FORWARD SUBMITTED DATA:', { ...data, type, originalEmailId: email.messageId });
-
-        const threadIdForApi = resolveThreadIdForReply(email.threadId, email.messageId);
+    const onSubmit = async (data: any, scheduleAtOverride?: string) => {
+        const scheduleAt = scheduleAtOverride ?? scheduleDateTime;
 
         // Add scheduled date if available and use scheduleEmail service
-        if (scheduleDateTime) {
+        if (scheduleAt) {
             // Create FormData for schedule email with attachments
             const scheduleFormData = new FormData();
 
@@ -198,31 +192,25 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
 
             // Add reply/forward specific fields
             scheduleFormData.append('messageId', email.messageId);
-            scheduleFormData.append('threadId', threadIdForApi);
+            scheduleFormData.append('threadId', email.threadId);
             scheduleFormData.append('type', type);
 
             // Add schedule date
-            scheduleFormData.append('scheduleAt', typeof scheduleDateTime === 'string' ? scheduleDateTime : scheduleDateTime.toISOString());
+            scheduleFormData.append('scheduleAt', scheduleAt);
             scheduleFormData.append('isSchedule', 'true');
 
             // Add attachments as files
             attachments.forEach((file) => {
                 if (file instanceof File) {
-                    scheduleFormData.append('attachments', file);
+                    scheduleFormData.append('attachments', file, file.name);
                 } else {
                     // For existing attachments, send as JSON string
                     scheduleFormData.append('existingAttachments', JSON.stringify(file));
                 }
             });
 
-            console.log('Schedule Reply/Forward FormData contents:');
-            for (let [key, value] of scheduleFormData.entries()) {
-                console.log(key, value);
-            }
-
             try {
                 const response: any = await scheduleEmail(scheduleFormData);
-                console.log('Reply/Forward scheduled successfully:', response);
                 if (response.statusCode === 200) {
                     onEmailSent?.();
                     onClose?.();
@@ -251,7 +239,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
             // Add attachments
             attachments.forEach((file) => {
                 if (file instanceof File) {
-                    formData.append('attachments', file);
+                    formData.append('attachments', file, file.name);
                 } else {
                     // For existing attachments, send as JSON string
                     formData.append('existingAttachments', JSON.stringify(file));
@@ -259,17 +247,10 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
             });
 
             formData.append('messageId', email.messageId)
-            formData.append('threadId', threadIdForApi)
-
-            // Log FormData for debugging
-            console.log('FormData contents:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, value);
-            }
+            formData.append('threadId', email.threadId)
 
             try {
                 const response: any = await sendReply(formData);
-                console.log('Reply/Forward sent successfully:', response);
                 if (response.statusCode === 200) {
                     onEmailSent?.();
                     onClose?.();
@@ -279,6 +260,12 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
             }
         }
     };
+
+    onSubmitRef.current = onSubmit;
+
+    useEffect(() => {
+        registerSubmitHandler((data, scheduleAt) => onSubmitRef.current(data, scheduleAt));
+    }, [registerSubmitHandler]);
 
     const openScheduleModal = () => {
         openModal('schedule');
@@ -560,7 +547,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
                         </button>
                         <SubmitButton
                             className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
-                            onClick={handleSubmit(onSubmit, (errors: any) => {
+                            onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
                                 console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                             })}
                         >Send</SubmitButton>

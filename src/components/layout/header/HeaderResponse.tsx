@@ -1,19 +1,18 @@
 
-import closeIcon from '@images/close-icon.svg';
-import closeIconHover from '@images/close-icon-hover.svg';
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import logoutIcon from "@images/logout-icon.svg";
-import logoutIconHover from "@images/logout-icon.svg";
-import changePasswordIcon from "@images/change-password-icon.svg";
-import changePasswordIconHover from "@images/change-password-icon-hover.svg";
-import changePasswordNewIcon from "@images/change-password-new-icon.svg";
-import changePasswordNewIconHover from "@images/change-password-new-icon-hover.svg";
-import enlivenLogo from "@images/enliven-logo.svg";
-import { useContacts, useMailData, useMailUI } from '../../../context/index';
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { getUserDetail } from "@services/user/userService";
 import { useProfile } from "@context/userContext";
+import changePasswordIconHover from "@images/change-password-icon-hover.svg";
+import changePasswordIcon from "@images/change-password-icon.svg";
+import changePasswordNewIconHover from "@images/change-password-new-icon-hover.svg";
+import changePasswordNewIcon from "@images/change-password-new-icon.svg";
+import closeIconHover from '@images/close-icon-hover.svg';
+import closeIcon from '@images/close-icon.svg';
+import enlivenLogo from "@images/enliven-logo.svg";
+import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
+import { getUserDetail } from "@services/user/userService";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useContacts, useMailData, useMailUI } from '../../../context/index';
 
 const Header = () => {
     const navigate = useNavigate();

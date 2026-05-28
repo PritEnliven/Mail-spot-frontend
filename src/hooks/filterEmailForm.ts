@@ -1,7 +1,7 @@
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { filterFormSchema } from '@models/filterForm.schema';
 import type { FilterFormValues } from '@models/filterForm.schema';
+import { filterFormSchema } from '@models/filterForm.schema';
+import { useForm } from 'react-hook-form';
 
 export function useFilterEmailForm() {
   return useForm<FilterFormValues>({

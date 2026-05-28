@@ -1,4 +1,3 @@
-// src/hooks/usePageStylesheet.ts
 import { useEffect, useState } from 'react';
 
 const adminCss = new URL('@styles/admin.css', import.meta.url).href;

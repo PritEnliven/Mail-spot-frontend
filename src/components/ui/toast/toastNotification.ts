@@ -26,4 +26,8 @@ const showWarning = (message: string, options?: ToastOptions) => {
     toast.warning(message, { ...baseOptions, ...options });
 };
 
-export { showSuccess, showError, showInfo, showWarning };
+const clearAllToasts = () => {
+    toast.dismiss();
+};
+
+export { showSuccess, showError, showInfo, showWarning, clearAllToasts };

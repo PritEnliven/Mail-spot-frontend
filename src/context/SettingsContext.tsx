@@ -1,12 +1,15 @@
 import { getSettings } from '@services/settings/settingsService';
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 export interface SettingsType {
   undoSendPeriod: number;
   pageSize: number;
   enableSignature: boolean;
   enableReplyForwardUse: boolean;
+  threadView: boolean;
+  notification: boolean;
   recoveryEmail: string;
+  downloadLocation: string;
 }
 
 interface SettingsContextType {
@@ -21,6 +24,9 @@ const defaultSettings: SettingsType = {
   pageSize: 25,
   enableSignature: true,
   enableReplyForwardUse: true,
+  threadView: true,
+  downloadLocation: '',
+  notification: true,
   recoveryEmail: ''
 };
 
@@ -36,6 +42,9 @@ const normalizeSettings = (raw: any): SettingsType => {
         : defaultSettings.pageSize),
     enableSignature: typeof raw?.enableSignature === 'boolean' ? raw.enableSignature : defaultSettings.enableSignature,
     enableReplyForwardUse: typeof raw?.enableReplyForwardUse === 'boolean' ? raw.enableReplyForwardUse : defaultSettings.enableReplyForwardUse,
+    threadView: typeof raw?.threadView === 'boolean' ? raw.threadView : true,
+    downloadLocation: typeof raw?.downloadLocation === 'string' ? raw.downloadLocation : defaultSettings.downloadLocation,
+    notification: typeof raw?.notification === 'boolean' ? raw.notification : defaultSettings.notification,
     recoveryEmail: typeof raw?.recoveryEmail === 'string' ? raw.recoveryEmail : defaultSettings.recoveryEmail,
   };
 };

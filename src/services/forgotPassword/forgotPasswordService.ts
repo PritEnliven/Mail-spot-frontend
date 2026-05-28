@@ -1,4 +1,3 @@
-
 import type { ApiResponse } from '@models/Response';
 import { getData, postData, putData } from '../apiService';
 
@@ -52,7 +51,7 @@ async function resetPassword(payload: resetPasswordPayload): Promise<ApiResponse
 }
 
 export {
-    verifyEmailAndSentMail,
-    verifyOtp,
-    resetPassword
-}
+    resetPassword, verifyEmailAndSentMail,
+    verifyOtp
+};
+

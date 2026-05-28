@@ -1,12 +1,10 @@
-import 'ckeditor5/ckeditor5.css';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
-import { ClassicEditor } from 'ckeditor5';
-import ckEditorConfig from '../../../config/ckeditor.config';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import smartMessage from "@images/smart-message-icon-16.svg";
 import GenerateEmailCard from '@components/ui/CkEditor/GenerateEmailCard';
 import SmartRepliesCard from '@components/ui/CkEditor/SmartRepliesCard';
+import { ClassicEditor } from 'ckeditor5';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import ckEditorConfig from '../../../config/ckeditor.config';
 
 interface CkEditorRichTextProps {
   id: string;

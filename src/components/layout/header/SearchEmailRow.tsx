@@ -2,6 +2,7 @@ import attachmentIcon from "@images/attachment-stroke-rounded-icon.svg";
 import { HighlightText } from "@components/ui/HighlightText";
 import { normalizeMailboxList } from "@utils/emailUtil";
 
+
 interface Email {
     _id?: string;
     uid: number;
@@ -19,14 +20,9 @@ interface Email {
 
 interface SearchEmailRowProps {
     email: Email;
-    searchTerm: string;
     onEmailClick: (email: Email, isSearch: boolean) => void;
+    searchTerm: string;
 }
-
-const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-};
 
 function htmlToPlainText(html: string): string {
     return html
@@ -35,27 +31,6 @@ function htmlToPlainText(html: string): string {
         .replace(/<[^>]+>/g, " ")
         .replace(/\s+/g, " ")
         .trim();
-}
-
-function fieldContainsTerm(text: string, term: string): boolean {
-    return text.toLowerCase().includes(term.toLowerCase());
-}
-
-function truncateAroundMatch(text: string, term: string, maxLength = 120): string {
-    const lowerText = text.toLowerCase();
-    const lowerTerm = term.toLowerCase();
-    const matchIndex = lowerText.indexOf(lowerTerm);
-    if (matchIndex === -1) return text.slice(0, maxLength);
-
-    const half = Math.floor((maxLength - term.length) / 2);
-    let start = Math.max(0, matchIndex - half);
-    let end = Math.min(text.length, start + maxLength);
-    start = Math.max(0, end - maxLength);
-
-    let snippet = text.slice(start, end);
-    if (start > 0) snippet = `…${snippet}`;
-    if (end < text.length) snippet = `${snippet}…`;
-    return snippet;
 }
 
 function getSearchPreviewText(email: Email, searchTerm: string): string {
@@ -80,6 +55,32 @@ function getSearchPreviewText(email: Email, searchTerm: string): string {
 
     return toStr || fromStr || ccStr || bccStr || bodyPlain.slice(0, 120);
 }
+
+function fieldContainsTerm(text: string, term: string): boolean {
+    return text.toLowerCase().includes(term.toLowerCase());
+}
+
+function truncateAroundMatch(text: string, term: string, maxLength = 120): string {
+    const lowerText = text.toLowerCase();
+    const lowerTerm = term.toLowerCase();
+    const matchIndex = lowerText.indexOf(lowerTerm);
+    if (matchIndex === -1) return text.slice(0, maxLength);
+
+    const half = Math.floor((maxLength - term.length) / 2);
+    let start = Math.max(0, matchIndex - half);
+    let end = Math.min(text.length, start + maxLength);
+    start = Math.max(0, end - maxLength);
+
+    let snippet = text.slice(start, end);
+    if (start > 0) snippet = `…${snippet}`;
+    if (end < text.length) snippet = `${snippet}…`;
+    return snippet;
+}
+
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
 function SearchEmailRow({ email, onEmailClick, searchTerm }: SearchEmailRowProps) {
     const subject = email.subject || "No Subject";

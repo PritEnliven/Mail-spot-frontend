@@ -25,6 +25,5 @@ async function addContacts(payload: addContactPaylod) {
 }
 
 export {
-    getAllContacts,
-    addContacts
-}
+    addContacts, getAllContacts
+};

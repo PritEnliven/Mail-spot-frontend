@@ -33,8 +33,6 @@ export const AdminUIProvider = ({ children }: AdminUIProviderProps) => {
     const [activeModals, setActiveModals] = useState<ActiveModal[]>([]);
     
     // Debug logs
-    console.log('AdminUIProvider - activeModals:', activeModals);
-
     const openModal = (type: ModalType, props?: any) => {
         const modalId = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         setActiveModals(prev => {
