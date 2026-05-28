@@ -23,7 +23,7 @@ import type { Email } from "@models/Email";
 import { sendReply } from "@services/emailSending/emailSendingService";
 import { scheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getSignatureForActions } from "@services/settings/settingsService";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Collapse, Dropdown } from "react-bootstrap";
 import { Controller } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +44,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const {
         setFormData,
-        setHandleSubmit,
+        registerSubmitHandler,
         setTriggerValidation,
         setScheduleDateTime,
         scheduleDateTime,
@@ -65,6 +65,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
     const [defaultSignature, setDefaultSignature] = useState<string>("");
     const [isInitialized, setIsInitialized] = useState(false);
     const [signatureInserted, setSignatureInserted] = useState(false);
+    const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => {});
 
     useEffect(() => {
         if (error) {
@@ -74,9 +75,15 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
 
     useEffect(() => {
         const fetchDefaultSignature = async () => {
-            const response = await getSignatureForActions();
-            if (response.statusCode === 200) {
-                setDefaultSignature(response.data.body || "");
+            try {
+                const response = await getSignatureForActions();
+                if (response.statusCode !== 200) return;
+
+                // `response.data` can be null even when statusCode is 200.
+                const signatureBody = response?.data?.body;
+                setDefaultSignature(signatureBody || "");
+            } catch (e) {
+                console.error('Failed to fetch default signature:', e);
             }
         };
 
@@ -87,23 +94,17 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
         // Set up the validation trigger function for the schedule modal
         setTriggerValidation(async () => {
             const isValid = await trigger();
-            if (isValid) {
-                const currentFormData = getValues();
-                setFormData(currentFormData);
+            if (!isValid) {
+                return null;
             }
-            return isValid;
+            const currentFormData = getValues();
+            setFormData(currentFormData);
+            return currentFormData;
         });
     }, [trigger, getValues, setFormData, setTriggerValidation]);
 
-    useEffect(() => {
-        // Set up the submit handler
-        setHandleSubmit(() => onSubmit);
-    }, [setHandleSubmit]);
-
     // Create wrapper for signature selection with proper parameters
     const handleSignatureSelectWrapper = (signature: any) => {
-        const currentBody = getValues('body') || '';
-
         handleSignatureSelect(signature, (value: string) => {
             setValue('body', value);
         }, () => getValues('body') || '');
@@ -170,10 +171,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
 
     }, [defaultSignature, isInitialized]);
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: any, scheduleAtOverride?: string) => {
+        const scheduleAt = scheduleAtOverride ?? scheduleDateTime;
 
         // Add scheduled date if available and use scheduleEmail service
-        if (scheduleDateTime) {
+        if (scheduleAt) {
             // Create FormData for schedule email with attachments
             const scheduleFormData = new FormData();
 
@@ -194,7 +196,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
             scheduleFormData.append('type', type);
 
             // Add schedule date
-            scheduleFormData.append('scheduleAt', typeof scheduleDateTime === 'string' ? scheduleDateTime : scheduleDateTime.toISOString());
+            scheduleFormData.append('scheduleAt', scheduleAt);
             scheduleFormData.append('isSchedule', 'true');
 
             // Add attachments as files
@@ -258,6 +260,12 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
             }
         }
     };
+
+    onSubmitRef.current = onSubmit;
+
+    useEffect(() => {
+        registerSubmitHandler((data, scheduleAt) => onSubmitRef.current(data, scheduleAt));
+    }, [registerSubmitHandler]);
 
     const openScheduleModal = () => {
         openModal('schedule');
@@ -539,7 +547,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
                         </button>
                         <SubmitButton
                             className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
-                            onClick={handleSubmit(onSubmit, (errors: any) => {
+                            onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
                                 console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                             })}
                         >Send</SubmitButton>
