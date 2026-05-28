@@ -20,7 +20,7 @@ import backBtnIconHover from "@images/back-btn-icon-hover.svg";
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import menuIcon from "@images/menu-icon.svg";
 import { useContacts, useMailData, useMailUI } from '../../../context/index';
-import { lazy, Suspense, useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import { Controller } from 'react-hook-form';
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
@@ -53,7 +53,7 @@ const Header = () => {
     const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
-        setBoxTitle, filterForm, boxName,
+        setBoxTitle, filterForm, boxName, searchTerm,
         setEmailDetailSelected, setActiveEmailMessageId } = useMailData();
     const { contacts, fetchContacts } = useContacts();
     const { calendarView, setCalendarView, changeView } = useCalendar();
@@ -397,6 +397,14 @@ const Header = () => {
         }
     }, [searchText]);
 
+    // Keep local search input in sync with global search context
+    // (e.g. after opening email detail from search results and coming back).
+    useEffect(() => {
+        if (!searchText && searchTerm) {
+            setSearchText(searchTerm);
+        }
+    }, [searchTerm]);
+
     const showAllSearchResult = async () => {
         setAllSearchResult(true);
         setSearchTerm(searchText);
@@ -456,6 +464,9 @@ const Header = () => {
         setSearchResults([]);
         setIsSearchResultDropdownOpen(false);
         setNoResult(true);
+        setAllSearchResult(false);
+        setSearchTerm('');
+        setFilterForm(null);
     }
 
     const closeProfileModalMobile = () => {
@@ -468,7 +479,6 @@ const Header = () => {
     const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
 
-
     return (
         <div className={`mail-details-header `}>
             {isCalendar ? (
@@ -477,8 +487,6 @@ const Header = () => {
                 </Suspense>
             ) : (
                 <>
-
-
                     <div className="d-flex align-items-center">
                         {/* moblie */}
                         <button
@@ -508,7 +516,6 @@ const Header = () => {
                         <>
                             {/* CENTER: Search Bar */}
                             <div className="two-sc-in d-flex align-items-center justify-content-center flex-grow-1">
-
                                 <div className={`top-search ${isResponsiveSearch ? 'show-search' : ''}`} id="topSearch">
                                     <div className="top-search-container">
                                         <div className="input-icon-add">
@@ -531,6 +538,7 @@ const Header = () => {
                                                         }}
                                                     />
                                                 </button>
+
                                                 <input
                                                     type="search"
                                                     className="form-control dropdown-toggle navTopSearchDropdown-cm top-search-form-control"
@@ -555,14 +563,14 @@ const Header = () => {
                                                             searchResults.map((email) => (
                                                                 <Suspense key={email.uid} fallback={null}>
                                                                     <SearchEmailRow
-                                                                    key={email.uid}
-                                                                    email={email}
-                                                                    searchTerm={searchText}
-                                                                    onEmailClick={(email, isSearch = true) =>
-                                                                        openEmailDetailHandler(boxName, email.uid, email.messageId, isSearch, (email as { _id?: string })._id)
-                                                                    }
-                                                                />
-								</Suspense>
+                                                                        key={email.uid}
+                                                                        email={email}
+                                                                        searchTerm={searchText}
+                                                                        onEmailClick={(email, isSearch = true) =>
+                                                                            openEmailDetailHandler(boxName, email.uid, email.messageId, isSearch, (email as { _id?: string })._id)
+                                                                        }
+                                                                    />
+                                                                </Suspense>
                                                             ))
                                                         ) : noResult ? (
                                                             <li className="no-result">
@@ -734,21 +742,21 @@ const Header = () => {
                                                                     name="dateRange"
                                                                     control={control}
                                                                     render={({ field }) => (
-								<Suspense fallback={<input className="form-control" placeholder="Loading date picker..." readOnly />}>
-                                                                        <Flatpickr
-                                                                            value={field.value as Date[] | undefined}
-                                                                            onChange={(dates) => field.onChange(dates)}
-                                                                            options={{
-                                                                                mode: 'range',
-                                                                                dateFormat: 'd-m-Y',
-                                                                                allowInput: true,
-                                                                                defaultDate: [new Date(), new Date()],
-                                                                                onReady: (_, __, instance) => mountFilterMonthDropdown(instance)
-                                                                            }}
-                                                                            className="form-control DateRangePickerStaticTop"
-                                                                            placeholder="Select date range"
-                                                                        />
-								</Suspense>
+                                                                        <Suspense fallback={<input className="form-control" placeholder="Loading date picker..." readOnly />}>
+                                                                            <Flatpickr
+                                                                                value={field.value as Date[] | undefined}
+                                                                                onChange={(dates) => field.onChange(dates)}
+                                                                                options={{
+                                                                                    mode: 'range',
+                                                                                    dateFormat: 'd-m-Y',
+                                                                                    allowInput: true,
+                                                                                    defaultDate: [new Date(), new Date()],
+                                                                                    onReady: (_, __, instance) => mountFilterMonthDropdown(instance)
+                                                                                }}
+                                                                                className="form-control DateRangePickerStaticTop"
+                                                                                placeholder="Select date range"
+                                                                            />
+                                                                        </Suspense>
                                                                     )}
                                                                 />
                                                             </div>

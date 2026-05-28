@@ -56,7 +56,18 @@ export const useReplyForward = () => {
 
     const getRecipients = useCallback((type: ReplyForwardType, email: Email) => {
         const currentUserEmail = (localStorage.getItem('email') || '').toLowerCase();
-        const normalize = (list: string[] = []) => list.map(v => (v || '').toLowerCase()).filter(Boolean);
+        const getAddress = (value: unknown): string => {
+            if (typeof value === 'string') return value;
+            if (value && typeof value === 'object') {
+                const maybeObj = value as { email?: unknown; address?: unknown; value?: unknown; label?: unknown };
+                if (typeof maybeObj.email === 'string') return maybeObj.email;
+                if (typeof maybeObj.address === 'string') return maybeObj.address;
+                if (typeof maybeObj.value === 'string') return maybeObj.value;
+                if (typeof maybeObj.label === 'string') return maybeObj.label;
+            }
+            return '';
+        };
+        const normalize = (list: unknown[] = []) => list.map(v => getAddress(v).trim().toLowerCase()).filter(Boolean);
         const unique = (list: string[]) => Array.from(new Set(list));
         const withoutCurrentUser = (list: string[]) => {
             if (!currentUserEmail) return list;
@@ -74,21 +85,21 @@ export const useReplyForward = () => {
             case 'reply':
                 if (fromHasCurrentUser) {
                     return {
-                        to: withoutCurrentUser(unique(to)),
+                        to: withoutCurrentUser(unique(normalize(to))),
                         cc: [],
                         bcc: []
                     };
                 }
                 return {
-                    to: withoutCurrentUser(unique(from)),
+                    to: withoutCurrentUser(unique(normalize(from))),
                     cc: [],
                     bcc: []
                 };
             case 'replyAll':
                 return {
-                    to: withoutCurrentUser(unique([...from, ...to])),
-                    cc: withoutCurrentUser(unique(cc)),
-                    bcc: withoutCurrentUser(unique(bcc))
+                    to: withoutCurrentUser(unique(normalize([...from, ...to]))),
+                    cc: withoutCurrentUser(unique(normalize(cc))),
+                    bcc: withoutCurrentUser(unique(normalize(bcc)))
                 };
             case 'forward':
                 return {
