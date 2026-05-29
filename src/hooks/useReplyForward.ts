@@ -12,6 +12,22 @@ export interface ReplyForwardState {
     targetId: string | null; // For thread emails, stores the unique identifier
 }
 
+const getAddress = (value: unknown): string => {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object') {
+        const obj = value as { email?: unknown; address?: unknown; value?: unknown; label?: unknown; name?: unknown };
+        if (typeof obj.email === 'string') return obj.email;
+        if (typeof obj.address === 'string') return obj.address;
+        if (typeof obj.value === 'string') return obj.value;
+        if (typeof obj.label === 'string') return obj.label;
+        if (typeof obj.name === 'string') return obj.name;
+    }
+    return '';
+};
+
+const formatAddressList = (list: unknown[] = []): string =>
+    list.map(v => getAddress(v).trim()).filter(Boolean).join(', ');
+
 type EmailAddress = {
     email: string;
     name?: string;
@@ -108,18 +124,9 @@ export const useReplyForward = () => {
 
     const getRecipients = useCallback((type: ReplyForwardType, email: Email) => {
         const currentUserEmail = (localStorage.getItem('email') || '').toLowerCase();
-
-        const extractEmails = (list: EmailAddress[] = []) =>
-            list.filter(v => v?.email);
-
-        const unique = (list: EmailAddress[] = []) =>
-            Array.from(
-                new Map(
-                    list.map(v => [v.email.toLowerCase(), v])
-                ).values()
-            );
-
-        const withoutCurrentUser = (list: EmailAddress[] = []) => {
+        const normalize = (list: unknown[] = []) => list.map(v => getAddress(v).trim().toLowerCase()).filter(Boolean);
+        const unique = (list: string[]) => Array.from(new Set(list));
+        const withoutCurrentUser = (list: string[]) => {
             if (!currentUserEmail) return list;
 
             return list.filter(
@@ -140,23 +147,23 @@ export const useReplyForward = () => {
             case 'reply':
                 if (fromHasCurrentUser) {
                     return {
-                        to: withoutCurrentUser(unique(to)),
+                        to: withoutCurrentUser(unique(normalize(to))),
                         cc: [],
                         bcc: []
                     };
                 }
 
                 return {
-                    to: withoutCurrentUser(unique(from)),
+                    to: withoutCurrentUser(unique(normalize(from))),
                     cc: [],
                     bcc: []
                 };
 
             case 'replyAll':
                 return {
-                    to: withoutCurrentUser(unique([...from, ...to])),
-                    cc: withoutCurrentUser(unique(cc)),
-                    bcc: withoutCurrentUser(unique(bcc))
+                    to: withoutCurrentUser(unique(normalize([...from, ...to]))),
+                    cc: withoutCurrentUser(unique(normalize(cc))),
+                    bcc: withoutCurrentUser(unique(normalize(bcc)))
                 };
 
             case 'forward':
@@ -186,22 +193,22 @@ export const useReplyForward = () => {
         // Create the quoted message header
         const header = isForward
             ? `<div id="forwarded-message" class="forwarded-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
-            `<div style="font-weight: bold; margin-bottom: 10px;">-------- Forwarded Message --------</div>` +
-            `<div><strong>From:</strong> ${email.from.join(', ')}</div>` +
-            `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
-            `<div><strong>Subject:</strong> ${email.subject}</div>` +
-            `<div><strong>To:</strong> ${email.to.join(', ')}</div>` +
-            `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.join(', ')}</div>` : ''}` +
-            `</div>`
+              `<div style="font-weight: bold; margin-bottom: 10px;">-------- Forwarded Message --------</div>` +
+              `<div><strong>From:</strong> ${formatAddressList(email.from)}</div>` +
+              `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
+              `<div><strong>Subject:</strong> ${email.subject}</div>` +
+              `<div><strong>To:</strong> ${formatAddressList(email.to)}</div>` +
+              `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${formatAddressList(email.cc)}</div>` : ''}` +
+              `</div>`
             : `<br><br><div id="quoted-message" class="quoted-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
-            `<div style="font-weight: bold; margin-bottom: 10px;">-------- Original Message --------</div>` +
-            `<div><strong>From:</strong> ${email.from.map(v => v.email).join(', ')}</div>` +
-            `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
-            `<div><strong>Subject:</strong> ${email.subject}</div>` +
-            `<div><strong>To:</strong> ${email.to.map(v => v.email).join(', ')}</div>` +
-            `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.map(v => v.email).join(', ')}</div>` : ''}` +
-            `</div>`;
-
+              `<div style="font-weight: bold; margin-bottom: 10px;">-------- Original Message --------</div>` +
+              `<div><strong>From:</strong> ${formatAddressList(email.from)}</div>` +
+              `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
+              `<div><strong>Subject:</strong> ${email.subject}</div>` +
+              `<div><strong>To:</strong> ${formatAddressList(email.to)}</div>` +
+              `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${formatAddressList(email.cc)}</div>` : ''}` +
+              `</div>`;
+        
         let bodyContent: string;
 
         if (email.isBodyHtml && email.body) {
@@ -212,7 +219,8 @@ export const useReplyForward = () => {
                 .replace(/<link[^>]*>/gi, '');
 
             bodyContent = `<div class="quoted-content" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 10px;">${cleanedBody}</div>`;
-        } else if (email.bodyText) {
+        } 
+        else if (email.bodyText) {
             const escapedText = email.bodyText
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
