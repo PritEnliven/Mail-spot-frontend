@@ -84,7 +84,7 @@ function getBoxNameFromSidebar(sidebarState: any, boxName: string): string {
     return box.value || box.label;
 }
 
-function verifyBoxName(boxName: string, boxValue: string){
+function verifyBoxName(boxName: string, boxValue: string) {
     if (!boxName || !boxValue) return false;
     const normalized = normalizeBoxName(boxName).toLowerCase();
     const lastSegment = normalized.split(/[./\\]/).pop() ?? normalized;
@@ -93,15 +93,26 @@ function verifyBoxName(boxName: string, boxValue: string){
 
 function normalizeBoxName(boxName: string): string {
     if (!boxName) return '';
-    
+
     // Decode URI components to handle spaces and special characters
     const decoded = decodeURIComponent(boxName);
-    
+
     // Remove any leading/trailing slashes and normalize
     return decoded.replace(/^\/+|\/+$/g, '');
 }
 
-function parseEmailAddress(email?: string): ParsedEmailAddress {
+function parseEmailAddress(email?: any): ParsedEmailAddress {
+
+    if (email && typeof email === 'object') {
+        const trimEmail = email.email?.trim() || '';
+        const name = email.name?.trim() || trimEmail.split('@')[0] || 'Unknown';
+        return {
+            name,
+            email,
+            initial: name.charAt(0).toUpperCase(),
+        };
+    }
+
     if (!email) {
         return {
             name: 'Unknown',

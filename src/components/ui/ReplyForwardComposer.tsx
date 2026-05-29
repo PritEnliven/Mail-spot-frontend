@@ -65,7 +65,14 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
     const [defaultSignature, setDefaultSignature] = useState<string>("");
     const [isInitialized, setIsInitialized] = useState(false);
     const [signatureInserted, setSignatureInserted] = useState(false);
-    const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => {});
+    const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => { });
+
+    const normalizeRecipients = (recipients: any[]): string[] => {
+        if (!recipients?.length) return [];
+        return recipients.map((r) =>
+            typeof r === 'string' ? r : r.email
+        );
+    };
 
     useEffect(() => {
         if (error) {
@@ -124,9 +131,9 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
         const quotedBody = getBody(type, email);
 
         reset({
-            to: recipients.to,
-            cc: recipients.cc,
-            bcc: recipients.bcc,
+            to: normalizeRecipients(recipients.to),
+            cc: normalizeRecipients(recipients.cc),
+            bcc: normalizeRecipients(recipients.bcc),
             subject,
             body: quotedBody
         });

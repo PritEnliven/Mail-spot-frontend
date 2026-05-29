@@ -13,7 +13,22 @@ function CopyEmail({ initial, name, email }: CopyEmailProps) {
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(email.trim());
+            // await navigator.clipboard.writeText(email.trim());
+            const text = email.trim();
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback for non-HTTPS or unsupported browsers
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+            }
             setCopied(true);
             setTimeout(() => {
                 setCopied(false);
@@ -29,8 +44,8 @@ function CopyEmail({ initial, name, email }: CopyEmailProps) {
                 <span className="mail-profile-label ms-0">{initial}</span>
                 <div className="d-block">
                     <span className="mail-profile-name d-block">{name}</span>
-                    <div 
-                        className="d-flex align-items-center copy-text" 
+                    <div
+                        className="d-flex align-items-center copy-text"
                         style={{ cursor: "pointer" }}
                         onClick={handleCopy}
                     >
