@@ -6,11 +6,12 @@ import dropdownIcon from "@images/chevron-down-icon.svg"
 import dropUpIcon from "@images/chevron-up-icon.svg";
 import removeIcon from "@images/close-icon.svg";
 import SimpleBar from 'simplebar-react';
+import type { AnyZodTuple } from 'zod/v3';
 
 export const getSelectStyles = (
   type: string,
   moduleName?: string,
-  isInModal: boolean = false 
+  isInModal: boolean = false
 ): StylesConfig<MultiOption, true, GroupBase<MultiOption>> => {
 
   const isMultiple = type === "multiple";
@@ -213,10 +214,10 @@ export const getSelectStyles = (
       alignItems: moduleName === "select2ColorOption" ? 'center' : '',
       justifyContent: moduleName === "select2ColorOption" ? 'center' : '',
       borderRadius: moduleName === "select2ColorOption" ? '50px' : '',
-      overflow:'hidden',
+      overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
-      maxWidth:'100%',
+      maxWidth: '100%',
       ':hover': {
         backgroundColor: '#e5e8ea',
       },
@@ -322,12 +323,12 @@ export const MenuList = (props: any) => {
       style={{ maxHeight: 200, scrollBehavior: 'smooth' }}
       autoHide={false}
       forceVisible="y"
-      scrollableNodeProps={{ 
+      scrollableNodeProps={{
         ref: props.innerRef,
-        style: { scrollBehavior: 'smooth' } 
+        style: { scrollBehavior: 'smooth' }
       }}
     >
-      <div 
+      <div
         className="react-select__menu-list"
         style={{ padding: 0 }}
       >
@@ -370,9 +371,23 @@ const mapMultiOptions = (options: MultiOption[]): MappedOption[] =>
 const getSelectedMultiOptions = (
   allOptions: MappedOption[],
   values: string[]
-) => {
-  return allOptions.filter(opt => values.includes(opt.value));
-}
+): MappedOption[] => {
+  return values.map((emailStr) => {
+    const match = allOptions
+      .flatMap((o: any) => o.options ?? [o])
+      .find((o: MappedOption) => o.value === emailStr || o.email === emailStr);
+
+    if (match) return match;
+
+    // Fallback for manually typed / draft emails not in contacts
+    return {
+      value: emailStr,
+      label: emailStr,
+      email: emailStr,
+      name: emailStr,
+    };
+  });
+};
 
 const getSelectedSingleOption = (
   options: SingleOption[],
@@ -428,7 +443,7 @@ const renderMultiSelect = ({
       isMulti
       options={allOptions}
       value={selectedOptions}
-      placeholder={placeholder}     
+      placeholder={placeholder}
       classNamePrefix="react-select"
       isClearable={false}
       onCreateOption={handleCreate}
@@ -450,16 +465,17 @@ const renderMultiSelect = ({
       onChange={handleChange}
       createOptionPosition="first"
       formatOptionLabel={(option, { context }) => {
-        const displayName = option.name || option.email || option.label || '?';
-        const initial = displayName[0].toUpperCase();
+        const email = option.email || option.value || '';
+        const displayName = option.name || option.label || email;
+        const initial = displayName.charAt(0).toUpperCase();
 
         return (
           <div className="profile-main">
             <div className="profile">{initial}</div>
             <div className="user-name">
-              <span className="name me-1">{option.name || option.email || option.label}</span>
-              {context === 'menu' && option.email && (
-                <span className="email">{option.email}</span>
+              <span className="name me-1">{displayName}</span>
+              {context === 'menu' && email && email !== displayName && (
+                <span className="email">{email}</span>
               )}
             </div>
           </div>
@@ -489,7 +505,7 @@ const renderSingleSelect = ({
     <Select<SingleOption, false>
       isMulti={false}
       options={options}
-      value={selectedOption}      
+      value={selectedOption}
       placeholder={placeholder}
       classNamePrefix="react-select"
       menuPortalTarget={document.body}

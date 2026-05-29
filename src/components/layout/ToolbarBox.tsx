@@ -23,7 +23,6 @@ import { handleEmailDeletion, verifyBoxName } from "@utils/emailUtil";
 import { useEffect, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import SimpleBar from 'simplebar-react';
-import { MAIL_ACTION } from "../../constants/mailAction";
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
 import CountSkeleton from "@components/ui/CountSkeletonLoader";
 

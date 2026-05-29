@@ -88,6 +88,7 @@ const EmailDetail = ({ email }: Props) => {
     }, [email.messageId, email.threadId]);
 
     useEffect(() => {
+        setThreadEmails([]);
         const isExcludedBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'sent') || verifyBoxName(boxName, 'trash');
 
         const hasThread = (emailDetailSelected?.threadCount ?? 0) > 1;

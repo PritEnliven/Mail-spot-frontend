@@ -55,7 +55,9 @@ const ThreadEmailItem = ({ index, email }: ThreadEmailItemProps) => {
     const openAttachment = () => {
     };
 
-    const { email: fromEmail, name: fromName, initial: fromInitial } = parseEmailAddress(email.from[0]);
+    const { email: fromEmail, name: fromName } = email.from?.[0] || {};
+
+    const fromInitial = (fromName || fromEmail || 'U').charAt(0).toUpperCase();
 
     return (
         <div className={`accordion-item pb-0 ${isThreadItemOpen ? 'open' : ''}`} id={`thread-${index}`}
