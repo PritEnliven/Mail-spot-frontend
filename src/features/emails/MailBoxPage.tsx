@@ -174,7 +174,6 @@ const MailBoxPage = () => {
             };
 
             let data = await getSingleEmailService(payload);
-            console.log(data);
             if (data.isScheduled) {
                 data.emailList.isSchedule = true;
             }

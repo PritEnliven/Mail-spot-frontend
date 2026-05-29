@@ -126,6 +126,7 @@ const EmailDetail = ({ email }: Props) => {
             showError("Error while cancel schedule email")
         }
     }
+    
     const handleEmailReplyForward = () => {
         if (!boxName.toLocaleLowerCase().includes('schedule')) {
             setEmails(prevEmails =>

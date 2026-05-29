@@ -5,20 +5,6 @@ import { getCounts, getEmailsService, searchAndFilterEmailService } from '@servi
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { getUserPermissions } from '@services/settings/settingsService';
 import { buildParentFolderOptions, resolveAllSidebarItems } from '@utils/emailUtil';
-import {
-    fetchEmailsWithCache,
-    markEmailsReadInCache,
-    removeEmailsFromCache,
-    invalidateMailboxCache,
-} from '@services/email/emailCacheService';
-import {
-    manageCache,
-    enforceSizeLimit,
-    prunePaginationWindow,
-    refreshCache,
-    getCacheStats,
-    PAGINATION_WINDOW_SIZE
-} from '../db/emailCacheRepository';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface BoxCount {
@@ -179,11 +165,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [isTotalCountLoading, setIsTotalCountLoading] = useState<boolean>(false);
     const [userId, setUserId] = useState<string>('guest');
 
-    useEffect(() => {
-        // Run comprehensive cache management on app startup
-        void manageCache();
-    }, []);
-
     const [sidebarState, setSidebarState] = useState<SidebarStateProps>({
         boxes: [],
         customBoxes: [],
@@ -235,7 +216,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     /* -------------------- API Functions -------------------- */
     const fetchEmails = useCallback(
         async (page = mailListPage, boxNameParam?: string, isPrevious?: boolean, mailAction: string = 'all', forceRefresh = false) => {
-
+            let emailList, paginationData;
             if (!boxNameParam) return;
 
             try {
@@ -246,28 +227,28 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     setReadUnreadFilter('all');
                 }
 
-                // Determine isReadTotal based on mailAction (not state to avoid closure issue)
                 let isReadTotal: boolean | null = null;
                 if (mailAction === 'unread') isReadTotal = false;
                 else if (mailAction === 'read') isReadTotal = true;
-                // For 'all', isReadTotal remains null
 
-                // Use cache-first approach for 'all' mailAction
                 if (mailAction === 'all') {
-                    const { emails: emailList, pagination: paginationData, fromCache } = await fetchEmailsWithCache({
-                        userId,
-                        boxName: boxNameParam,
-                        page,
-                        lastMailId: isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
-                        firstMailId: isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
+                    const payload = {
+                        current_active_box: boxName,
+                        vPage: page,
+                        lastMailId: page === 1 ? '' : isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
+                        firstMailId: page === 1 ? '' : isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
                         totalCount: page === 1 ? null : (paginationRef.current?.totalEmails ?? 0),
                         mailAction,
-                        isPrevious,
-                        forceRefresh,
-                    });
+                    };
 
-                    // Optional: log for debugging
-                    console.debug(`[MailData] fetchEmails page=${page} fromCache=${fromCache}`);
+
+                    const response = await getEmailsService(payload);
+                    if (response.statusCode !== 200) {
+                        throw new Error(`Failed to fetch emails (status ${response.statusCode})`);
+                    } else {
+                        emailList = response.data.emailList ?? [];
+                        paginationData = response.data.pagination;
+                    }
 
                     if (boxNameParam && page === 1) {
                         setIsTotalCountLoading(true);
@@ -316,13 +297,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     setEmails(emailList);
                     setPagination(paginationData);
                     setMailListPage(page);
-
-                    if (!fromCache) {
-                        void enforceSizeLimit(userId, boxNameParam);
-                        if (page > PAGINATION_WINDOW_SIZE + 5) {
-                            void prunePaginationWindow(userId, boxNameParam, page);
-                        }
-                    }
 
                 } else {
                     let payload = {
@@ -504,8 +478,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             )
         );
 
-        // Keep IndexedDB consistent — fire-and-forget
-        void markEmailsReadInCache(userId, boxName, messageIds, isRead);
 
         void unreadCountChange;
     };
@@ -539,9 +511,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 }
             }));
         }
-
-        // Keep IndexedDB consistent — fire-and-forget
-        void removeEmailsFromCache(userId, boxName, messageIds);
     };
 
     /* -------------------- Socket-safe helpers -------------------- */
@@ -596,10 +565,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
             return [...toAdd, ...prev];
         });
-
-        // After updating React state, invalidate the box cache so page 1
-        // gets re-fetched from the server next time (new email shifted cursors)
-        void invalidateMailboxCache(userId, boxName);
     };
 
     const updateEmail = (email: Email) => {
@@ -762,19 +727,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    // Cache management utilities
-    const refreshMailboxCache = useCallback(async (boxNameParam?: string) => {
-        await refreshCache(userId, boxNameParam);
-        // Refetch current page after cache refresh
-        if (boxNameParam || boxName) {
-            await fetchEmails(mailListPage, boxNameParam || boxName, false, 'all', true);
-        }
-    }, [userId, boxName, mailListPage, fetchEmails]);
-
-    const getCacheStatistics = useCallback(async () => {
-        return await getCacheStats();
-    }, []);
-
     const value = {
         boxName,
         boxTitle,
@@ -825,9 +777,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setIsSidebarCountLoading,
         isTotalCountLoading,
         setIsTotalCountLoading,
-        // Cache management utilities
-        refreshMailboxCache,
-        getCacheStatistics
     };
 
     return (
