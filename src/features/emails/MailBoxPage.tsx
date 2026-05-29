@@ -190,6 +190,7 @@ const MailBoxPage = () => {
 
             setEmailDetailSelected(data.emailList);
             setActiveEmailMessageId(messageId);
+
             // setSelectedEmails(new Set([messageId]));
             const isRead = data.emailList.isSeen;
 
@@ -275,6 +276,17 @@ const MailBoxPage = () => {
         }
     };
 
+    const simpleBarRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (simpleBarRef.current) {
+            const scrollEl = simpleBarRef.current.getScrollElement();
+            if (scrollEl) {
+                scrollEl.scrollTop = 0;
+            }
+        }
+    }, [emails]);
+
     return (
         <>
             {/* START:: Mail received box */}
@@ -300,6 +312,7 @@ const MailBoxPage = () => {
                         <NoEmailList />
                     ) : (
                         <SimpleBar
+                            ref={simpleBarRef}
                             style={{ paddingLeft: '1px', marginLeft: '-1px' }}
                             autoHide={false}
                             forceVisible="y"

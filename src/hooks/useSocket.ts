@@ -70,10 +70,7 @@ export const useMailSocket = () => {
             const boxLower = currentBox.toLowerCase().trim();
             // Match only the root Inbox, not sub-folders whose IMAP name starts
             // with "INBOX." (e.g. "INBOX.Sent", "INBOX.Drafts", "INBOX.Trash").
-            const isInbox =
-                boxLower === 'inbox' ||
-                boxLower.endsWith('/inbox') ||
-                boxLower.endsWith('.inbox');
+            const isInbox = boxLower === 'inbox' || boxLower.endsWith('/inbox') || boxLower.endsWith('.inbox');
             const isAllMail = boxLower.includes('all mail') || boxLower.includes('allmail');
             const appendToInbox = isInbox || isAllMail;
             if (!appendToInbox) return;

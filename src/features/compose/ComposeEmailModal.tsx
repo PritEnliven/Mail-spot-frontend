@@ -81,7 +81,14 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const [isGenerateEmailCardOpen, setIsGenerateEmailCardOpen] = useState(false);
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const attachmentsRef = useRef<HTMLDivElement>(null);
-    const onSubmitRef = useRef<(data: ComposeFormValues, scheduleAt?: string) => Promise<void>>(async () => {});
+    const onSubmitRef = useRef<(data: ComposeFormValues, scheduleAt?: string) => Promise<void>>(async () => { });
+
+    const normalizeRecipients = (recipients: any[]): string[] => {
+        if (!recipients?.length) return [];
+        return recipients.map((r) =>
+            typeof r === 'string' ? r : r.email
+        );
+    };
 
     const {
         control,
@@ -157,9 +164,9 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
         // 1. Reset RHF values (RHF does NOT auto-update)
         reset({
-            to: emailData.to ?? [],
-            cc: emailData.cc ?? [],
-            bcc: emailData.bcc ?? [],
+            to: normalizeRecipients(emailData.to),
+            cc: normalizeRecipients(emailData.cc ?? []),
+            bcc: normalizeRecipients(emailData.bcc ?? []),
             subject: emailData.subject ?? '',
             body: emailData.body ?? '',
         });
