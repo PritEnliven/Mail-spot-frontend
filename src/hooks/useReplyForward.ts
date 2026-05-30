@@ -177,11 +177,11 @@ export const useReplyForward = () => {
         const header = isForward
             ? `<div id="forwarded-message" class="forwarded-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
             `<div style="font-weight: bold; margin-bottom: 10px;">-------- Forwarded Message --------</div>` +
-            `<div><strong>From:</strong> ${email.from.join(', ')}</div>` +
+            `<div><strong>From:</strong> ${email.from.map(v => v.email).join(', ')}</div>` +
             `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
             `<div><strong>Subject:</strong> ${email.subject}</div>` +
-            `<div><strong>To:</strong> ${email.to.join(', ')}</div>` +
-            `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.join(', ')}</div>` : ''}` +
+            `<div><strong>To:</strong> ${email.to.map(v => v.email).join(', ')}</div>` +
+            `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.map(v => v.email).join(', ')}</div>` : ''}` +
             `</div>`
             : `<br><br><div id="quoted-message" class="quoted-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
             `<div style="font-weight: bold; margin-bottom: 10px;">-------- Original Message --------</div>` +
