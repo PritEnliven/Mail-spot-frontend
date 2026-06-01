@@ -94,7 +94,10 @@ const EmailDetailAttachmentPreview = ({
                 <div className="sm-name">
                     {attachments.length} Attachments
                     <span className="space-size ms-2">
-                        {(totalAttachmentSize / (1024 * 1024)).toFixed(2)} MB
+                        {totalAttachmentSize < 1024 * 1024
+                            ? `${(totalAttachmentSize / 1024).toFixed(2)} KB`
+                            : `${(totalAttachmentSize / (1024 * 1024)).toFixed(2)} MB`
+                        }
                     </span>
                 </div>
                 <a
