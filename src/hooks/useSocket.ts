@@ -40,73 +40,86 @@ export const useSocketEvent = (event: string, callback: EventCallback): void => 
 };
 
 export const useMailSocket = () => {
-    const { emails, setEmails, boxName, addNewEmail, updateEmail, deleteEmail } = useMailData();
+    const { emails, setEmails, boxName, pagination, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail } = useMailData();
 
     // Keep refs so the stable handlers always read the latest values
     // without needing to re-register on every render
-    const emailsRef    = useRef(emails);
-    const boxNameRef   = useRef(boxName);
+    const emailsRef = useRef(emails);
+    const boxNameRef = useRef(boxName);
     const setEmailsRef = useRef(setEmails);
-    const addEmailRef  = useRef(addNewEmail);
-    const updateRef    = useRef(updateEmail);
-    const deleteRef    = useRef(deleteEmail);
+    const addEmailRef = useRef(addNewEmail);
+    const updateRef = useRef(updateEmail);
+    const deleteRef = useRef(deleteEmail);
+
+    const paginationRef = useRef(pagination);
+    useEffect(() => {
+        paginationRef.current = pagination;
+    }, [pagination]);
 
     // Sync refs every render — no effect needed, no re-subscription triggered
-    emailsRef.current    = emails;
-    boxNameRef.current   = boxName;
+    emailsRef.current = emails;
+    boxNameRef.current = boxName;
     setEmailsRef.current = setEmails;
-    addEmailRef.current  = addNewEmail;
-    updateRef.current    = updateEmail;
-    deleteRef.current    = deleteEmail;
+    addEmailRef.current = addNewEmail;
+    updateRef.current = updateEmail;
+    deleteRef.current = deleteEmail;
 
     useEffect(() => {
         let cancelled = false;
         let socket: Socket | null = null;
+        const handleNewEmail = (payload: { emails: Email[]; unreadCount: number; totalCount: number; boxName: string }) => {
+            console.log('handleNewEmail', payload);
 
-        const handleNewEmail = (emailData: Email) => {
-            console.log('handleNewEmail', emailData);
-
-            const currentBox = boxNameRef.current;
-            const boxLower = currentBox.toLowerCase().trim();
-            // Match only the root Inbox, not sub-folders whose IMAP name starts
-            // with "INBOX." (e.g. "INBOX.Sent", "INBOX.Drafts", "INBOX.Trash").
+            const boxLower = boxNameRef.current.toLowerCase().trim();
             const isInbox = boxLower === 'inbox' || boxLower.endsWith('/inbox') || boxLower.endsWith('.inbox');
             const isAllMail = boxLower.includes('all mail') || boxLower.includes('allmail');
-            const appendToInbox = isInbox || isAllMail;
-            if (!appendToInbox) return;
+            if (!isInbox && !isAllMail) return;
 
-            if (!Array.isArray(emailData.from)) {
-                emailData.from = [emailData.from];
+            // Normalise + deduplicate against current state
+            const incoming = (payload.emails ?? [])
+                .map(e => ({ ...e, from: Array.isArray(e.from) ? e.from : [e.from] }))
+                .filter(e => !emailsRef.current.some(ex => ex.messageId === e.messageId));
+
+            if (!incoming.length) return;
+
+            const currentPagination = paginationRef.current;
+
+            if (currentPagination) {
+                setPagination({
+                    ...currentPagination,
+                    totalEmails: currentPagination.totalEmails + incoming.length,
+                    endCount: currentPagination.endCount + incoming.length
+                });
             }
 
-            if (emailData.threadId) {
-                const existingThread = emailsRef.current.find(
-                    e => e.threadId === emailData.threadId
-                );
+            const addedUnreadCount = incoming.filter(e => !e.isSeen).length;
+            updateBoxCount(boxNameRef.current, addedUnreadCount, incoming.length);
 
-                if (existingThread) {
-                    console.log('Found existing thread email, removing old and adding new to top');
+            // Single setState call — one re-render for the whole batch
+            setEmailsRef.current((prev: Email[]) => {
+                let next = [...prev];
 
-                    const updated = {
-                        ...emailData,
-                        flags: emailData.flags?.filter(f => f !== '\\Seen') ?? [],
-                        threadCount: (existingThread.threadCount ?? 0) + 1,
-                    };
-
-                    setEmailsRef.current((prev: Email[]) => [
-                        updated,
-                        ...prev.filter(e => e.messageId !== existingThread.messageId),
-                    ]);
-
-                    notificationManager.showNewEmailNotification(updated);
-                    console.log('emails after thread update', emailsRef.current);
-                    return;
+                for (const email of incoming) {
+                    if (email.threadId) {
+                        const idx = next.findIndex(e => e.threadId === email.threadId);
+                        if (idx !== -1) {
+                            const updated = {
+                                ...email,
+                                flags: email.flags?.filter(f => f !== '\\Seen') ?? [],
+                                threadCount: 1,
+                            };
+                            next.splice(idx, 1);
+                            next = [updated, ...next];
+                            notificationManager.showNewEmailNotification(updated);
+                            continue;
+                        }
+                    }
+                    next = [email, ...next];
+                    notificationManager.showNewEmailNotification(email);
                 }
-            }
 
-            addEmailRef.current(emailData);
-            notificationManager.showNewEmailNotification(emailData);
-            console.log('emails', emailsRef.current);
+                return next;
+            });
         };
 
         const handleEmailUpdated = (data: Partial<Email> & { messageId: string }) => {
@@ -135,10 +148,10 @@ export const useMailSocket = () => {
                 if (cancelled) return;
 
                 socket = s;
-                s.on('newEmail',      handleNewEmail);
-                s.on('emailUpdated',  handleEmailUpdated);
-                s.on('emailDeleted',  handleEmailDeleted);
-                s.on('threadReply',   handleThreadReply);
+                s.on('newEmail', handleNewEmail);
+                s.on('emailUpdated', handleEmailUpdated);
+                s.on('emailDeleted', handleEmailDeleted);
+                s.on('threadReply', handleThreadReply);
             } catch (err) {
                 console.error('Mail socket init error', err);
             }
@@ -150,10 +163,10 @@ export const useMailSocket = () => {
             cancelled = true;
             if (socket) {
                 // Pass exact handler references so only THIS hook's listeners are removed
-                socket.off('newEmail',      handleNewEmail);
-                socket.off('emailUpdated',  handleEmailUpdated);
-                socket.off('emailDeleted',  handleEmailDeleted);
-                socket.off('threadReply',   handleThreadReply);
+                socket.off('newEmail', handleNewEmail);
+                socket.off('emailUpdated', handleEmailUpdated);
+                socket.off('emailDeleted', handleEmailDeleted);
+                socket.off('threadReply', handleThreadReply);
             }
         };
     }, []); // empty array — runs once on mount, cleans up on unmount
