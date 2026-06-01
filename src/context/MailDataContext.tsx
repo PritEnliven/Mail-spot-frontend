@@ -73,6 +73,7 @@ interface MailDataType {
 
     userPermissions: AdminSettingsPermissions | null;
     setUserPermissions: (permissions: AdminSettingsPermissions | null) => void;
+    refreshUserPermissions: () => Promise<void>;
 
 
     /* Mail actions */
@@ -179,27 +180,27 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
     paginationRef.current = pagination;
 
-    useEffect(() => {
-        const loadUserPermissions = async () => {
-            try {
-                const response = await getUserPermissions();
-                if (response?.statusCode === 200) {
-                    setUserPermissions(response.data ?? null);
-                    // Set userId from permissions response
-                    if (response.data?.userId) {
-                        setUserId(response.data.userId);
-                    }
+    const refreshUserPermissions = useCallback(async () => {
+        try {
+            const response = await getUserPermissions();
+            if (response?.statusCode === 200) {
+                setUserPermissions(response.data ?? null);
+                // Set userId from permissions response
+                if (response.data?.userId) {
+                    setUserId(response.data.userId);
                 }
-            } catch {
-                setUserPermissions(null);
-                // Fallback: try to get userId from JWT token
-                const fallbackUserId = getUserIdFromToken();
-                setUserId(fallbackUserId);
             }
-        };
-
-        loadUserPermissions();
+        } catch {
+            setUserPermissions(null);
+            // Fallback: try to get userId from JWT token
+            const fallbackUserId = getUserIdFromToken();
+            setUserId(fallbackUserId);
+        }
     }, []);
+
+    useEffect(() => {
+        refreshUserPermissions();
+    }, [refreshUserPermissions]);
 
     // Helper to get userId from JWT token
     const getUserIdFromToken = () => {
@@ -742,6 +743,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         socketId,
         userPermissions,
         setUserPermissions,
+        refreshUserPermissions,
         setBoxName,
         setBoxTitle,
         setEmails,

@@ -67,7 +67,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const { contacts } = useContacts();
     const { openModal, closeModal, isComposeExpanded, setIsComposeExpanded } = useMailUI();
     const { settings } = useSettings();
-    const { updateBoxCount, sidebarState, boxName, setMailListPage, fetchEmails } = useMailData();
+    const { updateBoxCount, sidebarState, boxName, setMailListPage, fetchEmails, refreshUserPermissions } = useMailData();
     const {
         setFormData,
         registerSubmitHandler,
@@ -116,6 +116,10 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     });
     const debouncedSubject = useDebounce(subjectValue, 500);
     const [modalTitle, setModalTitle] = useState('Compose Email');
+
+    useEffect(() => {
+        void refreshUserPermissions();
+    }, [refreshUserPermissions]);
 
     const toggleGenerateEmailCard = () => {
         setIsGenerateEmailCardOpen(!isGenerateEmailCardOpen);

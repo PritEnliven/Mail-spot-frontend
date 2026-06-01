@@ -1,4 +1,5 @@
 import type { Email } from '@models/Email';
+import { useMailData } from '@context/MailDataContext';
 import { formatDate, TimeFormat } from '@utils/dateUtil';
 import { useCallback, useState } from 'react';
 import { useContacts } from '../context/index';
@@ -19,6 +20,7 @@ type EmailAddress = {
 
 export const useReplyForward = () => {
     const { fetchContacts } = useContacts();
+    const { refreshUserPermissions } = useMailData();
     const [replyForwardState, setReplyForwardState] = useState<ReplyForwardState>({
         isOpen: false,
         type: null,
@@ -32,6 +34,7 @@ export const useReplyForward = () => {
         targetId?: string
     ) => {
         fetchContacts();
+        void refreshUserPermissions();
         setReplyForwardState({
             isOpen: true,
             type,
@@ -48,7 +51,7 @@ export const useReplyForward = () => {
                 }
             }, 100);
         }
-    }, [fetchContacts]);
+    }, [fetchContacts, refreshUserPermissions]);
 
     const closeReplyForward = useCallback(() => {
         setReplyForwardState({
@@ -173,50 +176,58 @@ export const useReplyForward = () => {
     const getBody = useCallback((type: ReplyForwardType, email: Email) => {
         const isForward = type === 'forward';
 
-        // Create the quoted message header
-        const header = isForward
-            ? `<div id="forwarded-message" class="forwarded-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
-            `<div style="font-weight: bold; margin-bottom: 10px;">-------- Forwarded Message --------</div>` +
-            `<div><strong>From:</strong> ${email.from.map(v => v.email).join(', ')}</div>` +
-            `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
-            `<div><strong>Subject:</strong> ${email.subject}</div>` +
-            `<div><strong>To:</strong> ${email.to.map(v => v.email).join(', ')}</div>` +
-            `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.map(v => v.email).join(', ')}</div>` : ''}` +
-            `</div>`
-            : `<br><br><div id="quoted-message" class="quoted-message" style="border-left: 2px solid #ccc; padding-left: 10px; margin: 20px 0; color: #666; font-size: 0.9em;">` +
-            `<div style="font-weight: bold; margin-bottom: 10px;">-------- Original Message --------</div>` +
-            `<div><strong>From:</strong> ${email.from.map(v => v.email).join(', ')}</div>` +
-            `<div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>` +
-            `<div><strong>Subject:</strong> ${email.subject}</div>` +
-            `<div><strong>To:</strong> ${email.to.map(v => v.email).join(', ')}</div>` +
-            `${email.cc.length > 0 ? `<div><strong>CC:</strong> ${email.cc.map(v => v.email).join(', ')}</div>` : ''}` +
-            `</div>`;
+        const from = email.from.map(v => v.email).join(', ');
+        const to = email.to.map(v => v.email).join(', ');
+        const cc = email.cc?.map(v => v.email).join(', ');
 
-        let bodyContent: string;
+        const containerStyle =
+            'background-color:#f9f9f9;padding:15px;border-radius:4px;margin-top:10px;';
 
-        if (email.isBodyHtml && email.body) {
-            const cleanedBody = email.body
+        const header = `
+                    ${!isForward ? '<br><br>' : ''}
+                    <div
+                        id="${isForward ? 'forwarded-message' : 'quoted-message'}"
+                        class="${isForward ? 'forwarded-message' : 'quoted-message'}"
+                        style="border-left:2px solid #ccc;padding-left:10px;margin:20px 0;color:#666;font-size:0.9em;"
+                    >
+                        <div style="font-weight:bold;margin-bottom:10px;">
+                            -------- ${isForward ? 'Forwarded' : 'Original'} Message --------
+                        </div>
+                        <div><strong>From:</strong> ${from}</div>
+                        <div><strong>Date:</strong> ${formatDate(email.date, TimeFormat.FORWARD_TIME)}</div>
+                        <div><strong>Subject:</strong> ${email.subject}</div>
+                        <div><strong>To:</strong> ${to}</div>
+                        ${cc ? `<div><strong>CC:</strong> ${cc}</div>` : ''}
+                    </div>
+                `;
+
+        let content = '[No content]';
+        let extraStyle = 'color:#999;';
+
+        if (email.body) {
+            content = email.body
                 .replace(/<style[^>]*>.*?<\/style>/gis, '')
                 .replace(/:root\s*\{[^}]*\}/g, '')
                 .replace(/<meta[^>]*>/gi, '')
                 .replace(/<link[^>]*>/gi, '');
 
-            bodyContent = `<div class="quoted-content" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 10px;">${cleanedBody}</div>`;
+            extraStyle = '';
         } else if (email.bodyText) {
-            const escapedText = email.bodyText
+            content = email.bodyText
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
 
-            bodyContent = `<div class="quoted-content" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 10px; white-space: pre-wrap; font-family: monospace;">${escapedText}</div>`;
-        } else {
-            // Fallback for empty content
-            bodyContent = `<div class="quoted-content" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 10px; color: #999;">[No content]</div>`;
+            extraStyle = 'white-space:pre-wrap;font-family:monospace;';
         }
 
-        return header + bodyContent;
+        return `${header}
+                    <div class="quoted-content" style="${containerStyle}${extraStyle}">
+                        ${content}
+                    </div>
+                `;
     }, []);
 
     return {
