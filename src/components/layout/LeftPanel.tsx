@@ -131,6 +131,9 @@ const LeftPanel = () => {
             if (boxName === 'calendar') {
                 setIsCalendarAllSearchActive(false);
             }
+            else if (boxName === 'settings') {
+                
+            }
             else {
                 setPagination(null);
                 fetchEmails(1, boxName, false);

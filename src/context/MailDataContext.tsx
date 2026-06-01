@@ -221,7 +221,9 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchEmails = useCallback(
         async (page = mailListPage, boxNameParam?: string, isPrevious?: boolean, mailAction: string = 'all', forceRefresh = false) => {
             let emailList, paginationData;
-            if (!boxNameParam) return;
+            if(boxNameParam === 'settings' || boxNameParam === 'calendar' || !boxNameParam) {
+                return;
+            }
 
             try {
 
