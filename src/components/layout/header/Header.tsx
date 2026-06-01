@@ -54,10 +54,10 @@ const Header = () => {
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
         setBoxTitle, filterForm, boxName, searchTerm,
-        setEmailDetailSelected, setActiveEmailMessageId } = useMailData();
+        setEmailDetailSelected, setActiveEmailMessageId,
+        headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults } = useMailData();
     const { contacts, fetchContacts } = useContacts();
     const { calendarView, setCalendarView, changeView } = useCalendar();
-    const [searchResults, setSearchResults] = useState<any[]>([]);
     const [noResult, setNoResult] = useState(false);
     const { setSelectedEmails } = useMailSelection();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);

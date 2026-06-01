@@ -60,6 +60,8 @@ interface MailDataType {
     allSearchResult: boolean | false;
     searchTerm: string;
     filterForm: FilterEmailFormValues | null;
+    headerSearchResults: Email[];
+    setHeaderSearchResults: (results: Email[] | ((prev: Email[]) => Email[])) => void;
 
     /* Sidebar */
     sidebarState: SidebarStateProps;
@@ -158,6 +160,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [allSearchResult, setAllSearchResult] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterForm, setFilterForm] = useState<FilterEmailFormValues | null>(null);
+    const [headerSearchResults, setHeaderSearchResults] = useState<Email[]>([]);
     const [socketId, setSocketId] = useState<string | null>(null);
     const [userPermissions, setUserPermissions] = useState<AdminSettingsPermissions | null>(null);
     const [readUnreadFilter, setReadUnreadFilter] = useState<string>('all');
@@ -490,6 +493,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             .length;
 
         setEmails(prev => prev.filter(email => !messageIds.includes(email.messageId)));
+        setHeaderSearchResults(prev => prev.filter(email => !messageIds.includes(email.messageId)));
         const newPagination = pagination ? {
             ...pagination,
             endCount: pagination.endCount - messageIds.length,
@@ -740,6 +744,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         allSearchResult,
         searchTerm,
         filterForm,
+        headerSearchResults,
+        setHeaderSearchResults,
         socketId,
         userPermissions,
         setUserPermissions,
