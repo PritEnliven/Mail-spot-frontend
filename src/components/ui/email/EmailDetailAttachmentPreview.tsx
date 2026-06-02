@@ -12,7 +12,6 @@ import emlIcon from "@images/eml-image.png";
 import defaultIcon from "@images/no-image.png";
 
 const API_URL = import.meta.env.VITE_API_URL;
-const TOKEN = import.meta.env.VITE_TOKEN;
 
 interface Attachment {
     customFileName: string;
@@ -45,7 +44,8 @@ const EmailDetailAttachmentPreview = ({
             const isImage = ["png", "jpg", "jpeg", "svg", "webp", "gif"].includes(
                 extension || ""
             );
-
+            
+            const TOKEN = localStorage.getItem("token");
             return {
                 ...attachment,
                 isImage,
