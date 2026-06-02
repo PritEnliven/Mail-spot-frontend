@@ -27,9 +27,14 @@ function SubmitButton({ children, onClick, className = '', loading: propLoading 
             onClick={handleClick}
         >
             {isLoading ? (
-                <div className="spinner-border loading-spinner" role="status" style={{ width: '1rem', height: '1rem' }}>
-                    <span className="visually-hidden">Loading...</span>
-                </div>
+                <span className="d-inline-flex align-items-center gap-2">
+                    <span
+                        className="spinner-border spinner-border-sm text-light"
+                        role="status"
+                        aria-hidden="true"
+                    />
+                    <span>Saving...</span>
+                </span>
             ) : (
                 children
             )}

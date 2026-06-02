@@ -418,6 +418,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 const cursor = isPrevious ? pagination?.firstMailId : pagination?.lastMailId;
 
                 const direction = isPrevious ? 'prev' : 'next';
+                
                 const vPage = isPrevious ? Math.max(1, mailListPage - 1) : mailListPage + 1;
 
                 const payload: any = {

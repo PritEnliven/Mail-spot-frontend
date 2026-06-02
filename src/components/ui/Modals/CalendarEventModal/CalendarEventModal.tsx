@@ -844,7 +844,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                             </SimpleBar>
                             <div className="compose-btn-box d-flex align-items-center justify-content-between">
                                 <button type="button" className="btn-new" onClick={onClose}> Cancel </button>
-                                <SubmitButton className="btn-new btn-new-bg loading-spinner"
+                                <SubmitButton className="btn-new btn-new-bg"
                                     onClick={handleSubmit(onSubmit, (errors: any) => {
                                         console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                                     })}
