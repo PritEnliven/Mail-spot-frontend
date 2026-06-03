@@ -40,7 +40,7 @@ export const useSocketEvent = (event: string, callback: EventCallback): void => 
 };
 
 export const useMailSocket = () => {
-    const { emails, setEmails, boxName, pagination, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail } = useMailData();
+    const { emails, setEmails, boxName, pagination, updateEmailReadState, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail } = useMailData();
 
     // Keep refs so the stable handlers always read the latest values
     // without needing to re-register on every render
@@ -63,6 +63,9 @@ export const useMailSocket = () => {
     addEmailRef.current = addNewEmail;
     updateRef.current = updateEmail;
     deleteRef.current = deleteEmail;
+
+    const updateEmailReadStateRef = useRef(updateEmailReadState);
+    updateEmailReadStateRef.current = updateEmailReadState;
 
     useEffect(() => {
         let cancelled = false;
@@ -125,6 +128,12 @@ export const useMailSocket = () => {
         const handleEmailUpdated = (data: Partial<Email> & { messageId: string }) => {
             console.log('handleEmailUpdated', data);
             if (!data.messageId) return;
+
+            if (typeof data.isSeen === 'boolean') {
+                updateEmailReadStateRef.current([data.messageId], data.isSeen);
+                return;
+            }
+            
             updateRef.current(data as Email);
         };
 

@@ -221,7 +221,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchEmails = useCallback(
         async (page = mailListPage, boxNameParam?: string, isPrevious?: boolean, mailAction: string = 'all', forceRefresh = false) => {
             let emailList, paginationData;
-            if(boxNameParam === 'settings' || boxNameParam === 'calendar' || !boxNameParam) {
+            if (boxNameParam === 'settings' || boxNameParam === 'calendar' || !boxNameParam) {
                 return;
             }
 
@@ -418,7 +418,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 const cursor = isPrevious ? pagination?.firstMailId : pagination?.lastMailId;
 
                 const direction = isPrevious ? 'prev' : 'next';
-                
+
                 const vPage = isPrevious ? Math.max(1, mailListPage - 1) : mailListPage + 1;
 
                 const payload: any = {
@@ -458,16 +458,13 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
     /* -------------------- Mail Mutations -------------------- */
     const updateEmailReadState = (messageIds: string[], isRead: boolean) => {
-        // Count how many emails are changing read state
         let unreadCountChange = 0;
 
         if (isRead) {
-            // Marking as read: decrement unread count for emails that were unread
             unreadCountChange = emails.filter(email =>
                 messageIds.includes(email.messageId) && !email.isSeen
             ).length;
         } else {
-            // Marking as unread: increment unread count for emails that were read
             unreadCountChange = emails.filter(email =>
                 messageIds.includes(email.messageId) && email.isSeen
             ).length;
@@ -485,6 +482,25 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             )
         );
 
+        if (!unreadCountChange || !boxName) return;
+        setSidebarState(prev => {
+            const currentBox = prev.boxCounts[boxName];
+
+            if (!currentBox) return prev;
+
+            return {
+                ...prev,
+                boxCounts: {
+                    ...prev.boxCounts,
+                    [boxName]: {
+                        ...currentBox,
+                        unreadCount: isRead
+                            ? Math.max(0, currentBox.unreadCount - unreadCountChange)
+                            : currentBox.unreadCount + unreadCountChange
+                    }
+                }
+            };
+        });
 
         void unreadCountChange;
     };
