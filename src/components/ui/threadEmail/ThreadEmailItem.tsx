@@ -18,6 +18,7 @@ import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { parseEmailAddress } from "@utils/emailUtil";
 import moment from 'moment';
 import { lazy, Suspense, useState } from "react";
+import type { PendingReply } from "@models/PendingReply";
 
 // Lazy loaded components
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
@@ -38,9 +39,11 @@ const isDateInCurrentWeek = (date: Date | string | number): boolean => {
 interface ThreadEmailItemProps {
     email: any;
     index: number;
+    onEmailSent?: () => void;
+    onPendingReply?: (reply: PendingReply) => void;
 }
 
-const ThreadEmailItem = ({ index, email }: ThreadEmailItemProps) => {
+const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply }: ThreadEmailItemProps) => {
 
     const [isThreadItemOpen, setisThreadItemOpen] = useState(false);
     const { replyForwardState, openReplyForward, closeReplyForward, } = useReplyForward();
@@ -212,6 +215,8 @@ const ThreadEmailItem = ({ index, email }: ThreadEmailItemProps) => {
                                     email={replyForwardState.sourceEmail}
                                     type={replyForwardState.type!}
                                     onClose={closeReplyForward}
+                                    onEmailSent={onEmailSent}
+                                    onPendingReply={onPendingReply}
                                 />
                             </Suspense>
                         )}

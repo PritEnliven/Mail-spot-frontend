@@ -20,6 +20,7 @@ import editIcon from '@images/edit2-icon.svg';
 import replyAllIconHover from "@images/reply-all-icon-hover.svg";
 import replyAllIcon from "@images/reply-all-icon.svg";
 import type { Email } from "@models/Email";
+import type { PendingReply } from "@models/PendingReply";
 import type { Response } from "@models/Response";
 import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
@@ -28,10 +29,12 @@ import { verifyBoxName, parseEmailAddress, mailboxParticipantToString } from "@u
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
+import { useSocketEvent } from "@hooks/useSocket";
 
 // Lazy loaded components
 const ThreadEmailItem = lazy(() => import("@components/ui/threadEmail/ThreadEmailItem"));
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
+const PendingThreadEmailItem = lazy(() => import("@components/ui/threadEmail/PendingThreadEmailItem"));
 
 export interface RelativeDate {
     isOld: boolean;
@@ -57,6 +60,7 @@ const EmailDetail = ({ email }: Props) => {
     const { replyForwardState, openReplyForward, closeReplyForward } = useReplyForward();
     const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar()
     const [threadEmails, setThreadEmails] = useState<any[]>([]);
+    const [pendingReplies, setPendingReplies] = useState<PendingReply[]>([]);
     const { isDesktop } = useScreen();
 
     // const fromStr = mailboxParticipantToString(email.from?.[0]);
@@ -139,6 +143,58 @@ const EmailDetail = ({ email }: Props) => {
             loadThreadEmails();
         }
     }
+
+    // Optimistically append a pending row; skip thread refresh until socket confirms
+    const handlePendingReply = useCallback((reply: PendingReply) => {
+        if (!boxName.toLocaleLowerCase().includes('schedule')) {
+            setEmails(prevEmails =>
+                prevEmails.map(e =>
+                    e.messageId === email.messageId
+                        ? { ...e, threadCount: (e.threadCount ?? 0) + 1 }
+                        : e
+                )
+            );
+        }
+        setPendingReplies(prev => [...prev, reply]);
+    }, [boxName, email.messageId, setEmails]);
+
+    // Called by socket 'outboundReplySent' — flip row from pending → sent (light → full opacity)
+    const clearPendingReply = useCallback((clientMessageId: string) => {
+        setPendingReplies(prev =>
+            prev.map(r =>
+                r.clientMessageId === clientMessageId
+                    ? { ...r, status: 'sent' as const }
+                    : r
+            )
+        );
+    }, []);
+
+    // Called by socket 'outboundReplyFailed' — mark row as failed and show toast
+    const markPendingReplyFailed = useCallback((clientMessageId: string, errorMessage?: string) => {
+        setPendingReplies(prev =>
+            prev.map(r =>
+                r.clientMessageId === clientMessageId
+                    ? { ...r, status: 'failed' as const, errorMessage: errorMessage || 'Send failed' }
+                    : r
+            )
+        );
+        showError(errorMessage || 'Failed to send reply. Please try again.');
+    }, []);
+
+    // Clear pending rows when switching to a different email
+    useEffect(() => {
+        setPendingReplies([]);
+    }, [email.messageId]);
+
+    // Socket: reply confirmed → resolve pending row
+    useSocketEvent('outboundReplySent', (data: { clientMessageId: string }) => {
+        clearPendingReply(data.clientMessageId);
+    });
+
+    // Socket: reply failed → mark pending row as failed
+    useSocketEvent('outboundReplyFailed', (data: { clientMessageId: string; error?: string }) => {
+        markPendingReplyFailed(data.clientMessageId, data.error);
+    });
 
     const handleEditScheduleEmail = async (id: string) => {
         try {
@@ -445,18 +501,31 @@ const EmailDetail = ({ email }: Props) => {
                             type={replyForwardState.type!}
                             onClose={closeReplyForward}
                             onEmailSent={handleEmailReplyForward}
+                            onPendingReply={handlePendingReply}
                         />
                     </Suspense>
                 )}
             </div>
 
             {/* Thread Emails */}
-            {
-                threadEmails.length > 0 &&
+            {(threadEmails.length > 0 || pendingReplies.length > 0) &&
                 <div className="thread-email" id="threadEmailsSection">
                     <Suspense fallback={null}>
-                        {threadEmails.map((email, index) => (
-                            <ThreadEmailItem key={email.messageId} email={email} index={index} />
+                        {threadEmails.map((threadEmail, index) => (
+                            <ThreadEmailItem
+                                key={threadEmail.messageId}
+                                email={threadEmail}
+                                index={index}
+                                onEmailSent={handleEmailReplyForward}
+                                onPendingReply={handlePendingReply}
+                            />
+                        ))}
+                        {pendingReplies.map((reply, index) => (
+                            <PendingThreadEmailItem
+                                key={reply.clientMessageId}
+                                reply={reply}
+                                index={threadEmails.length + index}
+                            />
                         ))}
                     </Suspense>
                 </div>

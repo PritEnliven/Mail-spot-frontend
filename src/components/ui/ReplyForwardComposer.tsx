@@ -20,6 +20,7 @@ import smartMessageIcon from '@images/smart-message-icon.svg';
 import trashIconHover from '@images/trash-icon-hover.svg';
 import trashIcon from '@images/trash-icon.svg';
 import type { Email } from "@models/Email";
+import type { PendingReply } from "@models/PendingReply";
 import { sendReply } from "@services/emailSending/emailSendingService";
 import { scheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getSignatureForActions } from "@services/settings/settingsService";
@@ -30,14 +31,30 @@ import { useNavigate } from 'react-router-dom';
 import SimpleBar from "simplebar-react";
 import { useContacts, useMailUI } from '../../context/index';
 
+/**
+ * Returns the full composed HTML (reply text + original quoted message),
+ * stripping only the injected email signature so the pending row looks
+ * identical to what a real sent thread email would show.
+ */
+const extractBodyHtml = (html: string): string => {
+    try {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        doc.querySelectorAll('#email-signature').forEach(el => el.remove());
+        return doc.body.innerHTML.trim();
+    } catch {
+        return html;
+    }
+};
+
 interface ReplyForwardComposerProps {
     email: Email;
     type: ReplyForwardType;
     onClose?: () => void;
-    onEmailSent?: () => void; // Callback to refresh thread emails
+    onEmailSent?: () => void;
+    onPendingReply?: (reply: PendingReply) => void;
 }
 
-const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwardComposerProps) => {
+const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingReply }: ReplyForwardComposerProps) => {
     const navigate = useNavigate();
     const { contacts } = useContacts();
     const { openModal } = useMailUI();
@@ -256,10 +273,32 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent }: ReplyForwar
             formData.append('messageId', email.messageId)
             formData.append('threadId', email.threadId)
 
+            // Generate a client-side ID so the socket event can match this send
+            const clientMessageId =
+                typeof crypto?.randomUUID === 'function'
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+            formData.append('clientMessageId', clientMessageId);
+
             try {
                 const response: any = await sendReply(formData);
                 if (response.statusCode === 200) {
-                    onEmailSent?.();
+                    if (response.data?.status === 'pending') {
+                        const currentUserEmail = localStorage.getItem('email') || '';
+                        const bodyPreview = extractBodyHtml(data.body || '');
+                        onPendingReply?.({
+                            clientMessageId: response.data.clientMessageId ?? clientMessageId,
+                            fromEmail: currentUserEmail,
+                            fromName: currentUserEmail.split('@')[0],
+                            toEmails: data.to ?? [],
+                            subject: data.subject ?? '',
+                            bodyPreview,
+                            sentAt: new Date().toISOString(),
+                            status: 'pending',
+                        });
+                    } else {
+                        onEmailSent?.();
+                    }
                     onClose?.();
                 }
             } catch (error) {

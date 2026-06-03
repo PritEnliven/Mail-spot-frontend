@@ -895,3 +895,51 @@ button.accordion-button.collapsed {
     padding: 16px;
     bottom: -16px;
 }
+
+/* ─── Pending / Failed / Sent thread-reply rows ─── */
+.thread-email-pending {
+    position: relative;
+}
+
+.thread-email-pending::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-left: 3px solid #0073B6;
+    border-radius: 4px;
+    pointer-events: none;
+    transition: border-left-color 0.4s ease;
+}
+
+/* Socket confirmed: drop the blue stripe */
+.thread-email-sent::after {
+    border-left-color: transparent;
+}
+
+.thread-email-failed::after {
+    border-left-color: #dc3545;
+}
+
+.pending-profile-label {
+    background-color: #0073B6 !important;
+}
+
+.thread-email-failed .pending-profile-label {
+    background-color: #dc3545 !important;
+}
+
+.pending-status-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #0073B6;
+    background-color: #ddeef9;
+    border-radius: 10px;
+    padding: 2px 10px;
+    white-space: nowrap;
+}
+
+.pending-status-badge--failed {
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.08);
+}
