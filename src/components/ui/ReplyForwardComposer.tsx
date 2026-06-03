@@ -1,4 +1,5 @@
 import AttachmentPreview from "@components/ui/AttachmentPreview";
+import { showSuccess } from "@components/ui/toast/toastNotification";
 import CkEditorRichText from "@components/ui/CkEditor/CkEditorRichText";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import SubmitButton from '@components/ui/form/SubmitButton';
@@ -296,7 +297,9 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                             sentAt: new Date().toISOString(),
                             status: 'pending',
                         });
+                        showSuccess('Reply sent successfully!');
                     } else {
+                        showSuccess('Reply sent successfully!');
                         onEmailSent?.();
                     }
                     onClose?.();

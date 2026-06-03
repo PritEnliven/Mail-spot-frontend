@@ -43,7 +43,7 @@ const PendingThreadEmailItem = ({ reply, index }: PendingThreadEmailItemProps) =
                                 <div className="d-flex align-items-center justify-content-between position-relative profile-main-box">
                                     <span className="label-sm thread-label-text">From</span>
                                     <div className="d-flex align-items-center profile-section">
-                                        <span className={`mail-profile-label ms-0${isPending ? ' pending-profile-label' : ''}`}>
+                                        <span className="mail-profile-label ms-0">
                                             {initial}
                                         </span>
                                         <div className="d-block">

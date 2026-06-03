@@ -896,6 +896,11 @@ button.accordion-button.collapsed {
     bottom: -16px;
 }
 
+/* Remove double border between main email section and first thread item */
+.thread-email > .accordion-item:first-child {
+    border-top: none;
+}
+
 /* ─── Pending / Failed / Sent thread-reply rows ─── */
 .thread-email-pending {
     position: relative;
@@ -920,13 +925,6 @@ button.accordion-button.collapsed {
     border-left-color: #dc3545;
 }
 
-.pending-profile-label {
-    background-color: #0073B6 !important;
-}
-
-.thread-email-failed .pending-profile-label {
-    background-color: #dc3545 !important;
-}
 
 .pending-status-badge {
     display: inline-block;
