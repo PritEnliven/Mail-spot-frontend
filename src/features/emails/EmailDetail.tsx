@@ -26,7 +26,7 @@ import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/
 import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { verifyBoxName, parseEmailAddress, mailboxParticipantToString } from "@utils/emailUtil";
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
 import { useSocketEvent } from "@hooks/useSocket";
@@ -79,6 +79,8 @@ const EmailDetail = ({ email }: Props) => {
     const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
     const highlightTerm = email.isSearchEmail || allSearchResult ? searchTerm : "";
 
+    const isScheduleBox = useMemo(() => verifyBoxName(boxName, 'scheduled'), [boxName]);
+
     const loadThreadEmails = useCallback(async () => {
         try {
             const response = await getAllThreadEmails({
@@ -130,7 +132,7 @@ const EmailDetail = ({ email }: Props) => {
             showError("Error while cancel schedule email")
         }
     }
-    
+
     const handleEmailReplyForward = () => {
         if (!boxName.toLocaleLowerCase().includes('schedule')) {
             setEmails(prevEmails =>
@@ -297,7 +299,7 @@ const EmailDetail = ({ email }: Props) => {
                                 )}
                             </div>
                             {/* Actions */}
-                            {!email.isSchedule && (
+                            {!isScheduleBox && (
                                 <div className="application-btn-multi" id="emailActionsBtn">
                                     <ul>
                                         <li>
@@ -354,7 +356,7 @@ const EmailDetail = ({ email }: Props) => {
                     initial={initial}
                     fromName={fromName}
                     fromEmail={fromEmail}
-                    isSchedule={!!email.isSchedule}
+                    isSchedule={!!isScheduleBox}
                     email={email}
                     searchTerm={highlightTerm}
                     onReplyForwardAction={(action) => openReplyForward(action as any, email, "reply-forward-bottom-box")}
@@ -363,7 +365,7 @@ const EmailDetail = ({ email }: Props) => {
 
             { /** Schedule info box */}
 
-            {email.isSchedule && (
+            {isScheduleBox && (
                 <div className="schedule-info-box">
                     <div className="d-flex align-items-center">
                         <img src="images/scheduled-icon.svg" alt="" className="me-3" />
@@ -425,7 +427,7 @@ const EmailDetail = ({ email }: Props) => {
                 onOpenAttachment={openAttachment}
             />
 
-            {!email.isSchedule && (
+            {!isScheduleBox && (
                 <div className="application-btn-multi" id="replyForwardActionButtons">
                     <ul>
                         <li>
