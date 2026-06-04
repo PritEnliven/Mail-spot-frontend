@@ -44,7 +44,7 @@ const EmailDetailAttachmentPreview = ({
             const isImage = ["png", "jpg", "jpeg", "svg", "webp", "gif"].includes(
                 extension || ""
             );
-            
+
             const TOKEN = localStorage.getItem("token");
             return {
                 ...attachment,
@@ -156,7 +156,10 @@ const EmailDetailAttachmentPreview = ({
                         </div>
                         <div>
                             <p className="pdf-name m-0">{attachment.filename}</p>
-                            <span className="space-size">{(attachment.size / 1024).toFixed(2)} KB</span>
+                            {/* <span className="space-size">{(attachment.size / 1024).toFixed(2)} KB</span> */}
+                            <span className="space-size">{attachment.size < 1024 * 1024
+                                ? `${(attachment.size / 1024).toFixed(2)} KB`
+                                : `${(attachment.size / (1024 * 1024)).toFixed(2)} MB`}</span>
                         </div>
                     </div>
                 ))}

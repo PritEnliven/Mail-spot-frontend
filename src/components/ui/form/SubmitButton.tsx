@@ -33,7 +33,7 @@ function SubmitButton({ children, onClick, className = '', loading: propLoading 
                         role="status"
                         aria-hidden="true"
                     />
-                    <span>Saving...</span>
+                    {/* <span>Saving...</span> */}
                 </span>
             ) : (
                 children

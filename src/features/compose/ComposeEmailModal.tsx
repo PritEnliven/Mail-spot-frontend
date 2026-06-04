@@ -31,7 +31,7 @@ import { useSettings } from '@context/SettingsContext';
 import { useComposeFormContext } from '@context/ComposeFormContext';
 import { useCcBccToggle } from '@hooks/useCcBccToggle';
 import { useSignatureManager } from '@hooks/useSignatureManager';
-import { useAttachmentManager } from '@hooks/useAttachmentManager';
+import { useAttachmentManager, isExistingAttachment } from '@hooks/useAttachmentManager';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { composeSchema, type ComposeFormValues } from './compose.schema';
 import { useDebounce } from '@hooks/useDebounce';
@@ -59,6 +59,7 @@ interface ComposeEmailModalProps {
         isDraftMail?: boolean | false;
         draftEmailId?: string;
         draftMessageId?: string;
+        isEditScheduleEmail?: boolean;
     }
 }
 
@@ -303,6 +304,11 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             scheduleFormData.append('scheduleAt', scheduleAt);
             scheduleFormData.append('isSchedule', 'true');
 
+            if (emailData?.isEditScheduleEmail) {
+                scheduleFormData.append('isEditScheduleEmail', (emailData?.isEditScheduleEmail ?? false).toString());
+                scheduleFormData.append('scheduleId', emailData?._id || '');
+            }
+
             // Add attachments as files
             attachments.forEach((file) => {
                 if (file instanceof File) {
@@ -311,6 +317,17 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                     scheduleFormData.append('attachments', file.file);
                 }
             });
+
+            // Add deleted existing attachments so backend knows what to remove
+            const deletedAttachments = emailData?.attachments?.filter(
+                serverAttachment => !attachments.some(current =>
+                    isExistingAttachment(current) && current.name === serverAttachment.filename
+                )
+            ) || [];
+
+            if (deletedAttachments.length > 0) {
+                scheduleFormData.append('deletedAttachments', JSON.stringify(deletedAttachments));
+            }
 
             try {
                 const response: any = await scheduleEmail(scheduleFormData);

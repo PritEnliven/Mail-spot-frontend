@@ -482,25 +482,25 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             )
         );
 
-        if (!unreadCountChange || !boxName) return;
-        setSidebarState(prev => {
-            const currentBox = prev.boxCounts[boxName];
+        // if (!unreadCountChange || !boxName) return;
+        // setSidebarState(prev => {
+        //     const currentBox = prev.boxCounts[boxName];
 
-            if (!currentBox) return prev;
+        //     if (!currentBox) return prev;
 
-            return {
-                ...prev,
-                boxCounts: {
-                    ...prev.boxCounts,
-                    [boxName]: {
-                        ...currentBox,
-                        unreadCount: isRead
-                            ? Math.max(0, currentBox.unreadCount - unreadCountChange)
-                            : currentBox.unreadCount + unreadCountChange
-                    }
-                }
-            };
-        });
+        //     return {
+        //         ...prev,
+        //         boxCounts: {
+        //             ...prev.boxCounts,
+        //             [boxName]: {
+        //                 ...currentBox,
+        //                 unreadCount: isRead
+        //                     ? Math.max(0, currentBox.unreadCount - unreadCountChange)
+        //                     : currentBox.unreadCount + unreadCountChange
+        //             }
+        //         }
+        //     };
+        // });
 
         void unreadCountChange;
     };

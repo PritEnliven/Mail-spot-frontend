@@ -13,7 +13,7 @@ export type ExistingAttachment = {
 
 export type AttachmentItem = File | ExistingAttachment;
 
-function isExistingAttachment(
+export function isExistingAttachment(
     item: AttachmentItem
 ): item is ExistingAttachment {
     return (item as ExistingAttachment).isExisting === true;

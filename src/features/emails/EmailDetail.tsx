@@ -214,9 +214,9 @@ const EmailDetail = ({ email }: Props) => {
                         attachments: email.attachments ?? [],
                         scheduledTime: email.scheduledTime ?? null,
                         isScheduled: true,
+                        isEditScheduleEmail: true
                     }
                 })
-                showSuccess('Scheduled email loaded for editing');
             }
         } catch (error) {
             showError("Error while cancel schedule email")
