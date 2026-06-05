@@ -23,8 +23,8 @@ import { showError } from "@components/ui/toast/toastNotification";
 import type { CalendarFilterFormValues } from "./calendarFilterForm.schema";
 
 function CalendarHeader() {
-    const { goPrev, goNext, goToday, calendarTitle, mainCalendarRef, searchText, setSearchText, searchResults, setSearchResults, noResult, setNoResult, isSearchResultDropdownOpen, setIsSearchResultDropdownOpen, resetSearchState } = useCalendar();
-    const { control, handleSubmit, reset, getValues, setValue } = useCalendarFilterForm();
+    const { goPrev, goNext, goToday, calendarTitle, mainCalendarRef, searchText, setSearchText, searchResults, setSearchResults, noResult, setNoResult, isSearchResultDropdownOpen, setIsSearchResultDropdownOpen } = useCalendar();
+    const { control, handleSubmit, reset, getValues } = useCalendarFilterForm();
     const { isDesktop } = useScreen();
     const { contacts } = useContacts();
     const [isCalendarFilterDropdownOpen, setIsCalendarFilterDropdownOpen] = useState(false);

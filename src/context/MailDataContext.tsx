@@ -219,7 +219,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
     /* -------------------- API Functions -------------------- */
     const fetchEmails = useCallback(
-        async (page = mailListPage, boxNameParam?: string, isPrevious?: boolean, mailAction: string = 'all', forceRefresh = false) => {
+        async (page = mailListPage, boxNameParam?: string, isPrevious?: boolean, mailAction: string = 'all', _forceRefresh = false) => {
             let emailList, paginationData;
             if (boxNameParam === 'settings' || boxNameParam === 'calendar' || !boxNameParam) {
                 return;

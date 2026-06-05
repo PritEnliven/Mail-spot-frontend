@@ -6,7 +6,6 @@ import dropdownIcon from "@images/chevron-down-icon.svg"
 import dropUpIcon from "@images/chevron-up-icon.svg";
 import removeIcon from "@images/close-icon.svg";
 import SimpleBar from 'simplebar-react';
-import type { AnyZodTuple } from 'zod/v3';
 
 export const getSelectStyles = (
   type: string,

@@ -38,9 +38,12 @@ export const SettingsSchema = z.object({
   signatureId: z.string().optional(),
   enableSignature: z.boolean(),
   enableReplyForwardUse: z.boolean(),
+  threadView: z.boolean(),
+  downloadLocation: z.string().optional(),
+  notification: z.boolean(),
   body: z.string().optional(),
 });
 
 export type SettingPageFormValues = z.infer<typeof SettingsSchema> & {
-  signatures: Signature[];
+  signatures?: Signature[];
 };

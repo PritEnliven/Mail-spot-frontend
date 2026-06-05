@@ -115,11 +115,19 @@ const Header = () => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef<any>(null);
 
-    const isInsideProfileDropdown = profileRef.current && profileRef.current.contains(target);
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node;
+            const isInsideProfileDropdown = profileRef.current && profileRef.current.contains(target);
 
-    if (isProfileOpen && !isInsideProfileDropdown) {
-        setIsProfileOpen(false);
-    }
+            if (isProfileOpen && !isInsideProfileDropdown) {
+                setIsProfileOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isProfileOpen]);
 
     return (
         <div className="mail-profile-dropdown" ref={profileRef}>

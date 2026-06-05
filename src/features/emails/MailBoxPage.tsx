@@ -337,9 +337,7 @@ const MailBoxPage = () => {
                                                         emails={emails as any}
                                                         onOpenEmail={(uid: number, messageId: string, isSearch: boolean) => openEmailDetailHandler(currentActiveBox, uid, messageId, isSearch)}
                                                         onMarkReadUnread={markAsReadUnreadEmailHandler}
-                                                        onDelete={setupDeleteConfirmation} isActive={false} boxName={''} onToggleSelection={function (messageId: string): void {
-                                                            throw new Error('Function not implemented.');
-                                                        }} />
+                                                        onDelete={setupDeleteConfirmation} isActive={false} boxName={''} onToggleSelection={() => undefined} />
                                                 );
                                             })
                                         ) : (

@@ -57,7 +57,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showImapPassword, setShowImapPassword] = useState(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   const {
     control,

@@ -1,6 +1,5 @@
 import CopyEmail from "@components/ui/email/CopyEmail";
 import { HighlightText } from "@components/ui/HighlightText";
-import { mailboxParticipantToString, parseEmailAddress } from "@utils/emailUtil";
 
 interface Recipient {
     name?: string;

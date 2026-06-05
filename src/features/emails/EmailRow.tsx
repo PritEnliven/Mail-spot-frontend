@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import attachmentRoundIcon from "@images/attachment-stroke-rounded-icon.svg";
 import mailIcon from "@images/mail-icon.svg";
 import mailIconHover from "@images/mail-icon-hover.svg";
@@ -10,7 +10,7 @@ import eventIcon from "@images/event-icon.svg";
 import AttachmentList from "@components/ui/email/AttachmentList";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { verifyBoxName, normalizeMailboxList } from "@utils/emailUtil";
+import { verifyBoxName } from "@utils/emailUtil";
 import { useMailData, useMailSelection } from "../../context/index";
 
 interface EmailRowProps {
@@ -59,7 +59,7 @@ const EmailRow = memo(({
     onOpenEmail,
     onMarkReadUnread,
     onDelete,
-    onToggleSelection,
+    onToggleSelection: _onToggleSelection,
 }: EmailRowProps) => {
     const { boxName } = useMailData();
     let emailNameOrEmail = email.from?.[0] ?? "Unknown";

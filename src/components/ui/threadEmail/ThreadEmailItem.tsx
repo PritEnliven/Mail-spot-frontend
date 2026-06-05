@@ -15,7 +15,6 @@ import attachmentStrokesRoundedIcon from "@images/attachment-stroke-rounded-icon
 import replyAllIconHover from "@images/reply-all-icon-hover.svg";
 import replyAllIcon from "@images/reply-all-icon.svg";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { parseEmailAddress } from "@utils/emailUtil";
 import moment from 'moment';
 import { lazy, Suspense, useState } from "react";
 import type { PendingReply } from "@models/PendingReply";

@@ -99,12 +99,6 @@ function CustomTimeSelector({
     return hh * 60 + mm;
   };
 
-  const minutesToTimeString = (minutes: number): string => {
-    const hh = Math.floor(minutes / 60);
-    const mm = minutes % 60;
-    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-  };
-
   const roundToNearest15 = (minutes: number): number => {
     return Math.round(minutes / 15) * 15;
   };

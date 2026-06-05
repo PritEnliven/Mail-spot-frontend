@@ -231,8 +231,6 @@ function SettingsPage() {
     }
 
     // ─── Folder Picker Logic ───────────────────────────────────────────
-    let selectedDirHandle: FileSystemDirectoryHandle | null = null;
-
     const handleFolderPick = async () => {
         // 1. Browser FIRST
         if ('showDirectoryPicker' in window) {
@@ -240,9 +238,6 @@ function SettingsPage() {
                 const dirHandle = await (window as Window & {
                     showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>;
                 }).showDirectoryPicker();
-
-                // store in memory only
-                selectedDirHandle = dirHandle;
 
                 // UI
                 setValue('downloadLocation', dirHandle.name, { shouldDirty: true });

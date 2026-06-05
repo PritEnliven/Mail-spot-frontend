@@ -25,7 +25,7 @@ import type { Response } from "@models/Response";
 import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { verifyBoxName, parseEmailAddress, mailboxParticipantToString } from "@utils/emailUtil";
+import { verifyBoxName } from "@utils/emailUtil";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
@@ -49,9 +49,6 @@ export interface CustomBox {
 interface Props {
     email: Email;
 }
-
-const openAttachment = (customFileName: string, filename: string, isEml: boolean) => {
-};
 
 const EmailDetail = ({ email }: Props) => {
     const { downloadAttachments } = useAttachmentDownload();
@@ -78,6 +75,9 @@ const EmailDetail = ({ email }: Props) => {
 
     const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
     const highlightTerm = email.isSearchEmail || allSearchResult ? searchTerm : "";
+    const openAttachment = (customFileName: string, filename: string) => {
+        downloadAttachments('single', customFileName, filename, email.messageId);
+    };
 
     const isScheduleBox = useMemo(() => verifyBoxName(boxName, 'scheduled'), [boxName]);
 

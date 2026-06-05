@@ -1,7 +1,7 @@
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import inboxIconActive from '@images/inbox-icon-active.svg';
 import inboxIcon from '@images/inbox-icon.svg';
-import { getSingleEmailService } from "@services/email/emailService";
+import { getSingleEmailService, type GetSingleEmailPayload } from "@services/email/emailService";
 import sidebarConfig from "../config/sidebar.config";
 import type { BoxCount } from "../context/MailDataContext";
 

@@ -33,7 +33,7 @@ const LeftPanel = () => {
         setEmailDetailSelected,
         setActiveEmailMessageId,
         setSidebarStateFromAPI } = useMailData();
-    const { setToolbarState, openModal, closeModal, activeModals, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, setIsMailListOpen } = useMailUI();
+    const { setToolbarState, openModal, closeModal, activeModals, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { fetchContacts } = useContacts();
 
     const customFolders = useMemo(() => {

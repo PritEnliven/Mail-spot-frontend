@@ -29,7 +29,7 @@ interface CalendarAllEventListProps {
     endDate?: string;
 }
 
-const CalendarAllEventList = ({ startDate, endDate }: CalendarAllEventListProps) => {
+const CalendarAllEventList = (_props: CalendarAllEventListProps) => {
 
     // TODO: Use startDate and endDate for filtering or displaying date range information
     const { calendarAllSearchedEvents, setIsCalendarAllSearchActive, setCalendarAllSearchedEvents, setSelectedEvent, getAllEventList, resetSearchState } = useCalendar();
@@ -121,7 +121,7 @@ const CalendarAllEventList = ({ startDate, endDate }: CalendarAllEventListProps)
                                                 </div>
                                                 <div className="w-100">
                                                     {events.map((event) => {
-                                                        const { timeText, statusText } = formatTime(event);
+                                                        const { timeText } = formatTime(event);
                                                         return (
                                                             <a
                                                                 key={event._id}
