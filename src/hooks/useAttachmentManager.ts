@@ -24,7 +24,7 @@ function getAttachmentName(item: AttachmentItem): string {
 }
 
 export function useAttachmentManager() {
-    const { userPermissions } = useMailData();
+    const { userPermissions, permissionsLoaded } = useMailData();
     const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
     const [error, setError] = useState<string | null>(null);
 
@@ -92,15 +92,15 @@ export function useAttachmentManager() {
     };
 
     const addFiles = (files: AttachmentItem[]) => {
-        if (!userPermissions) {
+        if (!permissionsLoaded) {
             const message = 'Permissions are not loaded yet. Please try again.';
             setError(message);
             showError(message);
             return;
         }
 
-        const allowedTypes = normalizeAllowedTypes(userPermissions.allowedFileTypes);
-        const maxTotalBytes = getMaxTotalBytes(userPermissions.fileSize);
+        const allowedTypes = normalizeAllowedTypes(userPermissions?.allowedFileTypes);
+        const maxTotalBytes = getMaxTotalBytes(userPermissions?.fileSize);
         const currentTotalBytes = attachments.reduce((sum, item) => sum + (item?.size || 0), 0);
 
         const duplicates: string[] = [];
@@ -129,7 +129,7 @@ export function useAttachmentManager() {
 
         const incomingTotalBytes = filtered.reduce((sum, item) => sum + (item?.size || 0), 0);
         if (maxTotalBytes !== null && currentTotalBytes + incomingTotalBytes > maxTotalBytes) {
-            const message = `Total attachment size exceeds your limit (${userPermissions.fileSize}).`;
+            const message = `Total attachment size exceeds your limit (${userPermissions?.fileSize}).`;
             setError(message);
             showError(message);
             return;

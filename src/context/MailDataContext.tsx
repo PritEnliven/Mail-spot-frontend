@@ -17,7 +17,7 @@ export interface AdminSettingsPermissions {
     userId?: string;
     role: 'user' | 'admin';
     fileSize: number;
-    allowedFileTypes: any[];
+    allowedFileTypes?: any[];
     sendToOutsideDomain: boolean;
     receiveFromOutsideDomain: boolean;
     both?: boolean;
@@ -76,6 +76,7 @@ interface MailDataType {
     userPermissions: AdminSettingsPermissions | null;
     setUserPermissions: (permissions: AdminSettingsPermissions | null) => void;
     refreshUserPermissions: () => Promise<void>;
+    permissionsLoaded: boolean;
 
 
     /* Mail actions */
@@ -163,6 +164,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [headerSearchResults, setHeaderSearchResults] = useState<Email[]>([]);
     const [socketId, setSocketId] = useState<string | null>(null);
     const [userPermissions, setUserPermissions] = useState<AdminSettingsPermissions | null>(null);
+    const [permissionsLoaded, setPermissionsLoaded] = useState(false);
     const [readUnreadFilter, setReadUnreadFilter] = useState<string>('all');
     const [isSidebarLoading, setIsSidebarLoading] = useState<boolean>(false);
     const [isSidebarCountLoading, setIsSidebarCountLoading] = useState<boolean>(false);
@@ -198,6 +200,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             // Fallback: try to get userId from JWT token
             const fallbackUserId = getUserIdFromToken();
             setUserId(fallbackUserId);
+        } finally {
+            setPermissionsLoaded(true);
         }
     }, []);
 
@@ -523,17 +527,17 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
         // Update sidebar state with new unread counts if we have unread emails being deleted
         if (boxName && (unreadDeletedCount > 0 || messageIds.length > 0)) {
-            setSidebarState(prev => ({
-                ...prev,
-                boxCounts: {
-                    ...prev.boxCounts,
-                    [boxName]: {
-                        ...prev.boxCounts[boxName],
-                        unreadCount: Math.max(0, (prev.boxCounts[boxName]?.unreadCount || 0) - unreadDeletedCount),
-                        totalCount: Math.max(0, (prev.boxCounts[boxName]?.totalCount || 0) - messageIds.length)
-                    }
-                }
-            }));
+            // setSidebarState(prev => ({
+            //     ...prev,
+            //     boxCounts: {
+            //         ...prev.boxCounts,
+            //         [boxName]: {
+            //             ...prev.boxCounts[boxName],
+            //             unreadCount: Math.max(0, (prev.boxCounts[boxName]?.unreadCount || 0) - unreadDeletedCount),
+            //             totalCount: Math.max(0, (prev.boxCounts[boxName]?.totalCount || 0) - messageIds.length)
+            //         }
+            //     }
+            // }));
         }
     };
 
@@ -768,6 +772,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         socketId,
         userPermissions,
         setUserPermissions,
+        permissionsLoaded,
         refreshUserPermissions,
         setBoxName,
         setBoxTitle,
