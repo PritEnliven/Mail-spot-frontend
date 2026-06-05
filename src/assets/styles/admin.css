@@ -1718,7 +1718,7 @@ ttable.dataTable.display tbody tr:hover > .sorting_1, table.dataTable.order-colu
     width: 100%;
     height: calc(100dvh - 176px) !important;
 }
-/
+
  .ag-body .ag-body-viewport{
     height:calc(100vh - 210px) !important;
  }

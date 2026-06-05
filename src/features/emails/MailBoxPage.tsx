@@ -3,7 +3,7 @@ import EmailSkeletonLoader from '@components/ui/EmailSkeletonLoader';
 import { useScreen } from '@context/ScreenContext';
 import { useEmailAction } from '@hooks/useEmailAction';
 import { handleEmailDeletion, verifyBoxName } from '@utils/emailUtil';
-import { Suspense, lazy, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
 import EmailRow from '../../features/emails/EmailRow';
@@ -24,9 +24,16 @@ const MailBoxPage = () => {
     const { isDesktop } = useScreen();
     const currentActiveBox = boxName || '';
     const isDraftBox = boxName ? verifyBoxName(boxName, 'draft') : false;
+    const simpleBarRef = useRef<any>(null);
 
     // Ref to track the current markAsRead timeout
     const markAsReadTimeoutRef = useRef<number | null>(null);
+    const scrollMailListToTop = useCallback(() => {
+        const scrollEl = simpleBarRef.current?.getScrollElement?.();
+        if (scrollEl) {
+            scrollEl.scrollTop = 0;
+        }
+    }, []);
 
     useEffect(() => {
         if (!boxName || !isSidebarDataReady) return;
@@ -70,6 +77,7 @@ const MailBoxPage = () => {
 
             try {
                 await fetchEmails(1, urlBoxName || boxName);
+                setTimeout(scrollMailListToTop, 0);
             } finally {
                 if (!isCancelled) {
                     setIsLoading(false);
@@ -270,21 +278,11 @@ const MailBoxPage = () => {
 
         try {
             await fetchEmails(1, boxName, false, action);
+            setTimeout(scrollMailListToTop, 0);
         } finally {
             setIsLoading(false);
         }
     };
-
-    const simpleBarRef = useRef<any>(null);
-
-    useEffect(() => {
-        if (simpleBarRef.current) {
-            const scrollEl = simpleBarRef.current.getScrollElement();
-            if (scrollEl) {
-                scrollEl.scrollTop = 0;
-            }
-        }
-    }, [emails]);
 
     return (
         <>
