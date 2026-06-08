@@ -52,7 +52,7 @@ async function downloadAttachmentFunc(payLoad: downloadAttachmentPayload) {
             headers: {
                 'downloadType': payLoad.downloadType,
                 'messageId': payLoad.messageId,
-                'current_active_box': payLoad.currentActiveBox,
+                'current-active-box': payLoad.currentActiveBox,
                 'fileName': payLoad.customFileName
             }
         });
