@@ -13,7 +13,6 @@ import "flatpickr/dist/themes/material_green.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import 'react-tooltip/dist/react-tooltip.css';
 import GlobalUIRoot from './GlobalUiRoot.tsx';
-import "@styles/header-main-style.css";
 
 createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
