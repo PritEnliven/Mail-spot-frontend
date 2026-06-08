@@ -70,12 +70,12 @@ const ForgotPage = () => {
       isValid = await trigger(["email"]);
       if (!isValid) return;
       const email = getValues("email");
-      setMaskedEmail(email.replace(/(.)(.*)(@.*)/, "$1****$3"));
       const payload = {
         email: email
       }
       const response: Response = await verifyEmailAndSentMail(payload);
       if (response.statusCode === 200) {
+        setMaskedEmail(response?.data?.recoveryEmail.replace(/(.)(.*)(@.*)/, "$1****$3"));
         showSuccess("Email verified successfully");
         setCurrentStep(STEPS.OTP);
       } else {
@@ -153,6 +153,18 @@ const ForgotPage = () => {
     const currentOtp = getValues("otp") || "";
     const newOtp = currentOtp.slice(0, index) + value + currentOtp.slice(index + 1);
     setValue("otp", newOtp.slice(0, 6), { shouldValidate: true });
+  };
+
+  const onOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pastedData) return;
+
+    setValue("otp", pastedData, { shouldValidate: true });
+
+    // Focus the last filled input or the next empty one
+    const focusIndex = Math.min(pastedData.length, 5);
+    document.getElementById(`otp-${focusIndex}`)?.focus();
   };
 
   return (
@@ -267,6 +279,7 @@ const ForgotPage = () => {
                               className="text-center form-control otp-input"
                               value={(getValues("otp") || "")[index] || ""}
                               onChange={(e) => onOtpChange(index, e.target.value)}
+                              onPaste={onOtpPaste}
                               onKeyDown={(e) => {
                                 if (e.key === "Backspace" && !e.currentTarget.value && index > 0) {
                                   document.getElementById(`otp-${index - 1}`)?.focus();
@@ -396,7 +409,7 @@ const ForgotPage = () => {
                   <div className="d-flex align-items-center justify-content-between">
                     <p className="mb-0">Like your password reset information sent to </p>
                     <a href="javascript:;" className="link-ap" onClick={redirectToLogin}>Login</a>
-                    
+
                   </div>
                 </div>
               </div>
