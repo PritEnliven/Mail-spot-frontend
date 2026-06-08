@@ -1,36 +1,52 @@
 import { useEffect, useState } from 'react';
 
-const adminCss = new URL('@styles/admin.css', import.meta.url).href;
-const agGridCustomCss = new URL('@styles/ag-grid-custom.css', import.meta.url).href;
-const agGridCss = new URL('ag-grid-community/styles/ag-grid.css', import.meta.url).href;
-const agGridThemeAlpineCss = new URL('ag-grid-community/styles/ag-theme-alpine.css', import.meta.url).href;
-const calendarCss = new URL('@styles/calendar.style.css', import.meta.url).href;
-const customCss = new URL('@styles/custom.css', import.meta.url).href;
-const headerCss = new URL('@styles/header-main-style.css', import.meta.url).href;
-const inboxCss = new URL('@styles/inbox-style.css', import.meta.url).href;
-const responsiveCss = new URL('@styles/responsive.css', import.meta.url).href;
-const scheduleCss = new URL('@styles/schedule.css', import.meta.url).href;
-const settingsCss = new URL('@styles/setting-style.css', import.meta.url).href;
-const signInCss = new URL('@styles/sign-in-style.css', import.meta.url).href;
+type PageStyleKey =
+    | 'adminCss'
+    | 'agGridCustomCss'
+    | 'agGridCss'
+    | 'agGridThemeAlpineCss'
+    | 'calendarCss'
+    | 'customCss'
+    | 'headerCss'
+    | 'inboxCss'
+    | 'responsiveCss'
+    | 'scheduleCss'
+    | 'settingsCss'
+    | 'signInCss';
 
-
-export const pageStyles = {
-    adminCss,
-    agGridCustomCss,
-    agGridCss,
-    agGridThemeAlpineCss,
-    calendarCss,
-    customCss,
-    headerCss,
-    inboxCss,
-    responsiveCss,
-    scheduleCss,
-    settingsCss,
-    signInCss,
+const styleLoaders: Record<PageStyleKey, () => Promise<unknown>> = {
+    adminCss: () => import('@styles/admin.css'),
+    agGridCustomCss: () => import('@styles/ag-grid-custom.css'),
+    agGridCss: () => import('ag-grid-community/styles/ag-grid.css'),
+    agGridThemeAlpineCss: () => import('ag-grid-community/styles/ag-theme-alpine.css'),
+    calendarCss: () => import('@styles/calendar.style.css'),
+    customCss: () => import('@styles/custom.css'),
+    headerCss: () => import('@styles/header-main-style.css'),
+    inboxCss: () => import('@styles/inbox-style.css'),
+    responsiveCss: () => import('@styles/responsive.css'),
+    scheduleCss: () => import('@styles/schedule.css'),
+    settingsCss: () => import('@styles/setting-style.css'),
+    signInCss: () => import('@styles/sign-in-style.css'),
 };
 
-export function usePageStylesheet(hrefs: string | string[]): boolean {
-    const stylesheets = Array.isArray(hrefs) ? hrefs : [hrefs];
+/** Keys for usePageStylesheet — use dynamic import so Vite rewrites CSS image URLs in production. */
+export const pageStyles: Record<PageStyleKey, PageStyleKey> = {
+    adminCss: 'adminCss',
+    agGridCustomCss: 'agGridCustomCss',
+    agGridCss: 'agGridCss',
+    agGridThemeAlpineCss: 'agGridThemeAlpineCss',
+    calendarCss: 'calendarCss',
+    customCss: 'customCss',
+    headerCss: 'headerCss',
+    inboxCss: 'inboxCss',
+    responsiveCss: 'responsiveCss',
+    scheduleCss: 'scheduleCss',
+    settingsCss: 'settingsCss',
+    signInCss: 'signInCss',
+};
+
+export function usePageStylesheet(keys: PageStyleKey | PageStyleKey[]): boolean {
+    const stylesheets = Array.isArray(keys) ? keys : [keys];
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
@@ -39,42 +55,18 @@ export function usePageStylesheet(hrefs: string | string[]): boolean {
             return;
         }
 
-        let loadedCount = 0;
-        const links: HTMLLinkElement[] = [];
+        let cancelled = false;
 
-        const handleLoad = () => {
-            loadedCount += 1;
-            if (loadedCount === stylesheets.length) setLoaded(true);
-        };
-
-        stylesheets.forEach((href) => {
-            const alreadyExists = document.head.querySelector(
-                `link[data-page-style="${href}"]`
-            );
-
-            if (alreadyExists) {
-                handleLoad();
-                return;
-            }
-
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = href;  // ← now receives Webpack-resolved URL
-            link.setAttribute('data-page-style', href);
-            link.onload = handleLoad;
-            link.onerror = handleLoad;
-
-            document.head.appendChild(link);
-            links.push(link);
-        });
+        Promise.all(stylesheets.map((key) => styleLoaders[key]()))
+            .then(() => {
+                if (!cancelled) setLoaded(true);
+            })
+            .catch(() => {
+                if (!cancelled) setLoaded(true);
+            });
 
         return () => {
-            links.forEach((link) => {
-                const el = document.head.querySelector(
-                    `link[data-page-style="${link.getAttribute('data-page-style')}"]`
-                );
-                if (el) document.head.removeChild(el);
-            });
+            cancelled = true;
             setLoaded(false);
         };
     }, [stylesheets.join(',')]);
