@@ -28,12 +28,14 @@ function ModalRoot() {
                 switch (modal.type) {
                     case 'compose':
                         return (
-                            <ComposeEmailModal
-                                key={modal.id}
-                                modalId={modal.id}
-                                zIndex={zIndex}
-                                {...modal.props}
-                            />
+                            <Suspense key={modal.id} fallback={null}>
+                                <ComposeEmailModal
+                                    key={modal.id}
+                                    modalId={modal.id}
+                                    zIndex={zIndex}
+                                    {...modal.props}
+                                />
+                            </Suspense>
                         );
 
                     case 'confirmDelete':
@@ -48,12 +50,14 @@ function ModalRoot() {
 
                     case 'schedule':
                         return (
-                            <Schedule
-                                key={modal.id}
-                                modalId={modal.id}
-                                zIndex={zIndex}
-                                {...modal.props}
-                            />
+                            <Suspense key={modal.id} fallback={null}>
+                                <Schedule
+                                    key={modal.id}
+                                    modalId={modal.id}
+                                    zIndex={zIndex}
+                                    {...modal.props}
+                                />
+                            </Suspense>
                         );
 
                     case 'calendarEvent':

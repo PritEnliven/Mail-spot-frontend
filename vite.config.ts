@@ -2,11 +2,47 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer';
+import fs from 'fs';
+
+function copyDirSync(src: string, dest: string) {
+  fs.mkdirSync(dest, { recursive: true });
+
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function copyAssetsPlugin() {
+  return {
+    name: 'copy-src-assets',
+    closeBundle() {
+      const folders = ['audio', 'images', 'plugin', 'styles'];
+
+      folders.forEach((folder) => {
+        const src = path.resolve(__dirname, `src/assets/${folder}`);
+        const dest = path.resolve(__dirname, `dist/${folder}`);
+
+        if (fs.existsSync(src)) {
+          copyDirSync(src, dest);
+          console.log(`✅ src/assets/${folder} → dist/${folder}`);
+        }
+      });
+    }
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    copyAssetsPlugin(),
     visualizer({
       filename: 'dist/stats.html',
       open: true,

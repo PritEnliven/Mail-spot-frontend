@@ -152,12 +152,21 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
         setActiveModals(prev => {
             const existingModalIndex = prev.findIndex(modal => modal.type === type);
 
+            // if (existingModalIndex >= 0) {
+            //     const updatedModals = [...prev];
+            //     const existingModal = updatedModals[existingModalIndex];
+            //     existingModal.props = props;
+            //     updatedModals.splice(existingModalIndex, 1);
+            //     return [...updatedModals, existingModal];
+            // }
+
             if (existingModalIndex >= 0) {
-                const updatedModals = [...prev];
-                const existingModal = updatedModals[existingModalIndex];
-                existingModal.props = props;
-                updatedModals.splice(existingModalIndex, 1);
-                return [...updatedModals, existingModal];
+                // Only update props of the existing modal in-place, don't reorder
+                return prev.map((modal, index) =>
+                    index === existingModalIndex
+                        ? { ...modal, props }
+                        : modal
+                );
             }
 
             return [
