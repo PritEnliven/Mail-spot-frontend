@@ -18,6 +18,25 @@ import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
 import eventIcon from '@images/calendar-event-icon-white.svg';
 
+type SidebarNavItem = { id: string; boxName: string; label: string };
+
+const getActiveSidebarItem = (pathname: string, items: SidebarNavItem[]) => {
+    const pathParts = pathname.split('/');
+    const urlBoxName = decodeURIComponent(pathParts[pathParts.length - 1]);
+
+    if (!urlBoxName || !items.length) return null;
+
+    if (urlBoxName === 'settings') {
+        return items.find(item => item.id.includes('settings') || item.boxName === 'settings') ?? null;
+    }
+
+    if (urlBoxName === 'calendar') {
+        return items.find(item => item.id.includes('calendar') || item.boxName === 'calendar') ?? null;
+    }
+
+    return items.find(item => item.boxName === urlBoxName) ?? null;
+};
+
 const LeftPanel = () => {
 
     const navigate = useNavigate();
@@ -60,22 +79,7 @@ const LeftPanel = () => {
                 ];
                 setSidebarItems(resolvedItems);
 
-                // Extract boxName from pathname
-                const pathParts = location.pathname.split('/');
-                const urlBoxName = pathParts[pathParts.length - 1];
-
-                // Try to find active item based on URL boxName first
-                let activeItem = null;
-                if (urlBoxName) {
-                    // Special handling for settings route
-                    if (urlBoxName === 'settings') {
-                        activeItem = resolvedItems.find(item =>
-                            item.id.includes('settings') || item.boxName === 'settings'
-                        );
-                    } else {
-                        activeItem = resolvedItems.find(item => item.boxName === urlBoxName);
-                    }
-                }
+                let activeItem = getActiveSidebarItem(location.pathname, resolvedItems);
 
                 if (!activeItem) {
                     activeItem = resolvedItems.find(item =>
@@ -94,6 +98,16 @@ const LeftPanel = () => {
 
         loadBoxes();
     }, []);
+
+    useEffect(() => {
+        if (!sidebarItems.length) return;
+
+        const activeItem = getActiveSidebarItem(location.pathname, sidebarItems);
+        if (activeItem) {
+            setActiveBoxId(activeItem.id);
+            setBoxTitle(activeItem.label);
+        }
+    }, [location.pathname, sidebarItems]);
 
     const openComposeModal = () => {
         fetchContacts();

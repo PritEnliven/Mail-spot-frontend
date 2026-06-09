@@ -53,7 +53,8 @@ function ChangeImapSmtpPasswordModal({ modalId, zIndex, ...props }: CalendarEven
         formState: { errors },
     } = useForm<changeImapSmtpPasswordFormValues>({
         resolver: zodResolver(changeImapSmtpPasswordSchema),
-        mode: "onTouched",
+        mode: "onSubmit",
+        reValidateMode: "onChange",
         defaultValues: {
             imapPassword: "",
             imapServer: "",

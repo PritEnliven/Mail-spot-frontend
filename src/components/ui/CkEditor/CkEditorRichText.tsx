@@ -215,7 +215,7 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
           });
 
           // Allow email-friendly elements
-          ['table', 'tbody', 'tr', 'td', 'img', 'a', 'span', 'div'].forEach(tag => {
+          ['table', 'thead', 'tbody', 'tr', 'td', 'th', 'img', 'a', 'span', 'div'].forEach(tag => {
             htmlSupport.dataFilter.allowElement(tag);
           });
 

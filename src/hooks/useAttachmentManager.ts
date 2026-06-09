@@ -1,6 +1,6 @@
 import { showError } from "@components/ui/toast/toastNotification";
 import { useMailData } from "@context/MailDataContext";
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 
 export type ExistingAttachment = {
     _id: string;
@@ -74,9 +74,10 @@ export function useAttachmentManager() {
         });
     };
 
-    const handleFileChange = (e: any) => {
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) addFiles(Array.from(e.target.files));
         e.target.value = "";
+        e.target.blur();
     };
     const setInitialAttachments = (existing: any[]) => {
         const normalized: ExistingAttachment[] = existing.map(att => ({

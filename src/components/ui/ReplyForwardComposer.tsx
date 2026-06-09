@@ -31,6 +31,7 @@ import { Controller } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
 import SimpleBar from "simplebar-react";
 import { useContacts, useMailUI } from '../../context/index';
+import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 
 /**
  * Returns the full composed HTML (reply text + original quoted message),
@@ -206,7 +207,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
 
             // Add email fields
             scheduleFormData.append('subject', data.subject);
-            scheduleFormData.append('html', data.body || '');
+            scheduleFormData.append('html', ensureEmailTableBorders(data.body || ''));
             scheduleFormData.append('to', data.to.join(','));
             if (data.cc && data.cc.length > 0) {
                 scheduleFormData.append('cc', data.cc.join(','));
@@ -250,7 +251,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
 
             // Add string fields
             formData.append('subject', data.subject);
-            formData.append('content', data.body || '');
+            formData.append('content', ensureEmailTableBorders(data.body || ''));
 
             // Add array fields as comma-separated strings
             formData.append('to', data.to.join(','));
@@ -474,18 +475,14 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                         )}
                     />
 
+                </div>
+                <div className="compose-modal-footer">
                     {attachments.length > 0 && (
-                        <div className="compose-mail-attachments">
-                            <ul className="compose-mail-attachments-list attachments-box-small"
-                                id="composeMailAttachmentsList">
-                                <AttachmentPreview attachments={attachments} onRemove={removeFile} />
-                            </ul>
+                        <div className="compose-attachments-bar">
+                            <AttachmentPreview attachments={attachments} onRemove={removeFile} />
                         </div>
                     )}
-
-
-                </div>
-                <div className="compose-btn-box d-flex align-items-center justify-content-between mt-3">
+                    <div className="compose-btn-box d-flex align-items-center justify-content-between">
                     <a className="hover-link icon-hover-effect" onClick={handleClose} >
                         <InteractiveIcon
                             defaultIcon={trashIcon}
@@ -600,6 +597,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                 console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                             })}
                         >Send</SubmitButton>
+                    </div>
                     </div>
                 </div>
             </div>

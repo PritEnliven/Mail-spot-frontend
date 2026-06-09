@@ -34,7 +34,8 @@ function AdminChangePassword({ modalId, zIndex, userId }: ChangePasswordProps) {
         formState: { errors },
     } = useForm<AdminChangePasswordFormValues>({
         resolver: zodResolver(AdminChangePasswordSchema),
-        mode: "onTouched",
+        mode: "onSubmit",
+        reValidateMode: "onChange",
         defaultValues: {
             password: "",
             confirmPassword: "",

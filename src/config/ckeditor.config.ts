@@ -9,6 +9,8 @@ import {
     FontSize,
     Underline,
     Table,
+    TableProperties,
+    TableCellProperties,
     TableToolbar,
     Link,
      LinkUI,
@@ -233,7 +235,7 @@ const ckEditorConfig: any = {
         ImageBlock, ImageEditing, ImageInline, ImageToolbar, ImageResize, ImageUpload, ImageUtils,
         MediaEmbed,
         Indent, IndentBlock,
-        Table, TableToolbar, TableColumnResize, PlainTableOutput,
+        Table, TableToolbar, TableColumnResize, PlainTableOutput, TableProperties, TableCellProperties,
         PasteFromMarkdownExperimental, PasteFromOffice,
         ShowBlocks, SourceEditing,
         GeneralHtmlSupport,
@@ -300,7 +302,7 @@ const ckEditorConfig: any = {
     },
     htmlSupport: {
         allow: [{
-            name: /^(table|tbody|tr|td|img|a|span|div|p|br|strong|em)$/,
+            name: /^(table|thead|tbody|tr|td|th|img|a|span|div|p|br|strong|em)$/,
             attributes: true,
             classes: true,
             styles: true
@@ -316,7 +318,21 @@ const ckEditorConfig: any = {
     placeholder: 'Type or paste your content here!',
     table: {
         contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties', 'tableC'],
-        showHiddenBorders: false
+        tableProperties: {
+            defaultProperties: {
+                borderStyle: 'solid',
+                borderColor: '#BBC0C4',
+                borderWidth: '1px',
+            },
+        },
+        tableCellProperties: {
+            defaultProperties: {
+                borderStyle: 'solid',
+                borderColor: '#BBC0C4',
+                borderWidth: '1px',
+                padding: '4px',
+            },
+        },
     },
     link: {
         toolbar: ['linkPreview', '|', 'editLink', 'copyLink', 'unlink'],

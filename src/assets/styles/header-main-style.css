@@ -1985,8 +1985,27 @@ input::-webkit-search-cancel-button {
     min-width: calc(100% - 40px) !important;
 }
 
+.compose-email-modal .modal-content {
+    display: flex;
+    flex-direction: column;
+}
+
 .compose-email-modal .modal-body {
-    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: auto;
+}
+
+.compose-email-modal .modal-body > .simplebar-wrapper,
+.compose-email-modal .modal-body > .ComposeModalSimpleBar {
+    flex: 1;
+    min-height: 0;
+}
+
+.compose-email-modal .ComposeModalSimpleBar .simplebar-content-wrapper {
+    overflow-anchor: none;
 }
 
 .send-bcc {
@@ -3354,8 +3373,40 @@ hr {
 }
 
 /* START::compose mail attachments  */
+.compose-modal-footer {
+    position: relative;
+    flex-shrink: 0;
+    z-index: 4;
+}
+
+.compose-attachments-bar {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    padding: 8px 16px 0;
+    background-color: #fff;
+    border-top: 1px solid #e8eaed;
+    max-height: 130px;
+    overflow-y: auto;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.reply-mail-box .compose-attachments-bar {
+    padding: 8px 0 0;
+}
+
+.reply-mail-box .compose-modal-body {
+    overflow-anchor: none;
+}
+
 .compose-mail-attachments {
     width: 100%;
+}
+
+.compose-attachments-bar .compose-mail-attachments-list {
+    margin: 0;
+    padding-bottom: 8px;
 }
 
 .compose-mail-attachments-list {
@@ -3525,6 +3576,8 @@ hr {
 }
 
 .reply-mail-box {
+    display: flex;
+    flex-direction: column;
     position: relative;
     /* border: 1px solid #BBC0C4; */
     border: 0;
@@ -3533,6 +3586,7 @@ hr {
     box-shadow: none;
     margin: 0 0 16px 0;
 }
+
 
 .reply-mail-box::after {
     content: "";
@@ -3563,6 +3617,9 @@ hr {
 }
 
 .reply-mail-box .compose-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     padding: 20px 0 0 0;
 }
 

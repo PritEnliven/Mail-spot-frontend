@@ -36,7 +36,8 @@ function ChangePassword({ modalId, zIndex }: ChangePasswordProps) {
         formState: { errors },
     } = useForm<ChangePasswordFormValues>({
         resolver: zodResolver(ChangePasswordSchema),
-        mode: "onTouched",
+        mode: "onSubmit",
+        reValidateMode: "onChange",
         defaultValues: {
             password: "",
             confirmPassword: "",

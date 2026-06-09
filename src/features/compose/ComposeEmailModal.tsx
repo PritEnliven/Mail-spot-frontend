@@ -37,6 +37,7 @@ import { composeSchema, type ComposeFormValues } from './compose.schema';
 import { useDebounce } from '@hooks/useDebounce';
 import { showError, showInfo, showSuccess } from '@components/ui/toast/toastNotification';
 import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
+import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import BaseModal from '@components/ui/BaseModal';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
@@ -81,7 +82,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGenerateEmailCardOpen, setIsGenerateEmailCardOpen] = useState(false);
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
-    const attachmentsRef = useRef<HTMLDivElement>(null);
     const onSubmitRef = useRef<(data: ComposeFormValues, scheduleAt?: string) => Promise<void>>(async () => { });
 
     const normalizeRecipients = (recipients: any[]): string[] => {
@@ -208,18 +208,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         });
     }, [trigger, getValues, setFormData, setTriggerValidation]);
 
-    // Auto-scroll to attachments when they are added
-    useEffect(() => {
-        if (attachments.length > 0 && attachmentsRef.current) {
-            setTimeout(() => {
-                attachmentsRef.current?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
-            }, 100);
-        }
-    }, [attachments.length]);
-
     const handleManageSignatures = () => {
         navigate('/mail/settings');
     };
@@ -237,7 +225,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
         // Add string fields
         formData.append('subject', data.subject || '');
-        formData.append('html', data.body || '');
+        formData.append('html', ensureEmailTableBorders(data.body || ''));
         formData.append('isDraftMail', isDraft.toString());
         if (isDraft) {
             formData.append('draftEmailId', emailData?.draftEmailId || '');
@@ -291,7 +279,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
             // Add email fields
             scheduleFormData.append('subject', data.subject);
-            scheduleFormData.append('html', data.body || '');
+            scheduleFormData.append('html', ensureEmailTableBorders(data.body || ''));
             scheduleFormData.append('to', data.to.join(','));
             if (data.cc && data.cc.length > 0) {
                 scheduleFormData.append('cc', data.cc.join(','));
@@ -362,7 +350,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         try {
             const response: any = await sendEmail(formData);
             if (response.statusCode === 200) {
-                showSuccess("Email sent successfully!");
                 if (verifyBoxName(boxName, 'draft')) {
                     fetchEmails(1, boxName);
                     if (verifyBoxName(boxName, 'draft')) {
@@ -649,20 +636,16 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                         )}
                                     />
 
-                                    {attachments.length > 0 && (
-                                        <div className="compose-mail-attachments" ref={attachmentsRef}>
-                                            <ul className="compose-mail-attachments-list attachments-box-small"
-                                                id="composeMailAttachmentsList">
-                                                <AttachmentPreview attachments={attachments} onRemove={removeFile} />
-                                            </ul>
-                                        </div>
-                                    )}
-
-
                                 </div>
                             </SimpleBar>
                         </div>
-                        <div className="compose-btn-box d-flex align-items-center justify-content-between mt-3">
+                        <div className="compose-modal-footer">
+                            {attachments.length > 0 && (
+                                <div className="compose-attachments-bar">
+                                    <AttachmentPreview attachments={attachments} onRemove={removeFile} />
+                                </div>
+                            )}
+                            <div className="compose-btn-box d-flex align-items-center justify-content-between">
                             <a href="javascript:;" className="hover-link icon-hover-effect"
                                 onClick={onClose}
                             >
@@ -781,6 +764,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                     loading={isSubmitting}
                                 >Send
                                 </SubmitButton>
+                            </div>
                             </div>
                         </div>
                     </div>
