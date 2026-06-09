@@ -2,12 +2,14 @@ import { toast } from 'react-toastify';
 import type { ToastOptions } from 'react-toastify';
 
 const baseOptions: ToastOptions = {
-    position: 'top-right',
+    position: 'bottom-left',
     autoClose: 3000,
     hideProgressBar: false,
     closeOnClick: true,
     pauseOnHover: false,
     draggable: true,
+    pauseOnFocusLoss: false,
+    transition: undefined
 };
 
 const showSuccess = (message: string, options?: ToastOptions) => {

@@ -58,6 +58,7 @@ const RegisterPage = () => {
   const [showImapPassword, setShowImapPassword] = useState(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Loading data, please wait...");
 
   const {
     control,
@@ -153,7 +154,17 @@ const RegisterPage = () => {
 
       setCurrentStep(STEPS.SUCCESS);
 
+      const timer15 = setTimeout(() => {
+        setLoadingMessage("This is taking longer than expected. Please wait...");
+      }, 15000);
+
+      const timer30 = setTimeout(() => {
+        setLoadingMessage("Still loading your data. Please wait a little longer...");
+      }, 30000);
+
       const fetchAndStoreEmailsRes = await fetchAndStoreEmails(email, token);
+      clearTimeout(timer15);
+      clearTimeout(timer30);
       if (fetchAndStoreEmailsRes?.statusCode !== 200) {
         showError(fetchAndStoreEmailsRes?.message || "Failed to fetch and store emails");
         return;
@@ -801,7 +812,7 @@ const RegisterPage = () => {
                             <div className="loading-icon me-3">
                               <div className="spinner"></div>
                             </div>
-                            Loading data, please wait...
+                            {loadingMessage}
                           </div>
                         </div>
                       </div>

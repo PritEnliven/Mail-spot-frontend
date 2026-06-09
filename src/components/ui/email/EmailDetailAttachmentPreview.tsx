@@ -109,6 +109,9 @@ const EmailDetailAttachmentPreview = ({
                         className="hover-image"
                         src={downloadIcon}
                         alt="download all"
+                        data-tooltip-id="my-tooltip"
+                        data-tooltip-content="Download all"
+                        data-tooltip-place="top"
                     />
                 </a>
             </div>

@@ -43,7 +43,7 @@ const ToolbarBox = () => {
     //create moveTo folder options list from sidebarSteate
 
     useEffect(() => {
-        const originalBoxes = sidebarState.boxes.filter((box) => box.value !== boxName && !verifyBoxName(box.value, 'draft'));
+        const originalBoxes = sidebarState.boxes.filter((box) => box.value !== boxName && !verifyBoxName(box.value, 'draft') && !verifyBoxName(box.value, 'scheduled'));
         const customBoxes = sidebarState.customBoxes.filter((box) => box.value !== boxName);
         setMoveToFolderOptions({
             boxes: originalBoxes,
@@ -188,7 +188,7 @@ const ToolbarBox = () => {
 
         // const response = await markedAsLabel(payload);
         const response = await moveToFolder(payload);
-        
+
         if (response.statusCode === 200) {
             showSuccess("Email moved successfully");
 
@@ -200,7 +200,7 @@ const ToolbarBox = () => {
             if (verifyBoxName(folderName, 'trash') || verifyBoxName(folderName, 'junk')) {
                 // For trash: increase total count by number of moved emails
                 updateBoxCount(folderName, 0, movedEmails.length);
-            } 
+            }
 
             else {
                 // For other folders: update unread count based on read/unread status of moved emails

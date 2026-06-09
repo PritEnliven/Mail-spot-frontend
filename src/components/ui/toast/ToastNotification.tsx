@@ -1,4 +1,4 @@
-import { ToastContainer } from "react-toastify";
+import { Slide, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import closeIcon from "@images/close-icon.svg";
 import successIcon from "@images/checkmark-badge-icon.svg";
@@ -28,16 +28,17 @@ const AppToast = () => {
                 </button>
             )}
             position="top-right"
-            autoClose={8000}
+            autoClose={2000}
             hideProgressBar={false}
-            newestOnTop
+            newestOnTop={true}
             closeOnClick
             rtl={false}
-            pauseOnFocusLoss
+            pauseOnFocusLoss={false}
             draggable
-            pauseOnHover
+            pauseOnHover={false}
             theme="dark"
             limit={3}
+            transition={Slide}
         />
     );
 };

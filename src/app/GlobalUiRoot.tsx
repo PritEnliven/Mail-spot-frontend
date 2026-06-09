@@ -1,4 +1,3 @@
-import { ToastContainer } from 'react-toastify';
 import { Tooltip } from 'react-tooltip';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -6,14 +5,6 @@ const GlobalUIRoot = () => {
   
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        pauseOnHover
-        closeOnClick
-        draggable
-      />
-
       <Tooltip
         id="my-tooltip"
         place="top"     

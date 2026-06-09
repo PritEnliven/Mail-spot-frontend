@@ -60,6 +60,35 @@ const LeftPanel = () => {
         return buildCustomFolderTree(items);
     }, [sidebarItems]);
 
+    // Sync active sidebar item when URL changes (e.g. navigated from compose modal)
+    useEffect(() => {
+        if (sidebarItems.length === 0) return;
+
+        const pathParts = location.pathname.split('/');
+        const urlBoxName = pathParts[pathParts.length - 1];
+
+        if (urlBoxName) {
+            // Special handling for settings route
+            if (urlBoxName === 'settings') {
+                const settingsItem = sidebarItems.find(item =>
+                    item.id.includes('settings') || item.boxName === 'settings'
+                );
+                if (settingsItem) {
+                    setActiveBoxId(settingsItem.id);
+                    setBoxTitle(settingsItem.label);
+                    setBoxName(settingsItem.boxName);
+                }
+            } else {
+                const matchedItem = sidebarItems.find(item => item.boxName === urlBoxName);
+                if (matchedItem) {
+                    setActiveBoxId(matchedItem.id);
+                    setBoxTitle(matchedItem.label);
+                    setBoxName(urlBoxName);
+                }
+            }
+        }
+    }, [location.pathname, sidebarItems]);
+
     //call an api 
     useEffect(() => {
         const loadBoxes = async () => {
@@ -146,7 +175,7 @@ const LeftPanel = () => {
                 setIsCalendarAllSearchActive(false);
             }
             else if (boxName === 'settings') {
-                
+
             }
             else {
                 setPagination(null);
