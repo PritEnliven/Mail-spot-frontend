@@ -69,7 +69,7 @@ const formatAction = (action: Action): string => {
 const RulesList: React.FC<RulesListProps> = ({ rules = [], onEdit, onDelete }) => {
     if (!rules || rules.length === 0) {
         return (
-            <div className="text-center p-3 fs-12-commom">No rules found.</div>
+            <div className="w-100 text-center p-3 fs-12-commom">No rules found.</div>
         );
     }
 

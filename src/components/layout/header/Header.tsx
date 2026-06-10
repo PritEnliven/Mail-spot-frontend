@@ -51,7 +51,7 @@ const Header = () => {
     const [isCreateRuleModalOpen, setIsCreateRuleModalOpen] = useState(false);
     const [searchText, setSearchText] = useState("");
     const debouncedSearchText = useDebounce(searchText, 1000);
-    const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
+    const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, setActiveBoxId } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
         setBoxTitle, filterForm, boxName, searchTerm,
@@ -189,14 +189,6 @@ const Header = () => {
             createRule: true,
             actions: data
         }
-
-        // if (payload.dateRange && Array.isArray(payload.dateRange)) {
-        //     if (payload.dateRange.length > 1) {
-        //         payload.dateRange = `${payload.dateRange[0]} to ${payload.dateRange[1]}`;
-        //     } else if (payload.dateRange.length === 1) {
-        //         payload.dateRange = payload.dateRange[0];
-        //     }
-        // }
 
         let dateRangeStr: string | undefined = undefined;
         if (payload.dateRange && Array.isArray(payload.dateRange)) {
@@ -350,6 +342,8 @@ const Header = () => {
             setEmailDetailSelected(data.emailList);
             setSelectedEmails(new Set([messageId]));
             setActiveEmailMessageId(messageId);
+            setActiveBoxId('');
+
             const isRead = data.emailList.isSeen;
             setToolbarState({
                 showBack: !isDesktop,

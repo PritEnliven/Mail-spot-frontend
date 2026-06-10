@@ -128,12 +128,12 @@ span.Default-label-dot {
     padding: 5px 12px 5px 5px;
 }
 
-.setting-signature-box {
+/* .setting-signature-box {
     flex: 0 0 100%; 
     max-width: 600px; 
     width: 100%;
     border-radius: 8px;
-}
+} */
 
 .setting-features-sub-box{
      display: flex;

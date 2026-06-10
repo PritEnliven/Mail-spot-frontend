@@ -44,7 +44,6 @@ const LeftPanel = () => {
     const { sidebarSectionScrollbarRef, handleRef, scrollRef, fadeTopRef, fadeBottomRef } = useSidebarFadeScrollbar();
     const { setIsCalendarAllSearchActive } = useCalendar();
 
-    const [activeBoxId, setActiveBoxId] = useState<string>('box-li-0');
     const { boxName, setBoxName, setPagination, setBoxTitle, fetchEmails,
         sidebarState,
         sidebarItems,
@@ -55,7 +54,7 @@ const LeftPanel = () => {
         setAllSearchResult,
         setSidebarStateFromAPI,
         clearMailSearch } = useMailData();
-    const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
+    const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, activeBoxId, setActiveBoxId } = useMailUI();
     const { fetchContacts } = useContacts();
 
     const customFolders = useMemo(() => {

@@ -41,6 +41,8 @@ interface MailUIType {
     setIsComposeExpanded: (open: boolean) => void;
     isSidebarExpandedMobile: boolean;
     setIsSidebarExpandedMobile: (open: boolean) => void;
+    activeBoxId: string;
+    setActiveBoxId: (boxId: string) => void;
 }
 
 interface MailUIProviderProps {
@@ -66,6 +68,7 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
     const [customToolbarState, setCustomToolbarState] = useState<ToolbarState | null>(null);
     const [isComposeExpanded, setIsComposeExpanded] = useState(false);
     const [isSidebarExpandedMobile, setIsSidebarExpandedMobile] = useState(false);
+    const [activeBoxId, setActiveBoxId] = useState<string>('box-li-0');
 
     // Add this effect to reset customToolbarState when selection changes
     useEffect(() => {
@@ -169,14 +172,7 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
                 );
             }
 
-            return [
-                ...prev,
-                {
-                    id: modalId,
-                    type,
-                    props,
-                },
-            ];
+            return [...prev, { id: modalId, type, props}];
         });
         return modalId;
     };
@@ -208,6 +204,8 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
         setIsComposeExpanded,
         isSidebarExpandedMobile,
         setIsSidebarExpandedMobile,
+        activeBoxId,
+        setActiveBoxId
     };
 
     return (
