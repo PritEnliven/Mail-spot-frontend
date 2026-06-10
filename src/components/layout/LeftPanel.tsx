@@ -5,7 +5,7 @@ import navCollapseIcon from '@images/nav-collepse-icon.svg';
 import navExpandIconHover from '@images/nav-collepse-icon-hover.svg';
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import menuIcon from "@images/menu-icon.svg";
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import SidebarItem from '../../features/emails/SidebarItem';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMailData, useMailUI, useContacts, useCalendar } from '../../context/index';

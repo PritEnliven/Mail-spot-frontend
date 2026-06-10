@@ -20,7 +20,7 @@ import backBtnIconHover from "@images/back-btn-icon-hover.svg";
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import menuIcon from "@images/menu-icon.svg";
 import { useContacts, useMailData, useMailUI } from '../../../context/index';
-import { lazy, Suspense, useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import { Controller } from 'react-hook-form';
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
@@ -64,6 +64,7 @@ const Header = () => {
     const { setSelectedEmails } = useMailSelection();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
     const { isDesktop } = useScreen();
+    const prevDebouncedSearchRef = useRef(debouncedSearchText);
 
     useEffect(() => {
         fetchContacts();
@@ -81,12 +82,16 @@ const Header = () => {
         reset,
     } = useFilterEmailForm();
 
-    // SEARCH EFFECT (debounced)
+    // SEARCH EFFECT (debounced) — only restore mailbox when user clears a non-empty search string
     useEffect(() => {
-        if (!debouncedSearchText.trim()) {
+        const previousSearch = prevDebouncedSearchRef.current.trim();
+        const currentSearch = debouncedSearchText.trim();
+        prevDebouncedSearchRef.current = debouncedSearchText;
+
+        if (!currentSearch) {
             setSearchResults([]);
             setNoResult(false);
-            if (allSearchResult) {
+            if (previousSearch && allSearchResult) {
                 void clearMailSearch();
             }
             return;
@@ -174,13 +179,10 @@ const Header = () => {
                     setSearchResults(response.data.emailList.slice(0, 5) || []);
                 }
 
-                if (boxTitle === "Search Results") {
-                    setEmails(response.data.emailList);
-                    setPagination(response.data.pagination);
-                    setTotalEmailBadge(response.data.pagination.totalEmails);
-                    setIsFilterDropdownOpen(false);
-                    setBoxTitle("Search Results");
-                }
+                setEmails(response.data.emailList);
+                setPagination(response.data.pagination);
+                setTotalEmailBadge(response.data.pagination.totalEmails);
+                setBoxTitle("Search Results");
             }
         } catch (err) {
             console.error('Filter failed:', err);
