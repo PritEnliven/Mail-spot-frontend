@@ -51,6 +51,7 @@ const LeftPanel = () => {
         setSidebarItems,
         setEmailDetailSelected,
         setActiveEmailMessageId,
+        allSearchResult,
         setAllSearchResult,
         setSidebarStateFromAPI,
         clearMailSearch } = useMailData();
@@ -62,9 +63,17 @@ const LeftPanel = () => {
         return buildCustomFolderTree(items);
     }, [sidebarItems]);
 
+    const sidebarActiveBoxId = allSearchResult ? '' : activeBoxId;
+
+    useEffect(() => {
+        if (allSearchResult) {
+            setActiveBoxId('');
+        }
+    }, [allSearchResult]);
+
     // Sync active sidebar item when URL changes (e.g. navigated from compose modal)
     useEffect(() => {
-        if (sidebarItems.length === 0) return;
+        if (sidebarItems.length === 0 || allSearchResult) return;
 
         const pathParts = location.pathname.split('/');
         const urlBoxName = pathParts[pathParts.length - 1];
@@ -89,7 +98,7 @@ const LeftPanel = () => {
                 }
             }
         }
-    }, [location.pathname, sidebarItems]);
+    }, [location.pathname, sidebarItems, allSearchResult]);
 
     //call an api 
     useEffect(() => {
@@ -131,14 +140,14 @@ const LeftPanel = () => {
     }, []);
 
     useEffect(() => {
-        if (!sidebarItems.length) return;
+        if (!sidebarItems.length || allSearchResult) return;
 
         const activeItem = getActiveSidebarItem(location.pathname, sidebarItems);
         if (activeItem) {
             setActiveBoxId(activeItem.id);
             setBoxTitle(activeItem.label);
         }
-    }, [location.pathname, sidebarItems]);
+    }, [location.pathname, sidebarItems, allSearchResult]);
 
     const openComposeModal = () => {
         fetchContacts();
@@ -375,7 +384,7 @@ const LeftPanel = () => {
                             <SidebarItem
                                 items={sidebarItems.filter(item => item.category === 'boxes')}
                                 boxCounts={sidebarState.boxCounts}
-                                activeBoxId={activeBoxId}
+                                activeBoxId={sidebarActiveBoxId}
                                 onChangeBox={changeBox}
                             />
                         )}
@@ -390,7 +399,7 @@ const LeftPanel = () => {
                             value: item.boxName,
                             depth: item.depth,
                         }))}
-                        activeBoxId={activeBoxId}
+                        activeBoxId={sidebarActiveBoxId}
                         onChangeBox={(boxName) => {
                             const item = sidebarItems.find(si => si.boxName === boxName);
                             if (item) {
@@ -412,7 +421,7 @@ const LeftPanel = () => {
                             <SidebarItem
                                 items={sidebarItems.filter(item => item.category === 'otherMenu')}
                                 boxCounts={sidebarState.boxCounts}
-                                activeBoxId={activeBoxId}
+                                activeBoxId={sidebarActiveBoxId}
                                 onChangeBox={changeBox}
                             />
                         </ul>

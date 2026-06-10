@@ -149,7 +149,9 @@ const Header = () => {
         if (data.from?.length) payload.from = data.from;
         if (data.to?.length) payload.to = data.to;
 
-        if (data.dateRange?.length === 2) {
+        if (data.dateRange?.length === 1) {
+            payload.dateRange = formatDate(data.dateRange[0] as Date, TimeFormat.DD_MM_YYYY);
+        } else if (data.dateRange?.length === 2) {
             payload.dateRange = `${formatDate(data.dateRange[0] as Date, TimeFormat.DD_MM_YYYY)} to ${formatDate(data.dateRange[1] as Date, TimeFormat.DD_MM_YYYY)}`;
         }
 
@@ -293,8 +295,10 @@ const Header = () => {
                 payload.to = filterForm.to;
             }
 
-            if (filterForm.dateRange?.length === 2) {
-                payload.dateRange = filterForm.dateRange;
+            if (filterForm.dateRange?.length === 1) {
+                payload.dateRange = formatDate(filterForm.dateRange[0] as Date, TimeFormat.DD_MM_YYYY);
+            } else if (filterForm.dateRange?.length === 2) {
+                payload.dateRange = `${formatDate(filterForm.dateRange[0] as Date, TimeFormat.DD_MM_YYYY)} to ${formatDate(filterForm.dateRange[1] as Date, TimeFormat.DD_MM_YYYY)}`;
             }
         }
 

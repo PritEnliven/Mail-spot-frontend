@@ -336,7 +336,7 @@ const MailBoxPage = () => {
                                                 const isSelected = selectedEmails.has(email.messageId);
                                                 return (
                                                     <EmailRow
-                                                        key={email.messageId}
+                                                        key={email._id ?? email.messageId}
                                                         email={email}
                                                         isRead={isRead}
                                                         isSelected={isSelected}

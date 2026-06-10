@@ -77,7 +77,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         scheduleDateTime,
         setScheduleDateTime
     } = useComposeFormContext();
-    const { isCcOpen, isBccOpen, toggleCc, toggleBcc } = useCcBccToggle();
+    const { isCcOpen, isBccOpen, toggleCc, toggleBcc, openCc, openBcc } = useCcBccToggle();
     const { attachments, error, setInitialAttachments, removeFile, resetAttachments, handleFileChange } = useAttachmentManager();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGenerateEmailCardOpen, setIsGenerateEmailCardOpen] = useState(false);
@@ -186,6 +186,13 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             setInitialAttachments(emailData.attachments);
         } else {
             resetAttachments();
+        }
+
+        if (emailData.cc?.length) {
+            openCc();
+        }
+        if (emailData.bcc?.length) {
+            openBcc();
         }
     }, [emailData]);
 
@@ -329,16 +336,35 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 setIsSubmitting(false);
             }
         } else {
+            const restoreSnapshot: ComposeEmailModalProps['emailData'] = {
+                _id: emailData?._id || '',
+                to: data.to,
+                cc: data.cc ?? [],
+                bcc: data.bcc ?? [],
+                subject: data.subject ?? '',
+                body: data.body ?? '',
+                attachments: [...attachments],
+                scheduledTime: scheduleDateTime ?? undefined,
+                isDraftMail: emailData?.isDraftMail,
+                draftEmailId: emailData?.draftEmailId,
+                draftMessageId: emailData?.draftMessageId,
+            };
+
+            dismissCompose();
+
             try {
                 const outcome = await sendEmailWithUndo(
                     "Your email is being sent...",
                     settings.undoSendPeriod * 1000 || 3000,
-                    () => sendMailHandler(formData)
+                    () => sendMailHandler(formData, { skipClose: true })
                 );
                 if (outcome === 'cancelled') {
+                    openModal('compose', { emailData: restoreSnapshot });
                     showSuccess('Undo successful. Your email was not sent.');
                 }
             } catch (error) {
+                openModal('compose', { emailData: restoreSnapshot });
+                showError('Failed to send email. Your message has been restored.');
                 console.error('Failed to send email:', error);
             } finally {
                 setIsSubmitting(false);
@@ -346,7 +372,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         }
     };
 
-    const sendMailHandler = async (formData: any) => {
+    const sendMailHandler = async (formData: any, options?: { skipClose?: boolean }) => {
         try {
             const response: any = await sendEmail(formData);
             if (response.statusCode === 200) {
@@ -356,7 +382,9 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                         updateBoxCount(boxName, 0, -1);
                     }
                 }
-                onClose();
+                if (!options?.skipClose) {
+                    onClose();
+                }
             }
             return response;
         } catch (error) {
@@ -364,6 +392,11 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             throw error;
         }
     }
+
+    const dismissCompose = () => {
+        closeModal(modalId);
+        setIsComposeExpanded(false);
+    };
 
     const onClose = () => {
         reset()

@@ -18,10 +18,9 @@ export const filterEmailForm = z.object({
         .optional(),
 
     dateRange: z
-        .tuple([z.date(), z.date()])
-        .optional()
-        .or(z.literal(undefined))
-        .or(z.array(z.date()).length(0)),
+        .array(z.date())
+        .max(2)
+        .optional(),
 });
 
 export type FilterEmailFormValues = z.infer<typeof filterEmailForm>;

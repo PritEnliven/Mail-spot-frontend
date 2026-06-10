@@ -254,6 +254,11 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         mailAction,
                     };
 
+                    if (page === 1) {
+                        payload.lastMailId = '';
+                        payload.firstMailId = '';
+                    }
+
 
                     const response = await getEmailsService(payload);
                     if (response.statusCode !== 200) {
@@ -422,11 +427,13 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             if (!searchTerm && !filterForm) return;
 
             try {
-                const cursor = isPrevious ? pagination?.firstMailId : pagination?.lastMailId;
-
                 const direction = isPrevious ? 'prev' : 'next';
 
                 const vPage = isPrevious ? Math.max(1, mailListPage - 1) : mailListPage + 1;
+
+                const cursor = vPage === 1
+                    ? undefined
+                    : (isPrevious ? pagination?.firstMailId : pagination?.lastMailId);
 
                 const payload: any = {
                     searchTerm: searchTerm || undefined,
