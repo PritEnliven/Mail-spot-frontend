@@ -54,7 +54,7 @@ const Header = () => {
     const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, setActiveBoxId } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
-        setBoxTitle, filterForm, boxName, searchTerm,
+        setBoxTitle, filterForm, boxName, searchTerm, allSearchResult,
         setEmailDetailSelected, setActiveEmailMessageId,
         headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
         clearMailSearch, mailSearchResetKey } = useMailData();
@@ -84,6 +84,11 @@ const Header = () => {
     // SEARCH EFFECT (debounced)
     useEffect(() => {
         if (!debouncedSearchText.trim()) {
+            setSearchResults([]);
+            setNoResult(false);
+            if (allSearchResult) {
+                void clearMailSearch();
+            }
             return;
         }
 
@@ -118,7 +123,7 @@ const Header = () => {
         searchEmails();
 
         return () => controller.abort();
-    }, [debouncedSearchText]);
+    }, [debouncedSearchText, allSearchResult, clearMailSearch]);
 
     const toggleMobileSidebar = () => {
         setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
@@ -369,8 +374,7 @@ const Header = () => {
         });
         setIsFilterDropdownOpen(false);
         setIsSearchResultDropdownOpen(false);
-        // on reset clear the search result
-        setSearchResults([]);
+        void clearMailSearch();
     };
 
     const openChangeImapSmtpPasswordModal = async () => {
@@ -483,8 +487,7 @@ const Header = () => {
     }, [mailSearchResetKey]);
 
     const resetSearch = () => {
-        clearMailSearch();
-        setNoResult(true);
+        void clearMailSearch();
     }
 
     const closeProfileModalMobile = () => {

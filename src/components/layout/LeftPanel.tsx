@@ -156,7 +156,7 @@ const LeftPanel = () => {
     const isCalendar = verifyBoxName(boxName, 'calendar');
 
     const changeBox = (boxName: string, boxId: string, label: string) => {
-        clearMailSearch();
+        clearMailSearch({ restoreMailbox: false });
         activeModals
             .filter(modal => modal.type !== 'compose')
             .forEach(modal => closeModal(modal.id));

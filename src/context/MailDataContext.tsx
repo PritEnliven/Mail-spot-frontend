@@ -4,7 +4,7 @@ import type { Pagination } from '@models/Pagination';
 import { getCounts, getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { getUserPermissions } from '@services/settings/settingsService';
-import { buildParentFolderOptions, resolveAllSidebarItems } from '@utils/emailUtil';
+import { buildParentFolderOptions, resolveAllSidebarItems, verifyBoxName } from '@utils/emailUtil';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface BoxCount {
@@ -104,7 +104,7 @@ interface MailDataType {
     /* Events */
     updateBoxCount: (boxName: string, unreadDecrement: number, totalDecrement: number) => void;
     setAllSearchResult: (value: boolean) => void;
-    clearMailSearch: () => void;
+    clearMailSearch: (options?: { restoreMailbox?: boolean }) => Promise<void>;
     mailSearchResetKey: number;
 
     /* Socket */
@@ -739,13 +739,31 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const clearMailSearch = useCallback(() => {
+    const clearMailSearch = useCallback(async (options?: { restoreMailbox?: boolean }) => {
+        const restoreMailbox = options?.restoreMailbox !== false;
+        const wasShowingSearchResults = restoreMailbox && (allSearchResult || boxTitle === 'Search Results');
+
         setAllSearchResult(false);
         setSearchTerm('');
         setFilterForm(null);
         setHeaderSearchResults([]);
         setMailSearchResetKey(key => key + 1);
-    }, []);
+
+        if (
+            wasShowingSearchResults &&
+            boxName &&
+            !verifyBoxName(boxName, 'calendar') &&
+            !verifyBoxName(boxName, 'settings')
+        ) {
+            const activeItem = sidebarItems.find(item => item.boxName === boxName);
+            setBoxTitle(activeItem?.label ?? boxName);
+            setEmailDetailSelected(null);
+            setActiveEmailMessageId(null);
+            setMailListPage(1);
+            setPagination(null);
+            await fetchEmails(1, boxName, false, readUnreadFilter);
+        }
+    }, [allSearchResult, boxTitle, boxName, sidebarItems, fetchEmails, readUnreadFilter]);
 
     const updateBoxCount = (
         boxName: string,
