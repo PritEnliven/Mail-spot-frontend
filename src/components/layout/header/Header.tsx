@@ -42,6 +42,7 @@ import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropd
 import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { Dropdown } from 'react-bootstrap';
 import { verifyBoxName } from "@utils/emailUtil";
+import { useScreen } from "@context/ScreenContext";
 
 const Header = () => {
     const navigate = useNavigate();
@@ -55,12 +56,14 @@ const Header = () => {
         setSearchTerm, setFilterForm, setTotalEmailBadge,
         setBoxTitle, filterForm, boxName, searchTerm,
         setEmailDetailSelected, setActiveEmailMessageId,
-        headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults } = useMailData();
+        headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
+        clearMailSearch, mailSearchResetKey } = useMailData();
     const { contacts, fetchContacts } = useContacts();
     const { calendarView, setCalendarView, changeView } = useCalendar();
     const [noResult, setNoResult] = useState(false);
     const { setSelectedEmails } = useMailSelection();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
+    const { isDesktop } = useScreen();
 
     useEffect(() => {
         fetchContacts();
@@ -254,6 +257,58 @@ const Header = () => {
         setIsFilterDropdownOpen(true);
     };
 
+    const showAllSearchResult = async () => {
+        setAllSearchResult(true);
+        setSearchTerm(searchText);
+
+        if (boxName.toLocaleLowerCase().includes('schedule')) {
+            navigate('/mail/INBOX');
+        }
+
+        const payload: any = {
+            searchTerm: searchText,
+            limit: 25,
+            cursor: undefined,
+            direction: 'next',
+            vPage: 1
+        };
+
+        if (filterForm) {
+            payload.isFilter = true;
+            payload.searchQuery = filterForm.searchTerm || searchText;
+
+            if (filterForm.subject?.trim()) {
+                payload.subject = filterForm.subject.trim();
+            }
+
+            if (filterForm.attachmentSizeType) {
+                payload.attachmentSizeType = filterForm.attachmentSizeType;
+            }
+
+            if (filterForm.from?.length) {
+                payload.from = filterForm.from;
+            }
+
+            if (filterForm.to?.length) {
+                payload.to = filterForm.to;
+            }
+
+            if (filterForm.dateRange?.length === 2) {
+                payload.dateRange = filterForm.dateRange;
+            }
+        }
+
+        const response = await searchAndFilterEmailService(payload);
+        if (response.statusCode === 200) {
+            setEmails(response.data.emailList);
+            setPagination(response.data.pagination);
+            setIsSearchResultDropdownOpen(false);
+            setNoResult(false);
+            setTotalEmailBadge(response.data.pagination.totalEmails);
+            setBoxTitle("Search Results");
+        }
+    };
+
     const openEmailDetailHandler = async (
         currentActiveBox: string,
         uid: number,
@@ -262,6 +317,10 @@ const Header = () => {
         mongoId?: string
     ) => {
         try {
+            if (isSearch) {
+                await showAllSearchResult();
+            }
+
             const payload = {
                 current_active_box: currentActiveBox,
                 uid,
@@ -279,14 +338,18 @@ const Header = () => {
                 data.emailList.isSearchEmail = true;
                 setSearchTerm(searchText);
             }
-            setIsMailListOpen(false);
+
+            if (!isDesktop) {
+                setIsMailListOpen(false);
+            }
+
             setEmailDetailSelected(data.emailList);
             setSelectedEmails(new Set([messageId]));
             setActiveEmailMessageId(messageId);
             const isRead = data.emailList.isSeen;
             setToolbarState({
-                showBack: isSearch,
-                showSelectAll: false,
+                showBack: !isDesktop,
+                showSelectAll: isDesktop,
                 showRefresh: false,
                 showDelete: true,
                 showMarkAsRead: !isRead,
@@ -405,68 +468,25 @@ const Header = () => {
         }
     }, [searchTerm]);
 
-    const showAllSearchResult = async () => {
-        setAllSearchResult(true);
-        setSearchTerm(searchText);
+    // Clear header search UI when search is reset (e.g. switching mailbox tabs).
+    useEffect(() => {
+        if (mailSearchResetKey === 0) return;
 
-        if (boxName.toLocaleLowerCase().includes('schedule')) {
-            navigate('/mail/INBOX');
-        }
-
-        // Build base payload
-        const payload: any = {
-            searchTerm: searchText,
-            limit: 25,
-            cursor: undefined,
-            direction: 'next',
-            vPage: 1
-        };
-
-        // Add filter data if it exists
-        if (filterForm) {
-            payload.isFilter = true;
-            payload.searchQuery = filterForm.searchTerm || searchText;
-
-            if (filterForm.subject?.trim()) {
-                payload.subject = filterForm.subject.trim();
-            }
-
-            if (filterForm.attachmentSizeType) {
-                payload.attachmentSizeType = filterForm.attachmentSizeType;
-            }
-
-            if (filterForm.from?.length) {
-                payload.from = filterForm.from;
-            }
-
-            if (filterForm.to?.length) {
-                payload.to = filterForm.to;
-            }
-
-            if (filterForm.dateRange?.length === 2) {
-                payload.dateRange = filterForm.dateRange;
-            }
-        }
-
-        const response = await searchAndFilterEmailService(payload);
-        if (response.statusCode === 200) {
-            setEmails(response.data.emailList);
-            setPagination(response.data.pagination);
-            setIsSearchResultDropdownOpen(false);
-            setNoResult(false);
-            setTotalEmailBadge(response.data.pagination.totalEmails);
-            setBoxTitle("Search Results");
-        }
-    };
-
-    const resetSearch = () => {
         setSearchText("");
         setSearchResults([]);
         setIsSearchResultDropdownOpen(false);
+        setNoResult(false);
+        reset({
+            from: [],
+            to: [],
+            subject: '',
+            dateRange: [],
+        });
+    }, [mailSearchResetKey]);
+
+    const resetSearch = () => {
+        clearMailSearch();
         setNoResult(true);
-        setAllSearchResult(false);
-        setSearchTerm('');
-        setFilterForm(null);
     }
 
     const closeProfileModalMobile = () => {

@@ -335,7 +335,7 @@ const MailBoxPage = () => {
                                                         emails={emails as any}
                                                         onOpenEmail={(uid: number, messageId: string, isSearch: boolean) => openEmailDetailHandler(currentActiveBox, uid, messageId, isSearch)}
                                                         onMarkReadUnread={markAsReadUnreadEmailHandler}
-                                                        onDelete={setupDeleteConfirmation} isActive={false} boxName={''} onToggleSelection={() => undefined} />
+                                                        onDelete={setupDeleteConfirmation} isActive={email.messageId === activeEmailMessageId} boxName={''} onToggleSelection={() => undefined} />
                                                 );
                                             })
                                         ) : (

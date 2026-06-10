@@ -104,6 +104,8 @@ interface MailDataType {
     /* Events */
     updateBoxCount: (boxName: string, unreadDecrement: number, totalDecrement: number) => void;
     setAllSearchResult: (value: boolean) => void;
+    clearMailSearch: () => void;
+    mailSearchResetKey: number;
 
     /* Socket */
     addNewEmail: (email: Email | Email[]) => void;
@@ -162,6 +164,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterForm, setFilterForm] = useState<FilterEmailFormValues | null>(null);
     const [headerSearchResults, setHeaderSearchResults] = useState<Email[]>([]);
+    const [mailSearchResetKey, setMailSearchResetKey] = useState(0);
     const [socketId, setSocketId] = useState<string | null>(null);
     const [userPermissions, setUserPermissions] = useState<AdminSettingsPermissions | null>(null);
     const [permissionsLoaded, setPermissionsLoaded] = useState(false);
@@ -729,6 +732,14 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const clearMailSearch = useCallback(() => {
+        setAllSearchResult(false);
+        setSearchTerm('');
+        setFilterForm(null);
+        setHeaderSearchResults([]);
+        setMailSearchResetKey(key => key + 1);
+    }, []);
+
     const updateBoxCount = (
         boxName: string,
         unreadDecrement: number,
@@ -790,6 +801,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         deleteEmailState,
         updateBoxCount,
         setAllSearchResult,
+        clearMailSearch,
+        mailSearchResetKey,
         setSidebarStateFromAPI,
         sidebarState,
         setSidebarState,

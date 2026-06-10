@@ -51,7 +51,8 @@ const LeftPanel = () => {
         setSidebarItems,
         setEmailDetailSelected,
         setActiveEmailMessageId,
-        setSidebarStateFromAPI } = useMailData();
+        setSidebarStateFromAPI,
+        clearMailSearch } = useMailData();
     const { setToolbarState, openModal, closeModal, activeModals, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { fetchContacts } = useContacts();
 
@@ -146,6 +147,7 @@ const LeftPanel = () => {
     const isCalendar = verifyBoxName(boxName, 'calendar');
 
     const changeBox = (boxName: string, boxId: string, label: string) => {
+        clearMailSearch();
         activeModals
             .filter(modal => modal.type !== 'compose')
             .forEach(modal => closeModal(modal.id));
