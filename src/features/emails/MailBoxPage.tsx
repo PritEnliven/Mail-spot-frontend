@@ -9,6 +9,7 @@ import { useMailData, useMailSelection, useMailUI } from '../../context/index';
 import EmailRow from '../../features/emails/EmailRow';
 import { MAIL_ACTION } from '../../constants/mailAction';
 import { getSingleEmailService } from '../../services/email/emailService';
+import { useSettings } from '@context/SettingsContext';
 
 // Lazy loaded components
 const EmailDetail = lazy(() => import('../../features/emails/EmailDetail'));
@@ -19,7 +20,7 @@ const MailBoxPage = () => {
     const { boxName, sidebarState, sidebarItems, setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, isSidebarDataReady, isSidebarLoading, readUnreadFilter, setReadUnreadFilter } = useMailData();
     const { selectedEmails } = useMailSelection();
     const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
-
+    const { settings } = useSettings();
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
     const { isDesktop } = useScreen();
     const currentActiveBox = boxName || '';
@@ -216,25 +217,34 @@ const MailBoxPage = () => {
                 showMove: true,
             });
 
-            // here after 3 seconds this mail should mark as read
-            if (boxName && verifyBoxName(boxName, 'schedule')) {
+            if (boxName && verifyBoxName(boxName, 'schedule') && verifyBoxName(boxName, 'draft')) {
                 return;
             }
-            if (boxName && verifyBoxName(boxName, 'draft')) {
-                return;
-            }
+
             if (!isRead) {
+                const delay = settings?.markAsReadDelay ?? 0;
+
+                // Never
+                if (delay === -1) {
+                    return;
+                }
+
+                // Immediately
+                if (delay === 0) {
+                    markAsRead([messageId]);
+                    return;
+                }
+
                 // Clear any existing timeout
                 if (markAsReadTimeoutRef.current) {
                     clearTimeout(markAsReadTimeoutRef.current);
                 }
 
-                // Set new timeout for this email
-
+                // Delayed mark as read
                 markAsReadTimeoutRef.current = window.setTimeout(() => {
                     markAsRead([messageId]);
                     markAsReadTimeoutRef.current = null;
-                }, 3000);
+                }, delay * 1000);
             }
 
         } catch (error) {

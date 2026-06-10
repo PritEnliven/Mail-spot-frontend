@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 export interface SettingsType {
   undoSendPeriod: number;
   pageSize: number;
+  markAsReadDelay: number;
   enableSignature: boolean;
   enableReplyForwardUse: boolean;
   threadView: boolean;
@@ -21,6 +22,7 @@ interface SettingsContextType {
 
 const defaultSettings: SettingsType = {
   undoSendPeriod: 30,
+  markAsReadDelay: 0,
   pageSize: 25,
   enableSignature: true,
   enableReplyForwardUse: true,
@@ -35,6 +37,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 const normalizeSettings = (raw: any): SettingsType => {
   return {
     undoSendPeriod: typeof raw?.undoSendPeriod === 'number' ? raw.undoSendPeriod : defaultSettings.undoSendPeriod,
+    markAsReadDelay: typeof raw?.markAsReadDelay === 'number' ? raw.markAsReadDelay : defaultSettings.markAsReadDelay,
     pageSize: typeof raw?.pageSize === 'number'
       ? raw.pageSize
       : (typeof raw?.maximumPageSize === 'number'

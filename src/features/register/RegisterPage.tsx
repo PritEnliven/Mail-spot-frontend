@@ -154,17 +154,17 @@ const RegisterPage = () => {
 
       setCurrentStep(STEPS.SUCCESS);
 
-      const timer15 = setTimeout(() => {
+      const timer25 = setTimeout(() => {
         setLoadingMessage("This is taking longer than expected. Please wait...");
-      }, 15000);
+      }, 25000);
 
-      const timer30 = setTimeout(() => {
+      const timer35 = setTimeout(() => {
         setLoadingMessage("Still loading your data. Please wait a little longer...");
-      }, 30000);
+      }, 35000);
 
       const fetchAndStoreEmailsRes = await fetchAndStoreEmails(email, token);
-      clearTimeout(timer15);
-      clearTimeout(timer30);
+      clearTimeout(timer25);
+      clearTimeout(timer35);
       if (fetchAndStoreEmailsRes?.statusCode !== 200) {
         showError(fetchAndStoreEmailsRes?.message || "Failed to fetch and store emails");
         return;

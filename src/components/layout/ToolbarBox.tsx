@@ -91,6 +91,11 @@ const ToolbarBox = () => {
             }
         } finally {
             setIsLoading(false);
+            // Scroll to the top of the email list
+            const emailListRef = document.getElementById('email-list') as HTMLDivElement | null;
+            if (emailListRef) {
+                emailListRef.scrollTop = 0;
+            }
         }
     };
 

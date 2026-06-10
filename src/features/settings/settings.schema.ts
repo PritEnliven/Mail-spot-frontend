@@ -34,7 +34,8 @@ export const SettingsSchema = z.object({
     .email('Invalid email format')
     .optional()
     .or(z.literal('')),
-
+  
+  markAsReadDelay: z.number(),
   signatureId: z.string().optional(),
   enableSignature: z.boolean(),
   enableReplyForwardUse: z.boolean(),

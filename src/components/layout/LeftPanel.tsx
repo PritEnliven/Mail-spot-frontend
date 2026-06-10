@@ -51,9 +51,10 @@ const LeftPanel = () => {
         setSidebarItems,
         setEmailDetailSelected,
         setActiveEmailMessageId,
+        setAllSearchResult,
         setSidebarStateFromAPI,
         clearMailSearch } = useMailData();
-    const { setToolbarState, openModal, closeModal, activeModals, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
+    const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { fetchContacts } = useContacts();
 
     const customFolders = useMemo(() => {
@@ -166,6 +167,13 @@ const LeftPanel = () => {
             showMove: false,
         });
         setBoxTitle(label);
+
+        //reset search and filter
+        setAllSearchResult(false);
+
+        if (!isMailListOpen) {
+            setIsMailListOpen(true);
+        }
 
         // Get current boxName from pathname
         const pathParts = location.pathname.split('/');

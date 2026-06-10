@@ -12,7 +12,7 @@ import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import fileIcon from "@images/file-icon.svg";
 import plusIconHover from "@images/plus-icon-hover.svg";
 import plusIcon from "@images/plus-icon.svg";
-import { deleteRule, deleteSignature, getAllRules, getSettings,   saveSettings } from '@services/settings/settingsService';
+import { deleteRule, deleteSignature, getAllRules, getSettings, saveSettings } from '@services/settings/settingsService';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { SettingsSchema, type SettingPageFormValues, type Signature } from './settings.schema';
@@ -50,6 +50,7 @@ function SettingsPage() {
         defaultValues: {
             undoSendPeriod: 0,
             maximumPageSize: 20,
+            markAsReadDelay: 0,
             recoveryEmail: "",
             enableSignature: false,
             enableReplyForwardUse: false,
@@ -82,10 +83,12 @@ function SettingsPage() {
                 downloadLocation: response.data.downloadLocation ?? '',
                 notification: response.data.notification ?? true,
                 recoveryEmail: response.data.recoveryEmail ?? '',
+                markAsReadDelay: response.data.markAsReadDelay ?? 0
             });
 
             reset({
                 undoSendPeriod: response.data.undoSendPeriod ?? 0,
+                markAsReadDelay: response.data.markAsReadDelay ?? 0,
                 maximumPageSize: safePageSize,
                 recoveryEmail: response.data.recoveryEmail ?? '',
                 enableSignature: response.data.enableSignature ?? false,
@@ -203,6 +206,7 @@ function SettingsPage() {
                     downloadLocation: data.downloadLocation || '',
                     notification: data.notification,
                     recoveryEmail: data.recoveryEmail || '',
+                    markAsReadDelay: data.markAsReadDelay
                 });
             } else {
                 showError("Failed to save settings");
@@ -388,6 +392,34 @@ function SettingsPage() {
                             </div>
                         </div>
                     </div>
+                    <div className="col-lg-3 col-md-4">
+                        <div className="form-group form-row ">
+                            <label className="control-label">Mark as read delay</label>
+                            <div className="input-control">
+                                <Controller
+                                    name="markAsReadDelay"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select2Wrapper
+                                            value={field.value.toString() || null}
+                                            onChange={(val: string | null) => {
+                                                field.onChange(val != null ? Number(val) : null)
+                                            }}
+                                            options={[
+                                                { label: "Immediately", value: "0" },
+                                                { label: "After 1 second", value: "1" },
+                                                { label: "After 3 second", value: "3" },
+                                                { label: "After 20 second", value: "20" },
+                                                { label: "Never", value: "-1" },
+                                            ]}
+                                            isMulti={false}
+                                            typeable={false}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div className="single-header blue-line-aft">
@@ -541,7 +573,7 @@ function SettingsPage() {
                             name="body"
                             control={control}
                             render={({ field }) => (
-                                <Suspense fallback={<div className="form-control" style={{height: '200px'}}>Loading editor...</div>}>
+                                <Suspense fallback={<div className="form-control" style={{ height: '200px' }}>Loading editor...</div>}>
                                     <CkEditorRichText
                                         id="compose-email-body"
                                         value={field.value}
