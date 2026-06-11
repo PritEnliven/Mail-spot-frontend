@@ -105,7 +105,7 @@ interface MailDataType {
     /* Events */
     updateBoxCount: (boxName: string, unreadDecrement: number, totalDecrement: number) => void;
     setAllSearchResult: (value: boolean) => void;
-    clearMailSearch: (options?: { restoreMailbox?: boolean }) => Promise<void>;
+    clearMailSearch: (options?: { restoreMailbox?: boolean; preserveFilter?: boolean }) => Promise<void>;
     mailSearchResetKey: number;
 
     /* Socket */
@@ -728,15 +728,42 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const clearMailSearch = useCallback(async (options?: { restoreMailbox?: boolean }) => {
+    const clearMailSearch = useCallback(async (options?: { restoreMailbox?: boolean; preserveFilter?: boolean }) => {
         const restoreMailbox = options?.restoreMailbox !== false;
+        const preserveFilter = options?.preserveFilter === true;
+
+        setSearchTerm('');
+        setHeaderSearchResults([]);
+        setMailSearchResetKey(key => key + 1);
+
+        if (preserveFilter && filterForm) {
+            setAllSearchResult(true);
+            try {
+                const response = await searchAndFilterEmailService(
+                    buildSearchFilterPayload({
+                        filterForm,
+                        limit: 25,
+                        direction: 'next',
+                        vPage: 1,
+                    })
+                );
+
+                if (response?.statusCode === 200) {
+                    setEmails(response.data.emailList);
+                    setPagination(response.data.pagination);
+                    setTotalEmailBadge(response.data.pagination.totalEmails);
+                    setBoxTitle('Filtered Results');
+                }
+            } catch (error) {
+                console.error('Failed to refetch filtered emails:', error);
+            }
+            return;
+        }
+
         const wasShowingSearchResults = restoreMailbox && (allSearchResult || boxTitle === 'Search Results');
 
         setAllSearchResult(false);
-        setSearchTerm('');
         setFilterForm(null);
-        setHeaderSearchResults([]);
-        setMailSearchResetKey(key => key + 1);
 
         if (
             wasShowingSearchResults &&
@@ -752,7 +779,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             setPagination(null);
             await fetchEmails(1, boxName, false, readUnreadFilter);
         }
-    }, [allSearchResult, boxTitle, boxName, sidebarItems, fetchEmails, readUnreadFilter]);
+    }, [allSearchResult, boxTitle, boxName, filterForm, sidebarItems, fetchEmails, readUnreadFilter]);
 
     const updateBoxCount = (
         boxName: string,

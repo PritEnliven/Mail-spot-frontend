@@ -54,7 +54,7 @@ const Header = () => {
     const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, setActiveBoxId } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
-        setBoxTitle, filterForm, boxName, searchTerm, allSearchResult,
+        setBoxTitle, filterForm, boxName, boxTitle, searchTerm, allSearchResult,
         setEmailDetailSelected, setActiveEmailMessageId,
         headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
         clearMailSearch, mailSearchResetKey } = useMailData();
@@ -103,35 +103,11 @@ const Header = () => {
 
             setSearchResults([]);
             setNoResult(false);
-            if (searchTerm) {
-                setSearchTerm('');
-            }
-            if (previousSearch && allSearchResult) {
-                if (filterForm) {
-                    setSearchTerm('');
-                    const refetchFilteredOnly = async () => {
-                        try {
-                            const response = await searchAndFilterEmailService(
-                                buildSearchFilterPayload({
-                                    filterForm,
-                                    limit: 25,
-                                    direction: 'next',
-                                    vPage: 1,
-                                })
-                            );
 
-                            if (response?.statusCode === 200) {
-                                setEmails(response.data.emailList);
-                                setPagination(response.data.pagination);
-                                setTotalEmailBadge(response.data.pagination.totalEmails);
-                                setBoxTitle('Filtered Results');
-                            }
-                        } catch (err) {
-                            console.error('Filter refetch failed:', err);
-                        }
-                    };
-                    void refetchFilteredOnly();
-                } else {
+            if (previousSearch) {
+                if (filterForm) {
+                    void clearMailSearch({ preserveFilter: true });
+                } else if (allSearchResult || searchTerm || boxTitle === 'Search Results') {
                     void clearMailSearch();
                 }
             }
@@ -174,7 +150,7 @@ const Header = () => {
         searchEmails();
 
         return () => controller.abort();
-    }, [debouncedSearchText, searchText, searchTerm, allSearchResult, clearMailSearch, filterForm, setEmails, setPagination, setSearchTerm, setTotalEmailBadge, setBoxTitle]);
+    }, [debouncedSearchText, searchText, searchTerm, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
 
     const toggleMobileSidebar = () => {
         setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
@@ -403,7 +379,7 @@ const Header = () => {
         openModal('changePassword')
     }
 
-    const { boxTitle, totalEmailBadge, readUnreadFilter } = useMailData();
+    const { totalEmailBadge, readUnreadFilter } = useMailData();
 
     const toggleFilterDropdown = () => {
         setIsFilterDropdownOpen(!isFilterDropdownOpen);
@@ -469,22 +445,24 @@ const Header = () => {
         setSearchResults([]);
         setIsSearchResultDropdownOpen(false);
         setNoResult(false);
-        reset({
-            from: [],
-            to: [],
-            subject: '',
-            dateRange: [],
-        });
-    }, [mailSearchResetKey]);
+        if (!filterForm) {
+            reset({
+                from: [],
+                to: [],
+                subject: '',
+                dateRange: [],
+            });
+        }
+    }, [mailSearchResetKey, filterForm]);
 
     const resetSearch = () => {
         allowSearchDropdownRef.current = false;
-        setSearchText('');
         prevDebouncedSearchRef.current = '';
-        setSearchResults([]);
-        setIsSearchResultDropdownOpen(false);
-        setNoResult(false);
-        void clearMailSearch();
+        if (filterForm) {
+            void clearMailSearch({ preserveFilter: true });
+        } else {
+            void clearMailSearch();
+        }
     }
 
     const closeProfileModalMobile = () => {
