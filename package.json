@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build ",
     "build:log": "node scripts/build.cjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-react": "^11.0.1",
@@ -64,6 +66,7 @@
     "rollup-plugin-visualizer": "^6.0.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^4.1.8"
   }
 }

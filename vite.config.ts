@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -106,5 +106,10 @@ export default defineConfig({
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@constants': path.resolve(__dirname, 'src/constants'),
     },
-  }
+  },
+  test: {
+    globals: false,
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+  },
 })

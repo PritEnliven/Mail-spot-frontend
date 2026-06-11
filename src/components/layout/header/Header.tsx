@@ -43,7 +43,7 @@ import { Dropdown } from 'react-bootstrap';
 import { verifyBoxName } from "@utils/emailUtil";
 import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constants/attachmentSizeOptions";
 import { buildSearchFilterPayload, getAppliedFilterCount } from "@utils/filterUtil";
-import { buildSearchQueryFromFilters } from "@utils/searchQueryUtil";
+import { buildSearchQueryFromFilters, parseFilterQueryToFormValues } from "@utils/searchQueryUtil";
 import { useScreen } from "@context/ScreenContext";
 
 const Header = () => {
@@ -398,7 +398,20 @@ const Header = () => {
     const { totalEmailBadge, readUnreadFilter } = useMailData();
 
     const toggleFilterDropdown = () => {
-        setIsFilterDropdownOpen(!isFilterDropdownOpen);
+        if (isFilterDropdownOpen) {
+            setIsFilterDropdownOpen(false);
+            return;
+        }
+
+        const parsed = parseFilterQueryToFormValues(searchText);
+        reset({
+            from: parsed.from ?? [],
+            to: parsed.to ?? [],
+            subject: parsed.subject ?? '',
+            attachmentSize: parsed.attachmentSize,
+            dateRange: parsed.dateRange ?? [],
+        });
+        setIsFilterDropdownOpen(true);
     };
 
     useEffect(() => {
@@ -446,12 +459,6 @@ const Header = () => {
         }
 
     }, []);
-
-    useEffect(() => {
-        if (searchText.length > 0) {
-            setIsFilterDropdownOpen(false);
-        }
-    }, [searchText]);
 
     // Clear header search UI when search is reset (e.g. switching mailbox tabs).
     useEffect(() => {
