@@ -229,7 +229,6 @@ const LeftPanel = () => {
             editFolderId: boxData?.value._id
         }
         openModal('createCustomFolder', props);
-
     }
 
     const handleDeleteFolder = (folderId: string, folderName: string) => {
