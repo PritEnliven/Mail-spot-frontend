@@ -364,10 +364,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                                 if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
                                     const totalCount = getNumericCount(boxCountResponse.data.totalCount);
 
-                                    if (totalCount !== null) {
-                                        setTotalEmailBadge(totalCount);
-                                    }
-
                                     setPagination(prev => prev ? {
                                         ...prev,
                                         totalEmails: totalCount ?? prev.totalEmails
@@ -623,7 +619,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             const removedCount = removedEmails.length;
 
             // Update total email badge
-            setTotalEmailBadge(prev => Math.max(0, prev - removedCount));
+            // setTotalEmailBadge(prev => Math.max(0, prev - removedCount));
 
             // Update pagination
             setPagination(prev => prev ? {
@@ -788,6 +784,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     ) => {
         setSidebarState(prev => {
             const current = prev.boxCounts[boxName] || { unreadCount: 0, totalCount: 0 };
+            if (current.isTotal === true) return prev;
 
             // Calculate new values
             const newUnreadCount = Math.max(0, (current.unreadCount || 0) + unreadDecrement);
@@ -798,7 +795,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 boxCounts: {
                     ...prev.boxCounts,
                     [boxName]: {
-                        isTotal: false,
+                        ...current,
                         unreadCount: newUnreadCount,
                         totalCount: newTotalCount,
                     }

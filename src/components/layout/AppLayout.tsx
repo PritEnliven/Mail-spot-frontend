@@ -6,11 +6,17 @@ import { useMailUI } from "@context/MailUIContext";
 import { SettingsProvider } from "@context/SettingsContext";
 import { useMailSocket } from "@hooks/useSocket";
 import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
-// Create a new component that will be wrapped by MailProviders
+import AppLoader from "@components/layout/AppLoader";
+
 const AppContent = () => {
     useMailSocket();
-    usePageStylesheet([pageStyles.customCss, pageStyles.inboxCss, pageStyles.scheduleCss, pageStyles.headerCss, pageStyles.settingsCss, pageStyles.responsiveCss]);
+    const cssLoaded = usePageStylesheet([pageStyles.customCss, pageStyles.inboxCss, pageStyles.scheduleCss, pageStyles.headerCss, pageStyles.settingsCss, pageStyles.responsiveCss]);
     const { isSidebarOpen, isSidebarExpandedMobile } = useMailUI();
+
+    if (!cssLoaded) {
+        return <AppLoader />;
+    }
+
     return (
         <main className="d-flex">
             {/* START: Left Side  */}

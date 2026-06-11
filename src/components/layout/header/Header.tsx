@@ -503,7 +503,7 @@ const Header = () => {
                         {/* LEFT: Dynamic header section */}
                         <div className="d-flex align-items-center two-sc-in" id="dynamicHeaderSection">
                             <h2 className="box-title" id="boxTitle">{boxTitle}</h2>
-                            {!isSettings && totalEmailBadge > 0 && readUnreadFilter !== 'read' && readUnreadFilter !== 'unread' && (
+                            {!isSettings && totalEmailBadge > 0 && readUnreadFilter !== 'read' && (
                                 <span className="badge" id="boxBadge">{totalEmailBadge}</span>
                             )}
                         </div>

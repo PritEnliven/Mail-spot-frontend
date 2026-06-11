@@ -67,7 +67,7 @@ export function usePageStylesheet(keys: PageStyleKey | PageStyleKey[]): boolean 
 
         return () => {
             cancelled = true;
-            setLoaded(false);
+            // setLoaded(false);
         };
     }, [stylesheets.join(',')]);
 

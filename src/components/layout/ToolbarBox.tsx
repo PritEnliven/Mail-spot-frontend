@@ -37,7 +37,10 @@ const ToolbarBox = () => {
     const { isDesktop } = useScreen();
 
     // Hide pagination when mailbox is empty (all counts are 0)
-    const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
+    // const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
+    //     && (emails.length > 0);
+
+    const hasEmails = pagination?.startCount != null && pagination?.endCount != null
         && (emails.length > 0);
 
     //create moveTo folder options list from sidebarSteate

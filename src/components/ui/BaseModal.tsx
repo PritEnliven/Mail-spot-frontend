@@ -20,6 +20,8 @@ interface BaseModalProps {
   isComposeExpanded?: boolean;
 }
 
+const ANIMATION_DURATION = 200; // ms — match Bootstrap's modal transition
+
 const modalRoot = document.getElementById("modal-root") || document.body;
 
 export default function BaseModal({
@@ -45,6 +47,30 @@ export default function BaseModal({
   const isCompose = moduleName === "compose";
   const isExpanded = isCompose && isComposeExpanded;
 
+  // --- Animation state ---
+  // `mounted`  controls whether the DOM node exists at all
+  // `visible`  controls whether `.show` is applied (triggers CSS transition)
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // 1. Mount the DOM node first (without .show)
+      setMounted(true);
+      // 2. One frame later add .show so CSS transition fires
+      const raf = requestAnimationFrame(() => {
+        setVisible(true);
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      // 1. Remove .show → CSS transition plays
+      setVisible(false);
+      // 2. After transition completes, unmount
+      const timer = setTimeout(() => setMounted(false), ANIMATION_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   const [controlledPosition, setControlledPosition] = useState({ x: 0, y: 0 });
   const [bounds, setBounds] = useState({ left: 0, top: 0, right: 0, bottom: 0 });
 
@@ -64,7 +90,6 @@ export default function BaseModal({
     let newBounds;
 
     if (isCompose && !isExpanded) {
-      // Bottom-right anchored compose modal
       newBounds = {
         top: -(screenHeight - modalHeight - 20),
         bottom: modalHeight - VISIBLE_THRESHOLD + 20,
@@ -72,7 +97,6 @@ export default function BaseModal({
         right: modalWidth - VISIBLE_THRESHOLD + 20,
       };
     } else {
-      // Centered modal
       const halfWidth = (screenWidth - modalWidth) / 2;
       const halfHeight = (screenHeight - modalHeight) / 2;
 
@@ -88,7 +112,7 @@ export default function BaseModal({
   };
 
   useLayoutEffect(() => {
-    if (!isOpen) return;
+    if (!mounted) return;
 
     const timer = setTimeout(updateBounds, 150);
 
@@ -105,7 +129,7 @@ export default function BaseModal({
       ro.disconnect();
       window.removeEventListener("resize", updateBounds);
     };
-  }, [isOpen, isExpanded, width, maxWidth, minWidth, isCompose]);
+  }, [mounted, isExpanded, width, maxWidth, minWidth, isCompose]);
 
   // ESC close
   useEffect(() => {
@@ -135,7 +159,8 @@ export default function BaseModal({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Nothing in DOM until first open
+  if (!mounted) return null;
 
   const dynamicClass = isCompose
     ? isExpanded
@@ -153,12 +178,13 @@ export default function BaseModal({
     <>
       {showBackdrop && (
         <div
-          className="modal-backdrop fade show "
+          className={`modal-backdrop fade${visible ? " show" : ""}`}
           style={{
             zIndex,
             position: "fixed",
             inset: 0,
             backgroundColor: "rgba(0,0,0,0.5)",
+            transition: `opacity ${ANIMATION_DURATION}ms ease`,
           }}
           onClick={closeOnBackdrop ? onClose : undefined}
         />
@@ -175,7 +201,7 @@ export default function BaseModal({
       >
         <div
           ref={nodeRef}
-          className={`modal fade show d-block ${className}`}
+          className={`modal fade${visible ? " show d-block" : ""} ${className}`}
           style={{
             position: "fixed",
             inset: 0,
