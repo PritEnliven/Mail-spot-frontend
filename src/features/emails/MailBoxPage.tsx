@@ -17,7 +17,8 @@ const EmailDetail = lazy(() => import('../../features/emails/EmailDetail'));
 const MailBoxPage = () => {
     const emailScrollRef = useRef<HTMLDivElement | null>(null);
     // const { boxName } = useParams<{ boxName: string }>();
-    const { boxName, sidebarState, sidebarItems, setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, isSidebarDataReady, isSidebarLoading, readUnreadFilter, setReadUnreadFilter } = useMailData();
+    const { boxName, sidebarState, sidebarItems, setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, isSidebarDataReady, isSidebarLoading, readUnreadFilter, setReadUnreadFilter, boxTitle } = useMailData();
+    const isSearchOrFilterMailList = boxTitle === 'Search Results' || boxTitle === 'Filtered Results';
     const { selectedEmails } = useMailSelection();
     const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
     const { settings } = useSettings();
@@ -298,22 +299,24 @@ const MailBoxPage = () => {
         <>
             {/* START:: Mail received box */}
             <div className={`mail-message-box ${isSchedule ? 'schedule-message-box' : ''}`} id="mailMessageBoxSection" style={mailListStyleOpenViaSearch}>
-                <div className="mail-list-filter">
-                    <button
-                        type="button"
-                        className={`mail-list-filter__segment ${readUnreadFilter === MAIL_ACTION.ALL ? 'mail-list-filter__segment--active' : ''}`}
-                        onClick={() => handleMailListFilter(MAIL_ACTION.ALL)}
-                    >
-                        All
-                    </button>
-                    <button
-                        type="button"
-                        className={`mail-list-filter__segment ${readUnreadFilter === MAIL_ACTION.UNREAD ? 'mail-list-filter__segment--active' : ''}`}
-                        onClick={() => handleMailListFilter(MAIL_ACTION.UNREAD)}
-                    >
-                        Unread
-                    </button>
-                </div>
+                {!isSearchOrFilterMailList && (
+                    <div className="mail-list-filter">
+                        <button
+                            type="button"
+                            className={`mail-list-filter__segment ${readUnreadFilter === MAIL_ACTION.ALL ? 'mail-list-filter__segment--active' : ''}`}
+                            onClick={() => handleMailListFilter(MAIL_ACTION.ALL)}
+                        >
+                            All
+                        </button>
+                        <button
+                            type="button"
+                            className={`mail-list-filter__segment ${readUnreadFilter === MAIL_ACTION.UNREAD ? 'mail-list-filter__segment--active' : ''}`}
+                            onClick={() => handleMailListFilter(MAIL_ACTION.UNREAD)}
+                        >
+                            Unread
+                        </button>
+                    </div>
+                )}
                 <div className="mail-received-table-news">
                     {emails.length === 0 && !isLoading && !isSidebarLoading ? (
                         <NoEmailList />

@@ -1,4 +1,5 @@
 import type { FilterEmailFormValues } from '@components/layout/header/filterEmailForm.schema';
+import { buildSearchFilterPayload } from '@utils/filterUtil';
 import type { Email } from '@models/Email';
 import type { Pagination } from '@models/Pagination';
 import { getCounts, getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
@@ -435,26 +436,14 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     ? undefined
                     : (isPrevious ? pagination?.firstMailId : pagination?.lastMailId);
 
-                const payload: any = {
-                    searchTerm: searchTerm || undefined,
+                const payload = buildSearchFilterPayload({
+                    searchText: searchTerm,
+                    filterForm,
                     limit: 25,
                     cursor: cursor || undefined,
                     direction,
                     vPage,
-                    searchQuery: searchTerm || undefined
-                };
-
-                // Add filter form fields if they exist
-                if (filterForm) {
-                    Object.assign(payload, {
-                        from: filterForm.from,
-                        to: filterForm.to,
-                        subject: filterForm.subject,
-                        attachmentSizeType: filterForm.attachmentSizeType,
-                        dateRange: filterForm.dateRange,
-                        isFilter: true
-                    });
-                }
+                });
 
                 const response = await searchAndFilterEmailService(payload);
                 if (response.statusCode === 200) {

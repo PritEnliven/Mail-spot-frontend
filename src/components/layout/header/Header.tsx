@@ -39,9 +39,9 @@ const CreateRuleForm = lazy(() => import("@components/layout/header/createRuleFo
 import type { CreateRuleFormValues } from "./createRuleForm/CreateRuleForm.schema";
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
-import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { Dropdown } from 'react-bootstrap';
 import { verifyBoxName } from "@utils/emailUtil";
+import { buildSearchFilterPayload, getAppliedFilterCount } from "@utils/filterUtil";
 import { useScreen } from "@context/ScreenContext";
 
 const Header = () => {
@@ -65,6 +65,7 @@ const Header = () => {
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
     const { isDesktop } = useScreen();
     const prevDebouncedSearchRef = useRef(debouncedSearchText);
+    const allowSearchDropdownRef = useRef(true);
 
     useEffect(() => {
         fetchContacts();
@@ -84,15 +85,55 @@ const Header = () => {
 
     // SEARCH EFFECT (debounced) — only restore mailbox when user clears a non-empty search string
     useEffect(() => {
+        const trimmedSearchText = searchText.trim();
         const previousSearch = prevDebouncedSearchRef.current.trim();
         const currentSearch = debouncedSearchText.trim();
         prevDebouncedSearchRef.current = debouncedSearchText;
 
+        // Ignore stale debounced value while input is already cleared (e.g. first click on remove icon)
+        if (!trimmedSearchText && currentSearch) {
+            return;
+        }
+
         if (!currentSearch) {
+            // Debounce can lag behind — don't clear if user already started a new query
+            if (trimmedSearchText) {
+                return;
+            }
+
             setSearchResults([]);
             setNoResult(false);
+            if (searchTerm) {
+                setSearchTerm('');
+            }
             if (previousSearch && allSearchResult) {
-                void clearMailSearch();
+                if (filterForm) {
+                    setSearchTerm('');
+                    const refetchFilteredOnly = async () => {
+                        try {
+                            const response = await searchAndFilterEmailService(
+                                buildSearchFilterPayload({
+                                    filterForm,
+                                    limit: 25,
+                                    direction: 'next',
+                                    vPage: 1,
+                                })
+                            );
+
+                            if (response?.statusCode === 200) {
+                                setEmails(response.data.emailList);
+                                setPagination(response.data.pagination);
+                                setTotalEmailBadge(response.data.pagination.totalEmails);
+                                setBoxTitle('Filtered Results');
+                            }
+                        } catch (err) {
+                            console.error('Filter refetch failed:', err);
+                        }
+                    };
+                    void refetchFilteredOnly();
+                } else {
+                    void clearMailSearch();
+                }
             }
             return;
         }
@@ -101,14 +142,19 @@ const Header = () => {
 
         const searchEmails = async () => {
             try {
+                setSearchTerm(debouncedSearchText);
                 const response = await searchAndFilterEmailService(
-                    {
-                        searchTerm: debouncedSearchText,
+                    buildSearchFilterPayload({
+                        searchText: debouncedSearchText,
+                        filterForm,
                         limit: 5,
-                    }
+                    })
                 );
 
                 if (response?.statusCode === 200) {
+                    if (allowSearchDropdownRef.current) {
+                        setIsSearchResultDropdownOpen(true);
+                    }
                     if (response.data.emailList.length === 0) {
                         setNoResult(true);
                         setSearchResults([]);
@@ -128,7 +174,7 @@ const Header = () => {
         searchEmails();
 
         return () => controller.abort();
-    }, [debouncedSearchText, allSearchResult, clearMailSearch]);
+    }, [debouncedSearchText, searchText, searchTerm, allSearchResult, clearMailSearch, filterForm, setEmails, setPagination, setSearchTerm, setTotalEmailBadge, setBoxTitle]);
 
     const toggleMobileSidebar = () => {
         setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
@@ -139,50 +185,26 @@ const Header = () => {
         setSearchTerm(data.searchTerm || '');
         setFilterForm(data);
 
-        const payload: any = {
+        const payload = buildSearchFilterPayload({
+            searchText,
+            filterForm: data,
             limit: 25,
-            cursor: undefined,
             direction: 'next',
             vPage: 1,
-            searchQuery: searchText || undefined,
-            isFilter: true
-        };
-
-        if (data.subject?.trim()) {
-            payload.subject = data.subject.trim();
-        }
-
-        if (data.attachmentSizeType) {
-            payload.attachmentSizeType = data.attachmentSizeType;
-        }
-
-        if (data.from?.length) payload.from = data.from;
-        if (data.to?.length) payload.to = data.to;
-
-        if (data.dateRange?.length === 1) {
-            payload.dateRange = formatDate(data.dateRange[0] as Date, TimeFormat.DD_MM_YYYY);
-        } else if (data.dateRange?.length === 2) {
-            payload.dateRange = `${formatDate(data.dateRange[0] as Date, TimeFormat.DD_MM_YYYY)} to ${formatDate(data.dateRange[1] as Date, TimeFormat.DD_MM_YYYY)}`;
-        }
+        });
 
         try {
             const response = await searchAndFilterEmailService(payload);
             if (response?.statusCode === 200) {
                 setIsFilterDropdownOpen(false);
-                setIsSearchResultDropdownOpen(true);
-                if (response.data.emailList.length === 0) {
-                    setNoResult(true);
-                    setSearchResults([]);
-                }
-                else {
-                    setNoResult(false);
-                    setSearchResults(response.data.emailList.slice(0, 5) || []);
-                }
+                setIsSearchResultDropdownOpen(false);
+                setSearchResults([]);
+                setNoResult(false);
 
                 setEmails(response.data.emailList);
                 setPagination(response.data.pagination);
                 setTotalEmailBadge(response.data.pagination.totalEmails);
-                setBoxTitle("Search Results");
+                setBoxTitle("Filtered Results");
             }
         } catch (err) {
             console.error('Filter failed:', err);
@@ -266,49 +288,22 @@ const Header = () => {
             navigate('/mail/INBOX');
         }
 
-        const payload: any = {
-            searchTerm: searchText,
-            limit: 25,
-            cursor: undefined,
-            direction: 'next',
-            vPage: 1
-        };
-
-        if (filterForm) {
-            payload.isFilter = true;
-            payload.searchQuery = filterForm.searchTerm || searchText;
-
-            if (filterForm.subject?.trim()) {
-                payload.subject = filterForm.subject.trim();
-            }
-
-            if (filterForm.attachmentSizeType) {
-                payload.attachmentSizeType = filterForm.attachmentSizeType;
-            }
-
-            if (filterForm.from?.length) {
-                payload.from = filterForm.from;
-            }
-
-            if (filterForm.to?.length) {
-                payload.to = filterForm.to;
-            }
-
-            if (filterForm.dateRange?.length === 1) {
-                payload.dateRange = formatDate(filterForm.dateRange[0] as Date, TimeFormat.DD_MM_YYYY);
-            } else if (filterForm.dateRange?.length === 2) {
-                payload.dateRange = `${formatDate(filterForm.dateRange[0] as Date, TimeFormat.DD_MM_YYYY)} to ${formatDate(filterForm.dateRange[1] as Date, TimeFormat.DD_MM_YYYY)}`;
-            }
-        }
-
-        const response = await searchAndFilterEmailService(payload);
+        const response = await searchAndFilterEmailService(
+            buildSearchFilterPayload({
+                searchText,
+                filterForm,
+                limit: 25,
+                direction: 'next',
+                vPage: 1,
+            })
+        );
         if (response.statusCode === 200) {
             setEmails(response.data.emailList);
             setPagination(response.data.pagination);
             setIsSearchResultDropdownOpen(false);
             setNoResult(false);
             setTotalEmailBadge(response.data.pagination.totalEmails);
-            setBoxTitle("Search Results");
+            setBoxTitle(filterForm ? 'Filtered Results' : 'Search Results');
         }
     };
 
@@ -321,6 +316,8 @@ const Header = () => {
     ) => {
         try {
             if (isSearch) {
+                allowSearchDropdownRef.current = false;
+                setIsSearchResultDropdownOpen(false);
                 await showAllSearchResult();
             }
 
@@ -464,14 +461,6 @@ const Header = () => {
         }
     }, [searchText]);
 
-    // Keep local search input in sync with global search context
-    // (e.g. after opening email detail from search results and coming back).
-    useEffect(() => {
-        if (!searchText && searchTerm) {
-            setSearchText(searchTerm);
-        }
-    }, [searchTerm]);
-
     // Clear header search UI when search is reset (e.g. switching mailbox tabs).
     useEffect(() => {
         if (mailSearchResetKey === 0) return;
@@ -489,6 +478,12 @@ const Header = () => {
     }, [mailSearchResetKey]);
 
     const resetSearch = () => {
+        allowSearchDropdownRef.current = false;
+        setSearchText('');
+        prevDebouncedSearchRef.current = '';
+        setSearchResults([]);
+        setIsSearchResultDropdownOpen(false);
+        setNoResult(false);
         void clearMailSearch();
     }
 
@@ -501,6 +496,7 @@ const Header = () => {
 
     const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
+    const appliedFilterCount = getAppliedFilterCount(filterForm);
 
     return (
         <div className={`mail-details-header `}>
@@ -570,7 +566,14 @@ const Header = () => {
                                                     autoComplete="off"
                                                     aria-expanded="false"
                                                     value={searchText}
-                                                    onChange={(e) => setSearchText(e.target.value)}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        setSearchText(value);
+                                                        if (value.trim()) {
+                                                            allowSearchDropdownRef.current = true;
+                                                            setIsSearchResultDropdownOpen(true);
+                                                        }
+                                                    }}
                                                     onFocus={() => setIsSearchResultDropdownOpen(true)}
                                                 />
 
@@ -628,56 +631,48 @@ const Header = () => {
 
                                         {/* Search filters */}
                                         <div className="top-filter inbox-more">
-                                            {searchText.length > 0 && (
-                                                <button type="button" className="btn-new hover-link clearSearchBtn-cm" onClick={() => resetSearch()}>
+                                            <div className="top-filter__actions">
+                                                {searchText.length > 0 && (
+                                                    <button type="button" className="btn-new hover-link clearSearchBtn-cm" onClick={() => resetSearch()}>
+                                                        <InteractiveIcon
+                                                            defaultIcon={btnCloseIcon}
+                                                            hoverIcon={btnCloseIconHover}
+                                                            activeIcon=""
+                                                            isActive={false}
+                                                            alt=""
+                                                            className="interactive-icon hover-image"
+                                                            renderAs="img"
+                                                            tooltip="Back"
+                                                            customStyle={{
+                                                                width: '20px',
+                                                                height: '20px',
+                                                            }}
+                                                        />
+                                                    </button>
+                                                )}
+
+                                                <button type="button"
+                                                    className={`btn btnic btn-grey dropdown-toggle t-filter-btn hover-link search-d-Btn-cm${appliedFilterCount > 0 ? ' t-filter-btn--with-badge' : ''}`}
+                                                    onClick={toggleFilterDropdown}
+                                                    aria-expanded={isFilterDropdownOpen}
+                                                >
                                                     <InteractiveIcon
-                                                        defaultIcon={btnCloseIcon}
-                                                        hoverIcon={btnCloseIconHover}
+                                                        defaultIcon={functionIcon}
+                                                        hoverIcon={functionIconHover}
                                                         activeIcon=""
                                                         isActive={false}
                                                         alt=""
                                                         className="interactive-icon hover-image"
                                                         renderAs="img"
-                                                        tooltip="Back"
-                                                        customStyle={{
-                                                            width: '20px',
-                                                            height: '20px',
-                                                        }}
+                                                        tooltip="Show search option"
                                                     />
-
+                                                    {appliedFilterCount > 0 && (
+                                                        <span className="filter-applied-badge" aria-label={`${appliedFilterCount} filters applied`}>
+                                                            {appliedFilterCount}
+                                                        </span>
+                                                    )}
                                                 </button>
-                                            )}
-
-                                            <button
-                                                type="button"
-                                                className="btn btnic btn-grey dropdown-toggle t-filter-btn hover-link search-d-Btn-cm"
-                                                data-bs-toggle="dropdown"
-                                                data-bs-auto-close="outside"
-                                                aria-expanded="false"
-                                            >
-                                                <img
-                                                    className="interactive-icon hover-image"
-                                                    src={functionIcon}
-                                                    alt="Filter"
-                                                />
-                                            </button>
-
-                                            <button type="button"
-                                                className="btn btnic btn-grey dropdown-toggle t-filter-btn hover-link search-d-Btn-cm"
-                                                onClick={toggleFilterDropdown}
-                                                aria-expanded={isFilterDropdownOpen}
-                                            >
-                                                <InteractiveIcon
-                                                    defaultIcon={functionIcon}
-                                                    hoverIcon={functionIconHover}
-                                                    activeIcon=""
-                                                    isActive={false}
-                                                    alt=""
-                                                    className="interactive-icon hover-image"
-                                                    renderAs="img"
-                                                    tooltip="Show search option"
-                                                />
-                                            </button>
+                                            </div>
 
                                             {/* Filter dropdown */}
                                             <div id="filterEmailFormSection" className={`dropdown-menu dropdown-menu-end t-filter-dropdown-menu more-list ${isFilterDropdownOpen ? 'show' : ''}`}>

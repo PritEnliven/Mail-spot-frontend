@@ -277,7 +277,7 @@ function CalendarHeader() {
                                         <div className="all-search-result-show" onClick={() => allEventSearchHandler()}>
                                             <div className="d-flex align-items-center justify-content-strat">
                                                 <img src={searchIcon} className="me-2" alt="" width={18} height={18} />
-                                                <div className="subject">All search results for
+                                                <div className="subject">All search results for 
                                                     <span className="all-search-result" id="searchQuery">'{searchText}'</span>
                                                 </div>
                                             </div>

@@ -1297,16 +1297,82 @@ input::-webkit-search-cancel-button {
     width: 100%;
 }
 
-.top-filter .t-filter-btn {
+.top-filter__actions {
     position: absolute;
     right: 6px;
     top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    z-index: 2;
+}
+
+.top-filter__actions .clearSearchBtn-cm.btn-new {
+    position: static;
+    right: auto;
+    top: auto;
+    transform: none;
+    padding: 4px;
+}
+
+.top-filter .t-filter-btn {
+    position: static;
     border-radius: 50% !important;
     padding: 0;
     display: flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    transform: translate(0, -50%);
+    gap: 4px;
+    transform: none;
+}
+
+.top-filter .t-filter-btn--with-badge {
+    border-radius: 14px !important;
+    padding: 2px 6px 2px 4px;
+}
+
+.filter-applied-badge {
+    position: static;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    color: #b42318;
+    border: 1px solid #fecdca;
+    flex-shrink: 0;
+    pointer-events: none;
+    animation: filter-applied-badge-blink 1.2s ease-in-out infinite;
+}
+
+.top-search:has(.t-filter-btn--with-badge):not(:has(.clearSearchBtn-cm)) .t-search-group .form-control {
+    padding-right: 72px;
+}
+
+.top-search:has(.clearSearchBtn-cm):not(:has(.t-filter-btn--with-badge)) .t-search-group .form-control {
+    padding-right: 80px;
+}
+
+.top-search:has(.clearSearchBtn-cm):has(.t-filter-btn--with-badge) .t-search-group .form-control {
+    padding-right: 104px;
+}
+
+@keyframes filter-applied-badge-blink {
+    0%, 100% {
+        background-color: #fee4e2;
+    }
+
+    50% {
+        background-color: #fda29b;
+    }
 }
 
 .top-filter .t-filter-btn svg:hover {
