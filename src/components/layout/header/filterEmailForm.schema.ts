@@ -1,3 +1,4 @@
+import { ATTACHMENT_SIZE_LABELS } from '@constants/attachmentSizeOptions';
 import { z } from 'zod';
 
 export const filterEmailForm = z.object({
@@ -13,8 +14,8 @@ export const filterEmailForm = z.object({
         .optional()
         .or(z.literal('')),
 
-    attachmentSizeType: z
-        .enum(['small', 'medium', 'large'])
+    attachmentSize: z
+        .enum(ATTACHMENT_SIZE_LABELS as [string, ...string[]])
         .optional(),
 
     dateRange: z

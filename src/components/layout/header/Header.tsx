@@ -41,7 +41,9 @@ import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
 import { Dropdown } from 'react-bootstrap';
 import { verifyBoxName } from "@utils/emailUtil";
+import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constants/attachmentSizeOptions";
 import { buildSearchFilterPayload, getAppliedFilterCount } from "@utils/filterUtil";
+import { buildSearchQueryFromFilters } from "@utils/searchQueryUtil";
 import { useScreen } from "@context/ScreenContext";
 
 const Header = () => {
@@ -114,6 +116,10 @@ const Header = () => {
             return;
         }
 
+        if (filterForm && getAppliedFilterCount(filterForm) > 0) {
+            return;
+        }
+
         const controller = new AbortController();
 
         const searchEmails = async () => {
@@ -158,11 +164,14 @@ const Header = () => {
 
     const onSubmit = async (data: FilterEmailFormValues) => {
         setAllSearchResult(true);
-        setSearchTerm(data.searchTerm || '');
+        setSearchTerm('');
         setFilterForm(data);
 
+        const displayQuery = buildSearchQueryFromFilters(data);
+        setSearchText(displayQuery);
+        prevDebouncedSearchRef.current = displayQuery;
+
         const payload = buildSearchFilterPayload({
-            searchText,
             filterForm: data,
             limit: 25,
             direction: 'next',
@@ -209,6 +218,11 @@ const Header = () => {
         }
 
         payload.dateRange = dateRangeStr;
+
+        if (payload.attachmentSize) {
+            payload.attachmentSizeType = attachmentSizeLabelToApiType(payload.attachmentSize);
+            delete payload.attachmentSize;
+        }
 
         const response = await filterEmailAndCreateRuleService(payload);
         if (response?.emailList?.length > 0) {
@@ -258,7 +272,8 @@ const Header = () => {
 
     const showAllSearchResult = async () => {
         setAllSearchResult(true);
-        setSearchTerm(searchText);
+        const hasActiveFilters = filterForm && getAppliedFilterCount(filterForm) > 0;
+        setSearchTerm(hasActiveFilters ? '' : searchText);
 
         if (boxName.toLocaleLowerCase().includes('schedule')) {
             navigate('/mail/INBOX');
@@ -345,6 +360,7 @@ const Header = () => {
             from: [],
             to: [],
             subject: '',
+            attachmentSize: undefined,
             dateRange: [],
         });
         setIsFilterDropdownOpen(false);
@@ -441,15 +457,20 @@ const Header = () => {
     useEffect(() => {
         if (mailSearchResetKey === 0) return;
 
-        setSearchText("");
         setSearchResults([]);
         setIsSearchResultDropdownOpen(false);
         setNoResult(false);
-        if (!filterForm) {
+        if (filterForm) {
+            const displayQuery = buildSearchQueryFromFilters(filterForm);
+            setSearchText(displayQuery);
+            prevDebouncedSearchRef.current = displayQuery;
+        } else {
+            setSearchText("");
             reset({
                 from: [],
                 to: [],
                 subject: '',
+                attachmentSize: undefined,
                 dateRange: [],
             });
         }
@@ -710,7 +731,7 @@ const Header = () => {
                                                             <label className="control-label">Attachment Size</label>
                                                             <div className="input-control">
                                                                 <Controller
-                                                                    name="attachmentSizeType"
+                                                                    name="attachmentSize"
                                                                     control={control}
                                                                     render={({ field }) => (
                                                                         <Select2Wrapper
@@ -718,9 +739,10 @@ const Header = () => {
                                                                             onChange={field.onChange}
                                                                             options={[
                                                                                 { label: "Select one", value: "" },
-                                                                                { label: "Small (0-1 MB)", value: "small" },
-                                                                                { label: "Medium (1-5 MB)", value: "medium" },
-                                                                                { label: "Large(5+ MB)", value: "large" },
+                                                                                ...ATTACHMENT_SIZE_OPTIONS.map((opt) => ({
+                                                                                    label: opt.label,
+                                                                                    value: opt.value,
+                                                                                })),
                                                                             ]}
                                                                             placeholder="Select one"
                                                                             isMulti={false}

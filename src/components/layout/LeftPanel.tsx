@@ -246,6 +246,7 @@ const LeftPanel = () => {
             setSidebarStateFromAPI();
             return true;
         }
+        
         showError(`Folder ${folderName} deleted failed`);
         return false;
     }

@@ -104,6 +104,7 @@ export default defineConfig({
       '@context': path.resolve(__dirname, 'src/context'),
       '@models': path.resolve(__dirname, 'src/models'),
       '@hooks': path.resolve(__dirname, 'src/hooks'),
+      '@constants': path.resolve(__dirname, 'src/constants'),
     },
   }
 })

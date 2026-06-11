@@ -11,7 +11,7 @@ export function useFilterEmailForm() {
       from: [],
       to: [],
       subject: '',
-      attachmentSizeType: undefined,
+      attachmentSize: undefined,
       dateRange: undefined,
     },
   });

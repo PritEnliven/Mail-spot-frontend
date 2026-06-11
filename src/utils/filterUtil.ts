@@ -1,4 +1,5 @@
 import type { FilterEmailFormValues } from '@components/layout/header/filterEmailForm.schema';
+import { attachmentSizeLabelToApiType } from '@constants/attachmentSizeOptions';
 import { formatDate, TimeFormat } from '@utils/dateUtil';
 
 export function getAppliedFilterCount(filter: FilterEmailFormValues | null): number {
@@ -9,7 +10,7 @@ export function getAppliedFilterCount(filter: FilterEmailFormValues | null): num
     if (filter.from?.length) count++;
     if (filter.to?.length) count++;
     if (filter.subject?.trim()) count++;
-    if (filter.attachmentSizeType) count++;
+    if (filter.attachmentSize) count++;
     if (filter.dateRange?.length) count++;
 
     return count;
@@ -40,7 +41,9 @@ export function buildSearchFilterPayload({
     if (direction !== undefined) payload.direction = direction;
     if (vPage !== undefined) payload.vPage = vPage;
 
-    if (trimmedSearch) {
+    const hasStructuredFilters = Boolean(filterForm && getAppliedFilterCount(filterForm) > 0);
+
+    if (trimmedSearch && !hasStructuredFilters) {
         payload.searchTerm = trimmedSearch;
         payload.searchQuery = trimmedSearch;
     }
@@ -51,7 +54,9 @@ export function buildSearchFilterPayload({
         if (filterForm.from?.length) payload.from = filterForm.from;
         if (filterForm.to?.length) payload.to = filterForm.to;
         if (filterForm.subject?.trim()) payload.subject = filterForm.subject.trim();
-        if (filterForm.attachmentSizeType) payload.attachmentSizeType = filterForm.attachmentSizeType;
+
+        const attachmentSizeType = attachmentSizeLabelToApiType(filterForm.attachmentSize);
+        if (attachmentSizeType) payload.attachmentSizeType = attachmentSizeType;
 
         if (filterForm.dateRange?.length === 1) {
             payload.dateRange = formatDate(filterForm.dateRange[0] as Date, TimeFormat.DD_MM_YYYY);
