@@ -43,9 +43,11 @@ export function buildSearchFilterPayload({
 
     const hasStructuredFilters = Boolean(filterForm && getAppliedFilterCount(filterForm) > 0);
 
-    if (trimmedSearch && !hasStructuredFilters) {
+    if (trimmedSearch) {
         payload.searchTerm = trimmedSearch;
-        payload.searchQuery = trimmedSearch;
+        if (!hasStructuredFilters) {
+            payload.searchQuery = trimmedSearch;
+        }
     }
 
     if (filterForm) {

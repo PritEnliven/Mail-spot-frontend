@@ -3,7 +3,7 @@ import { buildOperatorPattern, resolveOperatorKey } from './operators';
 import type { FilterOperatorKey, OperatorToken } from './types';
 
 const DATE_VALUE_PATTERN =
-    /^\d{2}\/\d{2}\/\d{4}(?:\s+to\s+\d{2}\/\d{2}\/\d{4})?/i;
+    /^\d{2}\/\d{2}\/\d{4}(?:(?:to|\s+to\s+)\d{2}\/\d{2}\/\d{4})?/i;
 
 const SORTED_SIZE_LABELS = [...ATTACHMENT_SIZE_LABELS].sort((a, b) => b.length - a.length);
 

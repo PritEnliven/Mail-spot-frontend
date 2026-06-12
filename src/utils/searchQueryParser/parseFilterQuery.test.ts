@@ -48,19 +48,21 @@ describe('parseFilterQuery', () => {
         });
     });
 
-    it('infers from, to, and subject from emails plus text', () => {
+    it('infers from and to from emails without treating trailing text as subject', () => {
         expect(parseFilterQuery('prit.d@enlivendc.com vishal.d@enlivendc.com invoice')).toEqual({
             from: 'prit.d@enlivendc.com',
             to: 'vishal.d@enlivendc.com',
-            subject: 'invoice',
         });
     });
 
-    it('parses mixed from keyword and subject text', () => {
+    it('does not infer subject from trailing text after from keyword', () => {
         expect(parseFilterQuery('from:prit.d@enlivendc.com invoice')).toEqual({
             from: 'prit.d@enlivendc.com',
-            subject: 'invoice',
         });
+    });
+
+    it('does not treat plain text as subject', () => {
+        expect(parseFilterQuery('invoice')).toEqual({});
     });
 
     it('parses mixed bare email and subject keyword', () => {
@@ -93,6 +95,13 @@ describe('parseFilterQuery', () => {
         expect(parseFilterQuery('date:05/06/2026 to 10/06/2026')).toEqual({
             dateFrom: '2026-06-05',
             dateTo: '2026-06-10',
+        });
+    });
+
+    it('parses compact date range without spaces around to', () => {
+        expect(parseFilterQuery('date:01/06/2026to03/06/2026')).toEqual({
+            dateFrom: '2026-06-01',
+            dateTo: '2026-06-03',
         });
     });
 

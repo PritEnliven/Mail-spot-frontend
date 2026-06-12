@@ -756,7 +756,9 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        const wasShowingSearchResults = restoreMailbox && (allSearchResult || boxTitle === 'Search Results');
+        const wasShowingSearchResults = restoreMailbox && (
+            allSearchResult || boxTitle === 'Search Results' || boxTitle === 'Filtered Results'
+        );
 
         setAllSearchResult(false);
         setFilterForm(null);

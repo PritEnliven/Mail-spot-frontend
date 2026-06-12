@@ -8,7 +8,20 @@ import type { ParsedFilterQuery } from './types';
 const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 
 function parseDateValue(value: string): { dateFrom?: string; dateTo?: string } {
-    const parts = value.split(/\s+to\s+/i).map((p) => p.trim()).filter(Boolean);
+    const trimmed = value.trim();
+    const compactRange = trimmed.match(/^(\d{2}\/\d{2}\/\d{4})to(\d{2}\/\d{2}\/\d{4})$/i);
+    if (compactRange) {
+        const from = moment(compactRange[1], ['DD/MM/YYYY', 'DD-MM-YYYY'], true);
+        const to = moment(compactRange[2], ['DD/MM/YYYY', 'DD-MM-YYYY'], true);
+        if (from.isValid() && to.isValid()) {
+            return {
+                dateFrom: from.format('YYYY-MM-DD'),
+                dateTo: to.format('YYYY-MM-DD'),
+            };
+        }
+    }
+
+    const parts = trimmed.split(/\s+to\s+/i).map((p) => p.trim()).filter(Boolean);
     if (parts.length === 0) return {};
 
     const dates = parts
@@ -27,6 +40,22 @@ function parseDateValue(value: string): { dateFrom?: string; dateTo?: string } {
     };
 }
 
+export function extractFreeTextSearchTerm(query: string): string {
+    const trimmed = query.trim();
+    if (!trimmed) return '';
+
+    const operatorTokens = tokenizeOperators(trimmed);
+    let remainder = removeOperatorSpans(trimmed, operatorTokens).trim();
+    if (!remainder) return '';
+
+    const inferredEmails = extractEmails(remainder);
+    for (const email of inferredEmails) {
+        remainder = remainder.replace(email, ' ');
+    }
+
+    return remainder.replace(/\s+/g, ' ').trim();
+}
+
 function extractEmails(text: string): string[] {
     const emails: string[] = [];
     let match: RegExpExecArray | null;
@@ -37,14 +66,6 @@ function extractEmails(text: string): string[] {
     }
 
     return emails;
-}
-
-function removeEmails(text: string, emails: string[]): string {
-    let result = text;
-    for (const email of emails) {
-        result = result.replace(email, ' ');
-    }
-    return result.replace(/\s+/g, ' ').trim();
 }
 
 export function parseFilterQuery(query: string): ParsedFilterQuery {
@@ -95,13 +116,6 @@ export function parseFilterQuery(query: string): ParsedFilterQuery {
         }
     }
 
-    if (!result.subject) {
-        const leftover = removeEmails(remainder, inferredEmails);
-        if (leftover) {
-            result.subject = leftover;
-        }
-    }
-
     return result;
 }
 
@@ -120,6 +134,13 @@ function parsedDatesToDateRange(parsed: ParsedFilterQuery): Date[] | undefined {
     }
 
     return undefined;
+}
+
+export function isStructuredFilterQuery(query: string): boolean {
+    const trimmed = query.trim();
+    if (!trimmed) return false;
+    if (tokenizeOperators(trimmed).length > 0) return true;
+    return EMAIL_PATTERN.test(trimmed);
 }
 
 export function parseFilterQueryToFormValues(query: string): Partial<FilterEmailFormValues> {

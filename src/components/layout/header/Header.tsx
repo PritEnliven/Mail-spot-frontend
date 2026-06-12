@@ -43,7 +43,7 @@ import { Dropdown } from 'react-bootstrap';
 import { verifyBoxName } from "@utils/emailUtil";
 import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constants/attachmentSizeOptions";
 import { buildSearchFilterPayload, getAppliedFilterCount } from "@utils/filterUtil";
-import { buildSearchQueryFromFilters, parseFilterQueryToFormValues } from "@utils/searchQueryUtil";
+import { buildSearchQueryFromFilters, parseFilterQueryToFormValues, resolveSearchFromQuery } from "@utils/searchQueryUtil";
 import { useScreen } from "@context/ScreenContext";
 
 const Header = () => {
@@ -116,19 +116,20 @@ const Header = () => {
             return;
         }
 
-        if (filterForm && getAppliedFilterCount(filterForm) > 0) {
-            return;
-        }
+        const { filterForm: resolvedFilter, searchTerm: resolvedSearchTerm } = resolveSearchFromQuery(
+            currentSearch,
+            filterForm,
+        );
 
         const controller = new AbortController();
 
         const searchEmails = async () => {
             try {
-                setSearchTerm(debouncedSearchText);
+                setSearchTerm(resolvedSearchTerm);
                 const response = await searchAndFilterEmailService(
                     buildSearchFilterPayload({
-                        searchText: debouncedSearchText,
-                        filterForm,
+                        searchText: resolvedSearchTerm,
+                        filterForm: resolvedFilter,
                         limit: 5,
                     })
                 );
@@ -270,32 +271,67 @@ const Header = () => {
         setIsFilterDropdownOpen(true);
     };
 
-    const showAllSearchResult = async () => {
+    const executeSearchFromQuery = async () => {
+        const trimmed = searchText.trim();
+
+        if (!trimmed) {
+            void clearMailSearch();
+            return;
+        }
+
+        const { filterForm: resolvedFilter, searchTerm: resolvedSearchTerm } = resolveSearchFromQuery(trimmed, filterForm);
+
         setAllSearchResult(true);
-        const hasActiveFilters = filterForm && getAppliedFilterCount(filterForm) > 0;
-        setSearchTerm(hasActiveFilters ? '' : searchText);
+        setFilterForm(resolvedFilter);
+        setSearchTerm(resolvedSearchTerm);
+        prevDebouncedSearchRef.current = trimmed;
+        allowSearchDropdownRef.current = false;
+
+        reset({
+            from: resolvedFilter?.from ?? [],
+            to: resolvedFilter?.to ?? [],
+            subject: resolvedFilter?.subject ?? '',
+            attachmentSize: resolvedFilter?.attachmentSize,
+            dateRange: resolvedFilter?.dateRange ?? [],
+        });
+
+        setIsSearchResultDropdownOpen(false);
+        setIsFilterDropdownOpen(false);
 
         if (boxName.toLocaleLowerCase().includes('schedule')) {
             navigate('/mail/INBOX');
         }
 
-        const response = await searchAndFilterEmailService(
-            buildSearchFilterPayload({
-                searchText,
-                filterForm,
-                limit: 25,
-                direction: 'next',
-                vPage: 1,
-            })
-        );
-        if (response.statusCode === 200) {
-            setEmails(response.data.emailList);
-            setPagination(response.data.pagination);
-            setIsSearchResultDropdownOpen(false);
-            setNoResult(false);
-            setTotalEmailBadge(response.data.pagination.totalEmails);
-            setBoxTitle(filterForm ? 'Filtered Results' : 'Search Results');
+        try {
+            const response = await searchAndFilterEmailService(
+                buildSearchFilterPayload({
+                    searchText: resolvedSearchTerm,
+                    filterForm: resolvedFilter,
+                    limit: 25,
+                    direction: 'next',
+                    vPage: 1,
+                })
+            );
+
+            if (response?.statusCode === 200) {
+                setEmails(response.data.emailList);
+                setPagination(response.data.pagination);
+                setSearchResults([]);
+                setNoResult(false);
+                setTotalEmailBadge(response.data.pagination.totalEmails);
+                setBoxTitle(
+                    resolvedFilter && getAppliedFilterCount(resolvedFilter) > 0
+                        ? 'Filtered Results'
+                        : 'Search Results'
+                );
+            }
+        } catch (err) {
+            console.error('Search failed:', err);
         }
+    };
+
+    const showAllSearchResult = async () => {
+        await executeSearchFromQuery();
     };
 
     const openEmailDetailHandler = async (
@@ -430,7 +466,6 @@ const Header = () => {
 
             if (isFilterDropdownOpen && !isInsideFilterDropdown) {
                 setIsFilterDropdownOpen(false);
-                setAllSearchResult(false);
             }
 
             if (isSearchResultDropdownOpen && !isInsideSearchDropdown && !headerComponent) {
@@ -486,11 +521,14 @@ const Header = () => {
     const resetSearch = () => {
         allowSearchDropdownRef.current = false;
         prevDebouncedSearchRef.current = '';
-        if (filterForm) {
-            void clearMailSearch({ preserveFilter: true });
-        } else {
-            void clearMailSearch();
-        }
+        reset({
+            from: [],
+            to: [],
+            subject: '',
+            attachmentSize: undefined,
+            dateRange: [],
+        });
+        void clearMailSearch();
     }
 
     const closeProfileModalMobile = () => {
@@ -581,6 +619,12 @@ const Header = () => {
                                                         }
                                                     }}
                                                     onFocus={() => setIsSearchResultDropdownOpen(true)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            void executeSearchFromQuery();
+                                                        }
+                                                    }}
                                                 />
 
                                                 <div

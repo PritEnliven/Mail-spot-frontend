@@ -75,8 +75,7 @@ const Header = () => {
             if (flatpickrCalendar) return;
 
             if (isFilterDropdownOpen && !isInsideFilterDropdown) {
-                // setIsFilterDropdownOpen(false);
-                setAllSearchResult(false);
+                setIsFilterDropdownOpen(false);
             }
 
             if (isSearchResultDropdownOpen && !isInsideSearchDropdown && !headerComponent) {
