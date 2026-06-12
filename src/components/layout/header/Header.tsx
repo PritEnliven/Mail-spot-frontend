@@ -284,6 +284,8 @@ const Header = () => {
         setAllSearchResult(true);
         setFilterForm(resolvedFilter);
         setSearchTerm(resolvedSearchTerm);
+
+        setSearchText(trimmed);
         prevDebouncedSearchRef.current = trimmed;
         allowSearchDropdownRef.current = false;
 
@@ -516,7 +518,7 @@ const Header = () => {
                 dateRange: [],
             });
         }
-    }, [mailSearchResetKey, filterForm]);
+    }, [mailSearchResetKey]);
 
     const resetSearch = () => {
         allowSearchDropdownRef.current = false;

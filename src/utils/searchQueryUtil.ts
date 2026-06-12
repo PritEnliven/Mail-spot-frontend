@@ -46,6 +46,20 @@ export function buildSearchQueryFromFilters(filter: FilterEmailFormValues): stri
     return parts.join(' ');
 }
 
+export function buildDisplaySearchQuery(
+    filterForm: FilterEmailFormValues | null | undefined,
+    freeTextSearchTerm?: string | null,
+): string {
+    const filterPart =
+        filterForm && getAppliedFilterCount(filterForm) > 0
+            ? buildSearchQueryFromFilters(filterForm)
+            : '';
+    const searchPart = freeTextSearchTerm?.trim() ?? '';
+
+    if (filterPart && searchPart) return `${filterPart} ${searchPart}`;
+    return filterPart || searchPart;
+}
+
 export function parseSearchQueryToFilters(query: string): Partial<FilterEmailFormValues> {
     return parseFilterQueryToFormValues(query);
 }

@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { buildSearchFilterPayload } from '@utils/filterUtil';
-import { resolveSearchFromQuery } from './searchQueryUtil';
+import { buildDisplaySearchQuery, resolveSearchFromQuery } from './searchQueryUtil';
 
 describe('resolveSearchFromQuery', () => {
     it('combines parsed filters with trailing free-text search term', () => {
         const result = resolveSearchFromQuery('from:(user@mail.com) meeting notes');
+
+        expect(result.filterForm?.from).toEqual(['user@mail.com']);
+        expect(result.searchTerm).toBe('meeting notes');
+    });
+
+    it('combines parsed filters with leading free-text search term', () => {
+        const result = resolveSearchFromQuery('meeting notes from:(user@mail.com)');
 
         expect(result.filterForm?.from).toEqual(['user@mail.com']);
         expect(result.searchTerm).toBe('meeting notes');
@@ -29,6 +36,21 @@ describe('resolveSearchFromQuery', () => {
             filterForm: null,
             searchTerm: 'meeting notes',
         });
+    });
+});
+
+describe('buildDisplaySearchQuery', () => {
+    it('combines structured filters with free-text search term', () => {
+        expect(
+            buildDisplaySearchQuery(
+                { from: ['user@mail.com'], to: [], subject: '' },
+                'meeting notes',
+            ),
+        ).toBe('from:(user@mail.com) meeting notes');
+    });
+
+    it('returns only free text when no filters are active', () => {
+        expect(buildDisplaySearchQuery(null, 'meeting notes')).toBe('meeting notes');
     });
 });
 
