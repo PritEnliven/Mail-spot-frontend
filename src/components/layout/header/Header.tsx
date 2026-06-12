@@ -125,7 +125,9 @@ const Header = () => {
 
         const searchEmails = async () => {
             try {
-                setSearchTerm(resolvedSearchTerm);
+                if (resolvedSearchTerm !== searchTerm) {
+                    setSearchTerm(resolvedSearchTerm);
+                }
                 const response = await searchAndFilterEmailService(
                     buildSearchFilterPayload({
                         searchText: resolvedSearchTerm,
@@ -157,7 +159,7 @@ const Header = () => {
         searchEmails();
 
         return () => controller.abort();
-    }, [debouncedSearchText, searchText, searchTerm, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
+    }, [debouncedSearchText, searchText, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
 
     const toggleMobileSidebar = () => {
         setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
@@ -169,6 +171,8 @@ const Header = () => {
         setFilterForm(data);
 
         const displayQuery = buildSearchQueryFromFilters(data);
+        allowSearchDropdownRef.current = false;
+        setIsSearchResultDropdownOpen(false);
         setSearchText(displayQuery);
         prevDebouncedSearchRef.current = displayQuery;
 

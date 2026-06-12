@@ -37,7 +37,8 @@ export function buildSearchQueryFromFilters(filter: FilterEmailFormValues): stri
     if (filter.dateRange?.length === 1) {
         const formatted = formatDate(filter.dateRange[0], TimeFormat.DDMMYYYY);
         if (formatted) parts.push(`date:${formatted}`);
-    } else if (filter.dateRange?.length === 2) {
+    } 
+    else if (filter.dateRange?.length === 2) {
         const from = formatDate(filter.dateRange[0], TimeFormat.DDMMYYYY);
         const to = formatDate(filter.dateRange[1], TimeFormat.DDMMYYYY);
         if (from && to) parts.push(`date:${from}to${to}`);

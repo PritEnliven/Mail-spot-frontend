@@ -288,48 +288,50 @@ function CalendarHeader() {
                         </div>
                         {/* /.form-group */}
                         <div className="top-filter inbox-more">
-                            {searchText.length > 0 && (
-                                <button
-                                    type="button"
-                                    className="btn-new hover-link clearSearchBtn-cm"
-                                    onClick={() => {
-                                        setSearchText("");
-                                        setSearchResults([]);
-                                        setNoResult(false);
-                                        setIsSearchResultDropdownOpen(false);
-                                    }}
+                            <div className="top-filter__actions">
+                                {searchText.length > 0 && (
+                                    <button
+                                        type="button"
+                                        className="btn-new hover-link clearSearchBtn-cm"
+                                        onClick={() => {
+                                            setSearchText("");
+                                            setSearchResults([]);
+                                            setNoResult(false);
+                                            setIsSearchResultDropdownOpen(false);
+                                        }}
+                                    >
+                                        <InteractiveIcon
+                                            defaultIcon={btnCloseIcon}
+                                            hoverIcon={btnCloseIconHover}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip="Back"
+                                            customStyle={{
+                                                width: '20px',
+                                                height: '20px',
+                                            }}
+                                        />
+                                    </button>
+                                )}
+                                <button type="button" className="btn btnic btn-grey dropdown-toggle t-filter-btn hover-link search-d-Btn-cm"
+                                    onClick={toggleCalendarFilterDropdown}
+                                    aria-expanded={isCalendarFilterDropdownOpen}
                                 >
                                     <InteractiveIcon
-                                        defaultIcon={btnCloseIcon}
-                                        hoverIcon={btnCloseIconHover}
+                                        defaultIcon={functionIcon}
+                                        hoverIcon={functionIconHover}
                                         activeIcon=""
                                         isActive={false}
                                         alt=""
                                         className="interactive-icon hover-image"
                                         renderAs="img"
-                                        tooltip="Back"
-                                        customStyle={{
-                                            width: '20px',
-                                            height: '20px',
-                                        }}
+                                        tooltip="Show search option"
                                     />
                                 </button>
-                            )}
-                            <button type="button" className="btn btnic btn-grey dropdown-toggle t-filter-btn hover-link search-d-Btn-cm"
-                                onClick={toggleCalendarFilterDropdown}
-                                aria-expanded={isCalendarFilterDropdownOpen}
-                            >
-                                <InteractiveIcon
-                                    defaultIcon={functionIcon}
-                                    hoverIcon={functionIconHover}
-                                    activeIcon=""
-                                    isActive={false}
-                                    alt=""
-                                    className="interactive-icon hover-image"
-                                    renderAs="img"
-                                    tooltip="Show search option"
-                                />
-                            </button>
+                            </div>
                             <div
                                 className={`dropdown-menu dropdown-menu-end t-filter-dropdown-menu more-list ${isCalendarFilterDropdownOpen ? 'show' : ''}`}
                                 id="calendarFilterFormSection"
