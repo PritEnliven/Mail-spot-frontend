@@ -294,6 +294,29 @@ const MailBoxPage = () => {
         }
     }, [emailDetailSelected]);
 
+    useEffect(() => {
+        if (!isSearchOrFilterMailList || !activeEmailMessageId) return;
+
+        const isInFilteredList = emails.some(email => email.messageId === activeEmailMessageId);
+        if (!isInFilteredList) {
+            setEmailDetailSelected(null);
+            setActiveEmailMessageId(null);
+            setToolbarState({
+                showBack: false,
+                showSelectAll: true,
+                showRefresh: true,
+                showDelete: false,
+                showMarkAsRead: false,
+                showMarkAsUnread: false,
+                showMove: false,
+            });
+            
+            if (!isDesktop) {
+                setIsMailListOpen(true);
+            }
+        }
+    }, [emails, isSearchOrFilterMailList, activeEmailMessageId, setEmailDetailSelected, setActiveEmailMessageId, setToolbarState, setIsMailListOpen, isDesktop]);
+
     const handleMailListFilter = async (action: string) => {
         if (readUnreadFilter === action) return;
 
