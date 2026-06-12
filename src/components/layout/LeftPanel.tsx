@@ -246,7 +246,7 @@ const LeftPanel = () => {
             setSidebarStateFromAPI();
             return true;
         }
-        
+
         showError(`Folder ${folderName} deleted failed`);
         return false;
     }
@@ -330,15 +330,18 @@ const LeftPanel = () => {
                             onClick={openComposeModal}
                             id="composeEmailBtn"
                             className="compose-btn tooltips-ds"
-                            {...(
-                                isSidebarOpen
-                                    ? {}
-                                    : {
-                                        "data-tooltip-id": "my-tooltip",
-                                        "data-tooltip-content": "Compose",
-                                        "data-tooltip-place": "top"
-                                    })
-                            }
+                            // {...(
+                            //     isSidebarOpen
+                            //         ? {}
+                            //         : {
+                            //             "data-tooltip-id": "my-tooltip",
+                            //             "data-tooltip-content": "Compose",
+                            //             "data-tooltip-place": "top"
+                            //         })
+                            // }
+                            data-tooltip-id="my-tooltip"
+                            data-tooltip-content={isSidebarOpen ? "Ctrl + C" : "Compose"}
+                            data-tooltip-place="top"
                         >
                             <img
                                 src={composeIcon}

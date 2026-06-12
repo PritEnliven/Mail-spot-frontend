@@ -27,6 +27,11 @@ interface deleteRulePayload {
     ruleId: string;
 }
 
+interface updateShortcutPayload {
+    id: string;
+    shortcut: string;
+}
+
 async function getSettings() {
     try {
         const response = await getData('email/get-settings');
@@ -116,9 +121,19 @@ async function getUserPermissions() {
     }
 }
 
+async function updateShortcut(data: updateShortcutPayload) {
+    try {
+        const response = await postData('email/update-shortcut', data);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 export {
     createSignatureName, deleteRule, deleteSignature,
     getAllRules,
     getAllSignatures, getSettings, getSignatureForActions,
-    getUserPermissions, saveSettings
+    getUserPermissions, saveSettings,
+    updateShortcut
 };

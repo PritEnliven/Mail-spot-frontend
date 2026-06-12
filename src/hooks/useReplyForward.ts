@@ -62,53 +62,6 @@ export const useReplyForward = () => {
         });
     }, []);
 
-    // const getRecipients = useCallback((type: ReplyForwardType, email: Email) => {
-    //     const currentUserEmail = (localStorage.getItem('email') || '').toLowerCase();
-    //     const normalize = (list: string[] = []) => list.map(v => (v || '').toLowerCase()).filter(Boolean);
-    //     const unique = (list: string[]) => Array.from(new Set(list));
-    //     const withoutCurrentUser = (list: string[]) => {
-    //         if (!currentUserEmail) return list;
-    //         return list.filter(v => v.toLowerCase() !== currentUserEmail);
-    //     };
-
-    //     const from = email.from || [];
-    //     const to = email.to || [];
-    //     const cc = email.cc || [];
-    //     const bcc = email.bcc || [];
-
-    //     const fromHasCurrentUser = currentUserEmail ? normalize(from).includes(currentUserEmail) : false;
-
-    //     switch (type) {
-    //         case 'reply':
-    //             if (fromHasCurrentUser) {
-    //                 return {
-    //                     to: withoutCurrentUser(unique(to)),
-    //                     cc: [],
-    //                     bcc: []
-    //                 };
-    //             }
-    //             return {
-    //                 to: withoutCurrentUser(unique(from)),
-    //                 cc: [],
-    //                 bcc: []
-    //             };
-    //         case 'replyAll':
-    //             return {
-    //                 to: withoutCurrentUser(unique([...from, ...to])),
-    //                 cc: withoutCurrentUser(unique(cc)),
-    //                 bcc: withoutCurrentUser(unique(bcc))
-    //             };
-    //         case 'forward':
-    //             return {
-    //                 to: [],
-    //                 cc: [],
-    //                 bcc: []
-    //             };
-    //         default:
-    //             return { to: [], cc: [], bcc: [] };
-    //     }
-    // }, []);
-
     const getRecipients = useCallback((type: ReplyForwardType, email: Email) => {
         const currentUserEmail = (localStorage.getItem('email') || '').toLowerCase();
 

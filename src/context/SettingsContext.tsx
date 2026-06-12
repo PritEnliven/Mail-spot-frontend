@@ -1,8 +1,16 @@
 import { getSettings } from '@services/settings/settingsService';
 import { createContext, useContext, useEffect, useState } from 'react';
 
+export interface ShortCutType {
+  id: string;
+  name: string;
+  key: string;
+  defaultValue: string;
+}
+
 export interface SettingsType {
   undoSendPeriod: number;
+  shortcuts: ShortCutType[];
   pageSize: number;
   markAsReadDelay: number;
   enableSignature: boolean;
@@ -23,6 +31,9 @@ interface SettingsContextType {
 const defaultSettings: SettingsType = {
   undoSendPeriod: 30,
   markAsReadDelay: 0,
+  shortcuts: [
+    
+  ],
   pageSize: 25,
   enableSignature: true,
   enableReplyForwardUse: true,
@@ -34,10 +45,24 @@ const defaultSettings: SettingsType = {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+const normalizeShortcuts = (raw: any): ShortCutType[] => {
+  if (Array.isArray(raw) && raw.length > 0) {
+    const apiMap = new Map<string, string>(
+      raw.map((sc: any) => [sc?.id, typeof sc?.key === 'string' ? sc.key : ''])
+    );
+    return defaultSettings.shortcuts.map(sc => ({
+      ...sc,
+      key: apiMap.has(sc.id) ? (apiMap.get(sc.id) ?? '') : sc.key,
+    }));
+  }
+  return defaultSettings.shortcuts;
+};
+
 const normalizeSettings = (raw: any): SettingsType => {
   return {
     undoSendPeriod: typeof raw?.undoSendPeriod === 'number' ? raw.undoSendPeriod : defaultSettings.undoSendPeriod,
     markAsReadDelay: typeof raw?.markAsReadDelay === 'number' ? raw.markAsReadDelay : defaultSettings.markAsReadDelay,
+    shortcuts: normalizeShortcuts(raw?.shortCuts),
     pageSize: typeof raw?.pageSize === 'number'
       ? raw.pageSize
       : (typeof raw?.maximumPageSize === 'number'

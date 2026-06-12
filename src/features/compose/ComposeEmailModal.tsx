@@ -24,7 +24,7 @@ import { getSignatureForActions } from '@services/settings/settingsService';
 import { getBoxNameFromSidebar, verifyBoxName } from '@utils/emailUtil';
 import { useEffect, useRef, useState } from 'react';
 import { Collapse, Dropdown } from "react-bootstrap";
-import { useNavigate } from 'react-router-dom';
+import { data, useNavigate } from 'react-router-dom';
 import SimpleBar from 'simplebar-react';
 import { useContacts, useMailUI } from '../../context/index';
 import { useSettings } from '@context/SettingsContext';
@@ -43,6 +43,7 @@ import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
 import AttachmentPreview from '@components/ui/AttachmentPreview';
 import SubmitButton from '@components/ui/form/SubmitButton';
+import { useShortcutAction } from '@hooks/useShortcutAction';
 
 interface ComposeEmailModalProps {
     modalId: string;
@@ -83,6 +84,16 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const [isGenerateEmailCardOpen, setIsGenerateEmailCardOpen] = useState(false);
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const onSubmitRef = useRef<(data: ComposeFormValues, scheduleAt?: string) => Promise<void>>(async () => { });
+
+    useShortcutAction(
+        'send_email',
+        () => handleSubmit((data) => onSubmit(data))(),
+    );
+
+    useShortcutAction(
+        'save_as_draft',
+        () => onCloseSaveAsDraft(),
+    );
 
     const normalizeRecipients = (recipients: any[]): string[] => {
         if (!recipients?.length) return [];
@@ -221,6 +232,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const toggleComposeExpanded = () => {
         setIsComposeExpanded(!isComposeExpanded);
     }
+
 
     const prepareFormData = (data: ComposeFormValues, isDraft: boolean = false) => {
         const formData = new FormData();
@@ -783,14 +795,20 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                         <img className="me-2" src={scheduledIcon} />
                                         <span className='d-flex align-items-cnter'>Schedule</span>
                                     </button>
-                                    <SubmitButton
-                                        className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
-                                        onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
-                                            console.log('SUBMIT BLOCKED BY ERRORS:', errors);
-                                        })}
-                                        loading={isSubmitting}
-                                    >Send
-                                    </SubmitButton>
+                                    <span
+                                        data-tooltip-id="my-tooltip"
+                                        data-tooltip-content="Ctrl + Enter"
+                                        data-tooltip-place="top"
+                                    >
+                                        <SubmitButton
+                                            className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
+                                            onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
+                                                console.log('SUBMIT BLOCKED BY ERRORS:', errors);
+                                            })}
+                                            loading={isSubmitting}
+                                        >Send
+                                        </SubmitButton>
+                                    </span>
                                 </div>
                             </div>
                         </div>

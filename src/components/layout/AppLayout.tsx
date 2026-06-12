@@ -7,9 +7,12 @@ import { SettingsProvider } from "@context/SettingsContext";
 import { useMailSocket } from "@hooks/useSocket";
 import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
 import AppLoader from "@components/layout/AppLoader";
+import { useGlobalShortcuts } from "@hooks/useGlobalShortcuts";
 
 const AppContent = () => {
     useMailSocket();
+    useGlobalShortcuts();
+
     const cssLoaded = usePageStylesheet([pageStyles.customCss, pageStyles.inboxCss, pageStyles.scheduleCss, pageStyles.headerCss, pageStyles.settingsCss, pageStyles.responsiveCss]);
     const { isSidebarOpen, isSidebarExpandedMobile } = useMailUI();
 

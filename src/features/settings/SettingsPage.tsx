@@ -9,7 +9,6 @@ import { useMailUI } from '@context/MailUIContext';
 import { useSettings } from '@context/SettingsContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
-import fileIcon from "@images/file-icon.svg";
 import plusIconHover from "@images/plus-icon-hover.svg";
 import plusIcon from "@images/plus-icon.svg";
 import { deleteRule, deleteSignature, getAllRules, getSettings, saveSettings } from '@services/settings/settingsService';
@@ -33,11 +32,13 @@ function SettingsPage() {
     usePageStylesheet([pageStyles.settingsCss]);
     const { setBoxName } = useMailData();
     const { openModal } = useMailUI();
-    const { updateSettings } = useSettings();
+    const { settings, updateSettings } = useSettings();
     const [signatures, setSignatures] = useState<Signature[]>([]);
     const [selectedSignature, setSelectedSignature] = useState<Signature | null>(null);
     const [rules, setRules] = useState<any[]>([]);
     const folderInputRef = useRef<HTMLInputElement>(null);
+
+    console.log("settings : ", settings);
 
     const {
         control,
@@ -370,7 +371,7 @@ function SettingsPage() {
                             </div>
                         </form>
                     </div>
-                    <div className="col-lg-3 col-md-4">
+                    {/* <div className="col-lg-3 col-md-4">
                         <div className="form-group form-row ">
                             <label className="control-label">Download location</label>
                             <div className="input-icon-add">
@@ -391,7 +392,7 @@ function SettingsPage() {
                                 />
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                     <div className="col-lg-3 col-md-4">
                         <div className="form-group form-row ">
                             <label className="control-label">Mark as read delay</label>
@@ -585,6 +586,10 @@ function SettingsPage() {
                     </div>
                 </div>
             </div>
+            {/* <div className="single-header blue-line-aft">
+                <h2 className="box-title">Keyboard Shortcuts</h2>
+            </div>
+            <KeyboardShortCutList shortcuts={settings.shortcuts}/> */}
             <div className="single-header blue-line-aft">
                 <h2 className="box-title">Rules</h2>
             </div>

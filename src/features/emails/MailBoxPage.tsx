@@ -10,6 +10,8 @@ import EmailRow from '../../features/emails/EmailRow';
 import { MAIL_ACTION } from '../../constants/mailAction';
 import { getSingleEmailService } from '../../services/email/emailService';
 import { useSettings } from '@context/SettingsContext';
+import { useShortcutAction } from '@hooks/useShortcutAction';
+import { useNavigate } from 'react-router-dom';
 
 // Lazy loaded components
 const EmailDetail = lazy(() => import('../../features/emails/EmailDetail'));
@@ -27,6 +29,17 @@ const MailBoxPage = () => {
     const currentActiveBox = boxName || '';
     const isDraftBox = boxName ? verifyBoxName(boxName, 'draft') : false;
     const simpleBarRef = useRef<any>(null);
+    const navigate = useNavigate();
+
+    useShortcutAction(
+        'new_compose',
+        () => openModal('compose'),
+    );
+
+    useShortcutAction(
+        'go_to_inbox',
+        () => navigate('/mail/INBOX'),
+    );
 
     // Ref to track the current markAsRead timeout
     const markAsReadTimeoutRef = useRef<number | null>(null);
