@@ -1109,8 +1109,8 @@ span.copied-text.me-1 {
 /*--------------START:: Top Search ------------- */
 .top-search-container{
     width: 100%;
-    max-width: 380px;
-    min-width: 380px;
+    max-width: 480px;
+    min-width: 480px;
     position: relative;
     margin: 0 auto;
 }

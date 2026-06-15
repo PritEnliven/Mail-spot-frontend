@@ -3,8 +3,8 @@ import type { AttachmentSizeLabel } from '@constants/attachmentSizeOptions';
 export type FilterOperatorKey = 'from' | 'to' | 'subject' | 'size' | 'date';
 
 export type ParsedFilterQuery = {
-    from?: string;
-    to?: string;
+    from?: string[];
+    to?: string[];
     subject?: string;
     attachmentSize?: AttachmentSizeLabel;
     dateFrom?: string;

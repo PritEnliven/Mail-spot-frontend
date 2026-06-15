@@ -20,7 +20,7 @@ const MailBoxPage = () => {
     const emailScrollRef = useRef<HTMLDivElement | null>(null);
     // const { boxName } = useParams<{ boxName: string }>();
     const { boxName, sidebarState, sidebarItems, setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, isSidebarDataReady, isSidebarLoading, readUnreadFilter, setReadUnreadFilter, boxTitle } = useMailData();
-    const isSearchOrFilterMailList = boxTitle === 'Search Results' || boxTitle === 'Filtered Results';
+    const isSearchOrFilterMailList = boxTitle === 'Search Results';
     const { selectedEmails } = useMailSelection();
     const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
     const { settings } = useSettings();
@@ -81,7 +81,8 @@ const MailBoxPage = () => {
                 } else {
                     urlBoxName = pathParts[pathParts.length - 1];
                 }
-            } else {
+            } 
+            else {
                 // Default behavior - take the last part
                 urlBoxName = pathParts[pathParts.length - 1];
             }
@@ -89,11 +90,11 @@ const MailBoxPage = () => {
             // Decode URL-encoded characters (like %20 to space)
             urlBoxName = decodeURIComponent(urlBoxName);
 
-
             try {
                 await fetchEmails(1, urlBoxName || boxName);
                 setTimeout(scrollMailListToTop, 0);
-            } finally {
+            } 
+            finally {
                 if (!isCancelled) {
                     setIsLoading(false);
                 }

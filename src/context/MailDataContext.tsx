@@ -748,7 +748,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     setEmails(response.data.emailList);
                     setPagination(response.data.pagination);
                     setTotalEmailBadge(response.data.pagination.totalEmails);
-                    setBoxTitle('Filtered Results');
+                    setBoxTitle('Search Results');
                 }
             } catch (error) {
                 console.error('Failed to refetch filtered emails:', error);
@@ -757,7 +757,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const wasShowingSearchResults = restoreMailbox && (
-            allSearchResult || boxTitle === 'Search Results' || boxTitle === 'Filtered Results'
+            allSearchResult || boxTitle === 'Search Results'
         );
 
         setAllSearchResult(false);

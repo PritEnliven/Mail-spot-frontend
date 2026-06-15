@@ -12,7 +12,7 @@ import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import plusIconHover from "@images/plus-icon-hover.svg";
 import plusIcon from "@images/plus-icon.svg";
 import { deleteRule, deleteSignature, getAllRules, getSettings, saveSettings } from '@services/settings/settingsService';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { SettingsSchema, type SettingPageFormValues, type Signature } from './settings.schema';
 
@@ -36,7 +36,7 @@ function SettingsPage() {
     const [signatures, setSignatures] = useState<Signature[]>([]);
     const [selectedSignature, setSelectedSignature] = useState<Signature | null>(null);
     const [rules, setRules] = useState<any[]>([]);
-    const folderInputRef = useRef<HTMLInputElement>(null);
+    // const folderInputRef = useRef<HTMLInputElement>(null);
 
     console.log("settings : ", settings);
 
@@ -44,7 +44,6 @@ function SettingsPage() {
         control,
         handleSubmit,
         reset,
-        setValue
     } = useForm<SettingPageFormValues>({
         resolver: zodResolver(SettingsSchema as any),
         mode: "onSubmit",
@@ -236,57 +235,57 @@ function SettingsPage() {
     }
 
     // ─── Folder Picker Logic ───────────────────────────────────────────
-    const handleFolderPick = async () => {
-        // 1. Browser FIRST
-        if ('showDirectoryPicker' in window) {
-            try {
-                const dirHandle = await (window as Window & {
-                    showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>;
-                }).showDirectoryPicker();
+    // const handleFolderPick = async () => {
+    //     // 1. Browser FIRST
+    //     if ('showDirectoryPicker' in window) {
+    //         try {
+    //             const dirHandle = await (window as Window & {
+    //                 showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>;
+    //             }).showDirectoryPicker();
 
-                // UI
-                setValue('downloadLocation', dirHandle.name, { shouldDirty: true });
+    //             // UI
+    //             setValue('downloadLocation', dirHandle.name, { shouldDirty: true });
 
-                showSuccess(`Download folder set to "${dirHandle.name}"`);
+    //             showSuccess(`Download folder set to "${dirHandle.name}"`);
 
-                return;
-            } catch (err: any) {
-                if (err?.name !== 'AbortError') {
-                    console.error(err);
-                    showError('Could not open folder picker');
-                }
-                return;
-            }
-        }
+    //             return;
+    //         } catch (err: any) {
+    //             if (err?.name !== 'AbortError') {
+    //                 console.error(err);
+    //                 showError('Could not open folder picker');
+    //             }
+    //             return;
+    //         }
+    //     }
 
-        // 2. Electron (no restriction)
-        if (window.electron?.ipcRenderer) {
-            try {
-                const result = await window.electron.ipcRenderer.invoke('show-open-dialog', {
-                    properties: ['openDirectory'],
-                    title: 'Select Download Folder',
-                });
+    //     // 2. Electron (no restriction)
+    //     if (window.electron?.ipcRenderer) {
+    //         try {
+    //             const result = await window.electron.ipcRenderer.invoke('show-open-dialog', {
+    //                 properties: ['openDirectory'],
+    //                 title: 'Select Download Folder',
+    //             });
 
-                if (!result.canceled && result.filePaths.length > 0) {
-                    const fullPath = result.filePaths[0];
+    //             if (!result.canceled && result.filePaths.length > 0) {
+    //                 const fullPath = result.filePaths[0];
 
-                    // Electron → can persist
-                    localStorage.setItem('downloadDirPath', fullPath);
+    //                 // Electron → can persist
+    //                 localStorage.setItem('downloadDirPath', fullPath);
 
-                    setValue('downloadLocation', fullPath, { shouldDirty: true });
+    //                 setValue('downloadLocation', fullPath, { shouldDirty: true });
 
-                    showSuccess(`Download folder set`);
-                }
-            } catch (err) {
-                console.error(err);
-                showError('Could not open folder picker');
-            }
-            return;
-        }
+    //                 showSuccess(`Download folder set`);
+    //             }
+    //         } catch (err) {
+    //             console.error(err);
+    //             showError('Could not open folder picker');
+    //         }
+    //         return;
+    //     }
 
-        // 3. Fallback
-        folderInputRef.current?.click();
-    };
+    //     // 3. Fallback
+    //     folderInputRef.current?.click();
+    // };
     // ──────────────────────────────────────────────────────────────────
 
     return (

@@ -43,7 +43,7 @@ import { Dropdown } from 'react-bootstrap';
 import { verifyBoxName } from "@utils/emailUtil";
 import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constants/attachmentSizeOptions";
 import { buildSearchFilterPayload, getAppliedFilterCount } from "@utils/filterUtil";
-import { buildSearchQueryFromFilters, parseFilterQueryToFormValues, resolveSearchFromQuery } from "@utils/searchQueryUtil";
+import { buildDisplaySearchQuery, parseFilterQueryToFormValues, resolveSearchFromQuery } from "@utils/searchQueryUtil";
 import { useScreen } from "@context/ScreenContext";
 
 const Header = () => {
@@ -166,11 +166,13 @@ const Header = () => {
     }
 
     const onSubmit = async (data: FilterEmailFormValues) => {
+        const { searchTerm: existingSearchTerm } = resolveSearchFromQuery(searchText, filterForm);
+
         setAllSearchResult(true);
-        setSearchTerm('');
+        setSearchTerm(existingSearchTerm);
         setFilterForm(data);
 
-        const displayQuery = buildSearchQueryFromFilters(data);
+        const displayQuery = buildDisplaySearchQuery(data, existingSearchTerm);
         allowSearchDropdownRef.current = false;
         setIsSearchResultDropdownOpen(false);
         setSearchText(displayQuery);
@@ -178,6 +180,7 @@ const Header = () => {
 
         const payload = buildSearchFilterPayload({
             filterForm: data,
+            searchText: existingSearchTerm,
             limit: 25,
             direction: 'next',
             vPage: 1,
@@ -194,7 +197,7 @@ const Header = () => {
                 setEmails(response.data.emailList);
                 setPagination(response.data.pagination);
                 setTotalEmailBadge(response.data.pagination.totalEmails);
-                setBoxTitle("Filtered Results");
+                setBoxTitle("Search Results");
             }
         } catch (err) {
             console.error('Filter failed:', err);
@@ -325,11 +328,11 @@ const Header = () => {
                 setSearchResults([]);
                 setNoResult(false);
                 setTotalEmailBadge(response.data.pagination.totalEmails);
-                setBoxTitle(
-                    resolvedFilter && getAppliedFilterCount(resolvedFilter) > 0
-                        ? 'Filtered Results'
-                        : 'Search Results'
-                );
+                // setBoxTitle(
+                //     resolvedFilter && getAppliedFilterCount(resolvedFilter) > 0
+                //         ? 'Filtered Results'
+                //         : 'Search Results'
+                // );
             }
         } catch (err) {
             console.error('Search failed:', err);
@@ -445,14 +448,24 @@ const Header = () => {
             return;
         }
 
-        const parsed = parseFilterQueryToFormValues(searchText);
-        reset({
-            from: parsed.from ?? [],
-            to: parsed.to ?? [],
-            subject: parsed.subject ?? '',
-            attachmentSize: parsed.attachmentSize,
-            dateRange: parsed.dateRange ?? [],
-        });
+        if (filterForm && getAppliedFilterCount(filterForm) > 0) {
+            reset({
+                from: filterForm.from ?? [],
+                to: filterForm.to ?? [],
+                subject: filterForm.subject ?? '',
+                attachmentSize: filterForm.attachmentSize,
+                dateRange: filterForm.dateRange ?? [],
+            });
+        } else {
+            const parsed = parseFilterQueryToFormValues(searchText);
+            reset({
+                from: parsed.from ?? [],
+                to: parsed.to ?? [],
+                subject: parsed.subject ?? '',
+                attachmentSize: parsed.attachmentSize,
+                dateRange: parsed.dateRange ?? [],
+            });
+        }
         setIsFilterDropdownOpen(true);
     };
 
@@ -509,7 +522,7 @@ const Header = () => {
         setIsSearchResultDropdownOpen(false);
         setNoResult(false);
         if (filterForm) {
-            const displayQuery = buildSearchQueryFromFilters(filterForm);
+            const displayQuery = buildDisplaySearchQuery(filterForm, searchTerm);
             setSearchText(displayQuery);
             prevDebouncedSearchRef.current = displayQuery;
         } else {
@@ -546,8 +559,6 @@ const Header = () => {
 
     const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
-    const appliedFilterCount = getAppliedFilterCount(filterForm);
-
     return (
         <div className={`mail-details-header `}>
             {isCalendar ? (
@@ -708,7 +719,7 @@ const Header = () => {
                                                 )}
 
                                                 <button type="button"
-                                                    className={`btn btnic btn-grey dropdown-toggle t-filter-btn hover-link search-d-Btn-cm${appliedFilterCount > 0 ? ' t-filter-btn--with-badge' : ''}`}
+                                                    className="btn btnic btn-grey dropdown-toggle t-filter-btn hover-link search-d-Btn-cm"
                                                     onClick={toggleFilterDropdown}
                                                     aria-expanded={isFilterDropdownOpen}
                                                 >
@@ -722,11 +733,6 @@ const Header = () => {
                                                         renderAs="img"
                                                         tooltip="Show search option"
                                                     />
-                                                    {appliedFilterCount > 0 && (
-                                                        <span className="filter-applied-badge" aria-label={`${appliedFilterCount} filters applied`}>
-                                                            {appliedFilterCount}
-                                                        </span>
-                                                    )}
                                                 </button>
                                             </div>
 

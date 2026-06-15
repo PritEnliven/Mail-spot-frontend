@@ -46,7 +46,7 @@ describe('buildDisplaySearchQuery', () => {
                 { from: ['user@mail.com'], to: [], subject: '' },
                 'meeting notes',
             ),
-        ).toBe('from:(user@mail.com) meeting notes');
+        ).toBe('meeting notes from:(user@mail.com)');
     });
 
     it('returns only free text when no filters are active', () => {

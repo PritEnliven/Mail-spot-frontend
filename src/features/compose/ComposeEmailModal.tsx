@@ -24,7 +24,7 @@ import { getSignatureForActions } from '@services/settings/settingsService';
 import { getBoxNameFromSidebar, verifyBoxName } from '@utils/emailUtil';
 import { useEffect, useRef, useState } from 'react';
 import { Collapse, Dropdown } from "react-bootstrap";
-import { data, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import SimpleBar from 'simplebar-react';
 import { useContacts, useMailUI } from '../../context/index';
 import { useSettings } from '@context/SettingsContext';
@@ -35,7 +35,7 @@ import { useAttachmentManager, isExistingAttachment } from '@hooks/useAttachment
 import { zodResolver } from '@hookform/resolvers/zod';
 import { composeSchema, type ComposeFormValues } from './compose.schema';
 import { useDebounce } from '@hooks/useDebounce';
-import { showError, showInfo, showSuccess } from '@components/ui/toast/toastNotification';
+import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import BaseModal from '@components/ui/BaseModal';
@@ -420,6 +420,32 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         registerSubmitHandler((data, scheduleAt) => onSubmitRef.current(data, scheduleAt));
     }, [registerSubmitHandler]);
 
+    const getBodyTextWithoutSignature = (body: string | undefined): string => {
+        if (!body) return '';
+        const withoutSignature = body.replace(/<div[^>]*id="email-signature"[^>]*>[\s\S]*?<\/div>/gi, '');
+        return withoutSignature.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim();
+    };
+
+    const hasDraftContent = (data: ComposeFormValues): boolean => {
+        const hasRecipients =
+            (data.to?.length ?? 0) > 0 ||
+            (data.cc?.length ?? 0) > 0 ||
+            (data.bcc?.length ?? 0) > 0;
+        const hasSubject = !!(data.subject?.trim());
+        const hasBodyContent = getBodyTextWithoutSignature(data.body).length > 0;
+        const hasAttachments = attachments.length > 0;
+        return hasRecipients || hasSubject || hasBodyContent || hasAttachments;
+    };
+
+    const handleComposeClose = () => {
+        const data = getValues();
+        if (!hasDraftContent(data)) {
+            onClose();
+            return;
+        }
+        void onCloseSaveAsDraft();
+    };
+
     const onCloseSaveAsDraft = async () => {
         try {
             setIsSubmitting(true);
@@ -427,7 +453,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             const formData = prepareFormData(data, true);
             closeModal(modalId);
 
-            showInfo("Saving draft...")
             const response = await saveDraft(formData as any);
             if (response.statusCode === 200) {
                 showSuccess("Draft saved successfully");
@@ -450,7 +475,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     return (
         <BaseModal
             isOpen={true}
-            onClose={close}
+            onClose={handleComposeClose}
             zIndex={zIndex}
             className=""
             showBackdrop={isComposeExpanded ? true : false}
@@ -508,7 +533,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                         tooltip={isComposeExpanded ? 'Exit full screen' : 'Expand'}
                                     />
                                 </button>
-                                <button className="btn-close hover-link icon-hover-effect" onClick={onCloseSaveAsDraft}>
+                                <button className="btn-close hover-link icon-hover-effect" onClick={handleComposeClose}>
                                     <InteractiveIcon
                                         defaultIcon={closeIcon}
                                         hoverIcon={closeIconHover}

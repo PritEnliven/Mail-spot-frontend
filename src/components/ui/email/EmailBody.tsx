@@ -56,7 +56,7 @@ function EmailBody({ html, searchTerm }: EmailBodyProps) {
     container.innerHTML = contentHtml;
 
     // Gmail-style collapsed quoted content
-    container.querySelectorAll(".quoted-content").forEach((quotedContent, index) => {
+    container.querySelectorAll(".quoted-content").forEach((quotedContent) => {
       const wrapper = document.createElement("div");
 
       const toggle = document.createElement("button");

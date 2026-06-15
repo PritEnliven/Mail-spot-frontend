@@ -57,7 +57,7 @@ export function buildDisplaySearchQuery(
             : '';
     const searchPart = freeTextSearchTerm?.trim() ?? '';
 
-    if (filterPart && searchPart) return `${filterPart} ${searchPart}`;
+    if (filterPart && searchPart) return `${searchPart} ${filterPart}`;
     return filterPart || searchPart;
 }
 

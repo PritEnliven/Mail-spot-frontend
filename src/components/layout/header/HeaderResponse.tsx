@@ -12,7 +12,7 @@ import { default as logoutIcon, default as logoutIconHover } from "@images/logou
 import { getUserDetail } from "@services/user/userService";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useContacts, useMailData, useMailUI } from '../../../context/index';
+import { useContacts, useMailUI } from '../../../context/index';
 
 const Header = () => {
     const navigate = useNavigate();
@@ -20,7 +20,7 @@ const Header = () => {
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [searchText,] = useState("");
     const { openModal, closeModal, activeModals, } = useMailUI();
-    const { setAllSearchResult, } = useMailData();
+    // const { setAllSearchResult, } = useMailData();
     const { fetchContacts } = useContacts();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
 

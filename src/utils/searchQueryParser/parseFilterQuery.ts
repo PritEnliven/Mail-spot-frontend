@@ -81,10 +81,12 @@ export function parseFilterQuery(query: string): ParsedFilterQuery {
 
         switch (token.key) {
             case 'from':
-                if (!result.from) result.from = value;
+                if (!result.from) result.from = [];
+                result.from.push(value);
                 break;
             case 'to':
-                if (!result.to) result.to = value;
+                if (!result.to) result.to = [];
+                result.to.push(value);
                 break;
             case 'subject':
                 if (!result.subject) result.subject = value;
@@ -109,10 +111,10 @@ export function parseFilterQuery(query: string): ParsedFilterQuery {
     const inferredEmails = extractEmails(remainder);
 
     for (const email of inferredEmails) {
-        if (!result.from) {
-            result.from = email;
-        } else if (!result.to && email !== result.from) {
-            result.to = email;
+        if (!result.from?.length) {
+            result.from = [email];
+        } else if (!result.to?.length && !result.from.includes(email)) {
+            result.to = [email];
         }
     }
 
@@ -147,8 +149,8 @@ export function parseFilterQueryToFormValues(query: string): Partial<FilterEmail
     const parsed = parseFilterQuery(query);
     const formValues: Partial<FilterEmailFormValues> = {};
 
-    if (parsed.from) formValues.from = [parsed.from];
-    if (parsed.to) formValues.to = [parsed.to];
+    if (parsed.from?.length) formValues.from = parsed.from;
+    if (parsed.to?.length) formValues.to = parsed.to;
     if (parsed.subject) formValues.subject = parsed.subject;
     if (parsed.attachmentSize) {
         formValues.attachmentSize = parsed.attachmentSize as AttachmentSizeLabel;
