@@ -5,7 +5,7 @@ import { deleteEmails, readUnreadEmails } from '../services/emailAction/emailAct
 export function useEmailAction() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { boxName, updateEmailReadState, updateBoxCount, emails, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, deleteEmailState } = useMailData();
+    const { boxName, updateEmailReadState, updateBoxCount, emails, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, deleteEmailState, fetchEmails, mailListPage } = useMailData();
 
     const markAsRead = async (messageIds: string[]) => {
         setLoading(true);
@@ -65,10 +65,15 @@ export function useEmailAction() {
                 isDraftMail
             });
             if (response.statusCode === 200) {
+                const remainingEmails = emails.filter(email => !messageIds.includes(email.messageId));
                 deleteEmailState(messageIds);
                 if (activeEmailMessageId && messageIds.includes(activeEmailMessageId)) {
                     setActiveEmailMessageId(null);
                     setEmailDetailSelected(null);
+                }
+                if (remainingEmails.length === 0) {
+                    const targetPage = mailListPage > 1 ? mailListPage - 1 : 1;
+                    await fetchEmails(targetPage, boxName);
                 }
             }
             return response;

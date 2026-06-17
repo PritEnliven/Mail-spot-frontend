@@ -35,7 +35,7 @@ import { useAttachmentManager, isExistingAttachment } from '@hooks/useAttachment
 import { zodResolver } from '@hookform/resolvers/zod';
 import { composeSchema, type ComposeFormValues } from './compose.schema';
 import { useDebounce } from '@hooks/useDebounce';
-import { showError, showSuccess } from '@components/ui/toast/toastNotification';
+import { showError, showSuccess, showWarning } from '@components/ui/toast/toastNotification';
 import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import BaseModal from '@components/ui/BaseModal';
@@ -391,6 +391,10 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 if (!options?.skipClose) {
                     onClose();
                 }
+            } else if (response.statusCode === 429) {
+                showWarning('Too Many Emails Sent. Please try again later.');
+            } else if( response.statusCode === 400){
+                showWarning(response.message);
             }
             return response;
         } catch (error) {
@@ -438,18 +442,17 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     };
 
     const handleComposeClose = () => {
-        const data = getValues();
-        if (!hasDraftContent(data)) {
-            onClose();
-            return;
-        }
         void onCloseSaveAsDraft();
     };
 
     const onCloseSaveAsDraft = async () => {
         try {
-            setIsSubmitting(true);
             const data = getValues();
+            if (!hasDraftContent(data)) {
+                onClose();
+                return;
+            }
+            setIsSubmitting(true);
             const formData = prepareFormData(data, true);
             closeModal(modalId);
 

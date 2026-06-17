@@ -133,9 +133,14 @@ api.interceptors.response.use(
     }
     // return standardized error
     return Promise.reject({
-      message: error.response.data?.message || 'Something went wrong',
-      statusCode: error.response.status,
-      data: error.response.data,
+      ...error.response.data,
+      message:
+        error.response.data?.message ||
+        error.response.data?.data?.message ||
+        'Something went wrong',
+      statusCode:
+        error.response.data?.statusCode ||
+        error.response.status,
     });
   }
 );

@@ -1,5 +1,5 @@
 import AttachmentPreview from "@components/ui/AttachmentPreview";
-import { showSuccess } from "@components/ui/toast/toastNotification";
+import { showSuccess, showWarning } from "@components/ui/toast/toastNotification";
 import CkEditorRichText from "@components/ui/CkEditor/CkEditorRichText";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import SubmitButton from '@components/ui/form/SubmitButton';
@@ -304,6 +304,10 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                         onEmailSent?.();
                     }
                     onClose?.();
+                } else if (response.statusCode === 429) {
+                    showWarning('Too Many Emails Sent. Please try again later.');
+                } else if (response.statusCode === 400) {
+                    showWarning(response.message);
                 }
             } catch (error) {
                 console.error('Failed to send reply/forward:', error);

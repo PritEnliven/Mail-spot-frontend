@@ -220,10 +220,8 @@ const ToolbarBox = () => {
             const unreadRemovedCount = movedEmails.filter(email => !email.isSeen).length;
             updateBoxCount(boxName, -unreadRemovedCount, -movedEmails.length);
 
-            // Remove moved emails from the current list
+            const remainingEmails = emails.filter(email => !movedEmailIds.includes(email.messageId));
             deleteEmailState(movedEmailIds);
-
-            // Clear email selection
             clearEmailSelection();
 
             // Visually uncheck the master checkbox without firing its click handler
@@ -231,6 +229,12 @@ const ToolbarBox = () => {
             if (checkboxAll) {
                 checkboxAll.checked = false;
             }
+
+            if (remainingEmails.length === 0) {
+                const targetPage = mailListPage > 1 ? mailListPage - 1 : 1;
+                await fetchEmails(targetPage, boxName);
+            }
+
         }
     }
 

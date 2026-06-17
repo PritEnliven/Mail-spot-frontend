@@ -11,10 +11,16 @@ import lockIcon from "@images/password-icon-16.svg";
 import passwordShowIcon from "@images/password-show-icon-16.svg";
 import successfullyIcon from "@images/successfully-icon-red.svg";
 import { loginUser } from "@services/login/loginService";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { loginSchema, type LoginFormValues } from "./login.schema";
+
+export const AUTH_STORAGE_KEYS = ["email", "token", "username", "id"] as const;
+
+export const REMEMBERED_EMAIL_KEY = "rememberedEmail";
+export const getAuthStorage = (): Storage =>
+    localStorage.getItem("token") ? localStorage : sessionStorage;
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -32,15 +38,61 @@ const LoginPage = () => {
         setShowPassword(!showPassword);
     };
 
+    const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? "";
+
+    const {
+        control,
+        handleSubmit,
+        reset,
+        formState: { errors },
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        mode: "onSubmit",
+        defaultValues: {
+            email: "",
+            password: "",
+            rememberMe: !!rememberedEmail,
+        },
+    });
+
+    useEffect(() => {
+        if (rememberedEmail) {
+            reset({
+                email: rememberedEmail,
+                password: "",
+                rememberMe: true,
+            });
+        }
+    }, []);
+
     const onSubmit = async (data: LoginFormValues) => {
         try {
             const response = await loginUser(data);
             if (response.statusCode === 200) {
-                localStorage.setItem("email", response.data.email);
-                localStorage.setItem("token", response.data.token);
-                localStorage.setItem("username", response.data.username);
-                localStorage.setItem("id", response.data.id);
+                const { email, token, username, id } = response.data;
+
+                // Pick the right storage based on the checkbox
+                const storage = data.rememberMe ? localStorage : sessionStorage;
+
+                // Always clear both storages first to avoid stale data from a
+                // previous login with the opposite "remember me" setting
+                AUTH_STORAGE_KEYS.forEach((key) => {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                });
+
+                localStorage.setItem("email", email);
+                localStorage.setItem("token", token);
+                localStorage.setItem("username", username);
+                localStorage.setItem("id", id);
                 navigate('/mail/INBOX');
+
+                if (data.rememberMe) {
+                    localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+                } else {
+                    localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+                }
+
                 // Force page reload to ensure proper initialization
                 window.location.reload();
             }
@@ -57,20 +109,6 @@ const LoginPage = () => {
         }
 
     };
-
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<LoginFormValues>({
-        resolver: zodResolver(loginSchema),
-        mode: "onSubmit",
-        defaultValues: {
-            email: "",
-            password: "",
-            rememberMe: false,
-        },
-    });
 
     return (
         <div className="login-main">

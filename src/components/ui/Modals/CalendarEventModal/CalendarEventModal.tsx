@@ -183,16 +183,45 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                 eventColor: props.eventColor || '',
                 recurrence: props.recurrence?.isCustom
                     ? "custom"
-                    : (props.recurrence?.type ?? "doesNotRepeat")
+                    : (props.recurrence?.type ?? "doesNotRepeat"),
+                sendMailToGuest: props.sendMailToGuest ?? false
             });
         } else if (props?.date) {
             reset({
+                title: '',
+                eventColor: '#FF8A00',
                 eventStartDate: formatDate(props.date, TimeFormat.YYYYMMDD) as string,
                 eventEndDate: formatDate(props.date, TimeFormat.YYYYMMDD) as string,
+                eventStartTime: '',
+                eventEndTime: '',
                 allDayCheckbox: !!props.allDay,
+                recurrence: 'doesNotRepeat',
+                guestsList: [],
+                eventLocation: '',
+                eventMeetingLink: '',
+                eventDescription: '',
+                sendMailToGuest: false,
+                eventTimeZone: 'Asia/Kolkata',
             });
         } else {
-            reset();
+            // reset();
+            const today = new Date().toISOString().split('T')[0];
+            reset({
+                title: '',
+                eventColor: '#FF8A00',
+                eventStartDate: today,
+                eventStartTime: '',
+                eventEndDate: today,
+                eventEndTime: '',
+                allDayCheckbox: true,
+                recurrence: 'doesNotRepeat',
+                guestsList: [],
+                eventLocation: '',
+                eventMeetingLink: '',
+                eventDescription: '',
+                sendMailToGuest: false,
+                eventTimeZone: 'Asia/Kolkata',
+            });
         }
         return () => {
             reset();
@@ -200,9 +229,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
     }, [props?.isEdit, props?.date, reset]);
 
     const onClose = () => {
-        reset();
         closeModal(modalId);
-        // Close parent info modal if it exists
         if (props?.parentModalId) {
             closeModal(props.parentModalId);
         }
@@ -732,16 +759,16 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                             autoHide={false}
                                                             forceVisible="y"
                                                         >
-                                                        {guests.length > 0
-                                                            && guests.map((guest, index) => (
-                                                                <GuestTag
-                                                                    key={`${guest.email}-${index}`}
-                                                                    guest={guest}
-                                                                    mode="edit"
-                                                                    onRemove={onRemoveGuest}
-                                                                />
-                                                            ))
-                                                        }
+                                                            {guests.length > 0
+                                                                && guests.map((guest, index) => (
+                                                                    <GuestTag
+                                                                        key={`${guest.email}-${index}`}
+                                                                        guest={guest}
+                                                                        mode="edit"
+                                                                        onRemove={onRemoveGuest}
+                                                                    />
+                                                                ))
+                                                            }
                                                         </SimpleBar>
                                                     </div>
                                                 </div>

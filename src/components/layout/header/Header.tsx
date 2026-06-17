@@ -1,5 +1,5 @@
 import searchIcon from "@images/search-icon.svg";
-import srearchIconHover from "@images/search-icon-hover.svg";
+import searchIconHover from "@images/search-icon-hover.svg";
 import btnCloseIcon from "@images/btn-close-icon.svg";
 import btnCloseIconHover from "@images/btn-close-icon-hover.svg";
 import closeIcon from '@images/close-icon.svg';
@@ -45,6 +45,7 @@ import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constant
 import { buildSearchFilterPayload, getAppliedFilterCount } from "@utils/filterUtil";
 import { buildDisplaySearchQuery, parseFilterQueryToFormValues, resolveSearchFromQuery } from "@utils/searchQueryUtil";
 import { useScreen } from "@context/ScreenContext";
+import { AUTH_STORAGE_KEYS } from "@features/login/Login";
 
 const Header = () => {
     const navigate = useNavigate();
@@ -74,9 +75,13 @@ const Header = () => {
     }, []);
 
     const handleLogout = () => {
-        localStorage.clear();
+        // Clear only auth keys, preserve rememberedEmail
+        AUTH_STORAGE_KEYS.forEach((key) => {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        });
         navigate('/login');
-    };
+    }
 
     const {
         control,
@@ -85,12 +90,17 @@ const Header = () => {
         reset,
     } = useFilterEmailForm();
 
+    const isExecutingFullSearchRef = useRef(false);
     // SEARCH EFFECT (debounced) — only restore mailbox when user clears a non-empty search string
     useEffect(() => {
         const trimmedSearchText = searchText.trim();
         const previousSearch = prevDebouncedSearchRef.current.trim();
         const currentSearch = debouncedSearchText.trim();
         prevDebouncedSearchRef.current = debouncedSearchText;
+
+        if (isExecutingFullSearchRef.current) {
+            return;
+        }
 
         // Ignore stale debounced value while input is already cleared (e.g. first click on remove icon)
         if (!trimmedSearchText && currentSearch) {
@@ -159,7 +169,8 @@ const Header = () => {
         searchEmails();
 
         return () => controller.abort();
-    }, [debouncedSearchText, searchText, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
+        // }, [debouncedSearchText, searchText, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
+    }, [debouncedSearchText]);
 
     const toggleMobileSidebar = () => {
         setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
@@ -328,6 +339,7 @@ const Header = () => {
                 setSearchResults([]);
                 setNoResult(false);
                 setTotalEmailBadge(response.data.pagination.totalEmails);
+                setBoxTitle("Search Results");
                 // setBoxTitle(
                 //     resolvedFilter && getAppliedFilterCount(resolvedFilter) > 0
                 //         ? 'Filtered Results'
@@ -878,7 +890,7 @@ const Header = () => {
                 <button type="button" className="btn hover-link input-icon-1 mobile-search-btn icon-hover-effect ms-3 me-2" onClick={() => setIsResponsiveSearch(!isResponsiveSearch)} >
                     <InteractiveIcon
                         defaultIcon={searchIcon}
-                        hoverIcon={srearchIconHover}
+                        hoverIcon={searchIconHover}
                         activeIcon=""
                         isActive={false}
                         alt=""
