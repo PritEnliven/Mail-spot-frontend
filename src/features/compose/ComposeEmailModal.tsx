@@ -460,13 +460,16 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             if (response.statusCode === 200) {
                 showSuccess("Draft saved successfully");
                 const draftBoxName = getBoxNameFromSidebar(sidebarState, 'draft');
-                updateBoxCount(draftBoxName, 0, 1);
+                updateBoxCount(draftBoxName, 0, 1); 
+                
                 if (verifyBoxName(boxName, 'draft')) {
                     setMailListPage(1);
                     fetchEmails(1, draftBoxName);
                 }
+
                 onClose();
             }
+
         } catch (error) {
             console.error('Failed to save draft:', error);
             showError("Failed to save draft. Please try again.");

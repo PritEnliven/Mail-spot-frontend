@@ -2,6 +2,36 @@ import type { FilterEmailFormValues } from '@components/layout/header/filterEmai
 import { attachmentSizeLabelToApiType } from '@constants/attachmentSizeOptions';
 import { formatDate, TimeFormat } from '@utils/dateUtil';
 
+export function areFilterFormsEqual(
+    a: FilterEmailFormValues | null | undefined,
+    b: FilterEmailFormValues | null | undefined,
+): boolean {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+
+    const aFrom = a.from ?? [];
+    const bFrom = b.from ?? [];
+    if (aFrom.length !== bFrom.length || !aFrom.every((value, index) => value === bFrom[index])) {
+        return false;
+    }
+
+    const aTo = a.to ?? [];
+    const bTo = b.to ?? [];
+    if (aTo.length !== bTo.length || !aTo.every((value, index) => value === bTo[index])) {
+        return false;
+    }
+
+    if ((a.subject ?? '') !== (b.subject ?? '')) return false;
+    if (a.attachmentSize !== b.attachmentSize) return false;
+
+    const aDates = a.dateRange ?? [];
+    const bDates = b.dateRange ?? [];
+    if (aDates.length !== bDates.length) return false;
+    if (!aDates.every((date, index) => date.getTime() === bDates[index]?.getTime())) return false;
+
+    return true;
+}
+
 export function getAppliedFilterCount(filter: FilterEmailFormValues | null): number {
     if (!filter) return 0;
 

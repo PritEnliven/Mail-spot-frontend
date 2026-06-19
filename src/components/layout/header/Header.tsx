@@ -20,7 +20,7 @@ import backBtnIconHover from "@images/back-btn-icon-hover.svg";
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import menuIcon from "@images/menu-icon.svg";
 import { useContacts, useMailData, useMailUI } from '../../../context/index';
-import { lazy, Suspense, useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import { Controller } from 'react-hook-form';
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
@@ -42,8 +42,10 @@ import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropd
 import { Dropdown } from 'react-bootstrap';
 import { verifyBoxName } from "@utils/emailUtil";
 import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constants/attachmentSizeOptions";
-import { buildSearchFilterPayload, getAppliedFilterCount } from "@utils/filterUtil";
-import { buildDisplaySearchQuery, parseFilterQueryToFormValues, resolveSearchFromQuery } from "@utils/searchQueryUtil";
+import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
+import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
+import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
+import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
 import { useScreen } from "@context/ScreenContext";
 import { AUTH_STORAGE_KEYS } from "@features/login/Login";
 
@@ -91,6 +93,44 @@ const Header = () => {
     } = useFilterEmailForm();
 
     const isExecutingFullSearchRef = useRef(false);
+    const syncFilterFormFromQuery = useCallback((query: string) => {
+        const trimmed = query.trim();
+
+        if (!trimmed) {
+            if (filterForm) {
+                setFilterForm(null);
+            }
+            reset({
+                from: [],
+                to: [],
+                subject: '',
+                attachmentSize: undefined,
+                dateRange: [],
+            });
+            return;
+        }
+
+        const { filterForm: resolvedFilter, searchTerm: resolvedSearchTerm } = resolveSearchFromQuery(
+            trimmed,
+            filterForm,
+        );
+
+        if (resolvedSearchTerm !== searchTerm) {
+            setSearchTerm(resolvedSearchTerm);
+        }
+
+        if (!areFilterFormsEqual(filterForm, resolvedFilter)) {
+            setFilterForm(resolvedFilter);
+            reset({
+                from: resolvedFilter?.from ?? [],
+                to: resolvedFilter?.to ?? [],
+                subject: resolvedFilter?.subject ?? '',
+                attachmentSize: resolvedFilter?.attachmentSize,
+                dateRange: resolvedFilter?.dateRange ?? [],
+            });
+        }
+    }, [filterForm, reset, searchTerm, setFilterForm, setSearchTerm]);
+
     // SEARCH EFFECT (debounced) — only restore mailbox when user clears a non-empty search string
     useEffect(() => {
         const trimmedSearchText = searchText.trim();
@@ -300,20 +340,11 @@ const Header = () => {
         const { filterForm: resolvedFilter, searchTerm: resolvedSearchTerm } = resolveSearchFromQuery(trimmed, filterForm);
 
         setAllSearchResult(true);
-        setFilterForm(resolvedFilter);
-        setSearchTerm(resolvedSearchTerm);
+        syncFilterFormFromQuery(trimmed);
 
         setSearchText(trimmed);
         prevDebouncedSearchRef.current = trimmed;
         allowSearchDropdownRef.current = false;
-
-        reset({
-            from: resolvedFilter?.from ?? [],
-            to: resolvedFilter?.to ?? [],
-            subject: resolvedFilter?.subject ?? '',
-            attachmentSize: resolvedFilter?.attachmentSize,
-            dateRange: resolvedFilter?.dateRange ?? [],
-        });
 
         setIsSearchResultDropdownOpen(false);
         setIsFilterDropdownOpen(false);
@@ -460,24 +491,7 @@ const Header = () => {
             return;
         }
 
-        if (filterForm && getAppliedFilterCount(filterForm) > 0) {
-            reset({
-                from: filterForm.from ?? [],
-                to: filterForm.to ?? [],
-                subject: filterForm.subject ?? '',
-                attachmentSize: filterForm.attachmentSize,
-                dateRange: filterForm.dateRange ?? [],
-            });
-        } else {
-            const parsed = parseFilterQueryToFormValues(searchText);
-            reset({
-                from: parsed.from ?? [],
-                to: parsed.to ?? [],
-                subject: parsed.subject ?? '',
-                attachmentSize: parsed.attachmentSize,
-                dateRange: parsed.dateRange ?? [],
-            });
-        }
+        syncFilterFormFromQuery(searchText);
         setIsFilterDropdownOpen(true);
     };
 
@@ -642,6 +656,7 @@ const Header = () => {
                                                     onChange={(e) => {
                                                         const value = e.target.value;
                                                         setSearchText(value);
+                                                        syncFilterFormFromQuery(value);
                                                         if (value.trim()) {
                                                             allowSearchDropdownRef.current = true;
                                                             setIsSearchResultDropdownOpen(true);
