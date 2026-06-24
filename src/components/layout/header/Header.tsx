@@ -44,8 +44,6 @@ import { verifyBoxName } from "@utils/emailUtil";
 import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constants/attachmentSizeOptions";
 import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
 import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
-import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
-import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
 import { useScreen } from "@context/ScreenContext";
 import { AUTH_STORAGE_KEYS } from "@features/login/Login";
 
