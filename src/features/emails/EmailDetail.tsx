@@ -88,6 +88,7 @@ const EmailDetail = ({ email }: Props) => {
                 threadId: email.threadId
             });
             setThreadEmails(response.data.threadEmails || []);
+            setPendingReplies([]);
         } catch (error) {
             console.error('Error loading thread emails:', error);
         }
@@ -95,7 +96,7 @@ const EmailDetail = ({ email }: Props) => {
 
     useEffect(() => {
         setThreadEmails([]);
-        const isExcludedBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'sent') || verifyBoxName(boxName, 'trash');
+        const isExcludedBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'trash');
 
         const hasThread = (emailDetailSelected?.threadCount ?? 0) > 1;
 
@@ -157,7 +158,7 @@ const EmailDetail = ({ email }: Props) => {
                 )
             );
         }
-        setPendingReplies(prev => [...prev, reply]);
+        setPendingReplies(prev => [...prev, reply]);    
     }, [boxName, email.messageId, setEmails]);
 
     // Called by socket 'outboundReplySent' — flip row from pending → sent (light → full opacity)
@@ -169,6 +170,7 @@ const EmailDetail = ({ email }: Props) => {
                     : r
             )
         );
+        loadThreadEmails();
     }, []);
 
     // Called by socket 'outboundReplyFailed' — mark row as failed and show toast

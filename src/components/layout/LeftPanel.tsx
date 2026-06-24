@@ -340,7 +340,7 @@ const LeftPanel = () => {
                             //         })
                             // }
                             data-tooltip-id="my-tooltip"
-                            data-tooltip-content={isSidebarOpen ? "Ctrl + C" : "Compose"}
+                            data-tooltip-content={isSidebarOpen ? "Alt + C" : "Compose"}
                             data-tooltip-place="top"
                         >
                             <img
