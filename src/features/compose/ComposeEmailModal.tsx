@@ -395,6 +395,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 showWarning('Too Many Emails Sent. Please try again later.');
             } else if( response.statusCode === 400){
                 showWarning(response.message);
+            } else if( response.statusCode === 507){
+                showWarning('Storage Limit Exceeded.');   
             }
             return response;
         } catch (error) {
