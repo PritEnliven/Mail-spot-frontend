@@ -37,7 +37,7 @@ async function sendReply(payload: FormData): Promise<Response> {
 async function saveDraft(payload: EmailPayload): Promise<Response> {
     try {
         const response = await postData('email/save-as-draft', payload);
-        return response;
+       return response;
     } catch (error: any) {
         return error;
     }

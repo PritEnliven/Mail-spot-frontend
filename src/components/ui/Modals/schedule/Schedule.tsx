@@ -13,7 +13,7 @@ import Flatpickr from 'react-flatpickr';
 import { useMailUI } from '@context/MailUIContext';
 import { useComposeFormContext } from '@context/ComposeFormContext';
 import { showError } from '@components/ui/toast/toastNotification';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { formatDate, formatTime, TimeFormat } from '@utils/dateUtil';
 import BaseModal from "@components/ui/BaseModal";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
@@ -113,6 +113,23 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
     const startFromMonth = new Date().getMonth();
 
     const mountMonthDropdown = useFlatpickrMonthDropdown(startFromMonth);
+    const scheduleDateTimeOnChangeRef = useRef<(value: string) => void>(() => {});
+
+    const flatpickrOptions = useMemo(() => ({
+        dateFormat: 'd-m-Y H:i',
+        enableTime: true,
+        time_24hr: true,
+        allowInput: false,
+        closeOnSelect: false,
+        minDate: 'today' as const,
+        minTime: new Date().toTimeString().slice(0, 5),
+        onReady: (_: Date[], __: string, instance: flatpickr.Instance) => mountMonthDropdown(instance),
+        onClose: (dates: Date[]) => {
+            const date = dates?.[0];
+            scheduleDateTimeOnChangeRef.current(date ? date.toISOString() : '');
+        },
+    }), [mountMonthDropdown]);
+
     return (
 
         <BaseModal
@@ -201,22 +218,11 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
                                             name="scheduleDateTime"
                                             control={control}
                                             render={({ field }) => {
+                                                scheduleDateTimeOnChangeRef.current = field.onChange;
                                                 return (
                                                     <Flatpickr
-                                                        value={field.value}
-                                                        onChange={(dates: Date[]) => {
-                                                            const date = dates?.[0];
-                                                            field.onChange(date ? date.toISOString() : '');
-                                                        }}
-                                                        options={{
-                                                            dateFormat: 'd-m-Y H:i',
-                                                            enableTime: true,
-                                                            time_24hr: true,
-                                                            allowInput: false,
-                                                            minDate: 'today',
-                                                            minTime: new Date().toTimeString().slice(0, 5),
-                                                            onReady: (_, __, instance) => mountMonthDropdown(instance),
-                                                        }}
+                                                        value={field.value ? new Date(field.value) : ''}
+                                                        options={flatpickrOptions}
                                                         className="form-control DateRangePickerStaticTop"
                                                         placeholder="Select date" />
                                                 );

@@ -25,7 +25,8 @@ export const useSmartReplies = ({ emailContent, onSmartReplyClick }: UseSmartRep
             
             if (response?.data?.replies && Array.isArray(response.data.replies)) {
                 setSmartReplies(response.data.replies);
-            } else {
+            } 
+            else {
                 // Fallback to default replies if API doesn't return valid data
                 setSmartReplies([
                     'Thanks for reaching out.',

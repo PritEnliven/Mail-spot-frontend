@@ -175,6 +175,7 @@ const Header = () => {
                 if (resolvedSearchTerm !== searchTerm) {
                     setSearchTerm(resolvedSearchTerm);
                 }
+                
                 const response = await searchAndFilterEmailService(
                     buildSearchFilterPayload({
                         searchText: resolvedSearchTerm,
@@ -221,6 +222,7 @@ const Header = () => {
         setFilterForm(data);
 
         const displayQuery = buildDisplaySearchQuery(data, existingSearchTerm);
+
         allowSearchDropdownRef.current = false;
         setIsSearchResultDropdownOpen(false);
         setSearchText(displayQuery);
@@ -241,7 +243,6 @@ const Header = () => {
                 setIsSearchResultDropdownOpen(false);
                 setSearchResults([]);
                 setNoResult(false);
-
                 setEmails(response.data.emailList);
                 setPagination(response.data.pagination);
                 setTotalEmailBadge(response.data.pagination.totalEmails);
@@ -268,7 +269,8 @@ const Header = () => {
 
             if (dates.length === 1) {
                 dateRangeStr = dates[0];
-            } else if (dates.length > 1) {
+            } 
+            else if (dates.length > 1) {
                 dateRangeStr = `${dates[0]} to ${dates[1]}`;
             }
         }
@@ -281,6 +283,7 @@ const Header = () => {
         }
 
         const response = await filterEmailAndCreateRuleService(payload);
+        
         if (response?.emailList?.length > 0) {
             showSuccess('Rule created successfully');
             setIsCreateRuleModalOpen(false);
@@ -544,11 +547,13 @@ const Header = () => {
         setSearchResults([]);
         setIsSearchResultDropdownOpen(false);
         setNoResult(false);
+        
         if (filterForm) {
             const displayQuery = buildDisplaySearchQuery(filterForm, searchTerm);
             setSearchText(displayQuery);
             prevDebouncedSearchRef.current = displayQuery;
-        } else {
+        } 
+        else {
             setSearchText("");
             reset({
                 from: [],

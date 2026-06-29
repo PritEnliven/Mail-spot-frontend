@@ -12,7 +12,7 @@ import { useMailData, useMailUI, useContacts, useCalendar } from '../../context/
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { CustomFolderSection } from '../ui/sidebar/CustomFolderSection';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
-import { resolveSidebarItem, verifyBoxName, buildCustomFolderTree } from '@utils/emailUtil';
+import { resolveSidebarItem, verifyBoxName, buildCustomFolderTree, resolveAllSidebarItems } from '@utils/emailUtil';
 import { deleteCustomBox } from '@services/customBox/customBoxService';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
@@ -48,6 +48,7 @@ const LeftPanel = () => {
         sidebarState,
         sidebarItems,
         setSidebarItems,
+        setEmails,
         setEmailDetailSelected,
         setActiveEmailMessageId,
         allSearchResult,
@@ -232,18 +233,70 @@ const LeftPanel = () => {
     }
 
     const handleDeleteFolder = (folderId: string, folderName: string) => {
-        console.log(folderId, folderName);
         openModal('confirmDelete', {
             onConfirm: () => deleteFolder(folderId, folderName)
         })
     }
 
+    const redirectToInbox = (updatedSidebar?: Awaited<ReturnType<typeof setSidebarStateFromAPI>>) => {
+        clearMailSearch({ restoreMailbox: false });
+        setActiveEmailMessageId(null);
+        setEmailDetailSelected(null);
+        setPagination(null);
+        setEmails([]);
+        setAllSearchResult(false);
+        setToolbarState({
+            showBack: false,
+            showSelectAll: true,
+            showRefresh: true,
+            showDelete: false,
+            showMarkAsRead: false,
+            showMarkAsUnread: false,
+            showMove: false,
+        });
+
+        if (!isMailListOpen) {
+            setIsMailListOpen(true);
+        }
+
+        const boxCounts = updatedSidebar?.boxCounts ?? sidebarState.boxCounts;
+        const resolvedItems = updatedSidebar
+            ? resolveAllSidebarItems(
+                updatedSidebar.boxes,
+                updatedSidebar.customBoxes,
+                updatedSidebar.otherMenu,
+                boxCounts
+            )
+            : sidebarItems;
+
+        const inboxItem = resolvedItems.find(item => item.id.includes('inbox'));
+        const targetBoxName = inboxItem?.boxName ?? 'INBOX';
+        const targetBoxId = inboxItem?.id ?? 'box-li-0';
+        const targetLabel = inboxItem?.label ?? 'Inbox';
+
+        setBoxName(targetBoxName);
+        setActiveBoxId(targetBoxId);
+        setBoxTitle(targetLabel);
+        navigate(`/mail/${targetBoxName}`);
+    };
+
     const deleteFolder = async (folderId: string, folderName: string) => {
+        const decodedFolderId = decodeURIComponent(folderId);
+        const isDeletingActiveFolder =
+            boxName === folderId ||
+            boxName === decodedFolderId ||
+            decodeURIComponent(boxName) === decodedFolderId;
+
         const response: any = await deleteCustomBox({ boxName: folderName, boxKey: folderId });
 
         if (response.statusCode === 200) {
             showSuccess(`Folder ${folderName} deleted successfully`);
-            setSidebarStateFromAPI();
+            const updatedSidebar = await setSidebarStateFromAPI();
+
+            if (isDeletingActiveFolder) {
+                redirectToInbox(updatedSidebar);
+            }
+
             return true;
         }
 

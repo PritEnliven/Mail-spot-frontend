@@ -68,9 +68,9 @@ export const useGenerateEmail = ({ onClose }: UseGenerateEmailProps = {}) => {
                 subject: "Error",
                 body: "Failed to generate email. Please try again."
             });
-        } finally {
+        } 
+        finally {
             setIsLoading(false);
-            
             // Remove shimmer animation from input
             if (inputElement) {
                 inputElement.classList.remove('shimmering');

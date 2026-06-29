@@ -72,7 +72,7 @@ const LoginPage = () => {
                 const { email, token, username, id } = response.data;
 
                 // Pick the right storage based on the checkbox
-                const storage = data.rememberMe ? localStorage : sessionStorage;
+                // const storage = data.rememberMe ? localStorage : sessionStorage;
 
                 // Always clear both storages first to avoid stale data from a
                 // previous login with the opposite "remember me" setting
