@@ -355,6 +355,7 @@ const RegisterPage = () => {
                                   type={showPassword ? "text" : "password"}
                                   className="form-control"
                                   placeholder="Password"
+                                  maxLength={25}  
                                   id="CreatePassword"
                                   onFocus={() => setFocusedField("userPassword")}
                                   onBlur={() => setFocusedField(null)}

@@ -120,35 +120,36 @@ function ChangePassword({ modalId, zIndex }: ChangePasswordProps) {
                             >
                                 <div className="p-16">
                                     <div className="form-group form-row change-password-input">
-                                    <label className="control-label" htmlFor="new-password">
-                                        New password
-                                    </label>
-                                    <div className="input-control">
-                                        <div className="input-icon-add">
-                                            <Controller
-                                                name="password"
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <input
-                                                        {...field}
-                                                        type={showPassword ? "text" : "Password"}
-                                                        className="form-control"
-                                                        placeholder="New Password"
-                                                    />
-                                                )}
-                                            />
-                                            <img
-                                                src={showPassword ? passwordShowIcon : passwordHideIcon}
-                                                alt={showPassword ? "Hide" : "Show"}
-                                                className="input-icon-3"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                style={{ cursor: "pointer" }}
-                                            />
+                                        <label className="control-label" htmlFor="new-password">
+                                            New password
+                                        </label>
+                                        <div className="input-control">
+                                            <div className="input-icon-add">
+                                                <Controller
+                                                    name="password"
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <input
+                                                            {...field}
+                                                            type={showPassword ? "text" : "Password"}
+                                                            maxLength={25}
+                                                            className="form-control"
+                                                            placeholder="New Password"
+                                                        />
+                                                    )}
+                                                />
+                                                <img
+                                                    src={showPassword ? passwordShowIcon : passwordHideIcon}
+                                                    alt={showPassword ? "Hide" : "Show"}
+                                                    className="input-icon-3"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    style={{ cursor: "pointer" }}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    {errors.password && (
-                                        <div className="invalid-feedback d-block">{errors.password.message}</div>
-                                    )}
+                                        {errors.password && (
+                                            <div className="invalid-feedback d-block">{errors.password.message}</div>
+                                        )}
                                     </div>
                                     <div className="form-group form-row ">
                                         <label className="control-label" htmlFor="confirm-password">
@@ -163,6 +164,7 @@ function ChangePassword({ modalId, zIndex }: ChangePasswordProps) {
                                                         <input
                                                             {...field}
                                                             type={showSmtpPassword ? "text" : "Password"}
+                                                            maxLength={25}
                                                             className="form-control"
                                                             placeholder="Confirm Password"
                                                         />
