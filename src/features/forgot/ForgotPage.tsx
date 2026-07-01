@@ -1,5 +1,3 @@
-import "@assets/styles/header-main-style.css";
-import "@assets/styles/sign-in-style.css";
 import SubmitButton from "@components/ui/form/SubmitButton";
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +16,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { ForgotPageSchema, type ForgotPageFormValues } from "./ForgotPage.schema";
+import { pageStyles, usePageStylesheet } from "@hooks/usePageStyleSheet";
 
 const STEPS = {
   EMAIL: 1,
@@ -35,6 +34,7 @@ const stepTitles: Record<Step, string> = {
 
 const ForgotPage = () => {
   const naviate = useNavigate();
+  const cssLoaded = usePageStylesheet([pageStyles.headerCss, pageStyles.signInCss]);
   const [currentStep, setCurrentStep] = useState<Step>(STEPS.EMAIL);
   const [showPassword, setShowPassword] = useState(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
@@ -166,6 +166,10 @@ const ForgotPage = () => {
     const focusIndex = Math.min(pastedData.length, 5);
     document.getElementById(`otp-${focusIndex}`)?.focus();
   };
+
+  if (!cssLoaded) {
+    return null;
+  }
 
   return (
     <div className="login-main register">

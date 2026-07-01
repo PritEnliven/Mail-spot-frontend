@@ -1,5 +1,3 @@
-import "@assets/styles/header-main-style.css";
-import "@assets/styles/sign-in-style.css";
 import SubmitButton from "@components/ui/form/SubmitButton";
 import { showError } from "@components/ui/toast/toastNotification";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { loginSchema, type LoginFormValues } from "./login.schema";
+import { pageStyles, usePageStylesheet } from "@hooks/usePageStyleSheet";
 
 export const AUTH_STORAGE_KEYS = ["email", "token", "username", "id"] as const;
 
@@ -24,6 +23,7 @@ export const getAuthStorage = (): Storage =>
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const cssLoaded = usePageStylesheet([pageStyles.headerCss, pageStyles.signInCss]);
     const [showPassword, setShowPassword] = useState(true);
 
     const redirectToRegister = () => {
@@ -109,6 +109,10 @@ const LoginPage = () => {
         }
 
     };
+
+    if (!cssLoaded) {
+        return null;
+    }
 
     return (
         <div className="login-main">

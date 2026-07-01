@@ -3342,12 +3342,11 @@ button.ck.ck-button.ck-on.ck.ck-color-grid__tile:hover {
 
 .btn-new {
     background-color: transparent;
-    padding: 6px 10px;
+    padding: 7px 10px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    color: #fff;
     border: none;
     display: flex;
     align-items: center;

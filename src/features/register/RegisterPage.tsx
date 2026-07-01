@@ -1,5 +1,3 @@
-import "@assets/styles/header-main-style.css";
-import "@assets/styles/sign-in-style.css";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import SubmitButton from "@components/ui/form/SubmitButton";
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
@@ -33,6 +31,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { RegisterPageSchema, type RegisterPageFormValues } from "./RegisterPage.schema";
+import { pageStyles, usePageStylesheet } from "@hooks/usePageStyleSheet";
 
 const STEPS = {
   BASIC: 1,
@@ -52,6 +51,7 @@ const stepTitles: Record<Step, string> = {
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const cssLoaded = usePageStylesheet([pageStyles.headerCss, pageStyles.signInCss]);
   const [currentStep, setCurrentStep] = useState<Step>(STEPS.BASIC);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -224,7 +224,10 @@ const RegisterPage = () => {
   const getProgressClass = (step: number) => (currentStep >= step ? "active" : "");
 
   const [focusedField, setFocusedField] = useState<string | null>(null);
-
+  
+  if (!cssLoaded) {
+    return null;
+  }
   return (
     <div className="login-main register">
       <div className="row m-0">
@@ -355,7 +358,7 @@ const RegisterPage = () => {
                                   type={showPassword ? "text" : "password"}
                                   className="form-control"
                                   placeholder="Password"
-                                  maxLength={25}  
+                                  maxLength={25}
                                   id="CreatePassword"
                                   onFocus={() => setFocusedField("userPassword")}
                                   onBlur={() => setFocusedField(null)}
