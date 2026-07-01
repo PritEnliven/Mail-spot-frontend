@@ -341,7 +341,6 @@ const Header = () => {
 
         setAllSearchResult(true);
         syncFilterFormFromQuery(trimmed);
-
         setSearchText(trimmed);
         prevDebouncedSearchRef.current = trimmed;
         allowSearchDropdownRef.current = false;

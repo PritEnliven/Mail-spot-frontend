@@ -142,7 +142,8 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
     const setToolbarState = (state: Partial<ToolbarState> | null) => {
         if (state === null) {
             setCustomToolbarState(null);
-        } else {
+        } 
+        else {
             setCustomToolbarState(prev => ({
                 ...(prev || derivedToolbarState),
                 ...state

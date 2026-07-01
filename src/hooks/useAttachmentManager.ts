@@ -80,14 +80,21 @@ export function useAttachmentManager() {
         e.target.blur();
     };
     const setInitialAttachments = (existing: any[]) => {
-        const normalized: ExistingAttachment[] = existing.map(att => ({
-            _id: att._id,
-            name: att.filename,
-            customFileName: att.customFileName,
-            contentType: att.contentType,
-            size: att.size,
-            isExisting: true,
-        }));
+        const normalized: AttachmentItem[] = existing.map(att => {
+            // Already a native File (e.g. restored from undo snapshot)
+            if (att instanceof File) return att;
+            // Already a normalized ExistingAttachment (e.g. restored from undo snapshot)
+            if (att.isExisting === true) return att as ExistingAttachment;
+            // Raw server attachment object (e.g. opened from draft / scheduled mail)
+            return {
+                _id: att._id,
+                name: att.filename ?? att.name,
+                customFileName: att.customFileName,
+                contentType: att.contentType,
+                size: att.size,
+                isExisting: true,
+            } as ExistingAttachment;
+        });
 
         setAttachments(normalized);
     };

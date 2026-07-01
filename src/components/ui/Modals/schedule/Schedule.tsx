@@ -123,7 +123,7 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
         closeOnSelect: false,
         minDate: 'today' as const,
         minTime: new Date().toTimeString().slice(0, 5),
-        onReady: (_: Date[], __: string, instance: flatpickr.Instance) => mountMonthDropdown(instance),
+        onReady: (_: Date[], __: string, instance: any) => mountMonthDropdown(instance),
         onClose: (dates: Date[]) => {
             const date = dates?.[0];
             scheduleDateTimeOnChangeRef.current(date ? date.toISOString() : '');

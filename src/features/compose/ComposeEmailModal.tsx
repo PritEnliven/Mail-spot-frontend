@@ -393,10 +393,10 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 }
             } else if (response.statusCode === 429) {
                 showWarning('Too Many Emails Sent. Please try again later.');
-            } else if( response.statusCode === 400){
+            } else if (response.statusCode === 400) {
                 showWarning(response.message);
-            } else if( response.statusCode === 507){
-                showWarning('Storage Limit Exceeded.');   
+            } else if (response.statusCode === 507) {
+                showWarning('Storage Limit Exceeded.');
             }
             return response;
         } catch (error) {
@@ -462,8 +462,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             if (response.statusCode === 200) {
                 showSuccess("Draft saved successfully");
                 const draftBoxName = getBoxNameFromSidebar(sidebarState, 'draft');
-                updateBoxCount(draftBoxName, 0, 1); 
-                
+                updateBoxCount(draftBoxName, 0, 1);
+
                 if (verifyBoxName(boxName, 'draft')) {
                     setMailListPage(1);
                     fetchEmails(1, draftBoxName);
@@ -585,7 +585,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                         />
                                                     )}
                                                 />
-
                                             </div>
                                         </div>
                                         <div className="d-flex align-items-center">

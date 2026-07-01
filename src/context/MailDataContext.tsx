@@ -25,7 +25,7 @@ export interface AdminSettingsPermissions {
     aiFeatures: boolean;
 }
 
-interface SidebarStateProps {
+export interface SidebarStateProps {
     boxes: any[];
     customBoxes: any[];
     otherMenu: any[];
@@ -33,6 +33,11 @@ interface SidebarStateProps {
     parentFolderOptions: any[];
     delimiter: string | null;
 }
+
+export type SidebarApiResult = Pick<
+    SidebarStateProps,
+    'boxes' | 'customBoxes' | 'otherMenu' | 'boxCounts'
+> & { delimiter?: string | null };
 
 type SidebarItemType = {
     color: any;
@@ -67,7 +72,7 @@ interface MailDataType {
     /* Sidebar */
     sidebarState: SidebarStateProps;
     setSidebarState: (state: SidebarStateProps) => void;
-    setSidebarStateFromAPI: () => void;
+    setSidebarStateFromAPI: () => Promise<SidebarApiResult>;
     sidebarItems: SidebarItemType[];
     setSidebarItems: (items: SidebarItemType[]) => void;
     socketId: string | null;
@@ -651,7 +656,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     /* -------------------- Sidebar helpers -------------------- */
-    const setSidebarStateFromAPI = async () => {
+    const setSidebarStateFromAPI = async (): Promise<SidebarApiResult> => {
         setIsSidebarLoading(true);
         try {
             const response = await getBoxes()
