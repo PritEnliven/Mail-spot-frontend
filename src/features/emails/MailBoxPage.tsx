@@ -191,8 +191,14 @@ const MailBoxPage = () => {
         isSearch: boolean
     ) => {
         try {
-
             setIsEmailDetailLoading(true);
+            setActiveEmailMessageId(messageId);
+            setEmailDetailSelected(null);
+
+            if (!isDesktop) {
+                setIsMailListOpen(false);
+            }
+
             const payload = {
                 current_active_box: currentActiveBox,
                 uid,
@@ -201,7 +207,6 @@ const MailBoxPage = () => {
             };
 
             let data = await getSingleEmailService(payload);
-            setIsEmailDetailLoading(false);
             if (data.isScheduled) {
                 data.emailList.isSchedule = true;
             }
@@ -216,15 +221,9 @@ const MailBoxPage = () => {
             }
 
             setEmailDetailSelected(data.emailList);
-            setActiveEmailMessageId(messageId);
 
             // setSelectedEmails(new Set([messageId]));
             const isRead = data.emailList.isSeen;
-
-            // On mobile, hide mail list and show email detail
-            if (!isDesktop) {
-                setIsMailListOpen(false);
-            }
 
             setToolbarState({
                 showBack: !isDesktop,
@@ -406,7 +405,7 @@ const MailBoxPage = () => {
             {/* END:: Mail received box */}
 
             {/* START:: Application Form */}
-            {(isDesktop || (!!activeEmailMessageId && !!emailDetailSelected)) && (
+            {(isDesktop || !!activeEmailMessageId) && (
                 <div id="emailDetailSection" className="mail-details-box" style={mailDetailStyleOpenViaSearch} ref={emailScrollRef}>
                     {!isDraftBox && activeEmailMessageId && isEmailDetailLoading ? (
                         <EmailDetailSkeletonLoader />

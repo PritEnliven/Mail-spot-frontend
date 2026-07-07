@@ -911,7 +911,7 @@ button.accordion-button.collapsed {
     position: absolute;
     inset: 0;
     border-left: 3px solid #0073B6;
-    border-radius: 4px;
+    border-radius: 4px; 
     pointer-events: none;
     transition: border-left-color 0.4s ease;
 }

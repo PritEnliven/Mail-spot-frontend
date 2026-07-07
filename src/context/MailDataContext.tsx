@@ -816,15 +816,16 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         messageId: string,
         attachment: any,
     ) => {
-        const patchList = (attachments: any[]) => {
-            let alreadyPatched = false;
+        const patchEmail = (email: Email) => {
+            if (email.messageId !== messageId) return email;
 
-            return attachments.map(att => {
+            let alreadyPatched = false;
+            const incomingFileName = attachment.fileName ?? attachment.filename;
+
+            let nextAttachments = email.attachments.map(att => {
                 if (alreadyPatched) return att;
 
                 const attFileName = att.fileName ?? att.filename;
-                const incomingFileName = attachment.fileName ?? attachment.filename;
-
                 const isMatch =
                     !!attFileName &&
                     !!incomingFileName &&
@@ -832,25 +833,31 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
                 if (isMatch) {
                     alreadyPatched = true;
-                    return { ...att, ...attachment, _v: (att._v || 0) + 1 }; // bump version
+                    return { ...att, ...attachment, _v: (att._v || 0) + 1 };
                 }
 
                 return att;
             });
+
+            if (!alreadyPatched && incomingFileName) {
+                nextAttachments = [...nextAttachments, attachment];
+                alreadyPatched = true;
+            }
+
+            const remainingAttachments =
+                alreadyPatched && attachment.customFileName
+                    ? Math.max(0, (email.remainingAttachments ?? 0) - 1)
+                    : email.remainingAttachments;
+
+            return { ...email, attachments: nextAttachments, remainingAttachments };
         };
 
         setEmailDetailSelected(prev =>
-            prev && prev.messageId === messageId
-                ? { ...prev, attachments: patchList(prev.attachments) }
-                : prev
+            prev ? patchEmail(prev) : prev
         );
 
         setEmails(prev =>
-            prev.map(e =>
-                e.messageId === messageId
-                    ? { ...e, attachments: patchList(e.attachments) }
-                    : e
-            )
+            prev.map(e => patchEmail(e))
         );
     }, [setEmailDetailSelected, setEmails]);
 

@@ -199,10 +199,11 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply }: ThreadEm
                             <div className="custom-scrollbar-thumb-horizontal" ref={thumbRef}></div>
                         </div>
                     </div>
-                    {email.attachments.length > 0 && (
+                    {(email.attachments?.length > 0 || (email.remainingAttachments ?? 0) > 0) && (
                         <EmailDetailAttachmentPreview
                             attachments={email.attachments}
                             messageId={email.messageId}
+                            remainingAttachments={email.remainingAttachments}
                             onDownloadAttachment={downloadAttachments}
                             onOpenAttachment={openAttachment}
                         />

@@ -10,11 +10,12 @@ import videoIcon from "@images/video-image.png";
 import codeIcon from "@images/code-image.png";
 import emlIcon from "@images/eml-image.png";
 import defaultIcon from "@images/no-image.png";
+import AttachmentLoadingPlaceholder from "./AttachmentLoadingPlaceholder";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface Attachment {
-    customFileName: string;
+    customFileName?: string | null;
     filename: string;
     size: number;
     isEml: boolean;
@@ -24,21 +25,28 @@ interface Attachment {
 interface Props {
     attachments: Attachment[];
     messageId: string;
+    remainingAttachments?: number;
     onDownloadAttachment: (downloadType: string, customFileName: string, fileName: string, messageid: string) => void;
     onOpenAttachment: (customFileName: string, filename: string, isEml: boolean) => void;
 }
 
+const isAttachmentReady = (attachment: Attachment) => !!attachment.customFileName;
+
 const EmailDetailAttachmentPreview = ({
     attachments,
     messageId,
+    remainingAttachments = 0,
     onDownloadAttachment,
     onOpenAttachment
 }: Props) => {
-    if (attachments.length === 0) return null;
+    const extraPendingCount = Math.max(0, remainingAttachments - attachments.length);
+    const allAttachmentsReady = attachments.every(isAttachmentReady) && extraPendingCount === 0;
 
     // Cache preview URLs to prevent continuous requests
     const attachmentPreviews = useMemo(() => {
-        return attachments.map((attachment) => {
+        return attachments
+            .filter(isAttachmentReady)
+            .map((attachment) => {
             const extension = attachment.filename.split('.').pop()?.toLowerCase();
             const isImage = ["png", "jpg", "jpeg", "svg", "webp", "gif"].includes(extension || "");
             const TOKEN = localStorage.getItem("token");
@@ -54,6 +62,9 @@ const EmailDetailAttachmentPreview = ({
             };
         });
     }, [attachments]);
+
+    const hasAttachments = attachments.length > 0 || remainingAttachments > 0;
+    if (!hasAttachments) return null;
 
     function getAttachmentIcon(filename: string) {
         if (!filename) return defaultIcon;
@@ -86,42 +97,60 @@ const EmailDetailAttachmentPreview = ({
     }
 
     const totalAttachmentSize = attachments.reduce((total, attachment) => total + attachment.size, 0);
+    const totalCount = attachments.length + extraPendingCount;
 
     return (
         <div className="application-attachments-box no-border">
             <div className="d-flex align-items-center justify-content-between application-attachments-header">
                 <div className="sm-name">
-                    {attachments.length} Attachments
-                    <span className="space-size ms-2">
-                        {totalAttachmentSize < 1024 * 1024
-                            ? `${(totalAttachmentSize / 1024).toFixed(2)} KB`
-                            : `${(totalAttachmentSize / (1024 * 1024)).toFixed(2)} MB`
-                        }
-                    </span>
+                    {totalCount} Attachments
+                    {totalAttachmentSize > 0 && (
+                        <span className="space-size ms-2">
+                            {totalAttachmentSize < 1024 * 1024
+                                ? `${(totalAttachmentSize / 1024).toFixed(2)} KB`
+                                : `${(totalAttachmentSize / (1024 * 1024)).toFixed(2)} MB`
+                            }
+                        </span>
+                    )}
                 </div>
-                <a
-                    href="javascript:;"
-                    onClick={() => onDownloadAttachment('all', '', '', messageId)}
-                    className="hover-link single-icon"
-                >
-                    <img
-                        className="hover-image"
-                        src={downloadIcon}
-                        alt="download all"
-                        data-tooltip-id="my-tooltip"
-                        data-tooltip-content="Download all"
-                        data-tooltip-place="top"
-                    />
-                </a>
+                {allAttachmentsReady && (
+                    <a
+                        href="javascript:;"
+                        onClick={() => onDownloadAttachment('all', '', '', messageId)}
+                        className="hover-link single-icon"
+                    >
+                        <img
+                            className="hover-image"
+                            src={downloadIcon}
+                            alt="download all"
+                            data-tooltip-id="my-tooltip"
+                            data-tooltip-content="Download all"
+                            data-tooltip-place="top"
+                        />
+                    </a>
+                )}
             </div>
 
             <div className="attachments-pdf-box-main d-flex align-items-start flex-wrap">
+                {attachments.map((attachment, index) => {
+                    if (!isAttachmentReady(attachment)) {
+                        return (
+                            <AttachmentLoadingPlaceholder
+                                key={`processing-${attachment.filename}-${index}`}
+                                filename={attachment.filename}
+                                size={attachment.size}
+                            />
+                        );
+                    }
+
+                    return null;
+                })}
+
                 {attachmentPreviews.map((attachment, index) => (
                     <div
-                        // key={`${attachment.customFileName}-${index}`}
                         key={`${attachment.customFileName}-${attachment.reloadStamp}-${index}`}
                         className="attachments-pdf-box"
-                        onClick={() => onOpenAttachment(attachment.customFileName, attachment.filename, attachment.isEml)}
+                        onClick={() => onOpenAttachment(attachment.customFileName!, attachment.filename, attachment.isEml)}
                         data-tooltip-id={config.TOOLTIP_ID}
                         data-tooltip-content={attachment.filename}
                         data-tooltip-place="top"
@@ -144,7 +173,7 @@ const EmailDetailAttachmentPreview = ({
                                     style={{ zIndex: 999999, position: "relative" }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onDownloadAttachment('single', attachment.customFileName, attachment.filename, messageId);
+                                        onDownloadAttachment('single', attachment.customFileName!, attachment.filename, messageId);
                                         return false;
                                     }}
                                     className="hover-link single-icon"
@@ -159,12 +188,15 @@ const EmailDetailAttachmentPreview = ({
                         </div>
                         <div>
                             <p className="pdf-name m-0">{attachment.filename}</p>
-                            {/* <span className="space-size">{(attachment.size / 1024).toFixed(2)} KB</span> */}
                             <span className="space-size">{attachment.size < 1024 * 1024
                                 ? `${(attachment.size / 1024).toFixed(2)} KB`
                                 : `${(attachment.size / (1024 * 1024)).toFixed(2)} MB`}</span>
                         </div>
                     </div>
+                ))}
+
+                {Array.from({ length: extraPendingCount }).map((_, index) => (
+                    <AttachmentLoadingPlaceholder key={`pending-${index}`} />
                 ))}
             </div>
         </div>

@@ -417,6 +417,7 @@ const EmailDetail = ({ email }: Props) => {
             <EmailDetailAttachmentPreview
                 attachments={email.attachments}
                 messageId={email.messageId}
+                remainingAttachments={email.remainingAttachments}
                 onDownloadAttachment={downloadAttachments}
                 onOpenAttachment={openAttachment}
             />
