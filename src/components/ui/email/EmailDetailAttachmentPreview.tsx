@@ -40,16 +40,15 @@ const EmailDetailAttachmentPreview = ({
     const attachmentPreviews = useMemo(() => {
         return attachments.map((attachment) => {
             const extension = attachment.filename.split('.').pop()?.toLowerCase();
-
-            const isImage = ["png", "jpg", "jpeg", "svg", "webp", "gif"].includes(
-                extension || ""
-            );
-
+            const isImage = ["png", "jpg", "jpeg", "svg", "webp", "gif"].includes(extension || "");
             const TOKEN = localStorage.getItem("token");
+            const reloadStamp = Date.now();
+            const isPreviewReady = isImage && !!attachment.customFileName;
             return {
                 ...attachment,
-                isImage,
-                previewUrl: isImage
+                isImage: isPreviewReady,
+                reloadStamp,
+                previewUrl: isPreviewReady
                     ? `${API_URL}/preview/${TOKEN}/${attachment.customFileName}${attachment.isSchedule ? "?isSchedule=true" : ""}`
                     : getAttachmentIcon(attachment.filename)
             };
@@ -119,7 +118,8 @@ const EmailDetailAttachmentPreview = ({
             <div className="attachments-pdf-box-main d-flex align-items-start flex-wrap">
                 {attachmentPreviews.map((attachment, index) => (
                     <div
-                        key={`${attachment.customFileName}-${index}`}
+                        // key={`${attachment.customFileName}-${index}`}
+                        key={`${attachment.customFileName}-${attachment.reloadStamp}-${index}`}
                         className="attachments-pdf-box"
                         onClick={() => onOpenAttachment(attachment.customFileName, attachment.filename, attachment.isEml)}
                         data-tooltip-id={config.TOOLTIP_ID}

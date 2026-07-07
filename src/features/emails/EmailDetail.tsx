@@ -60,14 +60,6 @@ const EmailDetail = ({ email }: Props) => {
     const [pendingReplies, setPendingReplies] = useState<PendingReply[]>([]);
     const { isDesktop } = useScreen();
 
-    // const fromStr = mailboxParticipantToString(email.from?.[0]);
-    // const parsedFrom = parseEmailAddress(fromStr);
-    // const fromEmail = parsedFrom.email || fromStr;
-    // const fromName =
-    //     parsedFrom.name ||
-    //     (fromEmail.includes("@") ? fromEmail.split("@")[0] : fromEmail);
-    // const initial = parsedFrom.initial;
-
     const fromAddr = email.from?.[0];
     const fromEmail = fromAddr?.email || "";
     const fromName = fromAddr?.name || fromEmail.split("@")[0] || fromEmail;

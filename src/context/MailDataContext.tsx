@@ -129,6 +129,7 @@ interface MailDataType {
     setIsSidebarCountLoading: (loading: boolean) => void;
     isTotalCountLoading: boolean;
     setIsTotalCountLoading: (loading: boolean) => void;
+    updateEmailAttachment: (messageId: string, attachment: any) => void;
 
 }
 
@@ -811,6 +812,48 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
+    const updateEmailAttachment = useCallback((
+        messageId: string,
+        attachment: any,
+    ) => {
+        const patchList = (attachments: any[]) => {
+            let alreadyPatched = false;
+
+            return attachments.map(att => {
+                if (alreadyPatched) return att;
+
+                const attFileName = att.fileName ?? att.filename;
+                const incomingFileName = attachment.fileName ?? attachment.filename;
+
+                const isMatch =
+                    !!attFileName &&
+                    !!incomingFileName &&
+                    attFileName === incomingFileName;
+
+                if (isMatch) {
+                    alreadyPatched = true;
+                    return { ...att, ...attachment, _v: (att._v || 0) + 1 }; // bump version
+                }
+
+                return att;
+            });
+        };
+
+        setEmailDetailSelected(prev =>
+            prev && prev.messageId === messageId
+                ? { ...prev, attachments: patchList(prev.attachments) }
+                : prev
+        );
+
+        setEmails(prev =>
+            prev.map(e =>
+                e.messageId === messageId
+                    ? { ...e, attachments: patchList(e.attachments) }
+                    : e
+            )
+        );
+    }, [setEmailDetailSelected, setEmails]);
+
     const value = {
         boxName,
         boxTitle,
@@ -867,6 +910,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setIsSidebarCountLoading,
         isTotalCountLoading,
         setIsTotalCountLoading,
+        updateEmailAttachment
     };
 
     return (

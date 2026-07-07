@@ -3,7 +3,7 @@ import EmailSkeletonLoader from '@components/ui/EmailSkeletonLoader';
 import { useScreen } from '@context/ScreenContext';
 import { useEmailAction } from '@hooks/useEmailAction';
 import { handleEmailDeletion, verifyBoxName } from '@utils/emailUtil';
-import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
 import EmailRow from '../../features/emails/EmailRow';
@@ -11,6 +11,7 @@ import { MAIL_ACTION } from '../../constants/mailAction';
 import { getSingleEmailService } from '../../services/email/emailService';
 import { useSettings } from '@context/SettingsContext';
 import { useShortcutAction } from '@hooks/useShortcutAction';
+import EmailDetailSkeletonLoader from '@components/ui/EmailDetailSkeletonLoader';
 import { useNavigate } from 'react-router-dom';
 
 // Lazy loaded components
@@ -29,6 +30,7 @@ const MailBoxPage = () => {
     const currentActiveBox = boxName || '';
     const isDraftBox = boxName ? verifyBoxName(boxName, 'draft') : false;
     const simpleBarRef = useRef<any>(null);
+    const [isEmailDetailLoading, setIsEmailDetailLoading] = useState(false);
     const navigate = useNavigate();
 
     useShortcutAction(
@@ -81,7 +83,7 @@ const MailBoxPage = () => {
                 } else {
                     urlBoxName = pathParts[pathParts.length - 1];
                 }
-            } 
+            }
             else {
                 // Default behavior - take the last part
                 urlBoxName = pathParts[pathParts.length - 1];
@@ -93,7 +95,7 @@ const MailBoxPage = () => {
             try {
                 await fetchEmails(1, urlBoxName || boxName);
                 setTimeout(scrollMailListToTop, 0);
-            } 
+            }
             finally {
                 if (!isCancelled) {
                     setIsLoading(false);
@@ -190,6 +192,7 @@ const MailBoxPage = () => {
     ) => {
         try {
 
+            setIsEmailDetailLoading(true);
             const payload = {
                 current_active_box: currentActiveBox,
                 uid,
@@ -198,6 +201,7 @@ const MailBoxPage = () => {
             };
 
             let data = await getSingleEmailService(payload);
+            setIsEmailDetailLoading(false);
             if (data.isScheduled) {
                 data.emailList.isSchedule = true;
             }
@@ -264,6 +268,8 @@ const MailBoxPage = () => {
 
         } catch (error) {
             console.error('Failed to fetch email detail', error);
+        } finally {
+            setIsEmailDetailLoading(false);
         }
     };
 
@@ -311,7 +317,7 @@ const MailBoxPage = () => {
                 showMarkAsUnread: false,
                 showMove: false,
             });
-            
+
             if (!isDesktop) {
                 setIsMailListOpen(true);
             }
@@ -402,7 +408,9 @@ const MailBoxPage = () => {
             {/* START:: Application Form */}
             {(isDesktop || (!!activeEmailMessageId && !!emailDetailSelected)) && (
                 <div id="emailDetailSection" className="mail-details-box" style={mailDetailStyleOpenViaSearch} ref={emailScrollRef}>
-                    {!isDraftBox && activeEmailMessageId && emailDetailSelected ? (
+                    {!isDraftBox && activeEmailMessageId && isEmailDetailLoading ? (
+                        <EmailDetailSkeletonLoader />
+                    ) : !isDraftBox && activeEmailMessageId && emailDetailSelected ? (
                         <Suspense fallback={null}>
                             <EmailDetail email={emailDetailSelected} />
                         </Suspense>

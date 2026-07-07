@@ -40,10 +40,8 @@ export const useSocketEvent = (event: string, callback: EventCallback): void => 
 };
 
 export const useMailSocket = () => {
-    const { emails, setEmails, boxName, pagination, updateEmailReadState, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail } = useMailData();
+    const { emails, setEmails, boxName, pagination, updateEmailReadState, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail, updateEmailAttachment, activeEmailMessageId } = useMailData();
 
-    // Keep refs so the stable handlers always read the latest values
-    // without needing to re-register on every render
     const emailsRef = useRef(emails);
     const boxNameRef = useRef(boxName);
     const setEmailsRef = useRef(setEmails);
@@ -52,6 +50,12 @@ export const useMailSocket = () => {
     const deleteRef = useRef(deleteEmail);
 
     const paginationRef = useRef(pagination);
+    const activeEmailMessageIdRef = useRef(activeEmailMessageId);
+    const updateEmailAttachmentRef = useRef(updateEmailAttachment);
+
+    activeEmailMessageIdRef.current = activeEmailMessageId;
+    updateEmailAttachmentRef.current = updateEmailAttachment;
+
     useEffect(() => {
         paginationRef.current = pagination;
     }, [pagination]);
@@ -133,7 +137,7 @@ export const useMailSocket = () => {
                 updateEmailReadStateRef.current([data.messageId], data.isSeen);
                 return;
             }
-            
+
             updateRef.current(data as Email);
         };
 
@@ -150,6 +154,14 @@ export const useMailSocket = () => {
             console.log('Thread has received:', data);
         };
 
+        const handleAttachmentDownload = (data: any) => {
+            console.log('Attachment downloaded', data);
+            if (activeEmailMessageIdRef.current === data.messageId) {
+                updateEmailAttachmentRef.current(data.messageId, data.attachment);
+            }
+        };
+
+
         const init = async () => {
             try {
                 const s = await getSocket();
@@ -161,6 +173,7 @@ export const useMailSocket = () => {
                 s.on('emailUpdated', handleEmailUpdated);
                 s.on('emailDeleted', handleEmailDeleted);
                 s.on('threadReply', handleThreadReply);
+                s.on('attachment:downloaded', handleAttachmentDownload);
             } catch (err) {
                 console.error('Mail socket init error', err);
             }
@@ -176,6 +189,7 @@ export const useMailSocket = () => {
                 socket.off('emailUpdated', handleEmailUpdated);
                 socket.off('emailDeleted', handleEmailDeleted);
                 socket.off('threadReply', handleThreadReply);
+                socket.off('attachment:downloaded', handleAttachmentDownload);
             }
         };
     }, []); // empty array — runs once on mount, cleans up on unmount
