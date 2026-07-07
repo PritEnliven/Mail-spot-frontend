@@ -35,7 +35,7 @@ import { useAttachmentManager, isExistingAttachment } from '@hooks/useAttachment
 import { zodResolver } from '@hookform/resolvers/zod';
 import { composeSchema, type ComposeFormValues } from './compose.schema';
 import { useDebounce } from '@hooks/useDebounce';
-import { showError, showSuccess, showWarning } from '@components/ui/toast/toastNotification';
+import { showError, showInfo, showSuccess, showWarning } from '@components/ui/toast/toastNotification';
 import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import BaseModal from '@components/ui/BaseModal';
@@ -458,6 +458,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             const formData = prepareFormData(data, true);
             closeModal(modalId);
 
+            showInfo("Saving draft...");
             const response = await saveDraft(formData as any);
             if (response.statusCode === 200) {
                 showSuccess("Draft saved successfully");

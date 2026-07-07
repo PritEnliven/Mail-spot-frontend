@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { adminLoginSchema, type AdminLoginFormValues } from "./adminLogin.schema";
 
 const LoginPage = () => {
-    usePageStylesheet([pageStyles.adminCss]);
+    usePageStylesheet([pageStyles.adminCss, pageStyles.headerCss]);
 
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);

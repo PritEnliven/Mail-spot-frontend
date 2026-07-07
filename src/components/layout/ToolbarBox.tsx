@@ -242,13 +242,22 @@ const ToolbarBox = () => {
         openModal('createCustomFolder');
     }
 
+    const isAllSelected = emails.length > 0 && selectedEmails.size === emails.length;
+    const isIndeterminate = selectedEmails.size > 0 && selectedEmails.size < emails.length;
+
     return (
         <>
             <div className="Tool-bar-box d-flex align-items-center justify-content-between" id="toolBarBox">
                 <div className="d-flex align-items-center">
                     <div className={`checkbox-group d-flex align-items-center ${toolbarState.showSelectAll ? '' : 'd-none'}`} id="toolBarCheckboxGroup">
                         <div className="checkbox-custom table-check me-1" id="checkBoxAllSection">
-                            <input className="list-child" type="checkbox" id="checkboxAll" name="checkbox" onClick={handleSelectAllEmails} />
+                            <input className="list-child"
+                                type="checkbox"
+                                id="checkboxAll"
+                                name="checkbox"
+                                checked={isAllSelected}
+                                ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
+                                onClick={handleSelectAllEmails} />
                             <label htmlFor="checkboxAll" className="label-text" />
                         </div>
                     </div>

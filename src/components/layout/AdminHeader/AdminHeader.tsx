@@ -25,7 +25,7 @@ const AdminHeader = ({ title }: adminHeaderProps) => {
             </div>
             <div className="btn-group mail-profile-dropdown">
                 <button
-                    className="btn btn-secondary dropdown-toggle d-flex align-items-center"
+                    className="btn btn-secondary dropdown-toggle d-flex align-items-center justify-content-end"
                     type="button"
                     data-bs-toggle="dropdown"
                 >

@@ -38,8 +38,6 @@ function SettingsPage() {
     const [rules, setRules] = useState<any[]>([]);
     // const folderInputRef = useRef<HTMLInputElement>(null);
 
-    console.log("settings : ", settings);
-
     const {
         control,
         handleSubmit,

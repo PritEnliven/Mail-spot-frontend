@@ -233,94 +233,102 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
-            <div className="ag-theme-alpine admin-data-grid" style={{ width: '100%', height: '500px' }}>
-                <AgGridReact
-                    ref={gridRef}
-                    rowData={rowData}
-                    columnDefs={colDefs}
-                    defaultColDef={defaultColDef}
-                    pagination
-                    paginationPageSize={Number(pageSize)}
-                    headerHeight={26}
-                    rowHeight={42}
-                    quickFilterText={searchText}
-                    onGridReady={(params) => {
-                        setGridApi(params.api);
-                        setTotalRows(params.api.getDisplayedRowCount());
-                        // Set viewport height after grid is ready
-                        const viewport: any = document.querySelector('.ag-center-cols-viewport');
-                        if (viewport) {
-                            viewport.style.height = '100%';
-                            viewport.style.width = '100%';
-                        }
-                    }}
-                    onPaginationChanged={() => {
-                        if (!gridApi) return;
-
-                        setCurrentPage(gridApi.paginationGetCurrentPage() + 1);
-                        setTotalPages(gridApi.paginationGetTotalPages());
-                        setTotalRows(gridApi.getDisplayedRowCount());
-                    }}
-                />
-            </div>
-            <div className="d-flex align-items-center justify-content-between pt-3">
-                <div className="pagination-box d-flex align-items-center">
-                    <div className="d-flex align-items-center pagination-btn-box">
-                        <button
-                            className="btn hover-link icon-hover-effect"
-                            id="prevPage"
-                            data-bs-title="Previous"
-                            disabled={currentPage <= 1}
-                            onClick={goToPrevPage}
-                        >
-                            <img className="hover-image" src={chevronLeftIconBig} alt="Previous" />
-                        </button>
-                        <button
-                            className="btn hover-link icon-hover-effect"
-                            id="nextPage"
-                            data-bs-title="Next"
-                            disabled={currentPage >= totalPages || totalPages === 0}
-                            onClick={goToNextPage}
-                        >
-                            <img className="hover-image" src={chevronRightIconBig} alt="Next" />
-                        </button>
-                    </div>
-                    <ul className="pagination-cus me-3">
-                        <li className="pagination-count">
-                            <span id="currentPageRange" className="email-count">
-                                {(currentPage - 1) * Number(pageSize) + 1} - {Math.min(currentPage * Number(pageSize), totalRows)}
-                            </span>
-                            <span className="of"> of </span>
-                            <span id="totalRecordsCount" className="total-email-count">
-                                {totalRows}
-                            </span>
-                        </li>
-                    </ul>
+            {rowData.length === 0 ? (
+                <div className="admin-data-grid-empty text-center py-5">
+                    No users found
                 </div>
-                <div className="go-to-sec d-flex align-items-center">
-                    <div className="form-group m-0 me-2">
-                        <input
-                            type="number"
-                            className="form-control"
-                            id="goToPageInput"
-                            placeholder="Page"
-                            min={1}
-                            max={totalPages}
-                            value={goToPage}
-                            onChange={(e) => setGoToPage(e.target.value)}
-                            onKeyDown={handleKeyDown}
+            ) : (
+                <>
+                    <div className="ag-theme-alpine admin-data-grid" style={{ width: '100%', height: '500px' }}>
+                        <AgGridReact
+                            ref={gridRef}
+                            rowData={rowData}
+                            columnDefs={colDefs}
+                            defaultColDef={defaultColDef}
+                            pagination
+                            paginationPageSize={Number(pageSize)}
+                            headerHeight={26}
+                            rowHeight={42}
+                            quickFilterText={searchText}
+                            onGridReady={(params) => {
+                                setGridApi(params.api);
+                                setTotalRows(params.api.getDisplayedRowCount());
+                                // Set viewport height after grid is ready
+                                const viewport: any = document.querySelector('.ag-center-cols-viewport');
+                                if (viewport) {
+                                    viewport.style.height = '100%';
+                                    viewport.style.width = '100%';
+                                }
+                            }}
+                            onPaginationChanged={() => {
+                                if (!gridApi) return;
+
+                                setCurrentPage(gridApi.paginationGetCurrentPage() + 1);
+                                setTotalPages(gridApi.paginationGetTotalPages());
+                                setTotalRows(gridApi.getDisplayedRowCount());
+                            }}
                         />
                     </div>
-                    <button
-                        id="goToPageBtn"
-                        className="btn-new"
-                        onClick={handleGoToPage}
-                        disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages}
-                    >
-                        Go
-                    </button>
-                </div>
-            </div>
+                    <div className="d-flex align-items-center justify-content-between pt-3">
+                        <div className="pagination-box d-flex align-items-center">
+                            <div className="d-flex align-items-center pagination-btn-box">
+                                <button
+                                    className="btn hover-link icon-hover-effect"
+                                    id="prevPage"
+                                    data-bs-title="Previous"
+                                    disabled={currentPage <= 1}
+                                    onClick={goToPrevPage}
+                                >
+                                    <img className="hover-image" src={chevronLeftIconBig} alt="Previous" />
+                                </button>
+                                <button
+                                    className="btn hover-link icon-hover-effect"
+                                    id="nextPage"
+                                    data-bs-title="Next"
+                                    disabled={currentPage >= totalPages || totalPages === 0}
+                                    onClick={goToNextPage}
+                                >
+                                    <img className="hover-image" src={chevronRightIconBig} alt="Next" />
+                                </button>
+                            </div>
+                            <ul className="pagination-cus me-3">
+                                <li className="pagination-count">
+                                    <span id="currentPageRange" className="email-count">
+                                        {(currentPage - 1) * Number(pageSize) + 1} - {Math.min(currentPage * Number(pageSize), totalRows)}
+                                    </span>
+                                    <span className="of"> of </span>
+                                    <span id="totalRecordsCount" className="total-email-count">
+                                        {totalRows}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="go-to-sec d-flex align-items-center">
+                            <div className="form-group m-0 me-2">
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    id="goToPageInput"
+                                    placeholder="Page"
+                                    min={1}
+                                    max={totalPages}
+                                    value={goToPage}
+                                    onChange={(e) => setGoToPage(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                />
+                            </div>
+                            <button
+                                id="goToPageBtn"
+                                className="btn-new"
+                                onClick={handleGoToPage}
+                                disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages}
+                            >
+                                Go
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
 
         </div>
     );

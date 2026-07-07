@@ -161,7 +161,11 @@ const LoginPage = () => {
                                 <div className="form-group">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <label className="control-label required">Password</label>
-                                        <a href="javascript:;" className="link-ap" onClick={redirectToForgot}>Forgot?</a>
+                                        <a href="javascript:;"
+                                            className="link-ap"
+                                            onClick={redirectToForgot}
+                                            tabIndex={-1}
+                                        >Forgot?</a>
                                     </div>
                                     <div className="input-group2 icon-left2 icon-right2 password-show-hide">
                                         <div className="input-control">
