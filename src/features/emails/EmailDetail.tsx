@@ -30,6 +30,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react
 import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
 import { useSocketEvent } from "@hooks/useSocket";
+import { useSettings } from "@context/SettingsContext";
 
 // Lazy loaded components
 const ThreadEmailItem = lazy(() => import("@components/ui/threadEmail/ThreadEmailItem"));
@@ -58,6 +59,7 @@ const EmailDetail = ({ email }: Props) => {
     const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar()
     const [threadEmails, setThreadEmails] = useState<any[]>([]);
     const [pendingReplies, setPendingReplies] = useState<PendingReply[]>([]);
+    const { settings } = useSettings();
     const { isDesktop } = useScreen();
 
     const fromAddr = email.from?.[0];
@@ -94,7 +96,7 @@ const EmailDetail = ({ email }: Props) => {
 
         const shouldLoad = !isExcludedBox
             && hasThread
-            && !emailDetailSelected?.isSearchEmail;
+            && !emailDetailSelected?.isSearchEmail && settings.threadView;
 
         if (shouldLoad) {
             loadThreadEmails();
@@ -150,7 +152,7 @@ const EmailDetail = ({ email }: Props) => {
                 )
             );
         }
-        setPendingReplies(prev => [...prev, reply]);    
+        setPendingReplies(prev => [...prev, reply]);
     }, [boxName, email.messageId, setEmails]);
 
     // Called by socket 'outboundReplySent' — flip row from pending → sent (light → full opacity)

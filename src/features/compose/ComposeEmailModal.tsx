@@ -141,6 +141,9 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     useEffect(() => {
         const setDefaultSignature = async () => {
             try {
+                if (!settings?.enableSignature) {
+                    return;
+                }
                 const response = await getSignatureForActions();
                 if (response.statusCode !== 200) return;
 
@@ -156,7 +159,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         };
 
         setDefaultSignature();
-    }, [emailData, setValue]);
+    }, [emailData, setValue,]);
 
     useEffect(() => {
         if (debouncedSubject && debouncedSubject.trim()) {

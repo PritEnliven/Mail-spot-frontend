@@ -478,7 +478,7 @@ function SettingsPage() {
                         </button>
                         <div className="sub-signatur-setting">
                             <div className="d-flex align-items-center justify-content-between mb-3">
-                                <span className="fs-12-commom">Enable email signature</span>
+                                <span className="fs-12-commom">Enable compose email signature</span>
                                 <div className="switch-toggale d-flex align-items-center justify-content-center">
                                     <Controller
                                         name="enableSignature" control={control}
@@ -499,7 +499,7 @@ function SettingsPage() {
                                 </div>
                             </div>
                             <div className="d-flex align-items-center justify-content-between">
-                                <span className="fs-12-commom">Enable on reply/forward use</span>
+                                <span className="fs-12-commom">Enable signature on reply/forward use</span>
                                 <div className="switch-toggale d-flex align-items-center justify-content-center">
                                     <Controller
                                         name="enableReplyForwardUse"

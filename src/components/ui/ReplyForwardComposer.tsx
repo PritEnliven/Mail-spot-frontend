@@ -32,6 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import SimpleBar from "simplebar-react";
 import { useContacts, useMailUI } from '../../context/index';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
+import { useSettings } from "@context/SettingsContext";
 
 /**
  * Returns the full composed HTML (reply text + original quoted message),
@@ -60,6 +61,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     const navigate = useNavigate();
     const { contacts } = useContacts();
     const { openModal } = useMailUI();
+    const { settings } = useSettings();
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const {
         setFormData,
@@ -102,6 +104,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     useEffect(() => {
         const fetchDefaultSignature = async () => {
             try {
+                if (!settings?.enableReplyForwardUse) return;
                 const response = await getSignatureForActions();
                 if (response.statusCode !== 200) return;
 
