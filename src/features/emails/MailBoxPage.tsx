@@ -190,8 +190,13 @@ const MailBoxPage = () => {
         messageId: string,
         isSearch: boolean
     ) => {
-        try {
+
+        let loaderTimeout: number | null = window.setTimeout(() => {
             setIsEmailDetailLoading(true);
+            loaderTimeout = null;
+        }, 200);
+
+        try {
             setActiveEmailMessageId(messageId);
             setEmailDetailSelected(null);
 
@@ -268,7 +273,12 @@ const MailBoxPage = () => {
         } catch (error) {
             console.error('Failed to fetch email detail', error);
         } finally {
-            setIsEmailDetailLoading(false);
+            if (loaderTimeout !== null) {
+                clearTimeout(loaderTimeout);
+                loaderTimeout = null;
+            } else {
+                setIsEmailDetailLoading(false);
+            }
         }
     };
 
