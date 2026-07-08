@@ -165,7 +165,7 @@ const EmailDetail = ({ email }: Props) => {
             )
         );
         loadThreadEmails();
-    }, []);
+    }, [loadThreadEmails]);
 
     // Called by socket 'outboundReplyFailed' — mark row as failed and show toast
     const markPendingReplyFailed = useCallback((clientMessageId: string, errorMessage?: string) => {
