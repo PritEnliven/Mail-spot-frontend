@@ -1,5 +1,5 @@
 import AttachmentPreview from "@components/ui/AttachmentPreview";
-import { showSuccess, showWarning } from "@components/ui/toast/toastNotification";
+import { showError, showSuccess, showWarning } from "@components/ui/toast/toastNotification";
 import CkEditorRichText from "@components/ui/CkEditor/CkEditorRichText";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import SubmitButton from '@components/ui/form/SubmitButton';
@@ -30,7 +30,7 @@ import { Collapse, Dropdown } from "react-bootstrap";
 import { Controller } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
 import SimpleBar from "simplebar-react";
-import { useContacts, useMailUI } from '../../context/index';
+import { useContacts, useMailData, useMailUI } from '../../context/index';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import { useSettings } from "@context/SettingsContext";
 
@@ -57,6 +57,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     const { contacts } = useContacts();
     const { openModal } = useMailUI();
     const { settings } = useSettings();
+    const { userPermissions } = useMailData();
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const {
         setFormData,
@@ -307,9 +308,14 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                     showWarning('Too Many Emails Sent. Please try again later.');
                 } else if (response.statusCode === 400) {
                     showWarning(response.message);
+                } else if (response.statusCode === 507) {
+                    showWarning('Storage Limit Exceeded.');
+                } else {
+                    showError(response.data?.error || response.message);
                 }
             } catch (error) {
                 console.error('Failed to send reply/forward:', error);
+                showError('Failed to send reply/forward. Please try again.');
             }
         }
     };
@@ -470,7 +476,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                 id="reply-forward-email-body"
                                 value={field.value}
                                 onChange={field.onChange}
-                                isSmartReplyEnable={true}
+                                isSmartReplyEnable={userPermissions?.aiFeatures}
                                 isGenerateEmailOpen={isGenerateEmailCardOpen}
                                 onGenerateEmailClose={() => setIsGenerateEmailCardOpen(false)}
                                 emailContent={email.body || ''}
@@ -586,10 +592,12 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                     </label>
                                 </div>
                             </div>
-                            <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
-                                <img className="me-2" src={generateAiIcon} />
-                                Generate Email
-                            </button>
+                            {userPermissions?.aiFeatures && (
+                                <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
+                                    <img className="me-2" src={generateAiIcon} />
+                                    Generate Email
+                                </button>
+                            )}
                             <button className="btn-new ms-3" onClick={openScheduleModal}>
                                 <img className="me-2" src={scheduledIcon} />
                                 Schedule

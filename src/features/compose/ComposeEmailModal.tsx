@@ -71,7 +71,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const { contacts } = useContacts();
     const { openModal, closeModal, isComposeExpanded, setIsComposeExpanded } = useMailUI();
     const { settings } = useSettings();
-    const { updateBoxCount, sidebarState, boxName, setMailListPage, fetchEmails, refreshUserPermissions } = useMailData();
+    const { updateBoxCount, sidebarState, boxName, setMailListPage, fetchEmails, refreshUserPermissions, userPermissions } = useMailData();
     const {
         setFormData,
         registerSubmitHandler,
@@ -417,6 +417,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 showWarning(response.message);
             } else if (response.statusCode === 507) {
                 showWarning('Storage Limit Exceeded.');
+            } else {
+                showError(response.data?.error || response.message);
             }
             return response;
         } catch (error) {
@@ -840,10 +842,12 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                             </label>
                                         </div>
                                     </div>
-                                    <button className="btn-new ms-3 btn-new-icon-mobile" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
-                                        <img className="me-2" src={generateAiIcon} />
-                                        <span className="d-flex align-items-center">Generate Email</span>
-                                    </button>
+                                    {userPermissions?.aiFeatures && (
+                                        <button className="btn-new ms-3 btn-new-icon-mobile" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
+                                            <img className="me-2" src={generateAiIcon} />
+                                            <span className="d-flex align-items-center">Generate Email</span>
+                                        </button>
+                                    )}
                                     <button className="btn-new ms-3 btn-new-icon-mobile" onClick={openScheduleModal}>
                                         <img className="me-2" src={scheduledIcon} />
                                         <span className='d-flex align-items-cnter'>Schedule</span>

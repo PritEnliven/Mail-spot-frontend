@@ -137,6 +137,7 @@ export const useReplyForward = () => {
             'background-color:#f9f9f9;padding:15px;border-radius:4px;margin-top:10px;';
 
         const header = `
+                    <br>
                     <div
                         id="${isForward ? 'forwarded-message' : 'quoted-message'}"
                         class="${isForward ? 'forwarded-message' : 'quoted-message'}"

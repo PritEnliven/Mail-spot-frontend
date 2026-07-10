@@ -122,7 +122,7 @@ function ChangeImapSmtpPasswordModal({ modalId, zIndex, ...props }: CalendarEven
                 onClose();
             }
             else {
-                showError(response.data.data.error || 'Failed to update IMAP/SMTP details');
+                showError(response?.data?.error || 'Failed to update IMAP/SMTP details');
             }
         } catch (error) {
             console.error('Failed to update IMAP/SMTP details:', error);

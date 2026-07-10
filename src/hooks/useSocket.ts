@@ -5,6 +5,7 @@ import type { Email } from '@models/Email';
 import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 type EventCallback = (...args: any[]) => void;
 
@@ -43,7 +44,6 @@ export const useSocketEvent = (event: string, callback: EventCallback): void => 
 export const useMailSocket = () => {
     const navigate = useNavigate();
     const { emails, setEmails, boxName, pagination, updateEmailReadState, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail, updateEmailAttachment, activeEmailMessageId } = useMailData();
-
     const emailsRef = useRef(emails);
     const boxNameRef = useRef(boxName);
     const setEmailsRef = useRef(setEmails);
@@ -164,11 +164,7 @@ export const useMailSocket = () => {
         };
 
         const handleLogout = () => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('username');
-            localStorage.removeItem('email');
-            localStorage.removeItem('socketId');
+            localStorage.clear();
             disconnectSocket();
             navigate('/login');
         };

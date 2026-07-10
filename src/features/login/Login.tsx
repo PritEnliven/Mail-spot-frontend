@@ -97,7 +97,7 @@ const LoginPage = () => {
                 window.location.reload();
             }
             else {
-                showError(response.data?.data?.error || response.message || "Something went wrong!")
+                showError(response.data?.data?.error || response.data?.error || response.message || "Something went wrong!")
             }
         } catch (error: any) {
             console.log('LOGIN ERROR:', error);
