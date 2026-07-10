@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { getSocket } from '@services/socket/socket';
+import { getSocket, disconnectSocket } from '@services/socket/socket';
 import { useMailData } from '@context/MailDataContext';
 import type { Email } from '@models/Email';
 import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
+import { useNavigate } from 'react-router-dom';
 
 type EventCallback = (...args: any[]) => void;
 
@@ -40,6 +41,7 @@ export const useSocketEvent = (event: string, callback: EventCallback): void => 
 };
 
 export const useMailSocket = () => {
+    const navigate = useNavigate();
     const { emails, setEmails, boxName, pagination, updateEmailReadState, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail, updateEmailAttachment, activeEmailMessageId } = useMailData();
 
     const emailsRef = useRef(emails);
@@ -161,6 +163,15 @@ export const useMailSocket = () => {
             }
         };
 
+        const handleLogout = () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            localStorage.removeItem('email');
+            localStorage.removeItem('socketId');
+            disconnectSocket();
+            navigate('/login');
+        };
 
         const init = async () => {
             try {
@@ -174,6 +185,7 @@ export const useMailSocket = () => {
                 s.on('emailDeleted', handleEmailDeleted);
                 s.on('threadReply', handleThreadReply);
                 s.on('attachment:downloaded', handleAttachmentDownload);
+                s.on('logout', handleLogout);
             } catch (err) {
                 console.error('Mail socket init error', err);
             }
@@ -190,6 +202,7 @@ export const useMailSocket = () => {
                 socket.off('emailDeleted', handleEmailDeleted);
                 socket.off('threadReply', handleThreadReply);
                 socket.off('attachment:downloaded', handleAttachmentDownload);
+                socket.off('logout', handleLogout);
             }
         };
     }, []); // empty array — runs once on mount, cleans up on unmount

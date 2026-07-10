@@ -93,7 +93,16 @@ async function adminSaveSettings(payload: adminSaveSettingsPayload) {
     }
 }
 
+async function deleteUser(userId: string) {
+    try {
+        const response = await postData('admin/deleteUser', { userId });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 
 export {
-    adminGetUserList, adminLogin, adminSaveSettings, getAdminSettings, loginAdminAsUser, resetPasswordByAdmin
+    adminGetUserList, adminLogin, adminSaveSettings, deleteUser, getAdminSettings, loginAdminAsUser, resetPasswordByAdmin
 };

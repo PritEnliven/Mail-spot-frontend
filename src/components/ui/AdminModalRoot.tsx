@@ -2,6 +2,7 @@
 import { useAdminUI } from '@context/AdminUIContext';
 import { lazy, Suspense } from 'react';
 const AdminChangePassword = lazy(() => import('@components/ui/Modals/AdminChangePassword/AdminChangePassword'));
+const AdminConfirmDelete = lazy(() => import('@components/ui/Modals/AdminConfirmDelete/AdminConfirmDelete'));
 
 const BASE_Z_INDEX = 1050;
 const Z_INDEX_STEP = 20;
@@ -20,14 +21,24 @@ function AdminModalRoot() {
                 switch (modal.type) {
                     case 'changePassword':
                         return (
-                            <Suspense fallback={null}>
+                            <Suspense fallback={null} key={modal.id}>
                                 <AdminChangePassword
                                     modalId={modal.id}
                                     zIndex={zIndex}
                                     {...modal.props}
                                 />
                             </Suspense>
-                        )
+                        );
+                    case 'deleteConfirmation':
+                        return (
+                            <Suspense fallback={null} key={modal.id}>
+                                <AdminConfirmDelete
+                                    modalId={modal.id}
+                                    zIndex={zIndex}
+                                    onConfirm={modal.props?.onConfirm}
+                                />
+                            </Suspense>
+                        );
                     default:
                         return null;
                 }

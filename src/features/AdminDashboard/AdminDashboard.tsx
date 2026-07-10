@@ -9,7 +9,7 @@ import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import chevronLeftIconBig from "@images/chevron-left-icon-big.svg";
 import chevronRightIconBig from "@images/chevron-right-icon-big.svg";
 import searchIcon from "@images/search-icon.svg";
-import { adminGetUserList, loginAdminAsUser } from '@services/adminService/adminService';
+import { adminGetUserList, deleteUser, loginAdminAsUser } from '@services/adminService/adminService';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import { useEffect, useRef, useState } from 'react';
@@ -140,7 +140,19 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleDeleteUser = () => {
+    const handleDeleteUser = (userId: string) => {
+        openModal('deleteConfirmation', {
+            onConfirm: async () => {
+                const response = await deleteUser(userId);
+                if (response.statusCode === 200) {
+                    setRowData(prev => prev.filter(user => user.id !== userId));
+                    showSuccess('User deleted successfully');
+                } else {
+                    showError(response.message || 'Failed to delete user');
+                    throw new Error(response.message);
+                }
+            }
+        });
     };
 
     const handleLoginAsUser = async (userId: string) => {

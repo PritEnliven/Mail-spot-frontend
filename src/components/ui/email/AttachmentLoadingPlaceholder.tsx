@@ -1,4 +1,4 @@
-import attachmentIcon from "@images/attachment-stroke-rounded-icon.svg";
+// import attachmentIcon from "@images/attachment-stroke-rounded-icon.svg";
 
 interface Props {
     filename?: string;

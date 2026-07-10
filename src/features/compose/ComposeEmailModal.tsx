@@ -1,5 +1,6 @@
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useMailData } from '@context/MailDataContext';
+import AttachmentPreview from '@components/ui/AttachmentPreview';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import arrowPointingOutIcon from '@images/arrows-pointing-out-icon.svg';
 import arrowPointingOutIconHover from '@images/arrows-pointing-out-icon-hover.svg';
@@ -41,7 +42,7 @@ import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import BaseModal from '@components/ui/BaseModal';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
-import AttachmentPreview from '@components/ui/AttachmentPreview';
+// import AttachmentPreview from '@components/ui/AttachmentPreview';
 import SubmitButton from '@components/ui/form/SubmitButton';
 import { useShortcutAction } from '@hooks/useShortcutAction';
 
