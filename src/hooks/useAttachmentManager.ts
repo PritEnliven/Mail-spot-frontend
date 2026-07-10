@@ -42,6 +42,25 @@ export function useAttachmentManager() {
         return name.slice(idx + 1).toLowerCase();
     };
 
+    // const normalizeAllowedTypes = (allowed: any[] | undefined | null): string[] => {
+    //     if (!Array.isArray(allowed)) return [];
+    //     return allowed
+    //         .map(v => {
+    //             if (typeof v === 'string') return v;
+    //             if (v && typeof v === 'object') {
+    //                 return v.value ?? v.name ?? v.type ?? '';
+    //             }
+    //             return '';
+    //         })
+    //         .filter(Boolean)
+    //         .map((v: string) => v.toLowerCase());
+    // };
+
+    const ALLOWED_TYPE_ALIASES: Record<string, string> = {
+        docs: 'doc',
+        text: 'txt',
+    };
+
     const normalizeAllowedTypes = (allowed: any[] | undefined | null): string[] => {
         if (!Array.isArray(allowed)) return [];
         return allowed
@@ -53,7 +72,8 @@ export function useAttachmentManager() {
                 return '';
             })
             .filter(Boolean)
-            .map((v: string) => v.toLowerCase());
+            .map((v: string) => v.toLowerCase())
+            .map((v: string) => ALLOWED_TYPE_ALIASES[v] ?? v);
     };
 
     const isFileTypeAllowed = (file: File, allowed: string[]): boolean => {
