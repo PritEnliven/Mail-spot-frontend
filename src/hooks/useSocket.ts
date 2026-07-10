@@ -5,7 +5,6 @@ import type { Email } from '@models/Email';
 import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 
 type EventCallback = (...args: any[]) => void;
 
