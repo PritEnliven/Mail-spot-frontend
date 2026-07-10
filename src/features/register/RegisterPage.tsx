@@ -360,6 +360,7 @@ const RegisterPage = () => {
                                   placeholder="Password"
                                   maxLength={25}
                                   id="CreatePassword"
+                                  autoComplete="new-password"
                                   onFocus={() => setFocusedField("userPassword")}
                                   onBlur={() => setFocusedField(null)}
                                 />
@@ -371,6 +372,9 @@ const RegisterPage = () => {
                               src={showPassword ? passwordShowIcon : passwordHideIcon}
                               alt={showPassword ? "Hide password" : "Show password"}
                               className="input-icon-2"
+                              role="button"
+                              tabIndex={-1}
+                              onMouseDown={(event) => event.preventDefault()}
                               onClick={() => setShowPassword(!showPassword)}
                               style={{ cursor: "pointer" }}
                             />

@@ -3224,6 +3224,17 @@ a.hover-link.d-flex.align-items-center.me-2 img {
     cursor: pointer;
 }
 
+/* Hide browser-native password reveal/clear controls (Edge) — custom toggle is used instead */
+.password-show-hide input[type="password"]::-ms-reveal,
+.password-show-hide input[type="password"]::-ms-clear {
+    display: none;
+}
+
+.password-show-hide input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .change-password-input .form-group:has(.input-icon-2) .form-control {
     padding: 7px 30px 7px 30px;
 }

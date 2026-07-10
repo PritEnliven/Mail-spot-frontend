@@ -1,3 +1,4 @@
+import { passwordSchema } from "@utils/passwordValidation";
 import { z } from "zod";
 
 export const ForgotPageSchema = z
@@ -9,9 +10,9 @@ export const ForgotPageSchema = z
     otp: z.string().length(6, "OTP must be 6 digits"),
 
     // Step 3 – Reset Password
-    password: z.string().min(8, "Password must be at least 8 characters").optional(),
+    password: passwordSchema.optional(),
 
-    confirmPassword: z.string().min(8, "Confirm password must be at least 8 characters").optional(),
+    confirmPassword: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Only validate password match when both are present

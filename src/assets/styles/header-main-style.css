@@ -3407,6 +3407,17 @@ button.ck.ck-button.ck-on.ck.ck-color-grid__tile:hover {
     transform: translate(7px, 50%);
 }
 
+/* Hide browser-native password reveal/clear controls (Edge) — custom toggle is used instead */
+.password-show-hide input[type="password"]::-ms-reveal,
+.password-show-hide input[type="password"]::-ms-clear {
+    display: none;
+}
+
+.password-show-hide input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .input-icon-add .input-icon-3 {
     position: absolute;
     right: 13px;

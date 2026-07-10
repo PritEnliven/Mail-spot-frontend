@@ -583,7 +583,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                 autoHide={false}
                                 forceVisible="y"
                             >
-
                                 <div className="compose-modal-body p-16 pb-0">
                                     <div className="new-input-group new-input-group-border">
                                         <div className="d-flex w-100">
@@ -726,13 +725,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                             />
                                         )}
                                     />
-                                    {attachments.length > 0 && (
-                                        <div className="compose-attachments-bar">
-                                            <AttachmentPreview attachments={attachments} onRemove={removeFile} />
-                                            <div ref={attachmentsEndRef} />
-                                        </div>
-                                    )}
-
                                 </div>
                             </SimpleBar>
                         </div>

@@ -32,7 +32,7 @@ function SettingsPage() {
     usePageStylesheet([pageStyles.settingsCss]);
     const { setBoxName } = useMailData();
     const { openModal } = useMailUI();
-    const { settings, updateSettings } = useSettings();
+    const { updateSettings } = useSettings();
     const [signatures, setSignatures] = useState<Signature[]>([]);
     const [selectedSignature, setSelectedSignature] = useState<Signature | null>(null);
     const [rules, setRules] = useState<any[]>([]);

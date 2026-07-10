@@ -165,6 +165,17 @@ body .select2-container--default .select2-search--dropdown .select2-search__fiel
     min-height: 30px;
 }
 
+/* Hide browser-native password reveal/clear controls (Edge) — custom toggle is used instead */
+.password-show-hide input[type="password"]::-ms-reveal,
+.password-show-hide input[type="password"]::-ms-clear {
+    display: none;
+}
+
+.password-show-hide input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .form-group .select2-container .select2-selection--single .select2-selection__rendered {
     color: #717D84;
     padding: 0 0 0 28px;
@@ -231,7 +242,7 @@ hr {
     font-weight: 400;
     margin: 6px 0 0 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .breadcrumb-sec {
