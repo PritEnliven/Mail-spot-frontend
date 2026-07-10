@@ -167,6 +167,13 @@ span.Default-label-dot {
 .setting-features .ck-rounded-corners .ck.ck-editor__main>.ck-editor__editable, .ck.ck-editor__main>.ck-editor__editable.ck-rounded-corners {
     height: 320px !important;
 }
+.setting-features .ck-rounded-corners .ck-source-editing-area{
+     height: 320px !important;
+    border-radius: 0 0 5px 5px;
+    overflow: auto;
+    border: 0;
+    box-shadow: none;
+}
 
 .setting-features .ql-container.ql-snow {
     border: 0 !important;

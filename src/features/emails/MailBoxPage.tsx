@@ -33,15 +33,8 @@ const MailBoxPage = () => {
     const [isEmailDetailLoading, setIsEmailDetailLoading] = useState(false);
     const navigate = useNavigate();
 
-    useShortcutAction(
-        'new_compose',
-        () => openModal('compose'),
-    );
-
-    useShortcutAction(
-        'go_to_inbox',
-        () => navigate('/mail/INBOX'),
-    );
+    useShortcutAction('new_compose', () => openModal('compose'));
+    useShortcutAction('go_to_inbox', () => navigate('/mail/INBOX'));
 
     // Ref to track the current markAsRead timeout
     const markAsReadTimeoutRef = useRef<number | null>(null);

@@ -22,7 +22,7 @@ import { saveDraft, sendEmail } from '@services/emailSending/emailSendingService
 import { scheduleEmail } from '@services/scheduleEmail/scheduleEmailService';
 import { getSignatureForActions } from '@services/settings/settingsService';
 import { getBoxNameFromSidebar, verifyBoxName } from '@utils/emailUtil';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
 import { Collapse, Dropdown } from "react-bootstrap";
 import { useNavigate } from 'react-router-dom';
 import SimpleBar from 'simplebar-react';
@@ -84,6 +84,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const [isGenerateEmailCardOpen, setIsGenerateEmailCardOpen] = useState(false);
     const { signatures, selectedSignatureId, handleSignatureSelect } = useSignatureManager();
     const onSubmitRef = useRef<(data: ComposeFormValues, scheduleAt?: string) => Promise<void>>(async () => { });
+    const instanceId = useId()
+    const attachmentsEndRef = useRef<HTMLDivElement>(null);
 
     useShortcutAction(
         'send_email',
@@ -211,6 +213,20 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             // alert(error);
         }
     }, [error]);
+
+    useEffect(() => {
+        if (attachments.length > 0) {
+            const timer = setTimeout(() => {
+                attachmentsEndRef.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'nearest',
+                });
+            }, 100); // DOM render thava do, pachi scroll
+
+            return () => clearTimeout(timer);
+        }
+    }, [attachments.length]);
 
     useEffect(() => {
         setTriggerValidation(async () => {
@@ -666,7 +682,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                 render={({ field }) => (
                                                     <input
                                                         type="text"
-                                                        id="composeSubject"
+                                                        id={`composeSubject-${modalId}`}
                                                         className={`form-control`}
                                                         {...field}
                                                     />
@@ -710,16 +726,18 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                             />
                                         )}
                                     />
+                                    {attachments.length > 0 && (
+                                        <div className="compose-attachments-bar">
+                                            <AttachmentPreview attachments={attachments} onRemove={removeFile} />
+                                            <div ref={attachmentsEndRef} />
+                                        </div>
+                                    )}
 
                                 </div>
                             </SimpleBar>
                         </div>
                         <div className="compose-modal-footer">
-                            {attachments.length > 0 && (
-                                <div className="compose-attachments-bar">
-                                    <AttachmentPreview attachments={attachments} onRemove={removeFile} />
-                                </div>
-                            )}
+
                             <div className="compose-btn-box d-flex align-items-center justify-content-between">
                                 <a href="javascript:;" className="hover-link icon-hover-effect"
                                     onClick={onClose}
@@ -802,12 +820,12 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                         <div className="custom-file">
                                             <input
                                                 type="file"
-                                                id="composeFileAttachments"
+                                                id={`composeFileAttachments-${instanceId}`}
                                                 multiple
                                                 className="custom-file-input addAttachmentBtn"
                                                 onChange={handleFileChange}
                                             />
-                                            <label className="custom-file-label" htmlFor="composeFileAttachments">
+                                            <label className="custom-file-label" htmlFor={`composeFileAttachments-${instanceId}`}>
                                                 <span className="file-name">
                                                     <InteractiveIcon
                                                         defaultIcon={attachmentStrokeRoundedIcon}

@@ -25,7 +25,7 @@ import type { PendingReply } from "@models/PendingReply";
 import { sendReply } from "@services/emailSending/emailSendingService";
 import { scheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getSignatureForActions } from "@services/settings/settingsService";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import { Collapse, Dropdown } from "react-bootstrap";
 import { Controller } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
@@ -34,11 +34,6 @@ import { useContacts, useMailUI } from '../../context/index';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import { useSettings } from "@context/SettingsContext";
 
-/**
- * Returns the full composed HTML (reply text + original quoted message),
- * stripping only the injected email signature so the pending row looks
- * identical to what a real sent thread email would show.
- */
 const extractBodyHtml = (html: string): string => {
     try {
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -87,6 +82,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     const [isInitialized, setIsInitialized] = useState(false);
     const [signatureInserted, setSignatureInserted] = useState(false);
     const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => { });
+    const instanceId = useId();
 
     const normalizeRecipients = (recipients: any[]): string[] => {
         if (!recipients?.length) return [];
@@ -569,12 +565,12 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                 <div className="custom-file">
                                     <input
                                         type="file"
-                                        id="composeFileAttachments"
+                                        id={`composeFileAttachments-${instanceId}`}
                                         multiple
                                         className="custom-file-input addAttachmentBtn"
                                         onChange={handleFileChange}
                                     />
-                                    <label className="custom-file-label" htmlFor="composeFileAttachments">
+                                    <label className="custom-file-label" htmlFor={`composeFileAttachments-${instanceId}`}>
                                         <span className="file-name">
                                             <InteractiveIcon
                                                 defaultIcon={attachmentStrokeRoundedIcon}

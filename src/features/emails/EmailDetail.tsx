@@ -19,6 +19,10 @@ import editIconHover from '@images/edit2-icon-hover.svg';
 import editIcon from '@images/edit2-icon.svg';
 import replyAllIconHover from "@images/reply-all-icon-hover.svg";
 import replyAllIcon from "@images/reply-all-icon.svg";
+import chevronDownIcon from '@images/chevron-down-icon.svg';
+import chevronDownIconHover from '@images/chevron-down-icon-hover.svg';
+import chevronUpIcon from "@images/chevron-up-icon.svg";
+import chevronUpIconHover from "@images/chevron-up-icon-hover.svg";
 import type { Email } from "@models/Email";
 import type { PendingReply } from "@models/PendingReply";
 import type { Response } from "@models/Response";
@@ -61,6 +65,36 @@ const EmailDetail = ({ email }: Props) => {
     const [pendingReplies, setPendingReplies] = useState<PendingReply[]>([]);
     const { settings } = useSettings();
     const { isDesktop } = useScreen();
+    const [isCcBccExpanded, setIsCcBccExpanded] = useState(false);
+    const [toVisibleInfo, setToVisibleInfo] = useState({ visible: 0, total: 0 });
+
+    const hasCc = email.cc?.length > 0;
+    const hasBcc = email.bcc?.length > 0;
+    const hasMore = hasCc || hasBcc;
+    const hasHiddenTo = toVisibleInfo.total > toVisibleInfo.visible;
+    const toReserveWidth = !isCcBccExpanded && hasMore ? 32 : 0;
+
+    const toggleCcBcc = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCcBccExpanded(prev => !prev);
+    };
+
+    const ToggleChevronButton = () => (
+        <button
+            type="button"
+            className={`btn-new toggle-recipients-btn flex-shrink-0 ${isCcBccExpanded ? 'is-expanded' : ''}`}
+            onClick={toggleCcBcc}
+            aria-label={isCcBccExpanded ? "Hide Cc/Bcc" : "Show Cc/Bcc"}
+        >
+            <InteractiveIcon
+                defaultIcon={isCcBccExpanded ? chevronUpIcon : chevronDownIcon}
+                hoverIcon={isCcBccExpanded ? chevronUpIconHover : chevronDownIconHover}
+                className="interactive-icon hover-image"
+                tooltip=""
+            />
+        </button>
+    );
 
     const fromAddr = email.from?.[0];
     const fromEmail = fromAddr?.email || "";
@@ -267,29 +301,53 @@ const EmailDetail = ({ email }: Props) => {
                         <div className="d-flex align-items-end justify-content-between cc-bcc-to-info">
                             <div className="d-block">
                                 {/* To */}
-                                <div className="mail-details-information-details-box  d-flex align-items-start m-0">
-                                    <span className="label-sm">To</span>
-                                    <div className="d-flex align-items-center tomail-list">
-                                        <EmailRecipientList emails={email.to} searchTerm={highlightTerm} />
+                                <div className="mail-details-information-details-box d-flex align-items-start m-0">
+                                    <span className="label-sm flex-shrink-0">To</span>
+                                    <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
+                                        <EmailRecipientList
+                                            emails={email.to}
+                                            searchTerm={highlightTerm}
+                                            reserveWidth={toReserveWidth}
+                                            onVisibleCountChange={(visible, total) => setToVisibleInfo({ visible, total })}
+                                            trailingElement={!isCcBccExpanded && hasMore ? <ToggleChevronButton /> : null}
+                                            expanded={isCcBccExpanded}
+                                        />
+                                        {!isCcBccExpanded && !hasMore && hasHiddenTo && (
+                                            <span className="hidden-count-badge flex-shrink-0">
+                                                +{toVisibleInfo.total - toVisibleInfo.visible}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
                                 {/* CC */}
-                                {email.cc.length > 0 && (
-                                    <div className="mail-details-information-details-box d-flex align-items-center m-0">
-                                        <span className="label-sm">CC</span>
-                                        <div className="d-flex align-items-center tomail-list">
-                                            <EmailRecipientList emails={email.cc} searchTerm={highlightTerm} />
+                                {isCcBccExpanded && email.cc.length > 0 && (
+                                    <div className="mail-details-information-details-box d-flex align-items-start m-0">
+                                        <span className="label-sm flex-shrink-0">CC</span>
+                                        <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
+                                            <EmailRecipientList
+                                                emails={email.cc}
+                                                searchTerm={highlightTerm}
+                                                reserveWidth={!hasBcc ? 32 : 0}
+                                                trailingElement={!hasBcc ? <ToggleChevronButton /> : null}
+                                                expanded
+                                            />
                                         </div>
                                     </div>
                                 )}
 
                                 {/* BCC */}
-                                {email.bcc.length > 0 && (
-                                    <div className="mail-details-information-details-box d-flex align-items-center m-0">
-                                        <span className="label-sm">BCC</span>
-                                        <div className="d-flex align-items-center tomail-list">
-                                            <EmailRecipientList emails={email.bcc} searchTerm={highlightTerm} />
+                                {isCcBccExpanded && email.bcc.length > 0 && (
+                                    <div className="mail-details-information-details-box d-flex align-items-start m-0">
+                                        <span className="label-sm flex-shrink-0">BCC</span>
+                                        <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
+                                            <EmailRecipientList
+                                                emails={email.bcc}
+                                                searchTerm={highlightTerm}
+                                                reserveWidth={32}
+                                                trailingElement={<ToggleChevronButton />}
+                                                expanded
+                                            />
                                         </div>
                                     </div>
                                 )}

@@ -14,6 +14,10 @@ import attachmentStrokesRoundedIconHover from "@images/attachment-stroke-rounded
 import attachmentStrokesRoundedIcon from "@images/attachment-stroke-rounded-icon.svg";
 import replyAllIconHover from "@images/reply-all-icon-hover.svg";
 import replyAllIcon from "@images/reply-all-icon.svg";
+import chevronDownIcon from "@images/chevron-down-icon.svg";
+import chevronDownIconHover from "@images/chevron-down-icon-hover.svg";
+import chevronUpIcon from "@images/chevron-up-icon.svg";
+import chevronUpIconHover from "@images/chevron-up-icon-hover.svg";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
 import moment from 'moment';
 import { lazy, Suspense, useState } from "react";
@@ -27,9 +31,7 @@ const isDateInCurrentWeek = (date: Date | string | number): boolean => {
     const emailDate = moment(date);
     const now = moment();
 
-    // Start of week (Sunday)
     const startOfWeek = now.clone().startOf('week');
-    // End of week (Saturday)
     const endOfWeek = now.clone().endOf('week');
 
     return emailDate.isBetween(startOfWeek, endOfWeek, 'day', '[]');
@@ -45,11 +47,16 @@ interface ThreadEmailItemProps {
 const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply }: ThreadEmailItemProps) => {
 
     const [isThreadItemOpen, setisThreadItemOpen] = useState(false);
+    const [isCcBccExpanded, setIsCcBccExpanded] = useState(false);
+    const [toVisibleInfo, setToVisibleInfo] = useState({ visible: 0, total: 0 });
     const { replyForwardState, openReplyForward, closeReplyForward, } = useReplyForward();
     const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar();
 
     const toggleThread = () => {
-        setisThreadItemOpen(prev => !prev);
+        setisThreadItemOpen(prev => {
+            if (prev) setIsCcBccExpanded(false);
+            return !prev;
+        });
     }
 
     const { downloadAttachments } = useAttachmentDownload();
@@ -60,6 +67,35 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply }: ThreadEm
     const { email: fromEmail, name: fromName } = email.from?.[0] || {};
 
     const fromInitial = (fromName || fromEmail || 'U').charAt(0).toUpperCase();
+
+    const hasCc = email.cc?.length > 0;
+    const hasBcc = email.bcc?.length > 0;
+    const hasMore = hasCc || hasBcc;
+    const hasHiddenTo = toVisibleInfo.total > toVisibleInfo.visible;
+
+    const toggleCcBcc = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCcBccExpanded(prev => !prev);
+    };
+
+    const ToggleChevronButton = () => (
+        <button
+            type="button"
+            className={`btn-new toggle-recipients-btn flex-shrink-0 ${isCcBccExpanded ? 'is-expanded' : ''}`}
+            onClick={toggleCcBcc}
+            aria-label={isCcBccExpanded ? "Hide Cc/Bcc" : "Show Cc/Bcc"}
+        >
+            <InteractiveIcon
+                defaultIcon={isCcBccExpanded ? chevronUpIcon : chevronDownIcon}
+                hoverIcon={isCcBccExpanded ? chevronUpIconHover : chevronDownIconHover}
+                className="interactive-icon hover-image"
+                tooltip=""
+            />
+        </button>
+    );
+
+    const toReserveWidth = !isCcBccExpanded && hasMore ? 32 : 0;
 
     return (
         <div className={`accordion-item pb-0 ${isThreadItemOpen ? 'open' : ''}`} id={`thread-${index}`}
@@ -111,27 +147,67 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply }: ThreadEm
                                                 renderAs="img"
                                                 tooltip=""
                                             />
-
                                         </a>
                                     }
                                 </div>
                             </div>
                             <div className="d-flex align-items-end justify-content-between ">
-                                {isThreadItemOpen &&
-                                    (
-                                        <div className="mail-details-information-details-box  thread-mail-to-box  align-items-center m-0">
-                                            <span className="label-sm">To</span>
-                                            <div onClick={(e) => e.stopPropagation()}>
-                                                <EmailRecipientList emails={email.to} />
+                                <div className="cc-bcc-to-info" style={{ minWidth: 0, flex: 1 }}>
+                                    {isThreadItemOpen &&
+                                        (
+                                            <div className="mail-details-information-details-box thread-mail-to-box d-flex align-items-start m-0" style={{ minWidth: 0 }}>
+                                                <span className="label-sm flex-shrink-0">To</span>
+                                                <div className="d-flex align-items-center flex-grow-1" style={{ minWidth: 0 }} onClick={(e) => e.stopPropagation()}>
+                                                    <EmailRecipientList
+                                                        emails={email.to}
+                                                        reserveWidth={toReserveWidth}
+                                                        onVisibleCountChange={(visible, total) => setToVisibleInfo({ visible, total })}
+                                                        trailingElement={!isCcBccExpanded && hasMore ? <ToggleChevronButton /> : null}
+                                                        expanded={isCcBccExpanded}
+                                                    />
+                                                    {!isCcBccExpanded && !hasMore && hasHiddenTo && (
+                                                        <span className="hidden-count-badge flex-shrink-0">
+                                                            +{toVisibleInfo.total - toVisibleInfo.visible}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                {!isThreadItemOpen &&
-                                    (
-                                        <p className="shot-message-info-thread mb-0" style={{ display: "block" }}>
-                                            {email.subject}
-                                        </p>
-                                    )}
+                                        )}
+                                    {isThreadItemOpen && isCcBccExpanded && hasCc &&
+                                        (
+                                            <div className="mail-details-information-details-box thread-mail-to-box d-flex align-items-start m-0" style={{ minWidth: 0 }}>
+                                                <span className="label-sm flex-shrink-0">Cc</span>
+                                                <div className="d-flex align-items-center flex-grow-1" style={{ minWidth: 0 }} onClick={(e) => e.stopPropagation()}>
+                                                    <EmailRecipientList
+                                                        emails={email.cc}
+                                                        reserveWidth={!hasBcc ? 32 : 0}
+                                                        trailingElement={!hasBcc ? <ToggleChevronButton /> : null}
+                                                        expanded
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    {isThreadItemOpen && isCcBccExpanded && hasBcc &&
+                                        (
+                                            <div className="mail-details-information-details-box thread-mail-to-box d-flex align-items-start m-0" style={{ minWidth: 0 }}>
+                                                <span className="label-sm flex-shrink-0">Bcc</span>
+                                                <div className="d-flex align-items-center flex-grow-1" style={{ minWidth: 0 }} onClick={(e) => e.stopPropagation()}>
+                                                    <EmailRecipientList
+                                                        emails={email.bcc}
+                                                        reserveWidth={32}
+                                                        trailingElement={<ToggleChevronButton />}
+                                                        expanded
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    {!isThreadItemOpen &&
+                                        (
+                                            <p className="shot-message-info-thread mb-0" style={{ display: "block" }}>
+                                                {email.subject}
+                                            </p>
+                                        )}
+                                </div>
                                 {isThreadItemOpen && (
                                     <div className="application-btn-multi" id="replyForwardActionButtons">
                                         <ul>

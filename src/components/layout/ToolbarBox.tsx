@@ -394,13 +394,20 @@ const ToolbarBox = () => {
                                                         </Dropdown.Item>
                                                     ))}
 
-                                                    <Dropdown.Divider />
+                                                    {moveToFolderOptions.customBoxes?.length > 0 && (
+                                                        <>
+                                                            <Dropdown.Divider />
 
-                                                    {moveToFolderOptions.customBoxes && moveToFolderOptions.customBoxes.map((box: any) => (
-                                                        <Dropdown.Item key={box.value.value} onClick={() => moveToFolderHandler(box.value.value)}>
-                                                            {box.key}
-                                                        </Dropdown.Item>
-                                                    ))}
+                                                            {moveToFolderOptions.customBoxes.map((box: any) => (
+                                                                <Dropdown.Item
+                                                                    key={box.value.value}
+                                                                    onClick={() => moveToFolderHandler(box.value.value)}
+                                                                >
+                                                                    {box.key}
+                                                                </Dropdown.Item>
+                                                            ))}
+                                                        </>
+                                                    )}
 
                                                     <Dropdown.Divider />
 

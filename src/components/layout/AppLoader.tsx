@@ -9,10 +9,10 @@ const AppLoader = () => (
         zIndex: 9999,
     }}>
         <div style={{
-            width: 60,
-            height: 60,
+            width: 40,
+            height: 40,
             border: '3px solid #e0e0e0',
-            borderTop: '3px solid #4a90e2',
+            borderTop: '3px solid #0097ef',
             borderRadius: '50%',
             animation: 'spin 0.75s linear infinite',
         }} />

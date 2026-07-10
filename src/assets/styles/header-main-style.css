@@ -2034,7 +2034,6 @@ input::-webkit-search-cancel-button {
 
 .eventInfoModalSimpleBar {
     max-height: calc(100vh - 300px);
-    min-height: 200px;
 }
 
 /*--------------END:: Modal ------------- */
@@ -2135,9 +2134,19 @@ input::-webkit-search-cancel-button {
     border: 0;
     box-shadow: none;
 }
+#composeEmailModal .ck-source-editing-area{
+    height: 520px !important;
+    border-radius: 0 0 5px 5px;
+    overflow: auto;
+    border: 0;
+    box-shadow: none;
+}
 
 .compose-modal-expand #composeEmailModal .ck-rounded-corners .ck.ck-editor__main>.ck-editor__editable,
 .compose-modal-expand #composeEmailModal .ck.ck-editor__main>.ck-editor__editable.ck-rounded-corners {
+    height: calc(100vh - 280px) !important;
+}
+.compose-modal-expand #composeEmailModal .ck-source-editing-area{
     height: calc(100vh - 280px) !important;
 }
 /*--------------END:: Composee Mail Modal ------------- */
@@ -2495,6 +2504,13 @@ a.ck.ck-button.ck-on {
     border-radius: 0 0 5px 5px;
     overflow: auto;
 }
+
+.ck-rounded-corners .ck-source-editing-area {
+    height: 360px !important;
+    border-radius: 0 0 5px 5px;
+    overflow: auto;
+}
+
 
 .ck.ck-editor__editable:not(.ck-editor__nested-editable) {
     border: 1px solid rgba(187, 192, 196, 1);
@@ -3443,7 +3459,7 @@ hr {
     flex-shrink: 0;
     z-index: 4;
 }
-
+/* 
 .compose-attachments-bar {
     position: absolute;
     bottom: 100%;
@@ -3451,12 +3467,18 @@ hr {
     right: 0;
     padding: 8px 16px 0;
     background-color: #fff;
-    /* border-top: 1px solid #e8eaed; */
+    
     max-height: 130px;
     overflow-y: auto;
-    /* box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06); */
+    
+} */
+.ComposeModalSimpleBar .simplebar-content-wrapper {
+    scroll-behavior: smooth;
 }
 
+.compose-attachments-bar {
+    transition: all 0.2s ease-in-out;
+}
 .reply-mail-box .compose-attachments-bar {
     padding: 8px 0 0;
 }

@@ -13,12 +13,13 @@ const formatSize = (size: number) =>
 const AttachmentLoadingPlaceholder = ({ filename, size }: Props) => (
     <div className="attachments-pdf-box attachment-processing">
         <div className="attachments-img-box attachment-loading-thumb">
-            <img
-                src={attachmentIcon}
-                alt=""
-                className="attachment-loading-icon"
-                aria-hidden="true"
-            />
+            <div className="loading-spinner">
+                <span
+                        className="spinner-border spinner-border-sm text-light"
+                        role="status"
+                        aria-hidden="true"
+                    />
+            </div>
         </div>
         <div>
             {filename ? (

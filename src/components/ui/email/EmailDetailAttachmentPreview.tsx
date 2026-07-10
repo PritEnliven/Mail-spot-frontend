@@ -47,20 +47,20 @@ const EmailDetailAttachmentPreview = ({
         return attachments
             .filter(isAttachmentReady)
             .map((attachment) => {
-            const extension = attachment.filename.split('.').pop()?.toLowerCase();
-            const isImage = ["png", "jpg", "jpeg", "svg", "webp", "gif"].includes(extension || "");
-            const TOKEN = localStorage.getItem("token");
-            const reloadStamp = Date.now();
-            const isPreviewReady = isImage && !!attachment.customFileName;
-            return {
-                ...attachment,
-                isImage: isPreviewReady,
-                reloadStamp,
-                previewUrl: isPreviewReady
-                    ? `${API_URL}/preview/${TOKEN}/${attachment.customFileName}${attachment.isSchedule ? "?isSchedule=true" : ""}`
-                    : getAttachmentIcon(attachment.filename)
-            };
-        });
+                const extension = attachment.filename.split('.').pop()?.toLowerCase();
+                const isImage = ["png", "jpg", "jpeg", "svg", "webp", "gif"].includes(extension || "");
+                const TOKEN = localStorage.getItem("token");
+                const reloadStamp = Date.now();
+                const isPreviewReady = isImage && !!attachment.customFileName;
+                return {
+                    ...attachment,
+                    isImage: isPreviewReady,
+                    reloadStamp,
+                    previewUrl: isPreviewReady
+                        ? `${API_URL}/preview/${TOKEN}/${attachment.customFileName}${attachment.isSchedule ? "?isSchedule=true" : ""}`
+                        : getAttachmentIcon(attachment.filename)
+                };
+            });
     }, [attachments]);
 
     const hasAttachments = attachments.length > 0 || remainingAttachments > 0;
