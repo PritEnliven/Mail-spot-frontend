@@ -194,6 +194,12 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [isSidebarDataReady, setIsSidebarDataReady] = useState(false);
 
     paginationRef.current = pagination;
+    const mailListPageRef = useRef(mailListPage);
+    mailListPageRef.current = mailListPage;
+    const searchTermRef = useRef(searchTerm);
+    searchTermRef.current = searchTerm;
+    const filterFormRef = useRef(filterForm);
+    filterFormRef.current = filterForm;
 
     const refreshUserPermissions = useCallback(async () => {
         try {
@@ -427,20 +433,32 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchSearchEmails = useCallback(
         async (isPrevious = false) => {
-            if (!searchTerm && !filterForm) return;
+            // Always read from refs — never from stale closure state
+            const currentSearchTerm = searchTermRef.current;
+            const currentFilterForm = filterFormRef.current;
+            const currentPage = mailListPageRef.current;
+            const currentPagination = paginationRef.current;
+
+            if (!currentSearchTerm && !currentFilterForm) return;
+
+            const direction = isPrevious ? 'prev' : 'next';
+            const vPage = isPrevious ? Math.max(1, currentPage - 1) : currentPage + 1;
+
+            // Use prevCursor/nextCursor (search-specific) not firstMailId/lastMailId (IMAP-specific)
+            const cursor = isPrevious
+                ? currentPagination?.prevCursor
+                : currentPagination?.nextCursor;
+
+            // Guard: never fire with a missing cursor unless it's page 1
+            if (vPage > 1 && !cursor) {
+                console.warn(`[fetchSearchEmails] No ${isPrevious ? 'prevCursor' : 'nextCursor'} available for page ${vPage} — aborting to prevent wrong results`);
+                return;
+            }
 
             try {
-                const direction = isPrevious ? 'prev' : 'next';
-
-                const vPage = isPrevious ? Math.max(1, mailListPage - 1) : mailListPage + 1;
-
-                const cursor = vPage === 1
-                    ? undefined
-                    : (isPrevious ? pagination?.firstMailId : pagination?.lastMailId);
-
                 const payload = buildSearchFilterPayload({
-                    searchText: searchTerm,
-                    filterForm,
+                    searchText: currentSearchTerm,
+                    filterForm: currentFilterForm,
                     limit: 25,
                     cursor: cursor || undefined,
                     direction,
@@ -458,7 +476,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 console.error('Failed to fetch search emails:', error);
             }
         },
-        [searchTerm, filterForm, pagination, mailListPage]
+        [] // refs keep this always fresh — no stale closure possible
     );
 
     /* -------------------- Mail Mutations -------------------- */
