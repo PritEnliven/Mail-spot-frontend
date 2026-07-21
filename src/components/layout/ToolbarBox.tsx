@@ -114,7 +114,7 @@ const ToolbarBox = () => {
         try {
             const payLoad = {
                 current_active_box: boxName,
-                lastEmailMessageId: emails[0].messageId
+                lastEmailMessageId: emails[0]?.messageId ?? null
             }
             const response = await refreshMailBox(payLoad);
             if (response.statusCode === 200) {
@@ -304,9 +304,9 @@ const ToolbarBox = () => {
                                         }`}
                                     onClick={() => {
                                         if (toolbarState.showMarkAsUnread) {
-                                            markAsReadUnreadHandler(false); // mark unread
+                                            markAsReadUnreadHandler(false);
                                         } else if (toolbarState.showMarkAsRead) {
-                                            markAsReadUnreadHandler(true); // mark read
+                                            markAsReadUnreadHandler(true);
                                         }
                                     }}
                                 >

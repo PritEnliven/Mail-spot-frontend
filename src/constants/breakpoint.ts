@@ -1,8 +1,8 @@
 export const BREAKPOINTS = {
-    mobile: 0,
+    mobileSmall: 425,
+    mobile: 575,
     tablet: 768,
-    laptop: 1024,
-    desktop: 1280,
+    laptop: 992,
+    desktop: 1200,
 } as const;
-
-export type ScreenType = "mobile" | "tablet" | "laptop" | "desktop";
+export type ScreenType = "mobileSmall" | "mobile" | "tablet" | "laptop" | "desktop";

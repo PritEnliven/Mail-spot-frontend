@@ -810,9 +810,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     ) => {
         setSidebarState(prev => {
             const current = prev.boxCounts[boxName] || { unreadCount: 0, totalCount: 0 };
-            if (current.isTotal === true) return prev;
 
-            // Calculate new values
             const newUnreadCount = Math.max(0, (current.unreadCount || 0) + unreadDecrement);
             const newTotalCount = Math.max(0, (current.totalCount || 0) + totalDecrement);
 

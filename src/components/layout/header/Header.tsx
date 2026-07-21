@@ -8,6 +8,7 @@ import { useMailSelection } from "@context/MailSelectionContext";
 import { useScreen } from "@context/ScreenContext";
 import { useProfile } from "@context/userContext";
 import { AUTH_STORAGE_KEYS } from "@features/login/Login";
+import { logoutUser } from "@services/login/loginService";
 import { useDebounce } from "@hooks/useDebounce";
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
@@ -29,6 +30,10 @@ import menuIcon from "@images/menu-icon.svg";
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import searchIconHover from "@images/search-icon-hover.svg";
 import searchIcon from "@images/search-icon.svg";
+import sidebaropenIcon from "@images/side-bar-open-icon.svg"
+import sidebaropenHoverIcon from "@images/side-bar-open-hover-icon.svg"
+import sidebarcloseIcon from "@images/side-bar-close-icon.svg"
+import sidebarcloseHoverIcon from "@images/side-bar-close-hover-icon.svg"
 import { filterEmailAndCreateRuleService, getSingleEmailService, searchAndFilterEmailService } from "@services/email/emailService";
 import { getUserDetail } from "@services/user/userService";
 import { verifyBoxName } from "@utils/emailUtil";
@@ -53,19 +58,31 @@ const Header = () => {
     const [isCreateRuleModalOpen, setIsCreateRuleModalOpen] = useState(false);
     const [searchText, setSearchText] = useState("");
     const debouncedSearchText = useDebounce(searchText, 1000);
-    const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, setActiveBoxId } = useMailUI();
+    // const { openModal, closeModal, activeModals, setToolbarState, setIsMailListOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, setActiveBoxId, isSidebarOpen  } = useMailUI();
+    const {
+        openModal,
+        closeModal,
+        activeModals,
+        setToolbarState,
+        setIsMailListOpen,
+        isSidebarOpen,
+        setIsSidebarOpen,
+        isSidebarExpandedMobile,
+        setIsSidebarExpandedMobile,
+        setActiveBoxId
+    } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
         setBoxTitle, filterForm, boxName, boxTitle, searchTerm, allSearchResult,
         setEmailDetailSelected, setActiveEmailMessageId,
         headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
-        clearMailSearch, mailSearchResetKey } = useMailData();
+        clearMailSearch, mailSearchResetKey, socketId } = useMailData();
     const { contacts, fetchContacts } = useContacts();
     const { calendarView, setCalendarView, changeView } = useCalendar();
     const [noResult, setNoResult] = useState(false);
     const { setSelectedEmails } = useMailSelection();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
-    const { isDesktop } = useScreen();
+    const { isDesktop, isMobile } = useScreen();
     const prevDebouncedSearchRef = useRef(debouncedSearchText);
     const allowSearchDropdownRef = useRef(true);
 
@@ -73,12 +90,14 @@ const Header = () => {
         fetchContacts();
     }, []);
 
-    const handleLogout = () => {
-        // Clear only auth keys, preserve rememberedEmail
+    const handleLogout = async () => {
+        const currentSocketId = localStorage.getItem('socketId') ?? socketId;
+        await logoutUser(currentSocketId);
         AUTH_STORAGE_KEYS.forEach((key) => {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
         });
+        localStorage.removeItem('socketId');
         navigate('/login');
     }
 
@@ -175,7 +194,7 @@ const Header = () => {
                 if (resolvedSearchTerm !== searchTerm) {
                     setSearchTerm(resolvedSearchTerm);
                 }
-                
+
                 const response = await searchAndFilterEmailService(
                     buildSearchFilterPayload({
                         searchText: resolvedSearchTerm,
@@ -210,9 +229,15 @@ const Header = () => {
         // }, [debouncedSearchText, searchText, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
     }, [debouncedSearchText]);
 
-    const toggleMobileSidebar = () => {
+    // const toggleMobileSidebar = () => {
+    //     setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+    // }
+    const toggleSidebarHandler = () => {
+        // Toggles desktop sidebar state
+        setIsSidebarOpen(!isSidebarOpen);
+        // Toggles mobile sidebar state
         setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
-    }
+    };
 
     const onSubmit = async (data: FilterEmailFormValues) => {
         const { searchTerm: existingSearchTerm } = resolveSearchFromQuery(searchText, filterForm);
@@ -269,7 +294,7 @@ const Header = () => {
 
             if (dates.length === 1) {
                 dateRangeStr = dates[0];
-            } 
+            }
             else if (dates.length > 1) {
                 dateRangeStr = `${dates[0]} to ${dates[1]}`;
             }
@@ -283,7 +308,7 @@ const Header = () => {
         }
 
         const response = await filterEmailAndCreateRuleService(payload);
-        
+
         if (response?.emailList?.length > 0) {
             showSuccess('Rule created successfully');
             setIsCreateRuleModalOpen(false);
@@ -546,12 +571,12 @@ const Header = () => {
         setSearchResults([]);
         setIsSearchResultDropdownOpen(false);
         setNoResult(false);
-        
+
         if (filterForm) {
             const displayQuery = buildDisplaySearchQuery(filterForm, searchTerm);
             setSearchText(displayQuery);
             prevDebouncedSearchRef.current = displayQuery;
-        } 
+        }
         else {
             setSearchText("");
             reset({
@@ -595,21 +620,34 @@ const Header = () => {
             ) : (
                 <>
                     <div className="d-flex align-items-center">
-                        {/* moblie */}
-                        <button
-                            className="btn hover-link nav-collepse-button-mobile me-2"
-                            type="button" onClick={toggleMobileSidebar}
-                        >
-                            <InteractiveIcon
-                                defaultIcon={isSidebarExpandedMobile ? navCollapseIconHover : menuIcon}
-                                activeIcon=""
-                                isActive={false}
-                                alt=""
-                                className="interactive-icon hover-image"
-                                renderAs="img"
-                                tooltip=""
-                            />
-                        </button>
+                        {/*Moblie  Sidebar Menu Toggle Button */}
+                        {isMobile && (
+                            <button
+                                className="btn hover-link me-2"
+                                type="button"
+                                onClick={toggleSidebarHandler}
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={
+                                        (isDesktop ? isSidebarOpen : isSidebarExpandedMobile)
+                                            ? sidebarcloseIcon
+                                            : sidebaropenIcon
+                                    }
+                                    hoverIcon={
+                                        (isDesktop ? isSidebarOpen : isSidebarExpandedMobile)
+                                            ? sidebarcloseHoverIcon
+                                            : sidebaropenHoverIcon
+                                    }
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt="Toggle Sidebar"
+                                    className="interactive-icon hover-image"
+                                    renderAs="img"
+                                    tooltip="Toggle Menu"
+                                />
+                            </button>
+                        )}
+
                         {/* LEFT: Dynamic header section */}
                         <div className="d-flex align-items-center two-sc-in" id="dynamicHeaderSection">
                             <h2 className="box-title" id="boxTitle">{boxTitle}</h2>

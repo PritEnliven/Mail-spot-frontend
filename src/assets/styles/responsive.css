@@ -19,7 +19,7 @@
 
     @media screen and (max-width:992px) {
         /* START:: header */
-            .mail-details-header {padding: 6px 10px 6px 26px;}
+            /* .mail-details-header {padding: 6px 10px 6px 26px;} */
         /* END:: header */
 
         /* START:: Top Search */
@@ -49,7 +49,7 @@
         /* END:: Toolbar */
 
         /* STRATT:: left side bar */      
-            .single-navbar-collapse-sec{position: absolute;top: 27px;display: block;}
+            .single-navbar-collapse-sec{display: none !important;}
             .Tool-bar-box .pagination-cus{display: none;}
         /* END:: left side bar */
 

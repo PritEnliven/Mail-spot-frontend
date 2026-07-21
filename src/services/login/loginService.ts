@@ -17,6 +17,13 @@ async function loginUser(payload: loginPayload) {
     }
 }
 
-export {
-    loginUser
+async function logoutUser(socketId: string | null) {
+    try {
+        const response = await postData('auth/logout', { socketId });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
 }
+
+export { loginUser, logoutUser };

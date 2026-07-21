@@ -587,7 +587,6 @@ const EmailDetail = ({ email }: Props) => {
                     </Suspense>
                 </div>
             }
-
         </div >
     );
 };

@@ -10,9 +10,10 @@ import closeIcon from '@images/close-icon.svg';
 import enlivenLogo from "@images/enliven-logo.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
 import { getUserDetail } from "@services/user/userService";
+import { logoutUser } from "@services/login/loginService";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useContacts, useMailUI } from '../../../context/index';
+import { useContacts, useMailData, useMailUI } from '../../../context/index';
 
 const Header = () => {
     const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Header = () => {
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [searchText,] = useState("");
     const { openModal, closeModal, activeModals, } = useMailUI();
-    // const { setAllSearchResult, } = useMailData();
+    const { socketId } = useMailData();
     const { fetchContacts } = useContacts();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
 
@@ -28,7 +29,9 @@ const Header = () => {
         fetchContacts();
     }, []);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        const currentSocketId = localStorage.getItem('socketId') ?? socketId;
+        await logoutUser(currentSocketId);
         localStorage.clear();
         navigate('/login');
     };

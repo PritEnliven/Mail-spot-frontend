@@ -67,10 +67,12 @@ export function useEmailAction() {
             if (response.statusCode === 200) {
                 const remainingEmails = emails.filter(email => !messageIds.includes(email.messageId));
                 deleteEmailState(messageIds);
+
                 if (activeEmailMessageId && messageIds.includes(activeEmailMessageId)) {
                     setActiveEmailMessageId(null);
                     setEmailDetailSelected(null);
                 }
+                
                 if (remainingEmails.length === 0) {
                     const targetPage = mailListPage > 1 ? mailListPage - 1 : 1;
                     await fetchEmails(targetPage, boxName);

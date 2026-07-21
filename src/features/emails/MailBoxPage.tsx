@@ -221,7 +221,11 @@ const MailBoxPage = () => {
             setEmailDetailSelected(data.emailList);
 
             // setSelectedEmails(new Set([messageId]));
-            const isRead = data.emailList.isSeen;
+            // Use isSeen from the email list state (reflects socket updates) rather than
+            // the fetched detail, which may return stale/wrong read state when the email
+            // arrived via socket after a custom folder was deleted.
+            const emailInList = emails.find(e => e.messageId === messageId);
+            const isRead = emailInList ? emailInList.isSeen : data.emailList.isSeen;
 
             setToolbarState({
                 showBack: !isDesktop,
