@@ -69,7 +69,7 @@ const AdminLeftPanel = () => {
             <div className="side-bae-part-1">
                 {/* START:: Brand-box */}
                 <div className="Brand-box d-flex align-items-center justify-content-center">
-                    <a href="javascript:;" className="Brand-logo">
+                    <a href="#" className="Brand-logo">
                         {isSidebarOpen ?
                             <img
                                 src={mailBoxLogoImage}

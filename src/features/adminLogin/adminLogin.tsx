@@ -73,7 +73,7 @@ const LoginPage = () => {
                 <div className="col-md-6 p-0">
                     <div className="login-main-right-section h-100vh align-items-center">
                         <div className="login-box-main mt-0">
-                            <a href="javascript:;" className="brand-logo-login">
+                            <a href="#" className="brand-logo-login">
                                 <img src={mailSpotLogo} alt="" />
                             </a>
                             <form onSubmit={handleSubmit(onSubmit)}>
@@ -144,7 +144,7 @@ const LoginPage = () => {
                     <div className="power-by-box">
                         <span className="powered-sec">
                             Powered by
-                            <a href="javascript:;" className="ms-2">
+                            <a href="#" className="ms-2">
                                 <img src={enlivenLogo} alt="" />
                             </a>
                         </span>

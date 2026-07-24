@@ -13,6 +13,7 @@ interface CkEditorRichTextProps {
   isGenerateEmailOpen?: boolean | false
   isSmartReplyEnable?: boolean | false
   onGenerateEmailClose?: () => void;
+  onGenerateEmailInsert?: (subject: string) => void;
   emailContent?: string; // For smart replies
 }
 
@@ -44,7 +45,7 @@ function setupCustomFontColorMarker(editor: any) {
 
 // ────────────────────────────────────────────────
 // Main React Component
-function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSmartReplyEnable, onGenerateEmailClose, emailContent }: CkEditorRichTextProps) {
+function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSmartReplyEnable, onGenerateEmailClose, onGenerateEmailInsert, emailContent }: CkEditorRichTextProps) {
   const editorConfig = useMemo(() => ckEditorConfig, []);
   const aiRootRef = useRef<Root | null>(null);
   const smartRepliesRootRef = useRef<Root | null>(null);
@@ -76,7 +77,7 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
         input.focus();
       }
 
-      aiRootRef.current.render(<GenerateEmailCard editor={editor} onClose={onCloseGenerateEmailHandler} />);
+      aiRootRef.current.render(<GenerateEmailCard editor={editor} onClose={onCloseGenerateEmailHandler} onInsert={onGenerateEmailInsert} />);
     } else {
       // Unmount cleanly
       aiRootRef.current?.unmount();

@@ -1,213 +1,810 @@
-/* START:: General Responsive css */
-    @media screen and (max-width:1400px){
+/* ==========================================================================
+   General Responsive CSS
+   ========================================================================== */
 
+
+/* ==========================================================================
+   1. Breakpoint: max-width 1400px
+   ========================================================================== */
+@media screen and (max-width: 1400px) {
+}
+
+
+/* ==========================================================================
+   2. Breakpoint: max-width 1200px
+   ========================================================================== */
+@media screen and (max-width: 1200px) {
+
+    /* -------------------- Mail Details Header -------------------- */
+    .mail-details-header .mail-profile-name,
+    .mail-details-header .mail-profile-id {
+        display: none !important;
     }
 
-    @media screen and (max-width:1200px){
-        .mail-details-header .mail-profile-name, .mail-details-header .mail-profile-id{
-            display: none !important;
+    /* -------------------- Settings -------------------- */
+    .setting-signature-box {
+        max-width: 100% !important;
+    }
+
+    .setting-features {
+        padding: 20px !important;
+    }
+
+    .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content {
+        border-radius: 5px !important;
+        margin-top: 0 !important;
+    }
+
+    .setting-features .ck.ck-reset.ck-editor.ck-rounded-corners {
+        border: 0;
+        height: auto !important;
+    }
+}
+
+
+/* ==========================================================================
+   3. Breakpoint: max-width 992px
+   ========================================================================== */
+@media screen and (max-width: 992px) {
+
+    /* -------------------- Header -------------------- */
+    /* .mail-details-header { padding: 6px 10px 6px 26px; } */
+
+    /* -------------------- Top Search -------------------- */
+    .Calendar-main .top-search {
+        width: 100%;
+        position: absolute;
+        background: #F5F5F5;
+        left: 0;
+        top: 0;
+        height: 100%;
+        border-bottom: 1px solid #D0D9DE;
+        z-index: 9999;
+        margin: 0;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .Calendar-main .show-search {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1) translateY(0);
+        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+    }
+
+    .Calendar-main .top-search-container {
+        max-width: unset;
+    }
+
+    .Calendar-main .top-search-form-control {
+        border-radius: 0 !important;
+        height: 42px !important;
+        box-shadow: none !important;
+        border-width: 0 0 1px 0 !important;
+    }
+
+    .Calendar-main .t-search-group .t-search-dropdown-menu {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        transform: translate(0px, 0px) !important;
+    }
+
+    .Calendar-main .top-filter .dropdown-menu.more-list {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        transform: translate3d(-6px, 0px, 0px) !important;
+        height: calc(100dvh - 42px);
+    }
+
+    .Calendar-main .top-filter .dropdown-menu.more-list.search-create-filter-cmt {
+        transform: translate3d(-6px, 0px, 0px) !important;
+    }
+
+    .Calendar-main .monile-back-btn {
+        display: block;
+    }
+
+    .Calendar-main .search-icon {
+        display: none;
+    }
+
+    .Calendar-main .top-filter .filter-footer {
+        position: absolute;
+        bottom: 0px;
+        width: 100%;
+        background-color: #ffff;
+    }
+
+    .Calendar-main .t-search-dropdown-menu-home-action {
+        max-height: unset !important;
+        height: calc(100dvh - 42px);
+    }
+
+    .Calendar-main .top-filter .filter-body {
+        height: calc(100dvh - 100px) !important;
+    }
+
+    .Calendar-main .all-search-result-show {
+        position: absolute;
+        width: 100%;
+        bottom: 0;
+    }
+
+    .Calendar-main .two-sc-in {
+        max-width: 100%;
+    }
+
+    .Calendar-main .mobile-search-btn {
+        display: flex !important;
+    }
+
+    /* -------------------- Toolbar -------------------- */
+    .Tool-bar-box {
+        padding: 10px;
+        height: 53px;
+    }
+
+    .more-actions-dropdown a {
+        margin: 0;
+    }
+
+    /* .checkbox-group-2 { justify-content: space-between; } */
+
+    .top-search-container {
+        min-width: 320px;
+    }
+
+    /* -------------------- Left Sidebar -------------------- */
+    .single-navbar-collapse-sec {
+        position: absolute;
+        top: 27px;
+        display: block;
+    }
+
+    .Tool-bar-box .pagination-cus {
+        display: none;
+    }
+
+    /* -------------------- Right Sidebar -------------------- */
+    main {
+        justify-content: end;
+    }
+
+    .mail-message-box {
+        width: 100%;
+        height: calc(100vh - 106px);
+    }
+
+    .mail-details-box {
+        height: calc(100vh - 55px) !important;
+    }
+
+    .mail-details-box .box-title {
+        font-size: 16px;
+    }
+
+    .mail-message-send--information-details-box-mobile .application-btn-multi {
+        min-width: 68px;
+    }
+
+    .mail-message-send--information-details-box-mobile .react-dropdown .dropdown-menu {
+        margin-top: 4px;
+        margin-right: -5px;
+    }
+
+    /* From name/email: ellipsis so long text doesn't collide with reply/forward */
+    .mail-message-send--information-details-box-mobile .from-info-mobile .mail-profile-name,
+    .mail-message-send--information-details-box-mobile .from-info-mobile .mail-profile-id {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mail-message-send--information-details-box-mobile .from-info-mobile .from-info-text {
+        max-width: 100%;
+    }
+
+    /* .mail-received-table-news { height: calc(100vh - 108px); } */
+
+    .mailReceivedTableNewsSimpleBar {
+        height: calc(100dvh - 108px);
+    }
+
+    .mail-message-box .mail-list-filter + .mail-received-table-news .mailReceivedTableNewsSimpleBar {
+        height: calc(100dvh - 146px);
+    }
+
+    /* -------------------- Calendar Page: Left Side -------------------- */
+    .calendar-body-box {
+        display: flex;
+        flex-direction: column;
+        height: calc(100dvh - 55px);
+        overflow: hidden;
+    }
+
+    .Calendar-main .left-side-calendar-box {
+        position: relative;
+        min-width: 100% !important;
+        width: 100% !important;
+        height: auto !important;
+        border-radius: 0 !important;
+        flex: 0 0 auto;
+        transition: all 0.3s ease;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-col-header thead tr {
+        display: flex;
+        justify-content: end;
+        justify-content: space-around;
+        max-width: calc(100% - 50px);
+        margin-left: 49px;
+        border-left: 1px dashed #d0d9de30 !important;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-scrollgrid-sync-table {
+        border-left: none !important;
+        width: calc(100% - 50px) !important;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type {
+        border: 0 !important;
+    }
+
+    .Calendar-main .fc .fc-scroller-liquid-absolute {
+        height: 100% !important;
+        border-radius: 0 0 0 8px;
+    }
+
+    .Calendar-main #calendar .fc-dayGridMonth-view .fc-scrollgrid-sync-table {
+        height: calc(100vh - 110px) !important;
+    }
+
+    .fc .fc-scrollgrid-liquid {
+        border: 0;
+    }
+}
+
+
+/* ==========================================================================
+   4. Breakpoint: max-width 768px
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+
+    /* -------------------- Top Search -------------------- */
+    .top-search {
+        width: 100%;
+        position: fixed;
+        background: #F5F5F5;
+        left: 0;
+        top: 0;
+        height: 100%;
+        border-bottom: 1px solid #D0D9DE;
+        z-index: 25;
+        margin: 0;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .show-search {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1) translateY(0);
+        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+    }
+
+    .top-search-container {
+        max-width: unset;
+    }
+
+    .top-search-form-control {
+        border-radius: 0 !important;
+        height: 42px !important;
+        box-shadow: none !important;
+        border-width: 0 0 1px 0 !important;
+    }
+
+    .t-search-group .t-search-dropdown-menu {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        transform: translate(0px, 0px) !important;
+    }
+
+    .top-filter .dropdown-menu.more-list {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        transform: translate3d(-6px, 0px, 0px) !important;
+        height: calc(100dvh - 42px);
+    }
+
+    .top-filter .dropdown-menu.more-list.search-create-filter-cmt {
+        transform: translate3d(-6px, 0px, 0px) !important;
+    }
+
+    .monile-back-btn {
+        display: block;
+    }
+
+    .search-icon {
+        display: none;
+    }
+
+    .top-filter .filter-footer {
+        position: absolute;
+        bottom: 0px;
+        width: 100%;
+        background-color: #ffff;
+    }
+
+    .t-search-dropdown-menu-home-action {
+        max-height: unset !important;
+        height: calc(100dvh - 42px);
+    }
+
+    .top-filter .filter-body {
+        height: calc(100dvh - 100px) !important;
+    }
+
+    .all-search-result-show {
+        position: absolute;
+        width: 100%;
+        bottom: 0;
+    }
+
+    .two-sc-in {
+        max-width: 100%;
+    }
+
+    .mobile-search-btn {
+        display: flex !important;
+    }
+}
+
+
+/* ==========================================================================
+   5. Breakpoint: max-width 575px
+   ========================================================================== */
+@media screen and (max-width: 575px) {
+
+    /* -------------------- Buttons -------------------- */
+    .btn-new-icon-mobile {
+        border: 0;
+        padding: 2px !important;
+        min-width: unset !important;
+    }
+
+    .btn-new-icon-mobile:hover {
+        background-color: #E5E8EA;
+    }
+
+    .btn-new-icon-mobile span {
+        display: none !important;
+    }
+
+    .btn-new-icon-mobile img {
+        margin: 0 !important;
+    }
+
+    .drag-handle-btn {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .expand-btn-com {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .compose-btn {
+        display: none !important;
+    }
+
+    .INBOX-main .compose-btn {
+        display: flex !important;
+    }
+
+    /* -------------------- Header -------------------- */
+    .mail-details-header {
+        padding: 6px 12px;
+    }
+
+    .mail-profile-dropdown .dropdown-menu.dropdown-menu-lg-end.mail-profile-box.p-0.dropdown-menu {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: unset !important;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .mail-profile-close-btn-mobile {
+        display: flex !important;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+    .profile-sec-new-box {
+        width: 100%;
+        height: 100%;
+        background-color: #F5F5F5;
+        border-radius: 0;
+        box-shadow: none;
+        border: 0 !important;
+    }
+
+    .profile-footer {
+        position: absolute;
+        width: 100%;
+        bottom: 0;
+    }
+
+    .profile-sec-people {
+        max-width: 100%;
+        height: 230px;
+    }
+
+    .profile-sec-people::before {
+        background-size: cover;
+    }
+
+    .profile-sec-people-sub-mail-profile-name {
+        font-size: 14px;
+    }
+
+    .profile-sec-people-sub-mail-profile-id {
+        font-size: 13px;
+    }
+
+    .profile-link {
+        padding: 6px 8px;
+        font-size: 14px;
+    }
+
+    /* -------------------- Inbox -------------------- */
+    .box-title {
+        font-size: 16px;
+    }
+
+    /* -------------------- Compose Box -------------------- */
+    .compose-box {
+        position: fixed;
+        right: 10px;
+        bottom: 10px;
+        margin: 0;
+        z-index: 1050;
+    }
+
+    /* -------------------- Left Sidebar -------------------- */
+    .left-side-bar-main nav {
+        height: calc(100vh - 71px);
+    }
+
+    .left-side-bar-main {
+        position: absolute !important;
+        z-index: 1090;
+        left: -200px;
+        border-right: 0;
+        box-shadow: none;
+        transition: unset;
+    }
+
+    .left-sidebar-main-collapsed-mobile {
+        left: 0;
+        transition: all 0.4s ease;
+        border-right: 1px solid #BBC0C4;
+        box-shadow: 1px 0px 4px 0px #0000001F;
+    }
+
+    .left-sidebar-main-collapsed {
+        width: 200px;
+        min-width: 200px;
+        max-width: 200px;
+        left: -200px;
+        z-index: 50;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .nav-collepse-button {
+        display: none;
+    }
+
+    .nav-collepse-button-mobile {
+        display: flex;
+    }
+
+    .single-navbar-collapse-sec {
+        top: 50%;
+    }
+
+    .single-navbar-collapse-sec-mobile {
+        width: 45px;
+        right: -45px;
+        background: transparent;
+        box-shadow: none;
+        top: 27px;
+    }
+
+    .sidebar-mobile-backdrop {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1050;
+    }
+
+    .single-navbar-collapse-sec button{
+        display: none;
+    }
+    /* -------------------- Right Sidebar -------------------- */
+    .right-side-bar-main {
+        width: calc(100% - 0px);
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        border: 0;
+    }
+
+    .mail-message-box {
+        border-radius: 0;
+        /* height: calc(100vh - 97px); */
+    }
+
+    /* -------------------- General Modal -------------------- */
+    .modal-header {
+        background-color: transparent;
+        border-bottom: 0;
+    }
+
+    .modal-content {
+        background-color: #ffff;
+        border: 0;
+        border-radius: 18px 18px 0 0;
+        box-shadow: 0px -6px 12px 0px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal.fade {
+        overflow: hidden;
+    }
+
+    .modal-content-shadow {
+        margin: 0 !important;
+        max-width: 100% !important;
+        inset: unset !important;
+        bottom: 0 !important;
+        width: 100% !important;
+    }
+
+    .modal-content-shadow.modal-show-open > div {
+        animation: fadeUp 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
         }
-
-        /* START:: Setting */
-        .setting-signature-box {max-width: 100% !important;}
-        .setting-features {padding: 20px !important;}
-        .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content {border-radius: 5px !important;margin-top:0 !important;}
-        .setting-features .ck.ck-reset.ck-editor.ck-rounded-corners {border:0;}
-        .setting-features .ck.ck-reset.ck-editor.ck-rounded-corners{height: auto !important;}
-            /* END:: Setting */
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
-
-    @media screen and (max-width:992px) {
-        /* START:: header */
-            /* .mail-details-header {padding: 6px 10px 6px 26px;} */
-        /* END:: header */
-
-        /* START:: Top Search */
-           .Calendar-main .top-search {width: 100%;position: absolute;background: #F5F5F5;left: 0;top: 0;height: 100%;z-index: 1;border-bottom: 1px solid #D0D9DE;z-index: 25;margin: 0; opacity: 0;visibility: hidden;}
-            .Calendar-main .show-search{opacity: 1;visibility: visible;transform: scale(1) translateY(0); transition: opacity 0.4s ease,transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),visibility 0.4s;}
-           .Calendar-main  .top-search-container{max-width: unset ;}
-            .Calendar-main .top-search-form-control{border-radius: 0 !important; height: 42px !important;box-shadow: none !important;border-width: 0 0 1px 0 !important;}
-            .Calendar-main .t-search-group .t-search-dropdown-menu{border: 0; border-radius: 0;box-shadow: none;transform: translate(0px, 0px) !important;}
-            .Calendar-main .top-filter .dropdown-menu.more-list{border: 0; border-radius: 0;box-shadow: none;transform: translate3d(-6px, 0px, 0px) !important;height: calc(100dvh - 42px);}
-            .Calendar-main .top-filter .dropdown-menu.more-list.search-create-filter-cmt{transform: translate3d(-6px, 0px, 0px) !important;}
-            .Calendar-main .monile-back-btn{display: block;}
-            .Calendar-main .search-icon{display: none;}
-            .Calendar-main .top-filter .filter-footer{position: absolute;bottom:0px;width: 100%;background-color: #ffff;}
-            .Calendar-main .t-search-dropdown-menu-home-action{max-height: unset !important;height: calc(100dvh - 42px);}
-            .Calendar-main .top-filter .filter-body{height: calc(100dvh - 100px) !important;}
-           .Calendar-main .all-search-result-show{position: absolute;width: 100%;bottom: 0;}
-            .Calendar-main .two-sc-in{max-width: 100%}
-            .Calendar-main .mobile-search-btn{display: flex !important;}        
-        /* END:: search bar */
-
-        /* STRAT:: Toolbar */
-            .Tool-bar-box{padding: 10px;}
-            .more-actions-dropdown a{margin: 0;}
-            /* .checkbox-group-2 {justify-content: space-between;} */
-            .Tool-bar-box{height: 53px;}
-            .top-search-container{min-width: 320px;}
-        /* END:: Toolbar */
-
-        /* STRATT:: left side bar */      
-            .single-navbar-collapse-sec{display: none !important;}
-            .Tool-bar-box .pagination-cus{display: none;}
-        /* END:: left side bar */
-
-        /* START::right side bar*/
-            main{justify-content: end;}
-            .mail-message-box{width: 100%;height: calc(100vh - 108px);}
-            .mail-details-box{height: calc(100vh - 55px) !important;}
-            .mail-details-box .box-title {font-size: 16px;}
-            .mail-message-send--information-details-box-mobile .application-btn-multi{min-width:68px;}
-            .mail-message-send--information-details-box-mobile .react-dropdown .dropdown-menu{margin-top: 4px;margin-right: -5px;}
-            .mail-received-table-news{height: calc(100vh - 108px);}
-            .mailReceivedTableNewsSimpleBar {height: calc(100vh - 108px);}
-            .mail-message-box .mail-list-filter + .mail-received-table-news .mailReceivedTableNewsSimpleBar {height: calc(100vh - 148px);}
-        /* END::right side bar */
-
-
-        /* START:: Calender page */
-        
-
-        /* START:: Left side */
-            .calendar-body-box{display: flex; flex-direction: column;         height: calc(100dvh - 55px);overflow: hidden;}
-            .Calendar-main .left-side-calendar-box {position: relative;min-width: 100% !important;width: 100% !important;height: auto !important;border-radius:0 !important;flex: 0 0 auto; transition: all 0.3s ease;}
-            .Calendar-main #sidebar-calendar .fc-col-header thead tr {display: flex;justify-content: end;justify-content: space-around;max-width: calc(100% - 50px);margin-left: 49px; border-left: 1px dashed #d0d9de30 !important;}
-            .Calendar-main #sidebar-calendar .fc-scrollgrid-sync-table {border-left: none !important;width: calc(100% - 50px) !important;}
-            .Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type{border:0 !important; }
-            .Calendar-main .fc .fc-scroller-liquid-absolute{height: 100% !important;border-radius: 0 0 0 8px;}
-            .Calendar-main #calendar .fc-dayGridMonth-view .fc-scrollgrid-sync-table{height: calc(100vh - 110px) !important;}
-            .fc .fc-scrollgrid-liquid{border: 0;}
-        /* END:: Left side */
-
-        /* END:: Calender page */
     }
 
-    @media screen and (max-width:768px){       
-
-         /* START:: Top Search */
-            .top-search {width: 100%;position: absolute;background: #F5F5F5;left: 0;top: 0;height: 100%;z-index: 1;border-bottom: 1px solid #D0D9DE;z-index: 25;margin: 0; opacity: 0;visibility: hidden;}
-            .show-search{opacity: 1;visibility: visible;transform: scale(1) translateY(0); transition: opacity 0.4s ease,transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),visibility 0.4s;}
-            .top-search-container{max-width: unset ;}
-            .top-search-form-control{border-radius: 0 !important; height: 42px !important;box-shadow: none !important;border-width: 0 0 1px 0 !important;}
-            .t-search-group .t-search-dropdown-menu{border: 0; border-radius: 0;box-shadow: none;transform: translate(0px, 0px) !important;}
-            .top-filter .dropdown-menu.more-list{border: 0; border-radius: 0;box-shadow: none;transform: translate3d(-6px, 0px, 0px) !important;height: calc(100dvh - 42px);}
-            .top-filter .dropdown-menu.more-list.search-create-filter-cmt{transform: translate3d(-6px, 0px, 0px) !important;}
-            .monile-back-btn{display: block;}
-            .search-icon{display: none;}
-            .top-filter .filter-footer{position: absolute;bottom:0px;width: 100%;background-color: #ffff;}
-            .t-search-dropdown-menu-home-action{max-height: unset !important;height: calc(100dvh - 42px);}
-            .top-filter .filter-body{height: calc(100dvh - 100px) !important;}
-            .all-search-result-show{position: absolute;width: 100%;bottom: 0;}
-            .two-sc-in{max-width: 100%}
-            .mobile-search-btn{display: flex !important;}        
-        /* END:: search bar */
-
-        
+    /* -------------------- Compose Modal -------------------- */
+    .compose-modal-unexpand {
+        width: 100% !important;
+        max-width: 100% !important;
+        inset: unset !important;
     }
 
-    @media screen and (max-width:575px){
-        /* START:: Button */
-            .btn-new-icon-mobile {border: 0;padding: 2px !important;min-width: unset !important;}
-            .btn-new-icon-mobile:hover{background-color: #E5E8EA;}
-            .btn-new-icon-mobile span{display: none !important;}
-            .btn-new-icon-mobile img{margin: 0 !important;}
-            .drag-handle-btn {visibility: hidden;opacity: 0;}
-            .expand-btn-com {visibility: hidden;opacity: 0;}
-            .compose-btn{display: none !important;}
-            .INBOX-main .compose-btn{display: flex !important;}
-        /* END:: Button */
+    .compose-email-modal .modal-dialog-scrollable {
+        height: 100vh;
+    }
 
-        /* STRAT:: header */
-            .mail-details-header {padding: 6px 12px;}
-            .mail-profile-dropdown .dropdown-menu.dropdown-menu-lg-end.mail-profile-box.p-0.dropdown-menu {position: fixed !important;top: 0 !important;left: 0  !important;width: 100%;height: 100%;display: flex;align-items: center;justify-content: center; transform:unset !important;border: 0;border-radius: 0;}
-            .mail-profile-close-btn-mobile{display: flex !important;}
-            .mail-profile-close-btn-mobile {position: absolute;top: 10px;right: 10px;}    
-            .profile-sec-new-box {width: 100%;height: 100%;background-color: #F5F5F5;border-radius: 0;box-shadow: none;border: 0 !important;} 
-            .profile-footer {position: absolute;width: 100%;bottom: 0;} 
-            .profile-sec-people {max-width: 100%;height: 230px;}
-            .profile-sec-people::before{background-size:cover;}
-            .profile-sec-people-sub-mail-profile-name {font-size: 14px;}
-            .profile-sec-people-sub-mail-profile-id {font-size: 13px;}
-            .profile-link {padding: 6px 8px;font-size: 14px;}
-        /* END:: header */
+    .compose-email-modal .modal-dialog {
+        margin: 0 !important;
+    }
 
-        /* START:: Toolbar */
-            
-        /* END:: Toolbar */
+    .compose-email-modal .modal-header {
+        background-color: transparent;
+        border-bottom: 0;
+    }
 
-         /* STRAT:: Inbox */
-            .box-title {font-size: 16px;}
-        /* END:: Inbox */
+    /* .compose-email-modal .modal-header .drag-handle-btn { display: none; } */
 
-        /* STRATT:: left side bar */
-            .compose-box {position: fixed;right: 10px;bottom: 10px;margin: 0;}
-            .left-side-bar-main nav{height: calc(100vh - 71px);}
-            .left-side-bar-main {position: absolute !important;z-index: 30;left: -200px;border-right:0;box-shadow: none;  transition: left 0.4s ease;}
-            .left-sidebar-main-collapsed-mobile{left: 0;transition: all 0.4s ease; border-right:1px solid #BBC0C4;box-shadow: 1px 0px 4px 0px #0000001F;}
-            .left-sidebar-main-collapsed {width: 200px;min-width: 200px;max-width: 200px;left: -200px;z-index: 50;border: 0;box-shadow: none;}
-            .nav-collepse-button{display: none;}
-            .nav-collepse-button-mobile{display: flex;}
-            .single-navbar-collapse-sec{top: 50%; display: none;}
-            .single-navbar-collapse-sec-mobile{width: 45px; right: -45px; background: transparent;box-shadow: none;top: 27px; display: none;}
-        /* END:: left side bar */
+    .compose-email-modal .modal-content {
+        border: 0;
+        box-shadow: none !important;
+        background-color: #fff;
+        border-radius: 0;
+    }
 
-        /* START::right side bar*/
-            .right-side-bar-main{width: calc(100% - 0px);border-radius: 0 !important; box-shadow: none !important;border: 0;}
-            .mail-message-box{border-radius: 0;height: calc(100vh - 97px);}
-        /* END::right side bar */
+    .ComposeModalSimpleBar {
+        max-height: calc(100dvh - 102px);
+    }
 
-        /* START: General modal */
-            .modal-header {background-color: transparent;border-bottom: 0;}
-            .modal-content {background-color: #ffff ;border: 0;border-radius: 18px 18px 0 0;box-shadow: 0px -6px 12px 0px rgba(0, 0, 0, 0.1);}
-            .modal.fade{overflow: hidden;}
-            .modal-content-shadow{margin:0 !important;max-width:100% !important;inset: unset !important; bottom: 0 !important;width: 100% !important;}
-            .modal-content-shadow.modal-show-open > div { animation: fadeUp 0.3s ease-out forwards;}
-            @keyframes fadeUp {from {opacity: 0;transform: translateY(100%);}to {opacity: 1;transform: translateY(0);}}
-        /* END: General modal */
-                
-        /* START:: Compose modal */            
-            .compose-modal-unexpand {width: 100% !important;max-width: 100% !important;inset: unset !important;}
-            .compose-email-modal .modal-dialog-scrollable {height: 100vh; }
-            .compose-email-modal .modal-dialog{margin: 0 !important;}
-            .compose-email-modal .modal-header {background-color: transparent;border-bottom: 0;}
-             /* .compose-email-modal .modal-header .drag-handle-btn{display: none;} */
-            .compose-email-modal .modal-content {border: 0;box-shadow: none !important;background-color: #fff;border-radius: 0;}
-            .ComposeModalSimpleBar {max-height: calc(100vh - 100px);}
-            #composeEmailModal .ck-rounded-corners .ck.ck-editor__main>.ck-editor__editable, #composeEmailModal .ck.ck-editor__main>.ck-editor__editable.ck-rounded-corners {
-            height: calc(100dvh - 233px) !important;}
-            .compose-email-modal{ animation: fadeDown 0.3s ease-out forwards !important;}
-            @keyframes fadeDown {from {opacity: 0;transform: translatex(-100%);}to {opacity: 1;transform: translatex(0);}}
-            .compose-email-modal .modal-header .modal-title-center{left: 13px;transform: unset !important;}
-            /* .compose-email-modal .btn-close, .modal-title{display: none;} */
-        /* END:: Compose modal */
+    #composeEmailModal .ck-rounded-corners .ck.ck-editor__main > .ck-editor__editable,
+    #composeEmailModal .ck.ck-editor__main > .ck-editor__editable.ck-rounded-corners {
+        height: calc(100dvh - 236px) !important;
+    }
 
-        /* START:: Schedule */
-            .modal-schedule-box .modal-dialog{
-                max-width: 100%
-            }
-        /* END:: Schedule */
+    .compose-email-modal {
+        animation: fadeDown 0.3s ease-out forwards !important;
+    }
 
-        /* START:: Flatpicker-calendar */
-            body .flatpickr-calendar {display: none;z-index: 99999;bottom: -100%;top: unset !important;left: 0 !important;width: 100%;
-            border-radius: 18px 18px 0 0;border: 0;transition: all 0.4s ease-in-out;}
-            body .flatpickr-calendar.open{bottom: 0 !important;display: inline-block;}
-            body .flatpickr-months .flatpickr-prev-month, body .flatpickr-months .flatpickr-next-month{border: 0;}
-            body .flatpickr-month .flatpickr-current-month{gap: 74px;}
-            body .flatpickr-innerContainer{justify-content: center;}
-        /* END:: Flatpicker-calendar */
+    @keyframes fadeDown {
+        from {
+            opacity: 0;
+            transform: translatex(-100%);
+        }
+        to {
+            opacity: 1;
+            transform: translatex(0);
+        }
+    }
+
+    .compose-email-modal .modal-header .modal-title-center {
+        left: 13px;
+        transform: unset !important;
+    }
+
+    /* .compose-email-modal .btn-close, .modal-title { display: none; } */
+
+    /* -------------------- CC BCC to info -------------------- */
+    .cc-bcc-to-info{
+        flex-direction: column !important;
+        align-items: start !important;
+        gap: 16px;
+    }
+    /* -------------------- Schedule -------------------- */
+    .modal-schedule-box .modal-dialog {
+        max-width: 100%;
+    }
+
+    /* -------------------- Flatpickr Calendar -------------------- */
+    body .flatpickr-calendar {
+        display: none;
+        z-index: 99999;
+        bottom: -100%;
+        top: unset !important;
+        left: 0 !important;
+        width: 100%;
+        border-radius: 18px 18px 0 0;
+        border: 0;
+        transition: all 0.4s ease-in-out;
+    }
+
+    body .flatpickr-calendar.open {
+        bottom: 0 !important;
+        display: inline-block;
+    }
+
+    body .flatpickr-months .flatpickr-prev-month,
+    body .flatpickr-months .flatpickr-next-month {
+        border: 0;
+    }
+
+    body .flatpickr-month .flatpickr-current-month {
+        gap: 74px;
+    }
+
+    body .flatpickr-innerContainer {
+        justify-content: center;
+    }
+
+
+    /* -------------------- Settings -------------------- */
+    .setting-features {
+        padding: 12px !important;
+    }
+
     
-        /* START:: Setting */
-            .setting-features {padding: 12px !important;}
-        /* END:: Setting */
+}
 
 
-        
+/* ==========================================================================
+   6. Breakpoint: max-width 425px
+   ========================================================================== */
+@media screen and (max-width: 425px) {
+
+    /* -------------------- Attachment -------------------- */
+    .mail-attachment-text{
+        width: 50px;
     }
 
-    @media screen and (max-width:425px){
-       
+    
+}
+
+/* ==========================================================================
+   7. Breakpoint: max-width 320px — CKEditor sticky toolbar
+   Show icons that fit; overflow into three-dots (.ck-toolbar__grouped-dropdown)
+   ========================================================================== */
+@media screen and (max-width: 320px) {
+
+    .compose-email-modal .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content,
+    .reply-mail-box .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content,
+    .forward-it-modal .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content {
+        padding: 2px;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
     }
-/* END:: General Responsive css */
 
+    .compose-email-modal .ck.ck-toolbar,
+    .reply-mail-box .ck.ck-toolbar,
+    .forward-it-modal .ck.ck-toolbar {
+        width: 100%;
+        max-width: 100%;
+    }
 
+    /* Tighter gaps so more icons fit before three-dots */
+    .compose-email-modal .ck.ck-toolbar > .ck-toolbar__items > *:not(.ck-toolbar__line-break),
+    .compose-email-modal .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown,
+    .reply-mail-box .ck.ck-toolbar > .ck-toolbar__items > *:not(.ck-toolbar__line-break),
+    .reply-mail-box .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown,
+    .forward-it-modal .ck.ck-toolbar > .ck-toolbar__items > *:not(.ck-toolbar__line-break),
+    .forward-it-modal .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown {
+        margin: 0 2px 0 0;
+    }
+
+    .compose-email-modal .ck.ck-button,
+    .compose-email-modal a.ck.ck-button,
+    .reply-mail-box .ck.ck-button,
+    .reply-mail-box a.ck.ck-button,
+    .forward-it-modal .ck.ck-button,
+    .forward-it-modal a.ck.ck-button {
+        padding: 2px !important;
+    }
+
+    /* Shrink text labels (heading / font size) so icon buttons remain visible */
+    .compose-email-modal .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label,
+    .reply-mail-box .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label,
+    .forward-it-modal .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label,
+    .compose-email-modal .ck.ck-dropdown.ck-font-size-dropdown .ck-dropdown__button .ck-button__label,
+    .reply-mail-box .ck.ck-dropdown.ck-font-size-dropdown .ck-dropdown__button .ck-button__label,
+    .forward-it-modal .ck.ck-dropdown.ck-font-size-dropdown .ck-dropdown__button .ck-button__label {
+        max-width: 3.5em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Keep three-dots overflow menu visible and tappable */
+    .compose-email-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown,
+    .reply-mail-box .ck.ck-dropdown.ck-toolbar__grouped-dropdown,
+    .forward-it-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown {
+        flex-shrink: 0;
+        margin: 0 !important;
+    }
+
+    .compose-email-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown .ck.ck-icon.ck-icon_inherit-color :not([fill]),
+    .reply-mail-box .ck.ck-dropdown.ck-toolbar__grouped-dropdown .ck.ck-icon.ck-icon_inherit-color :not([fill]),
+    .forward-it-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown .ck.ck-icon.ck-icon_inherit-color :not([fill]) {
+        fill: #e2e2e2;
+    }
+}
+
+/* ==========================================================================
+   End :: General Responsive CSS
+   ========================================================================== */
+.mobile-sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999; /* below sidebar, above rest of content */
+}

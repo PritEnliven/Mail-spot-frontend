@@ -8,9 +8,10 @@ import { useGenerateEmail } from "@hooks/useGenerateEmail";
 interface GenerateEmailCardProps {
     editor?: any;
     onClose?: () => void;
+    onInsert?: (subject: string) => void;
 }
 
-const GenerateEmailCard = ({ editor, onClose }: GenerateEmailCardProps) => {
+const GenerateEmailCard = ({ editor, onClose, onInsert }: GenerateEmailCardProps) => {
     const {
         inputValue,
         generatedEmail,
@@ -21,7 +22,7 @@ const GenerateEmailCard = ({ editor, onClose }: GenerateEmailCardProps) => {
         handleSubmit,
         handleClose,
         insertIntoEditorHandler,
-    } = useGenerateEmail({ onClose });
+    } = useGenerateEmail({ onClose, onInsert });
 
     return (
         <div id="generate-panel" className="generate-panel-ai">

@@ -64,6 +64,7 @@ export function useCustomFolderScrollbar() {
         resizeObserver.observe(el);
 
         const mutationObserver = new MutationObserver(update);
+        
         mutationObserver.observe(el, {
             childList: true,
             subtree: true,

@@ -66,7 +66,9 @@ export function useEmailAction() {
             });
             if (response.statusCode === 200) {
                 const remainingEmails = emails.filter(email => !messageIds.includes(email.messageId));
-                deleteEmailState(messageIds);
+                // Draft has no emailDeleted socket event, so update sidebar here.
+                // Other folders (e.g. Junk) rely on socket deleteEmail, which must preserve isTotal.
+                deleteEmailState(messageIds, !isDraftMail);
 
                 if (activeEmailMessageId && messageIds.includes(activeEmailMessageId)) {
                     setActiveEmailMessageId(null);

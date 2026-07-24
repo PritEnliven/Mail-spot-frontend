@@ -88,6 +88,10 @@ p {
     padding-bottom: 8px;
 }
 
+.sidebar-mobile-backdrop {
+    display: none;
+}
+
 .Brand-box {
     padding: 0 4px 16px 4px;
     text-align: center;
@@ -314,7 +318,8 @@ p {
     font-weight: 500;
     line-height: normal;
     color: #717D84;
-    max-width: 170px;
+    max-width: 100%;
+    display: block;
     overflow: hidden;
     white-space: nowrap;
 }
@@ -964,6 +969,12 @@ span.mailspot-version-number {
 }
 
 span.copied-text.me-1 {
+    font-size: 12px;
+    font-weight: 500;
+    color: gray;
+}
+
+.ck.ck-button.ck-copy-link-copied .ck-button__label {
     font-size: 12px;
     font-weight: 500;
     color: gray;
@@ -4735,6 +4746,15 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
     inset: -7px auto auto 0px !important;
 }
 
+/* Mobile/tablet: open Move to folder list below "Move to" instead of to the right */
+.react-dropdown .react-subdropdown.react-subdropdown-mobile-down {
+    inset: 100% auto auto 0 !important;
+    transform: none !important;
+    margin-top: 0;
+    position: absolute !important;
+}
+
+.dropdown .dropdown.dropend .react-subdropdown-menu.dropdown-toggle::after,
 .dropend .react-subdropdown-menu.dropdown-toggle::after {
     content: "" !important;
     background-image: url(../images/chevron-right-icon-big.svg);
@@ -4749,6 +4769,19 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
     border-right: 0 !important;
     border-bottom: 0 !important;
     border-left: 0 !important;
+}
+
+/* Down-opening Move to: use downward chevron */
+.dropdown.dropdown-down .react-subdropdown-menu.dropdown-toggle::after,
+.react-dropdown .dropdown:not(.dropend):not(.dropstart) > .react-subdropdown-menu.dropdown-toggle::after {
+    content: "" !important;
+    background-image: url(../images/chevron-down-icon.svg);
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    border: 0 !important;
 }
 
 .react-dropdown .dropstart .react-subdropdown-menu.dropdown-toggle:hover::after {
@@ -4785,6 +4818,27 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
 
 .more-actions-dropdown .react-dropdown .react-subdropdown {
     inset: -7px auto auto 0px !important;
+}
+
+.more-actions-dropdown .react-subdropdown.react-subdropdown-mobile-down,
+.react-dropdown .react-subdropdown.react-subdropdown-mobile-down {
+    inset: 100% 0 auto 0 !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    margin-top: 2px;
+    position: absolute !important;
+    min-width: 100%;
+}
+
+/* Allow nested Move to list to expand downward inside the more-actions menu */
+.more-actions-dropdown > .dropdown-menu {
+    overflow: visible;
+}
+
+.more-actions-dropdown .dropdown:not(.dropend) {
+    position: relative;
 }
 
 
@@ -5199,6 +5253,11 @@ nav#navbarList.nav-collepse::after {
     padding: 0 8px 13px 16px;
 }
 
+.creat-folder-custom-modal {
+    overflow: auto;
+    padding: 16px ;
+    height: calc(30dvh - 52px);
+}
 /* END:: create foder */
 
 /* START:: collepse side bar */

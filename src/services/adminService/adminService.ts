@@ -63,7 +63,18 @@ async function resetPasswordByAdmin(payload: ChangePasswordPayload) {
 }
 async function loginAdminAsUser(payload: loginAdminAsUserPayload) {
     try {
-        const response = await postData('admin/loginAdminAsUser', payload);
+        const adminToken = localStorage.getItem('adminToken');
+        if (!adminToken) {
+            return {
+                statusCode: 401,
+                message: 'Admin session expired. Please log in again.',
+            };
+        }
+        const response = await postData('admin/loginAdminAsUser', payload, {
+            headers: {
+                Authorization: `Bearer ${adminToken}`,
+            },
+        });
         return response;
     } catch (error: any) {
         return error;

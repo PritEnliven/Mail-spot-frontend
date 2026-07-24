@@ -17,6 +17,7 @@ import { createCustomBox } from "@services/customBox/customBoxService";
 import { showSuccess } from "@components/ui/toast/toastNotification";
 import { useMemo } from "react";
 import { buildParentFolderOptions } from "@utils/emailUtil";
+import SimpleBar from "simplebar-react";
 
 const defaultColor = colorListConfi.find(c => c.default)?.value ?? colorListConfi[0].value;
 
@@ -128,11 +129,15 @@ function CreateCustomFolderModal(
                                 />
                             </button>
                         </div>
+                          
                         <div
-                            className="modal-body folder-features-select-2"
-                            data-simplebar=""
-                            data-simplebar-auto-hide="false"
+                            className="modal-body folder-features-select-2 p-0"                           
                         >
+                           <SimpleBar
+                                className="creat-folder-custom-modal"
+                                autoHide={false}
+                                forceVisible="y"
+                            >
                             <div className="d-block">
                                 <div className="form-group form-row mb-0">
                                     <label className="control-label">Folder Name</label>
@@ -213,7 +218,9 @@ function CreateCustomFolderModal(
                                     </SubmitButton>
                                 </div>
                             </div>
+                             </SimpleBar>
                         </div>
+                       
                     </div>
                 </div>
             </div>

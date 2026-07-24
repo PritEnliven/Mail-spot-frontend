@@ -150,7 +150,7 @@ const EmailRow = memo(({
 
                                     { /* Date */}
                                     <div className="d-flex align-items-center justify-content-end" style={{ minWidth: "93px" }}>
-                                        <a href="javascript:;" className="d-flex align-items-center justify-content-center me-2 event-icon-mail-box">
+                                        <a href="#" className="d-flex align-items-center justify-content-center me-2 event-icon-mail-box">
                                             <img className="d-none" style={{ minWidth: "20px" }} src={eventIcon} alt="" />
                                         </a>
                                         <div className="mail-received-date d-flex align-items-center justify-content-end"> {emailDate} </div>
@@ -160,7 +160,7 @@ const EmailRow = memo(({
                                 <div className="d-flex align-items-center justify-content-between c-mb-2">
                                     <div className="mail-received-subject"> {email.subject} </div>
                                     {safeAttachments.length > 0 && (
-                                        <a href="javascript:;"
+                                        <a href="#"
                                             className="hover-link d-inline-flex align-items-center justify-content-end"
                                         >
                                             <img src={attachmentRoundIcon} />

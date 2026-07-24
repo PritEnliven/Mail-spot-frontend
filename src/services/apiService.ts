@@ -41,15 +41,37 @@ const ApiInterceptor = {
     localStorage.removeItem('token');
   },
 
-  clearAllData() {
+  clearUserData() {
+    this.token = null;
     localStorage.removeItem('token');
     localStorage.removeItem('socketId');
     localStorage.removeItem('email');
     localStorage.removeItem('username');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('id');
+  },
+
+  clearAdminData() {
     localStorage.removeItem('adminToken');
+  },
+
+  clearAllData() {
+    this.clearUserData();
+    this.clearAdminData();
     window.location.href = "/";
   }
 };
+
+const isAdminApiRequest = (url = '') => /(^|\/)admin(\/|$)/.test(url);
+
+// Exact credential login only — must NOT match loginAdminAsUser
+const isCredentialLoginRequest = (url = '') =>
+  /(^|\/)(auth\/login|admin\/login)(\?|$)/.test(url);
+
+const isLoginAsUserRequest = (url = '') => url.includes('loginAdminAsUser');
+
+const getErrorMessage = (data: any, fallback: string) =>
+  data?.message || data?.data?.message || fallback;
 
 // Initialize the interceptor
 ApiInterceptor.init();
@@ -57,12 +79,13 @@ ApiInterceptor.init();
 // Request Interceptor (attach token)
 api.interceptors.request.use(
   (config: any) => {
-    let token = localStorage.getItem('token');
+    const url = config.url || '';
     const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
 
-    if (config.url?.includes('admin')) {
-      token = localStorage.getItem('adminToken');
-    }
+    // Admin APIs (including loginAdminAsUser) must use adminToken, not user token
+    const token = isAdminApiRequest(url)
+      ? localStorage.getItem('adminToken')
+      : localStorage.getItem('token');
 
     if (isFormData && config.headers) {
       if (typeof config.headers.delete === 'function') {
@@ -74,10 +97,14 @@ api.interceptors.request.use(
     }
 
     if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
+      if (typeof config.headers?.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+      }
     }
 
     return config;
@@ -113,31 +140,41 @@ api.interceptors.response.use(
     if (error.response.status === 429) {
       // Handle rate limiting specifically
       return Promise.reject({
-        message: error.response.data?.message || 'Too many requests. Please try again later.',
+        message: getErrorMessage(error.response.data, 'Too many requests. Please try again later.'),
         statusCode: 429,
         isRateLimit: true,
       });
     }
     if (error.response.status === 401) {
-      // Don't redirect for login endpoints - let the login component handle the error
-      if (error.config?.url?.includes('login')) {
+      const url = error.config?.url || '';
+
+      // Don't redirect for credential login / login-as-user — let the caller handle the error
+      if (isCredentialLoginRequest(url) || isLoginAsUserRequest(url)) {
         return Promise.reject({
-          message: error.response.data?.message || 'Invalid credentials',
+          message: getErrorMessage(
+            error.response.data,
+            isLoginAsUserRequest(url) ? 'Failed to login as user' : 'Invalid credentials'
+          ),
           statusCode: 401,
         });
       }
-      // Clear all local storage data and redirect to login for other endpoints
-      ApiInterceptor.clearAllData();
-      showError("Unauthorized - token expired");
+
+      // Keep admin and user sessions independent (login-as-user opens mail in another tab)
+      if (isAdminApiRequest(url)) {
+        ApiInterceptor.clearAdminData();
+        showError("Unauthorized - admin session expired");
+        window.location.href = '/admin/login';
+      } else {
+        ApiInterceptor.clearUserData();
+        showError("Unauthorized - token expired");
+        window.location.href = '/login';
+      }
       return Promise.reject({ message: 'Unauthorized - token expired', statusCode: 401 });
     }
     // return standardized error
     return Promise.reject({
       ...error.response.data,
-      message:
-        error.response.data?.message ||
-        error.response.data?.data?.message ||
-        'Something went wrong',
+      message: getErrorMessage(error.response.data, 'Something went wrong'),
       statusCode:
         error.response.data?.statusCode ||
         error.response.status,
@@ -154,8 +191,8 @@ export const getData = async (endpoint: string, config = {}): Promise<any> => {
   return response.data;
 };
 
-export const postData = async (endpoint: string, data: any): Promise<any> => {
-  const response = await api.post(endpoint, data);
+export const postData = async (endpoint: string, data: any, config = {}): Promise<any> => {
+  const response = await api.post(endpoint, data, config);
   return response.data;
 };
 

@@ -90,13 +90,15 @@ export const MailSelectionProvider = ({ children, emails, onSelectionChange }: M
             const newSelection = new Set(allMessageIds);
             setSelectedEmails(newSelection);
             onSelectionChange?.(newSelection);
-        } else {
+        } 
+        else {
             // If all are already selected, clear selection
             const newSelection = new Set<string>();
             setSelectedEmails(newSelection);
             onSelectionChange?.(newSelection);
         }
     };
+    
     const clearEmailSelection = () => {
         const newSelection = new Set<string>();
         setSelectedEmails(newSelection);

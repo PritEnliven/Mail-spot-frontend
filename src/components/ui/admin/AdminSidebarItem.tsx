@@ -32,7 +32,7 @@ const AdminSidebarItems = ({ items, activeBoxId, onChangeBox, isLoading = false 
                             onClick={() => onChangeBox(item.id, item.label)}
                         >
                             <a
-                                href="javascript:;"
+                                href="#"
                                 className={`m-link can-be-active hover-link ${isActive ? 'active' : ''}`}
                                 onClick={e => e.preventDefault()} // prevent <a> default
                             >

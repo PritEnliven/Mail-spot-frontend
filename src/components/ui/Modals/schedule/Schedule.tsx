@@ -178,7 +178,7 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
                             <div className="schedule-body">
                                 <ul className="list-style">
                                     <li>
-                                        <a href="javascript:;" id="tomorrowMorning"
+                                        <a href="#" id="tomorrowMorning"
                                             className={`d-flex align-items-center justify-content-between schedule-link ${selectedOption === 'tomorrowMorning' ? 'active' : ''}`}
                                             onClick={() => handleScheduleClick(scheduleOptions.tomorrowMorning.dateTime, 'tomorrowMorning')}>
                                             <p className="m-0 label-sm">Tomorrow morning</p>
@@ -189,7 +189,7 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="javascript:;" id="tomorrowAfternoon"
+                                        <a href="#" id="tomorrowAfternoon"
                                             className={`d-flex align-items-center justify-content-between schedule-link ${selectedOption === 'tomorrowAfternoon' ? 'active' : ''}`}
                                             onClick={() => handleScheduleClick(scheduleOptions.tomorrowAfternoon.dateTime, 'tomorrowAfternoon')}>
                                             <p className="m-0 label-sm">Tomorrow Afternoon</p>
@@ -200,7 +200,7 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="javascript:;" id="tomorrowEvening"
+                                        <a href="#" id="tomorrowEvening"
                                             className={`d-flex align-items-center justify-content-between schedule-link ${selectedOption === 'tomorrowEvening' ? 'active' : ''}`}
                                             onClick={() => handleScheduleClick(scheduleOptions.tomorrowEvening.dateTime, 'tomorrowEvening')}>
                                             <p className="m-0 label-sm">Tomorrow Evening</p>

@@ -17,6 +17,8 @@ import { deleteCustomBox } from '@services/customBox/customBoxService';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
 import eventIcon from '@images/calendar-event-icon-white.svg';
+import { useScreen } from '@context/ScreenContext';
+
 
 type SidebarNavItem = { id: string; boxName: string; label: string };
 
@@ -57,6 +59,7 @@ const LeftPanel = () => {
         clearMailSearch } = useMailData();
     const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, activeBoxId, setActiveBoxId } = useMailUI();
     const { fetchContacts } = useContacts();
+    const { isMobile } = useScreen();
 
     const customFolders = useMemo(() => {
         const items = sidebarItems.filter(item => item.category === 'customBoxes');
@@ -64,6 +67,7 @@ const LeftPanel = () => {
     }, [sidebarItems]);
 
     const sidebarActiveBoxId = allSearchResult ? '' : activeBoxId;
+
 
     useEffect(() => {
         if (allSearchResult) {
@@ -184,6 +188,11 @@ const LeftPanel = () => {
             setIsMailListOpen(true);
         }
 
+        // Close mobile sidebar on selection
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
+
         // Get current boxName from pathname
         const pathParts = location.pathname.split('/');
         const currentBoxName = pathParts[pathParts.length - 1];
@@ -205,7 +214,6 @@ const LeftPanel = () => {
             setEmailDetailSelected(null);
             setBoxName(boxName);
             navigate(`/mail/${boxName}`);
-            // fetchEmails(1, boxName, false);
         }
     };
 
@@ -217,6 +225,9 @@ const LeftPanel = () => {
         const response = await getBoxes();
         if (response.boxes && response.customBoxes) {
             openModal('createCustomFolder');
+            if (isMobile) {
+                setIsSidebarExpandedMobile(false);
+            }
         }
     };
 
@@ -230,12 +241,18 @@ const LeftPanel = () => {
             editFolderId: boxData?.value._id
         }
         openModal('createCustomFolder', props);
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
     }
 
     const handleDeleteFolder = (folderId: string, folderName: string) => {
         openModal('confirmDelete', {
             onConfirm: () => deleteFolder(folderId, folderName)
         })
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
     }
 
     const redirectToInbox = (updatedSidebar?: Awaited<ReturnType<typeof setSidebarStateFromAPI>>) => {
@@ -316,48 +333,49 @@ const LeftPanel = () => {
 
     return (
         <>
-            <div className={`single-navbar-collapse-sec ${isSidebarExpandedMobile ? '' : 'single-navbar-collapse-sec-mobile'}`} id="draggable-section">
-                <div className="nav-collepse-btn ">
-                    <button
-                        className="btn hover-link nav-collepse-button"
-                        type="button"
-                        onClick={toggleSidebar}
-                    >
-                        <InteractiveIcon
-                            defaultIcon={navCollapseIcon}
-                            hoverIcon={isSidebarOpen ? navCollapseIconHover : navExpandIconHover}
-                            activeIcon=""
-                            isActive={false}
-                            alt=""
-                            className="interactive-icon hover-image"
-                            renderAs="img"
-                            tooltip=""
-                        />
-                    </button>
+            {!isMobile && (
+                <div className={`single-navbar-collapse-sec ${isSidebarExpandedMobile ? '' : 'single-navbar-collapse-sec-mobile'}`} id="draggable-section">
+                    <div className="nav-collepse-btn ">
+                        <button
+                            className="btn hover-link nav-collepse-button"
+                            type="button"
+                            onClick={toggleSidebar}
+                        >
+                            <InteractiveIcon
+                                defaultIcon={navCollapseIcon}
+                                hoverIcon={isSidebarOpen ? navCollapseIconHover : navExpandIconHover}
+                                activeIcon=""
+                                isActive={false}
+                                alt=""
+                                className="interactive-icon hover-image"
+                                renderAs="img"
+                                tooltip=""
+                            />
+                        </button>
 
-                    {/* moblie */}
-                    <button
-                        className="btn hover-link nav-collepse-button-mobile"
-                        type="button" onClick={toggleMobileSidebar}
-                    >
-                        <InteractiveIcon
-                            defaultIcon={isSidebarExpandedMobile ? navCollapseIconHover : menuIcon}
+                        {/* moblie */}
+                        <button
+                            className="btn hover-link nav-collepse-button-mobile"
+                            type="button" onClick={toggleMobileSidebar}
+                        >
+                            <InteractiveIcon
+                                defaultIcon={isSidebarExpandedMobile ? navCollapseIconHover : menuIcon}
 
-                            activeIcon=""
-                            isActive={false}
-                            alt=""
-                            className="interactive-icon hover-image"
-                            renderAs="img"
-                            tooltip=""
-                        />
-                    </button>
+                                activeIcon=""
+                                isActive={false}
+                                alt=""
+                                className="interactive-icon hover-image"
+                                renderAs="img"
+                                tooltip=""
+                            />
+                        </button>
+                    </div>
                 </div>
-            </div>
-
+            )}
             <div className="side-bae-part-1">
                 {/* START:: Brand-box */}
                 <div className="Brand-box d-flex align-items-center justify-content-center">
-                    <a href="javascript:;" className="Brand-logo">
+                    <a href="#" className="Brand-logo">
                         {isSidebarOpen ?
                             <img
                                 src={mailBoxLogoImage}
@@ -377,7 +395,7 @@ const LeftPanel = () => {
                 {/* END:: Brand-box */}
 
                 {/* START:: Compose box */}
-                <div className="compose-box" id="composeBoxSection">
+                <div className="compose-box" id="composeBoxSection" style={{ display: isMobile ? 'none' : '' }}>
                     {!isCalendar ?
                         (<a
                             onClick={openComposeModal}
@@ -489,6 +507,7 @@ const LeftPanel = () => {
             </nav>
 
         </>
+
 
     );
 };

@@ -40,6 +40,15 @@ const AdminDashboard = () => {
     const { openModal } = useAdminUI();
     const { setSettingPayLoad } = useAdmin();
 
+    // Clear leftover user session once on mount only — do not clear after login-as-user
+    useEffect(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('id');
+        localStorage.removeItem('username');
+        localStorage.removeItem('email');
+    }, []);
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -51,10 +60,6 @@ const AdminDashboard = () => {
         };
 
         fetchUsers();
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('username');
-        localStorage.removeItem('email');
     }, [pageSize]);
 
 
@@ -158,17 +163,23 @@ const AdminDashboard = () => {
     const handleLoginAsUser = async (userId: string) => {
         const response = await loginAdminAsUser({ userId });
         if (response.statusCode === 200) {
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('userId', response.data.id);
-            localStorage.setItem('username', response.data.username);
-            localStorage.setItem('email', response.data.email);
+            const { token, email, username, id } = response.data;
 
-            showSuccess("Admin logged in successfully");
+            // Match Login.tsx AUTH_STORAGE_KEYS so ProtectedRoute + mail APIs work
+            localStorage.setItem('token', token);
+            localStorage.setItem('email', email);
+            localStorage.setItem('username', username);
+            localStorage.setItem('id', id);
+
+            showSuccess("Logged in as user successfully");
             window.open('/mail/INBOX', '_blank');
         } else {
-            showError(response.message || "Failed to login as user");
+            showError(
+                response.message ||
+                response.data?.message ||
+                "Failed to login as user"
+            );
         }
-        // Add login as user logic here
     };
 
     const defaultColDef = {
@@ -273,8 +284,7 @@ const AdminDashboard = () => {
                                 }
                             }}
                             onPaginationChanged={() => {
-                                if (!gridApi) return;
-
+                                if (!gridApi) return
                                 setCurrentPage(gridApi.paginationGetCurrentPage() + 1);
                                 setTotalPages(gridApi.paginationGetTotalPages());
                                 setTotalRows(gridApi.getDisplayedRowCount());

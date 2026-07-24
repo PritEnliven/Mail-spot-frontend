@@ -105,7 +105,7 @@ interface MailDataType {
 
     /* Mail mutations */
     updateEmailReadState: (messageIds: string[], isRead: boolean) => void;
-    deleteEmailState: (messageIds: string[]) => void;
+    deleteEmailState: (messageIds: string[], skipSidebarUpdate?: boolean) => void;
 
     /* Events */
     updateBoxCount: (boxName: string, unreadDecrement: number, totalDecrement: number) => void;
@@ -528,35 +528,71 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         void unreadCountChange;
     };
 
-    const deleteEmailState = (messageIds: string[]) => {
-        // Count how many unread emails are being deleted
-        const unreadDeletedCount = emails
-            .filter(email => messageIds.includes(email.messageId) && !email.isSeen)
-            .length;
+    // const deleteEmailState = (messageIds: string[]) => {
+    //     // Count how many unread emails are being deleted
+    //     const unreadDeletedCount = emails
+    //         .filter(email => messageIds.includes(email.messageId) && !email.isSeen)
+    //         .length;
+
+    //     setEmails(prev => prev.filter(email => !messageIds.includes(email.messageId)));
+    //     setHeaderSearchResults(prev => prev.filter(email => !messageIds.includes(email.messageId)));
+    //     const newPagination = pagination ? {
+    //         ...pagination,
+    //         endCount: pagination.endCount - messageIds.length,
+    //         totalEmails: pagination.totalEmails - messageIds.length
+    //     } : null;
+
+    //     setPagination(newPagination);
+    //     setTotalEmailBadge(prevBadge => Math.max(0, prevBadge - messageIds.length));
+
+    //     // Update sidebar state with new unread counts if we have unread emails being deleted
+    //     if (boxName && (unreadDeletedCount > 0 || messageIds.length > 0)) {
+    //         // setSidebarState(prev => ({
+    //         //     ...prev,
+    //         //     boxCounts: {
+    //         //         ...prev.boxCounts,
+    //         //         [boxName]: {
+    //         //             ...prev.boxCounts[boxName],
+    //         //             unreadCount: Math.max(0, (prev.boxCounts[boxName]?.unreadCount || 0) - unreadDeletedCount),
+    //         //             totalCount: Math.max(0, (prev.boxCounts[boxName]?.totalCount || 0) - messageIds.length)
+    //         //         }
+    //         //     }
+    //         // }));
+    //     }
+    // };
+
+    const deleteEmailState = (messageIds: string[], skipSidebarUpdate = false) => {
+        const deletedEmails = emails.filter(email => messageIds.includes(email.messageId));
+        const unreadDeletedCount = deletedEmails.filter(email => !email.isSeen).length;
+        const removedCount = deletedEmails.length;
 
         setEmails(prev => prev.filter(email => !messageIds.includes(email.messageId)));
         setHeaderSearchResults(prev => prev.filter(email => !messageIds.includes(email.messageId)));
+
+        if (removedCount === 0) return;
+
         const newPagination = pagination ? {
             ...pagination,
-            endCount: pagination.endCount - messageIds.length,
-            totalEmails: pagination.totalEmails - messageIds.length
+            endCount: pagination.endCount - removedCount,
+            totalEmails: pagination.totalEmails - removedCount
         } : null;
         setPagination(newPagination);
-        setTotalEmailBadge(prevBadge => Math.max(0, prevBadge - messageIds.length));
+        setTotalEmailBadge(prevBadge => Math.max(0, prevBadge - removedCount));
 
-        // Update sidebar state with new unread counts if we have unread emails being deleted
-        if (boxName && (unreadDeletedCount > 0 || messageIds.length > 0)) {
-            // setSidebarState(prev => ({
-            //     ...prev,
-            //     boxCounts: {
-            //         ...prev.boxCounts,
-            //         [boxName]: {
-            //             ...prev.boxCounts[boxName],
-            //             unreadCount: Math.max(0, (prev.boxCounts[boxName]?.unreadCount || 0) - unreadDeletedCount),
-            //             totalCount: Math.max(0, (prev.boxCounts[boxName]?.totalCount || 0) - messageIds.length)
-            //         }
-            //     }
-            // }));
+        // Only update sidebar when explicitly requested (e.g. draft delete where no socket event fires).
+        // Spread existing box entry so isTotal stays intact for Junk/Draft/Trash.
+        if (skipSidebarUpdate === false && boxName) {
+            setSidebarState(prev => ({
+                ...prev,
+                boxCounts: {
+                    ...prev.boxCounts,
+                    [boxName]: {
+                        ...prev.boxCounts[boxName],
+                        unreadCount: Math.max(0, (prev.boxCounts[boxName]?.unreadCount || 0) - unreadDeletedCount),
+                        totalCount: Math.max(0, (prev.boxCounts[boxName]?.totalCount || 0) - removedCount)
+                    }
+                }
+            }));
         }
     };
 
@@ -597,17 +633,20 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             } : prevPagination);
 
             if (boxName) {
-                setSidebarState(prevSidebar => ({
-                    ...prevSidebar,
-                    boxCounts: {
-                        ...prevSidebar.boxCounts,
-                        [boxName]: {
-                            isTotal: false,
-                            unreadCount: (prevSidebar.boxCounts[boxName]?.unreadCount || 0) + addedUnreadCount,
-                            totalCount: (prevSidebar.boxCounts[boxName]?.totalCount || 0) + addedEmailsCount
+                setSidebarState(prevSidebar => {
+                    const currentBox = prevSidebar.boxCounts[boxName] || { isTotal: false, unreadCount: 0, totalCount: 0 };
+                    return {
+                        ...prevSidebar,
+                        boxCounts: {
+                            ...prevSidebar.boxCounts,
+                            [boxName]: {
+                                ...currentBox,
+                                unreadCount: (currentBox.unreadCount || 0) + addedUnreadCount,
+                                totalCount: (currentBox.totalCount || 0) + addedEmailsCount
+                            }
                         }
-                    }
-                }));
+                    };
+                });
             }
 
             return [...toAdd, ...prev];
@@ -652,16 +691,18 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 endCount: Math.max(0, prev.endCount - removedCount)
             } : prev);
 
-            // Update sidebar state if boxName is available
+            // Update sidebar state if boxName is available.
+            // Preserve isTotal so folders like Junk/Draft/Trash keep showing totalCount
+            // (forcing isTotal:false switches the badge to unreadCount and makes it disappear).
             if (boxName && removedCount > 0) {
                 setSidebarState(prev => {
-                    const currentBox = prev.boxCounts[boxName] || { unreadCount: 0, totalCount: 0 };
+                    const currentBox = prev.boxCounts[boxName] || { isTotal: false, unreadCount: 0, totalCount: 0 };
                     return {
                         ...prev,
                         boxCounts: {
                             ...prev.boxCounts,
                             [boxName]: {
-                                isTotal: false,
+                                ...currentBox,
                                 unreadCount: Math.max(0, currentBox.unreadCount - unreadCountToDecrement),
                                 totalCount: Math.max(0, currentBox.totalCount - removedCount)
                             }

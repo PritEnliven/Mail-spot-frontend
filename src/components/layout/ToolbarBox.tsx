@@ -35,6 +35,8 @@ const ToolbarBox = () => {
     const [moveToFolderOptions, setMoveToFolderOptions] = useState<any>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
     const { isDesktop } = useScreen();
+    // On mobile/tablet, open "Move to" below the item instead of to the right
+    const moveToDropDirection = isDesktop ? "end" : "down";
 
     // Hide pagination when mailbox is empty (all counts are 0)
     // const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
@@ -201,7 +203,7 @@ const ToolbarBox = () => {
             showSuccess("Email moved successfully");
 
             // now after moving update count to that specific box update it's sidebar unread count if trash then don't read/unread just set that total selectedEmail count in trash increase it. and then remove that emails from list and clear email selection.
-            const movedEmailIds = Array.from(selectedEmails);
+            const movedEmailIds = messageIds as string[];
             const movedEmails = emails.filter(email => movedEmailIds.includes(email.messageId));
 
             // Update counts for the target folder
@@ -221,7 +223,13 @@ const ToolbarBox = () => {
             updateBoxCount(boxName, -unreadRemovedCount, -movedEmails.length);
 
             const remainingEmails = emails.filter(email => !movedEmailIds.includes(email.messageId));
-            deleteEmailState(movedEmailIds);
+            deleteEmailState(movedEmailIds, true);
+
+            if (activeEmailMessageId && movedEmailIds.includes(activeEmailMessageId)) {
+                setEmailDetailSelected(null);
+                setActiveEmailMessageId(null);
+            }
+
             clearEmailSelection();
 
             // Visually uncheck the master checkbox without firing its click handler
@@ -263,7 +271,7 @@ const ToolbarBox = () => {
                     </div>
 
                     <div className="checkbox-group-2 d-flex align-items-center">
-                        <a href="javascript:;" id="mail-message-box-back-show" className={`icon-hover-effect hover-link ${toolbarState.showBack ? 'd-flex' : 'd-none'}`} onClick={handleBack}>
+                        <a href="#" id="mail-message-box-back-show" className={`icon-hover-effect hover-link ${toolbarState.showBack ? 'd-flex' : 'd-none'}`} onClick={handleBack}>
                             <InteractiveIcon
                                 defaultIcon={backBtnIcon}
                                 hoverIcon={backBtnIconHover}
@@ -277,7 +285,7 @@ const ToolbarBox = () => {
                         </a>
 
                         <a
-                            href="javascript:;"
+                            href="#"
                             id="refreshEmailBtn"
                             className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showRefresh ? '' : 'd-none'} ${isRefreshing ? 'disabled' : ''}`}
                             onClick={refreshMailBoxHandler}
@@ -298,7 +306,7 @@ const ToolbarBox = () => {
                         {hasEmails && (
                             <div id="actionButtons" className="d-flex align-items-center action-buttons">
                                 <a
-                                    href="javascript:;"
+                                    href="#"
                                     id="markAsReadUnreadBtn"
                                     className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showMarkAsUnread || toolbarState.showMarkAsRead ? '' : 'd-none'
                                         }`}
@@ -335,7 +343,7 @@ const ToolbarBox = () => {
                                 </a>
 
                                 <a
-                                    href="javascript:;"
+                                    href="#"
                                     id="toolbarDeleteBtn"
                                     className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showDelete ? '' : 'd-none'}`}
                                     onClick={deleteMailHandler}
@@ -372,8 +380,8 @@ const ToolbarBox = () => {
                                     </Dropdown.Toggle>
 
                                     <Dropdown.Menu>
-                                        {/* Move To Submenu */}
-                                        <Dropdown drop="end">
+                                        {/* Move To Submenu — down on mobile, right on desktop */}
+                                        <Dropdown drop={moveToDropDirection}>
                                             <Dropdown.Toggle
                                                 as="div"
                                                 className="dropdown-item react-subdropdown-menu  d-flex justify-content-between align-items-center"
@@ -381,7 +389,7 @@ const ToolbarBox = () => {
                                                 Move to
                                             </Dropdown.Toggle>
 
-                                            <Dropdown.Menu className="react-subdropdown">
+                                            <Dropdown.Menu className={`react-subdropdown ${!isDesktop ? 'react-subdropdown-mobile-down' : ''}`}>
                                                 <SimpleBar
                                                     className="eventInfoModalSimpleBar"
                                                     autoHide={false}

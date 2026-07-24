@@ -8,7 +8,6 @@ import { useMailSelection } from "@context/MailSelectionContext";
 import { useScreen } from "@context/ScreenContext";
 import { useProfile } from "@context/userContext";
 import { AUTH_STORAGE_KEYS } from "@features/login/Login";
-import { logoutUser } from "@services/login/loginService";
 import { useDebounce } from "@hooks/useDebounce";
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
@@ -36,6 +35,8 @@ import sidebarcloseIcon from "@images/side-bar-close-icon.svg"
 import sidebarcloseHoverIcon from "@images/side-bar-close-hover-icon.svg"
 import { filterEmailAndCreateRuleService, getSingleEmailService, searchAndFilterEmailService } from "@services/email/emailService";
 import { getUserDetail } from "@services/user/userService";
+import { logoutUser } from "@services/login/loginService";
+import { getSocket, disconnectSocket } from "@services/socket/socket";
 import { verifyBoxName } from "@utils/emailUtil";
 import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
 import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
@@ -76,13 +77,14 @@ const Header = () => {
         setBoxTitle, filterForm, boxName, boxTitle, searchTerm, allSearchResult,
         setEmailDetailSelected, setActiveEmailMessageId,
         headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
-        clearMailSearch, mailSearchResetKey, socketId } = useMailData();
+        clearMailSearch, mailSearchResetKey } = useMailData();
     const { contacts, fetchContacts } = useContacts();
     const { calendarView, setCalendarView, changeView } = useCalendar();
     const [noResult, setNoResult] = useState(false);
     const { setSelectedEmails } = useMailSelection();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
-    const { isDesktop, isMobile } = useScreen();
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const { isDesktop, isMobile, isTrueMobile } = useScreen();
     const prevDebouncedSearchRef = useRef(debouncedSearchText);
     const allowSearchDropdownRef = useRef(true);
 
@@ -91,14 +93,19 @@ const Header = () => {
     }, []);
 
     const handleLogout = async () => {
-        const currentSocketId = localStorage.getItem('socketId') ?? socketId;
-        await logoutUser(currentSocketId);
-        AUTH_STORAGE_KEYS.forEach((key) => {
-            localStorage.removeItem(key);
-            sessionStorage.removeItem(key);
-        });
-        localStorage.removeItem('socketId');
-        navigate('/login');
+        try {
+            const socket = await getSocket();
+            await logoutUser(socket.id ?? null);
+        } catch {
+            // proceed with logout even if API fails
+        } finally {
+            disconnectSocket();
+            AUTH_STORAGE_KEYS.forEach((key) => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+            navigate('/login');
+        }
     }
 
     const {
@@ -229,14 +236,13 @@ const Header = () => {
         // }, [debouncedSearchText, searchText, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
     }, [debouncedSearchText]);
 
-    // const toggleMobileSidebar = () => {
-    //     setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
-    // }
+
     const toggleSidebarHandler = () => {
-        // Toggles desktop sidebar state
-        setIsSidebarOpen(!isSidebarOpen);
-        // Toggles mobile sidebar state
-        setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+        if (isMobile) {
+            setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+        } else {
+            setIsSidebarOpen(!isSidebarOpen);
+        }
     };
 
     const onSubmit = async (data: FilterEmailFormValues) => {
@@ -603,7 +609,7 @@ const Header = () => {
     }
 
     const closeProfileModalMobile = () => {
-
+        setIsProfileOpen(false);
     }
 
     const isCalendar = verifyBoxName(boxName, "calendar");
@@ -621,20 +627,21 @@ const Header = () => {
                 <>
                     <div className="d-flex align-items-center">
                         {/*Moblie  Sidebar Menu Toggle Button */}
-                        {isMobile && (
+                        {!isDesktop && (
                             <button
                                 className="btn hover-link me-2"
+                                style={{ width: "24px", height: "24px" }}
                                 type="button"
                                 onClick={toggleSidebarHandler}
                             >
                                 <InteractiveIcon
                                     defaultIcon={
-                                        (isDesktop ? isSidebarOpen : isSidebarExpandedMobile)
+                                        (isMobile ? isSidebarExpandedMobile : !isSidebarOpen)
                                             ? sidebarcloseIcon
                                             : sidebaropenIcon
                                     }
                                     hoverIcon={
-                                        (isDesktop ? isSidebarOpen : isSidebarExpandedMobile)
+                                        (isMobile ? isSidebarExpandedMobile : !isSidebarOpen)
                                             ? sidebarcloseHoverIcon
                                             : sidebaropenHoverIcon
                                     }
@@ -657,7 +664,7 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {!isSettings && (
+                    {!isSettings && !isCalendar && (
                         <>
                             {/* CENTER: Search Bar */}
                             <div className="two-sc-in d-flex align-items-center justify-content-center flex-grow-1">
@@ -941,22 +948,24 @@ const Header = () => {
             {/* RIGHT: Profile & Calendar */}
             <div className="d-flex align-items-center two-sc-in justify-content-end">
                 {/* Mobile-serch-btn */}
-                <button type="button" className="btn hover-link input-icon-1 mobile-search-btn icon-hover-effect ms-3 me-2" onClick={() => setIsResponsiveSearch(!isResponsiveSearch)} >
-                    <InteractiveIcon
-                        defaultIcon={searchIcon}
-                        hoverIcon={searchIconHover}
-                        activeIcon=""
-                        isActive={false}
-                        alt=""
-                        className="interactive-icon hover-image"
-                        renderAs="img"
-                        tooltip="Search"
-                        customStyle={{
-                            width: '20px',
-                            height: '20px',
-                        }}
-                    />
-                </button>
+                {!isCalendar && (
+                    <button type="button" className="btn hover-link input-icon-1 mobile-search-btn icon-hover-effect ms-3 me-2" onClick={() => setIsResponsiveSearch(!isResponsiveSearch)} >
+                        <InteractiveIcon
+                            defaultIcon={searchIcon}
+                            hoverIcon={searchIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt=""
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip="Search"
+                            customStyle={{
+                                width: '20px',
+                                height: '20px',
+                            }}
+                        />
+                    </button>
+                )}
                 {isCalendar && (
                     <div className="form-group recurrence-div mb-0 me-3" id="calendarViewDropdownSection">
                         <Select2Wrapper
@@ -978,7 +987,11 @@ const Header = () => {
                     </div>
                 )}
 
-                <Dropdown className="mail-profile-dropdown">
+                <Dropdown
+                    className="mail-profile-dropdown"
+                    show={isProfileOpen}
+                    onToggle={(nextShow) => setIsProfileOpen(nextShow)}
+                >
                     <Dropdown.Toggle className="btn btn-secondary dropdown-toggle d-flex align-items-center">
                         <div className="d-block" id="profileBox">
                             <span className="mail-profile-name d-block text-end" id="profileName"> {profileName}</span>
@@ -989,7 +1002,11 @@ const Header = () => {
                         </span>
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="dropdown-menu dropdown-menu-lg-end mail-profile-box p-0">
-                        <button className="mail-profile-close-btn-mobile btn icon-hover-effect" onClick={closeProfileModalMobile}>
+                        <button
+                            type="button"
+                            className="mail-profile-close-btn-mobile btn icon-hover-effect"
+                            onClick={closeProfileModalMobile}
+                        >
                             <InteractiveIcon
                                 defaultIcon={closeIcon}
                                 hoverIcon={closeIconHover}
@@ -1015,7 +1032,7 @@ const Header = () => {
                             </div>
                             <ul className="profile-link-list">
                                 <li className="profile-link-items">
-                                    <a href="javascript:;" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>
+                                    <a href="#" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>
                                         <InteractiveIcon
                                             defaultIcon={changePasswordNewIcon}
                                             hoverIcon={changePasswordNewIconHover}
@@ -1028,7 +1045,7 @@ const Header = () => {
                                         />Change IMAP/SMTP Configuration</a>
                                 </li>
                                 <li className="profile-link-items">
-                                    <a href="javascript:;" className="profile-link hover-link" onClick={openChangePasswordModal}>
+                                    <a href="#" className="profile-link hover-link" onClick={openChangePasswordModal}>
                                         <InteractiveIcon
                                             defaultIcon={changePasswordIcon}
                                             hoverIcon={changePasswordIconHover}
@@ -1041,7 +1058,7 @@ const Header = () => {
                                         />Change password</a>
                                 </li>
                                 <li className="profile-link-items">
-                                    <a href="javascript:;" className="profile-link hover-link" onClick={handleLogout}>
+                                    <a href="#" className="profile-link hover-link" onClick={handleLogout}>
                                         <InteractiveIcon
                                             defaultIcon={logoutIcon}
                                             hoverIcon={logoutIconHover}
@@ -1058,7 +1075,7 @@ const Header = () => {
                                 <span className="mailspot-version-number">V 1.0</span>
                                 <span className="powered-sec">
                                     Powered by
-                                    <a href="javascript:;" className="ms-2">
+                                    <a href="#" className="ms-2">
                                         <img src={enlivenLogo} alt="" />
                                     </a>
                                 </span>

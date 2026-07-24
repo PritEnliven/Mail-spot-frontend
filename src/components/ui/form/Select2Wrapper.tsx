@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Select, { components } from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { MultiValue, StylesConfig, GroupBase } from 'react-select';
@@ -6,6 +6,22 @@ import dropdownIcon from "@images/chevron-down-icon.svg"
 import dropUpIcon from "@images/chevron-up-icon.svg";
 import removeIcon from "@images/close-icon.svg";
 import SimpleBar from 'simplebar-react';
+
+// ---------- helper hook ----------
+const useIsMobile = (breakpoint: number = 575) => {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, [breakpoint]);
+
+  return isMobile;
+};
 
 export const getSelectStyles = (
   type: string,
@@ -181,6 +197,7 @@ export const getSelectStyles = (
       backgroundColor: '#ffff',
       border: '1px solid #BBC0C4',
       overflow: 'hidden',
+      zIndex:'999',
     }),
 
     /** Scrollable menu list */
@@ -406,7 +423,7 @@ const renderMultiSelect = ({
   moduleName,
   isModal = false,
   isEmail,
-}: MultiSelectProps) => {
+}: MultiSelectProps, isMobile: boolean) => {
   const handleChange = (selected: MultiValue<MappedOption>) => {
     onChange(selected.map((opt) => opt.value));
   };
@@ -451,7 +468,7 @@ const renderMultiSelect = ({
         !opts.some((o: any) => o.value === inputValue) &&
         !value.includes(inputValue)
       }
-      menuPortalTarget={document.body}
+      menuPortalTarget={isMobile ? null : document.body}
       styles={getSelectStyles("multiple", moduleName, isModal) as any}
       captureMenuScroll={false}
       menuShouldBlockScroll={false}
@@ -493,7 +510,7 @@ const renderSingleSelect = ({
   isModal = false,
   typeable = false,
   formatOptionLabel,
-}: SingleSelectProps) => {
+}: SingleSelectProps, isMobile: boolean) => {
   const selectedOption = getSelectedSingleOption(options, value);
 
   const handleChange = (selected: SingleOption | null) => {
@@ -507,7 +524,7 @@ const renderSingleSelect = ({
       value={selectedOption}
       placeholder={placeholder}
       classNamePrefix="react-select"
-      menuPortalTarget={document.body}
+      menuPortalTarget={isMobile ? null : document.body}
       styles={getSelectStyles("single", moduleName, isModal) as any}
       components={{
         MenuList,
@@ -521,8 +538,11 @@ const renderSingleSelect = ({
 };
 
 export default function Select2Wrapper(props: Select2WrapperProps) {
+  const isMobile = useIsMobile();
+
   if (props.isMulti) {
-    return renderMultiSelect(props);
+    return renderMultiSelect(props, isMobile);
   }
-  return renderSingleSelect(props);
+
+  return renderSingleSelect(props, isMobile);
 }

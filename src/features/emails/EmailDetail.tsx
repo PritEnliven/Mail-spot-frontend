@@ -427,7 +427,7 @@ const EmailDetail = ({ email }: Props) => {
                         <span>{formatDate(email.date, TimeFormat.SCHEDULE_DATE)}</span>
                     </div>
                     <div className="d-flex align-items-center">
-                        <a href="javascript:;" className="hover-link d-flex align-items-center me-2" onClick={() => handleEditScheduleEmail(email.id)}>
+                        <a href="#" className="hover-link d-flex align-items-center me-2" onClick={() => handleEditScheduleEmail(email.id)}>
                             <InteractiveIcon
                                 defaultIcon={editIcon}
                                 hoverIcon={editIconHover}
@@ -439,7 +439,7 @@ const EmailDetail = ({ email }: Props) => {
                                 tooltip="Edit"
                             />
                         </a>
-                        <a href="javascript:;" className="hover-link d-flex align-items-center" onClick={() => handleCancelScheduleEmail(email.id)}>
+                        <a href="#" className="hover-link d-flex align-items-center" onClick={() => handleCancelScheduleEmail(email.id)}>
                             <InteractiveIcon
                                 defaultIcon={closeIcon}
                                 hoverIcon={closeIconHover}

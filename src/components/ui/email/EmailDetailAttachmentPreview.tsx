@@ -115,7 +115,7 @@ const EmailDetailAttachmentPreview = ({
                 </div>
                 {allAttachmentsReady && (
                     <a
-                        href="javascript:;"
+                        href="#"
                         onClick={() => onDownloadAttachment('all', '', '', messageId)}
                         className="hover-link single-icon"
                     >

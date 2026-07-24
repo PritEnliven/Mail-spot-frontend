@@ -206,7 +206,8 @@ function SettingsPage() {
                     recoveryEmail: data.recoveryEmail || '',
                     markAsReadDelay: data.markAsReadDelay
                 });
-            } else {
+            }
+            else {
                 showError("Failed to save settings");
             }
         } catch (error) {

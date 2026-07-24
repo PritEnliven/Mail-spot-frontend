@@ -136,7 +136,7 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply }: ThreadEm
                                         }
                                     </span>
                                     {email.attachments.length > 0 &&
-                                        <a href="javascript:;" className="hover-link d-inline-flex align-items-center justify-content-end" data-original="images/attachment-stroke-rounded-icon.svg" data-hover="images/attachment-stroke-rounded-icon-hover.svg">
+                                        <a href="#" className="hover-link d-inline-flex align-items-center justify-content-end" data-original="images/attachment-stroke-rounded-icon.svg" data-hover="images/attachment-stroke-rounded-icon-hover.svg">
                                             <InteractiveIcon
                                                 defaultIcon={attachmentStrokesRoundedIcon}
                                                 hoverIcon={attachmentStrokesRoundedIconHover}

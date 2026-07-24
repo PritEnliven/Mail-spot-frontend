@@ -478,7 +478,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                 <label className="control-label mb-0">
                                                     Date, time &amp; repeat event
                                                 </label>
-                                                <a href="javascript:;" className="fs-12 send-bcc show-time-zone d-none">
+                                                <a href="#" className="fs-12 send-bcc show-time-zone d-none">
                                                     Show time zone
                                                 </a>
                                             </div>

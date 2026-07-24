@@ -147,7 +147,7 @@ export function useAttachmentManager() {
             if (!isDuplicate && file instanceof File) {
                 const ok = isFileTypeAllowed(file, allowedTypes);
                 if (!ok) {
-                    rejectedType.push(getAttachmentName(file));
+                    rejectedType.push(getAttachmentName(file));  
                     return false;
                 }
             }
@@ -156,8 +156,9 @@ export function useAttachmentManager() {
         });
 
         const incomingTotalBytes = filtered.reduce((sum, item) => sum + (item?.size || 0), 0);
+
         if (maxTotalBytes !== null && currentTotalBytes + incomingTotalBytes > maxTotalBytes) {
-            const message = `Total attachment size exceeds your limit (${userPermissions?.fileSize}).`;
+            const message = `Total attachment size exceeds your limit (${userPermissions?.fileSize} MB).`;
             setError(message);
             showError(message);
             return;
@@ -169,6 +170,7 @@ export function useAttachmentManager() {
 
         const errorMessage = errors.length > 0 ? errors.join('\n\n') : null;
         setError(errorMessage);
+
         if (errorMessage) {
             showError(errorMessage);
         }

@@ -8,9 +8,10 @@ interface GeneratedEmail {
 
 interface UseGenerateEmailProps {
     onClose?: () => void;
+    onInsert?: (subject: string) => void;
 }
 
-export const useGenerateEmail = ({ onClose }: UseGenerateEmailProps = {}) => {
+export const useGenerateEmail = ({ onClose, onInsert }: UseGenerateEmailProps = {}) => {
     const [inputValue, setInputValue] = useState("");
     const [generatedEmail, setGeneratedEmail] = useState<GeneratedEmail | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +96,8 @@ export const useGenerateEmail = ({ onClose }: UseGenerateEmailProps = {}) => {
                 const modelFragment = editor.data.toModel(viewFragment);
                 editor.model.insertContent(modelFragment, editor.model.document.selection.getFirstPosition());
             });
+
+            onInsert?.(generatedEmail.subject);
             
             // Reset all values and close the card
             setInputValue("");
@@ -104,7 +107,7 @@ export const useGenerateEmail = ({ onClose }: UseGenerateEmailProps = {}) => {
             // Call the onClose callback if provided
             onClose?.();
         }
-    }, [generatedEmail, onClose]);
+    }, [generatedEmail, onClose, onInsert]);
 
     return {
         // State

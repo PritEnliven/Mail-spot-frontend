@@ -1,3 +1,4 @@
+import { BREAKPOINTS } from "@constants/breakpoint";
 import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import ReactDOM from "react-dom";
 import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
@@ -21,6 +22,7 @@ interface BaseModalProps {
 }
 
 const ANIMATION_DURATION = 200; // ms — match Bootstrap's modal transition
+const MODAL_BACKDROP_MQ = `(max-width: ${BREAKPOINTS.modalBackdrop}px)`;
 
 const modalRoot = document.getElementById("modal-root") || document.body;
 
@@ -52,6 +54,21 @@ export default function BaseModal({
   // `visible`  controls whether `.show` is applied (triggers CSS transition)
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(MODAL_BACKDROP_MQ).matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(MODAL_BACKDROP_MQ);
+    const onChange = (event: MediaQueryListEvent) => setIsNarrowViewport(event.matches);
+
+    setIsNarrowViewport(mediaQuery.matches);
+    mediaQuery.addEventListener("change", onChange);
+    return () => mediaQuery.removeEventListener("change", onChange);
+  }, []);
+
+  const shouldShowBackdrop = showBackdrop || isNarrowViewport;
+  const canDrag = draggable && !isNarrowViewport;
 
   useEffect(() => {
     if (isOpen) {
@@ -76,7 +93,7 @@ export default function BaseModal({
 
   useEffect(() => {
     setControlledPosition({ x: 0, y: 0 });
-  }, [isExpanded, isCompose]);
+  }, [isExpanded, isCompose, isNarrowViewport]);
 
   const updateBounds = () => {
     if (!contentRef.current) return;
@@ -176,7 +193,7 @@ export default function BaseModal({
 
   return ReactDOM.createPortal(
     <>
-      {showBackdrop && (
+      {shouldShowBackdrop && (
         <div
           className={`modal-backdrop fade${visible ? " show" : ""}`}
           style={{
@@ -194,7 +211,7 @@ export default function BaseModal({
         handle={dragHandleSelector}
         nodeRef={nodeRef}
         cancel="input, textarea, button:not(.drag-handle-btn), select, .no-drag"
-        disabled={!draggable}
+        disabled={!canDrag}
         bounds={bounds}
         position={controlledPosition}
         onStop={handleStop}

@@ -161,7 +161,7 @@ const LoginPage = () => {
                                 <div className="form-group">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <label className="control-label required">Password</label>
-                                        <a href="javascript:;"
+                                        <a href="#"
                                             className="link-ap"
                                             onClick={redirectToForgot}
                                             tabIndex={-1}
@@ -235,14 +235,14 @@ const LoginPage = () => {
                             <hr />
                             <div className="d-flex align-items-center justify-content-between">
                                 <p className="mb-0">Don't have an account?</p>
-                                <a href="javascript:;" className="link-ap" onClick={redirectToRegister}>Register</a>
+                                <a href="#" className="link-ap" onClick={redirectToRegister}>Register</a>
                             </div>
                         </div>
                     </div>
                     <div className="power-by-box">
                         <span className="powered-sec">
                             Powered by
-                            <a href="javascript:;" className="ms-2">
+                            <a href="#" className="ms-2">
                                 <img src={enlivenLogo} alt="" />
                             </a>
                         </span>

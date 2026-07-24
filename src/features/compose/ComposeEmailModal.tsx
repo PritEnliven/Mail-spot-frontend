@@ -725,6 +725,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                 isSmartReplyEnable={false}
                                                 isGenerateEmailOpen={isGenerateEmailCardOpen}
                                                 onGenerateEmailClose={() => setIsGenerateEmailCardOpen(false)}
+                                                onGenerateEmailInsert={(subject) => setValue('subject', subject)}
                                             />
                                         )}
                                     />
@@ -740,7 +741,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                         <div className="compose-modal-footer">
 
                             <div className="compose-btn-box d-flex align-items-center justify-content-between">
-                                <a href="javascript:;" className="hover-link icon-hover-effect"
+                                <a href="#" className="hover-link icon-hover-effect"
                                     onClick={onClose}
                                 >
                                     <InteractiveIcon
@@ -817,7 +818,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                             )}
                                         </Dropdown.Menu>
                                     </Dropdown>
-                                    <div className="custom-file-mail mg-5 icon-hover-effect hover-link ms-3">
+
+                                    <div className="custom-file-mail icon-hover-effect hover-link ms-3">
                                         <div className="custom-file">
                                             <input
                                                 type="file"
@@ -842,12 +844,14 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                             </label>
                                         </div>
                                     </div>
+
                                     {userPermissions?.aiFeatures && (
                                         <button className="btn-new ms-3 btn-new-icon-mobile" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
                                             <img className="me-2" src={generateAiIcon} />
                                             <span className="d-flex align-items-center">Generate Email</span>
                                         </button>
                                     )}
+                                    
                                     <button className="btn-new ms-3 btn-new-icon-mobile" onClick={openScheduleModal}>
                                         <img className="me-2" src={scheduledIcon} />
                                         <span className='d-flex align-items-cnter'>Schedule</span>

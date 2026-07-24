@@ -567,7 +567,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                     )}
                                 </Dropdown.Menu>
                             </Dropdown>
-                            <div className="custom-file-mail mg-5 icon-hover-effect hover-link ms-3" id="reply-forward-bottom-box">
+                            <div className="custom-file-mail icon-hover-effect hover-link ms-3" id="reply-forward-bottom-box">
                                 <div className="custom-file">
                                     <input
                                         type="file"
@@ -592,12 +592,14 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                     </label>
                                 </div>
                             </div>
+
                             {userPermissions?.aiFeatures && (
                                 <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
                                     <img className="me-2" src={generateAiIcon} />
                                     Generate Email
                                 </button>
                             )}
+
                             <button className="btn-new ms-3" onClick={openScheduleModal}>
                                 <img className="me-2" src={scheduledIcon} />
                                 Schedule
@@ -607,7 +609,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                 onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
                                     console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                                 })}
-                            >Send</SubmitButton>
+                            >Send
+                            </SubmitButton>
                         </div>
                     </div>
                 </div>

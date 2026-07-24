@@ -52,9 +52,11 @@ const Header = () => {
             }
             //check if changePassword modal is open then close it
             const changePasswordModal = activeModals.find((modal) => modal.type === 'changePassword');
+
             if (changePasswordModal) {
                 closeModal(changePasswordModal.id);
             }
+
             openModal('changeImapSmtpPassword', userData)
         }
     }
@@ -102,6 +104,7 @@ const Header = () => {
             const initial = storedName.charAt(0).toUpperCase();
             setProfileInitial(initial);
         }
+
         if (storedEmail) {
             setProfileEmail(storedEmail);
         }
@@ -170,69 +173,69 @@ const Header = () => {
                             tooltip=""
                         />
                     </button>
-<div className="profile-sec-new-box">
-                            <div className="profile-sec-people">
-                                <div className="profile-sec-people-sub">
-                                    <div className="profile-sec-image mb-3" id="profileInitial1">
-                                        {profileInitial}
-                                    </div>
-                                    <span className="profile-sec-people-sub-mail-profile-name d-block text-center"
-                                        id="profileName1"> {profileName}</span>
-                                    <span className="profile-sec-people-sub-mail-profile-id d-block copy-text text-center"
-                                        id="profileEmail1"> {profileEmail}</span>
+                    <div className="profile-sec-new-box">
+                        <div className="profile-sec-people">
+                            <div className="profile-sec-people-sub">
+                                <div className="profile-sec-image mb-3" id="profileInitial1">
+                                    {profileInitial}
                                 </div>
-                            </div>
-                            <ul className="profile-link-list">
-                                <li className="profile-link-items">
-                                    <a href="javascript:;" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>
-                                        <InteractiveIcon
-                                            defaultIcon={changePasswordNewIcon}
-                                            hoverIcon={changePasswordNewIconHover}
-                                            activeIcon=""
-                                            isActive={false}
-                                            alt=""
-                                            className="interactive-icon hover-image"
-                                            renderAs="img"
-                                            tooltip=""
-                                        />Change IMAP/SMTP Configuration</a>
-                                </li>
-                                <li className="profile-link-items">
-                                    <a href="javascript:;" className="profile-link hover-link" onClick={openChangePasswordModal}>
-                                        <InteractiveIcon
-                                            defaultIcon={changePasswordIcon}
-                                            hoverIcon={changePasswordIconHover}
-                                            activeIcon=""
-                                            isActive={false}
-                                            alt=""
-                                            className="interactive-icon hover-image"
-                                            renderAs="img"
-                                            tooltip=""
-                                        />Change password</a>
-                                </li>
-                                <li className="profile-link-items">
-                                    <a href="javascript:;" className="profile-link hover-link" onClick={handleLogout}>
-                                        <InteractiveIcon
-                                            defaultIcon={logoutIcon}
-                                            hoverIcon={logoutIconHover}
-                                            activeIcon=""
-                                            isActive={false}
-                                            alt=""
-                                            className="interactive-icon hover-image"
-                                            renderAs="img"
-                                            tooltip=""
-                                        />Logout</a>
-                                </li>
-                            </ul>
-                            <div className="profile-footer d-flex align-items-center justify-content-between">
-                                <span className="mailspot-version-number">V 1.0</span>
-                                <span className="powered-sec">
-                                    Powered by
-                                    <a href="javascript:;" className="ms-2">
-                                        <img src={enlivenLogo} alt="" />
-                                    </a>
-                                </span>
+                                <span className="profile-sec-people-sub-mail-profile-name d-block text-center"
+                                    id="profileName1"> {profileName}</span>
+                                <span className="profile-sec-people-sub-mail-profile-id d-block copy-text text-center"
+                                    id="profileEmail1"> {profileEmail}</span>
                             </div>
                         </div>
+                        <ul className="profile-link-list">
+                            <li className="profile-link-items">
+                                <a href="#" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>
+                                    <InteractiveIcon
+                                        defaultIcon={changePasswordNewIcon}
+                                        hoverIcon={changePasswordNewIconHover}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip=""
+                                    />Change IMAP/SMTP Configuration</a>
+                            </li>
+                            <li className="profile-link-items">
+                                <a href="#" className="profile-link hover-link" onClick={openChangePasswordModal}>
+                                    <InteractiveIcon
+                                        defaultIcon={changePasswordIcon}
+                                        hoverIcon={changePasswordIconHover}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip=""
+                                    />Change password</a>
+                            </li>
+                            <li className="profile-link-items">
+                                <a href="#" className="profile-link hover-link" onClick={handleLogout}>
+                                    <InteractiveIcon
+                                        defaultIcon={logoutIcon}
+                                        hoverIcon={logoutIconHover}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip=""
+                                    />Logout</a>
+                            </li>
+                        </ul>
+                        <div className="profile-footer d-flex align-items-center justify-content-between">
+                            <span className="mailspot-version-number">V 1.0</span>
+                            <span className="powered-sec">
+                                Powered by
+                                <a href="#" className="ms-2">
+                                    <img src={enlivenLogo} alt="" />
+                                </a>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

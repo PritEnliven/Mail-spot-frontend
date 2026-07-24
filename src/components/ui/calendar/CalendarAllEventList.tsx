@@ -87,7 +87,7 @@ const CalendarAllEventList = (_props: CalendarAllEventListProps) => {
     return (
         <>
             <div className="calendar-search-results-toolbar d-flex align-items-center">
-                <a href="javascript:;" className="icon-hover-effect hover-link calendar-back-btn me-2" onClick={handleBack}>
+                <a href="#" className="icon-hover-effect hover-link calendar-back-btn me-2" onClick={handleBack}>
                     <InteractiveIcon
                         defaultIcon={backBtnIcon}
                         hoverIcon={backBtnIconHover}
@@ -125,7 +125,7 @@ const CalendarAllEventList = (_props: CalendarAllEventListProps) => {
                                                         return (
                                                             <a
                                                                 key={event._id}
-                                                                href="javascript:;"
+                                                                href="#"
                                                                 className="d-block w-100"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#eventInfoModal"

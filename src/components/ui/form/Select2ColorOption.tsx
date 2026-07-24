@@ -1,6 +1,6 @@
 import Select, { components, type SingleValue } from "react-select";
 import { DropdownIndicator, getSelectStyles } from "./Select2Wrapper";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export interface ColorOption {
     value: string;
@@ -16,6 +16,22 @@ interface ColorSingleSelectProps {
     placeholder?: string;
     isDisabled?: boolean;
 }
+
+// ---------- helper hook ----------
+const useIsMobile = (breakpoint: number = 575) => {
+    const [isMobile, setIsMobile] = useState(
+        typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+    );
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < breakpoint);
+        window.addEventListener('resize', handleResize);
+        handleResize();
+        return () => window.removeEventListener('resize', handleResize);
+    }, [breakpoint]);
+
+    return isMobile;
+};
 
 const ColorOptionComponent = (props: any) => {
     const { data } = props;
@@ -67,6 +83,8 @@ const ColorSingleSelect = ({
     placeholder = "",
     isDisabled = false,
 }: ColorSingleSelectProps) => {
+    const isMobile = useIsMobile();
+
     const defaultColor = React.useMemo(() => {
         return options?.find(option => option.default) || options?.[0] || null;
     }, [options]);
@@ -83,6 +101,7 @@ const ColorSingleSelect = ({
             onChange={(val: SingleValue<ColorOption>) => onChange(val)}
             isDisabled={isDisabled}
             placeholder={placeholder}
+            menuPortalTarget={isMobile ? null : document.body}
             styles={getSelectStyles("single", "select2ColorOption", false) as any}
             components={{
                 Option: ColorOptionComponent,

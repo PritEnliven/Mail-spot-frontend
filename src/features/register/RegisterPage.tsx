@@ -264,7 +264,7 @@ const RegisterPage = () => {
             <div className="login-main-right-section">
               <div className="login-box-main">
                 <div className="d-flex align-items-center justify-content-between brand-logo-login">
-                  <a href="javascript:;">
+                  <a href="#">
                     <img src={mailSpotLogo} alt="" />
                   </a>
                   <div id="stepCounter">
@@ -410,7 +410,7 @@ const RegisterPage = () => {
                     <hr />
                     <div className="d-flex align-items-center justify-content-between">
                       <p className="mb-0">Already have an account?</p>
-                      <a href="javascript:;" className="link-ap" onClick={redirectToLogin}>Login</a>
+                      <a href="#" className="link-ap" onClick={redirectToLogin}>Login</a>
                     </div>
                   </div>
 
@@ -602,7 +602,7 @@ const RegisterPage = () => {
                     <hr />
                     <div className="d-flex align-items-center justify-content-between">
                       <p className="mb-0">Already have an account?</p>
-                      <a href="javascript:;" className="link-ap">Login</a>
+                      <a href="#" className="link-ap">Login</a>
                     </div>
                   </div>
 
@@ -793,7 +793,7 @@ const RegisterPage = () => {
                     <hr />
                     <div className="d-flex align-items-center justify-content-between">
                       <p className="mb-0">Already have an account?</p>
-                      <a href="javascript:;" className="link-ap">Login</a>
+                      <a href="#" className="link-ap">Login</a>
                     </div>
                   </div>
 
@@ -834,7 +834,7 @@ const RegisterPage = () => {
           <div className="power-by-box">
             <span className="powered-sec">
               Powered by
-              <a href="javascript:;" className="ms-2"><img src={enlivenLogo} alt="" /></a>
+              <a href="#" className="ms-2"><img src={enlivenLogo} alt="" /></a>
             </span>
           </div>
         </div>

@@ -1,8 +1,10 @@
 export const BREAKPOINTS = {
-    mobileSmall: 425,
-    mobile: 575,
-    tablet: 768,
-    laptop: 992,
+    extraSmall: 425,
+    mobileSmall: 575,
+    mobile: 768,
+    /** Force modal backdrop at this width and below */
+    modalBackdrop: 575,
+    tablet: 992,
     desktop: 1200,
 } as const;
-export type ScreenType = "mobileSmall" | "mobile" | "tablet" | "laptop" | "desktop";
+export type ScreenType = "extraSmall" |"mobileSmall" | "mobile" | "tablet" | "desktop";

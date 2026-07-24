@@ -69,7 +69,7 @@ const AdminHeader = ({ title }: adminHeaderProps) => {
                             <span className="mailspot-version-number">V 1.0</span>
                             <span className="powered-sec">
                                 Powered by
-                                <a href="javascript:;" className="ms-2">
+                                <a href="#" className="ms-2">
                                     <img src={enlivenLogo} alt="" />
                                 </a>
                             </span>
