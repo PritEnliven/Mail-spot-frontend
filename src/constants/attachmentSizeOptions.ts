@@ -19,7 +19,9 @@ export const ATTACHMENT_SIZE_LABELS = ATTACHMENT_SIZE_OPTIONS.map((opt) => opt.v
 
 export function attachmentSizeLabelToApiType(
     label: string | undefined
-): AttachmentSizeApiType | undefined {
+):
+ 
+AttachmentSizeApiType | undefined {
     if (!label) return undefined;
     return LABEL_TO_API_TYPE[label as AttachmentSizeLabel];
 }

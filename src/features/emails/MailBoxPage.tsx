@@ -218,13 +218,17 @@ const MailBoxPage = () => {
                 })
             }
 
-            setEmailDetailSelected(data.emailList);
-
-            // setSelectedEmails(new Set([messageId]));
-            // Use isSeen from the email list state (reflects socket updates) rather than
-            // the fetched detail, which may return stale/wrong read state when the email
-            // arrived via socket after a custom folder was deleted.
+            // Prefer list state for fields kept fresh by socket (isSeen, threadCount).
+            // get-single-email often returns threadCount: 1 for a reply, which would skip
+            // loading the rest of the thread on first open.
             const emailInList = emails.find(e => e.messageId === messageId);
+            const listThreadCount = emailInList?.threadCount ?? 0;
+            const apiThreadCount = data.emailList?.threadCount ?? 0;
+            setEmailDetailSelected({
+                ...data.emailList,
+                threadCount: Math.max(listThreadCount, apiThreadCount) || apiThreadCount || 1,
+            });
+
             const isRead = emailInList ? emailInList.isSeen : data.emailList.isSeen;
 
             setToolbarState({

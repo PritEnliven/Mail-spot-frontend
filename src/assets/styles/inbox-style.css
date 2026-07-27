@@ -133,7 +133,33 @@ tr:has(+ tr .mail-message-list.mail-message-active) .mail-message-list { border-
 .thread-email .mail-content-details-box { border: 0; }
 .thread-email .mail-message-send--information-details-box { padding: 0; border-bottom: 0 !important; }
 /* .thread-email .dropdown-toggle { border: 1px solid #D0D9DE; background-color: #F0F7FB; } */
-.thread-email .shot-message-info-thread { display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0.75; }
+.thread-email .shot-message-info-thread {
+    display: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    color: #5f6368;
+    font-size: 13px;
+    margin: 0;
+}
+/* Collapsed root preview (root lives outside .thread-email) */
+.shot-message-info-thread {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    color: #5f6368;
+    font-size: 13px;
+    margin: 0;
+}
+.thread-root-header {
+    cursor: pointer;
+}
 .thread-email .application-btn-multi { display: flex; }
 .thread-email .custom-accordion-body { transition: all 0.3s ease; }
 .thread-email .thread-label-text { display: none; }
@@ -149,6 +175,10 @@ tr:has(+ tr .mail-message-list.mail-message-active) .mail-message-list { border-
 .accordion-button:hover { z-index: 0; }
 .accordion-button::after { display: none; }
 button.accordion-button.collapsed { padding: 0; }
+div.accordion-button.custom-toggle-btn { cursor: default; width: 100%; }
+div.accordion-button.custom-toggle-btn .mail-message-send--information-details-box { cursor: pointer; }
+.thread-email .application-btn-multi { cursor: default; }
+.thread-email .more-actions-dropdown .dropdown-menu { z-index: 1080; }
 .accordion-item:last-child .accordion-button:not(.collapsed) { border-bottom: 0; }
 .custom-accordion-body { display: none; }
 .thread-email .accordion-item::after { content: ""; width: calc(100% - -40px); height: 1px; background-color: #D0D9DE; position: absolute; bottom: 1px; margin: 0 -20px 0; }
@@ -160,6 +190,103 @@ button.accordion-button.collapsed { padding: 0; }
 .shot-message-info-thrad { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; width: 50%; }
 .application-btn-multi { pointer-events: auto; position: relative; z-index: 10; min-width: 103px; }
 .thread-mail-to-box { display: flex; }
+
+/* --- Gmail-style collapsed middle-thread expand control --- */
+.thread-expand-divider {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 40px;
+    margin: 6px 0;
+}
+.thread-expand-divider__line {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+.thread-expand-divider__line::before,
+.thread-expand-divider__line::after {
+    content: "";
+    display: block;
+    height: 1px;
+    width: 100%;
+    background-color: #D0D9DE;
+}
+/* Align count badge center with .mail-profile-label (40px, ms-0) center at 20px */
+.thread-expand-divider__line:first-child {
+    flex: 0 0 2px;
+    width: 2px;
+    min-width: 2px;
+}
+.thread-expand-divider__line:last-child {
+    flex: 1 1 auto;
+    min-width: 12px;
+}
+.thread-expand-divider__btn {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: 0 2px 0 0;
+    padding: 0;
+    border: 1px solid #BBC0C4;
+    border-radius: 50%;
+    background-color: #fff;
+    color: #5f6368;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.thread-expand-divider__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.thread-expand-divider__arrows {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    line-height: 0;
+}
+.thread-expand-divider__arrow {
+    width: 16px;
+    height: 16px;
+    display: block;
+    opacity: 0.75;
+}
+.thread-expand-divider__arrow:first-child {
+    margin-bottom: -4px;
+}
+.thread-expand-divider__arrow:last-child {
+    margin-top: -4px;
+}
+.thread-expand-divider__btn:hover,
+.thread-expand-divider__btn:focus-visible {
+    background-color: #f1f3f4;
+    border-color: #9aa0a6;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+}
+.thread-expand-divider__btn:hover .thread-expand-divider__count,
+.thread-expand-divider__btn:focus-visible .thread-expand-divider__count {
+    display: none;
+}
+.thread-expand-divider__btn:hover .thread-expand-divider__arrows,
+.thread-expand-divider__btn:focus-visible .thread-expand-divider__arrows {
+    display: inline-flex;
+}
+.thread-expand-divider__btn:focus-visible {
+    outline: 2px solid #0073B6;
+    outline-offset: 2px;
+}
 
 /* --- Pending / Failed / Sent thread-reply rows --- */
 .thread-email-pending { position: relative; }

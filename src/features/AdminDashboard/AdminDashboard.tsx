@@ -171,7 +171,6 @@ const AdminDashboard = () => {
             localStorage.setItem('username', username);
             localStorage.setItem('id', id);
 
-            showSuccess("Logged in as user successfully");
             window.open('/mail/INBOX', '_blank');
         } else {
             showError(
@@ -301,7 +300,7 @@ const AdminDashboard = () => {
                                     disabled={currentPage <= 1}
                                     onClick={goToPrevPage}
                                 >
-                                    <img className="hover-image" src={chevronLeftIconBig} alt="Previous" />
+                                <img className="hover-image" src={chevronLeftIconBig} alt="Previous" />
                                 </button>
                                 <button
                                     className="btn hover-link icon-hover-effect"
@@ -351,7 +350,6 @@ const AdminDashboard = () => {
                     </div>
                 </>
             )}
-
         </div>
     );
 }

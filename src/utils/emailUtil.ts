@@ -388,4 +388,60 @@ const buildCustomFolderTree = (customBoxItems: any[]): any[] => {
     return result;
 };
 
-export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName };
+const htmlToPlainText = (html: string): string =>
+    html
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"')
+        .replace(/\s+/g, " ")
+        .trim();
+
+/** Drop quoted/forwarded tails so list/thread previews show only the newest reply text. */
+const stripQuotedTail = (text: string): string => {
+    // Normalize unicode dashes so "——— Original Message ———" still matches.
+    const normalized = text.replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g, "-");
+
+    const quoteMarkers = [
+        // Leading dashes are enough; trailing side may be broken (e.g. "-f-------").
+        /-{2,}\s*Original\s+Message\b/i,
+        /-{2,}\s*Forwarded\s+Message\b/i,
+        /_{5,}\s*Original\s+Message\b/i,
+        /_{5,}/,
+        /\bOn\s.+?\bwrote:/i,
+        /\bFrom:\s.+\bSent:/i,
+        /\bBegin\s+forwarded\s+message\b/i,
+    ];
+
+    let cutAt = normalized.length;
+    for (const marker of quoteMarkers) {
+        const match = marker.exec(normalized);
+        if (match?.index != null && match.index < cutAt) {
+            cutAt = match.index;
+        }
+    }
+
+    return normalized.slice(0, cutAt).replace(/\s+/g, " ").trim();
+};
+
+/**
+ * One-line preview for thread emails: latest body (without quoted tails),
+ * falling back to subject when body is empty.
+ */
+const getEmailPreviewText = (email: {
+    bodyText?: string;
+    body?: string;
+    subject?: string;
+}): string => {
+    const plain = (email.bodyText || htmlToPlainText(email.body || "")).trim();
+    const withoutQuote = stripQuotedTail(plain);
+    return withoutQuote || email.subject || "";
+};
+
+export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText };

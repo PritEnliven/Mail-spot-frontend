@@ -35,7 +35,7 @@ import {
     ImageResize,
     ImageUpload,
     ImageUtils,
-    MediaEmbed,
+    // MediaEmbed,
     PasteFromMarkdownExperimental,
     PasteFromOffice,
     PlainTableOutput,
@@ -328,7 +328,9 @@ const ckEditorConfig: any = {
         shouldNotGroupWhenFull: false,
         removePlugins: ['ToolbarItemsTexts']
     },
-    extraPlugins: [Base64UploadAdapterPlugin, MyCustomMediaPlugin, EnhancedLinkPlugin],
+    // extraPlugins: [Base64UploadAdapterPlugin, MyCustomMediaPlugin, EnhancedLinkPlugin],
+    extraPlugins: [Base64UploadAdapterPlugin, EnhancedLinkPlugin],
+
     plugins: [
         Essentials, Paragraph, Autoformat, AutoLink, Autosave,
         Bold, Italic, Underline, Strikethrough, Code, CodeBlock,
@@ -337,7 +339,7 @@ const ckEditorConfig: any = {
         Alignment, List,
         Link,LinkUI, LinkEditing, ContextualBalloon,
         ImageBlock, ImageEditing, ImageInline, ImageToolbar, ImageResize, ImageUpload, ImageUtils,
-        MediaEmbed,
+        // MediaEmbed,
         Indent, IndentBlock,
         Table, TableToolbar, TableColumnResize, PlainTableOutput, TableProperties, TableCellProperties,
         PasteFromMarkdownExperimental, PasteFromOffice,

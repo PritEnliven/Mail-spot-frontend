@@ -29,8 +29,8 @@ import type { Response } from "@models/Response";
 import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { verifyBoxName } from "@utils/emailUtil";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { getEmailPreviewText, verifyBoxName } from "@utils/emailUtil";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
 import { useSocketEvent } from "@hooks/useSocket";
@@ -40,6 +40,7 @@ import { useSettings } from "@context/SettingsContext";
 const ThreadEmailItem = lazy(() => import("@components/ui/threadEmail/ThreadEmailItem"));
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
 const PendingThreadEmailItem = lazy(() => import("@components/ui/threadEmail/PendingThreadEmailItem"));
+const ThreadExpandDivider = lazy(() => import("@components/ui/threadEmail/ThreadExpandDivider"));
 
 export interface RelativeDate {
     isOld: boolean;
@@ -63,6 +64,11 @@ const EmailDetail = ({ email }: Props) => {
     const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar()
     const [threadEmails, setThreadEmails] = useState<any[]>([]);
     const [pendingReplies, setPendingReplies] = useState<PendingReply[]>([]);
+    const [isThreadExpanded, setIsThreadExpanded] = useState(false);
+    // Root starts open; collapses when a thread reply should be focused instead.
+    const [isRootOpen, setIsRootOpen] = useState(true);
+    const [autoOpenMessageId, setAutoOpenMessageId] = useState<string | null>(null);
+    const prevAutoOpenRef = useRef<string | null>(null);
     const { settings } = useSettings();
     const { isDesktop } = useScreen();
     const [isCcBccExpanded, setIsCcBccExpanded] = useState(false);
@@ -109,33 +115,93 @@ const EmailDetail = ({ email }: Props) => {
 
     const isScheduleBox = useMemo(() => verifyBoxName(boxName, 'scheduled'), [boxName]);
 
+    // Keep a live ref so loadThreadEmails stays stable when we promote the root
+    // (messageId changes) and does not retrigger the fetch effect.
+    const emailRef = useRef(email);
+    emailRef.current = email;
+    const lastThreadFetchRef = useRef<{ threadId: string; threadCount: number } | null>(null);
+
     const loadThreadEmails = useCallback(async () => {
+        const current = emailRef.current;
         try {
             const response = await getAllThreadEmails({
-                messageId: email.messageId,
-                threadId: email.threadId
+                messageId: current.messageId,
+                threadId: current.threadId
             });
-            setThreadEmails(response.data.threadEmails || []);
+            const siblings = response.data.threadEmails || [];
+
+            // Build full thread (current + siblings), unique by messageId, oldest → newest
+            // so the latest reply always appears last (Gmail-style).
+            const byId = new Map<string, any>();
+            for (const item of [...siblings, current]) {
+                if (item?.messageId) byId.set(item.messageId, item);
+            }
+            const chronological = [...byId.values()].sort(
+                (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+            );
+
+            if (chronological.length === 0) {
+                setThreadEmails([]);
+                setPendingReplies([]);
+                return;
+            }
+
+            const [oldest, ...rest] = chronological;
+
+            // Record what we loaded so promoting the root (messageId swap) does not
+            // kick off a second fetch-threadEmails call for the same thread.
+            lastThreadFetchRef.current = {
+                threadId: current.threadId,
+                threadCount: chronological.length,
+            };
+
+            // If the user opened a newer reply, promote the oldest to the main detail
+            // so the newest lands at the bottom of the thread list.
+            if (oldest.messageId !== current.messageId) {
+                setEmailDetailSelected({
+                    ...oldest,
+                    threadCount: chronological.length,
+                    isSearchEmail: emailDetailSelected?.isSearchEmail,
+                });
+            }
+
+            setThreadEmails(rest);
             setPendingReplies([]);
         } catch (error) {
             console.error('Error loading thread emails:', error);
         }
-    }, [email.messageId, email.threadId]);
+    }, [emailDetailSelected?.isSearchEmail, setEmailDetailSelected]);
+
+    const listThreadCount = emails.find(e => e.threadId === email.threadId)?.threadCount ?? 0;
 
     useEffect(() => {
-        setThreadEmails([]);
         const isExcludedBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'trash');
 
-        const hasThread = (emailDetailSelected?.threadCount ?? 0) > 1;
+        // Fall back to the inbox list row's count — socket may have updated it before
+        // get-single-email returned a stale threadCount of 1.
+        const hasThread = Math.max(emailDetailSelected?.threadCount ?? 0, listThreadCount) > 1;
 
         const shouldLoad = !isExcludedBox
             && hasThread
             && !emailDetailSelected?.isSearchEmail && settings.threadView;
 
-        if (shouldLoad) {
-            loadThreadEmails();
+        if (!shouldLoad) {
+            setThreadEmails([]);
+            lastThreadFetchRef.current = null;
+            return;
         }
-    }, [loadThreadEmails, boxName, emailDetailSelected?.isSearchEmail, emailDetailSelected?.messageId, emailDetailSelected?.threadCount]);
+
+        const threadCount = Math.max(emailDetailSelected?.threadCount ?? 0, listThreadCount);
+        const prev = lastThreadFetchRef.current;
+        // Same thread + same count → skip (covers root promotion changing messageId only)
+        if (prev && prev.threadId === email.threadId && prev.threadCount === threadCount) {
+            return;
+        }
+
+        lastThreadFetchRef.current = { threadId: email.threadId, threadCount };
+        setThreadEmails([]);
+        loadThreadEmails();
+    }, [loadThreadEmails, boxName, email.threadId, emailDetailSelected?.isSearchEmail, emailDetailSelected?.threadCount, listThreadCount, settings.threadView]);
 
     const handleCancelScheduleEmail = async (id: string) => {
         try {
@@ -189,6 +255,30 @@ const EmailDetail = ({ email }: Props) => {
         setPendingReplies(prev => [...prev, reply]);
     }, [boxName, email.messageId, setEmails]);
 
+    const handleThreadEmailRemoved = useCallback((removedMessageId: string) => {
+        setThreadEmails(prev => {
+            const nextThreadEmails = prev.filter(e => e.messageId !== removedMessageId);
+            const nextCount = nextThreadEmails.length + 1;
+
+            setEmails(prevEmails =>
+                prevEmails.map(e =>
+                    e.threadId === email.threadId
+                        ? { ...e, threadCount: nextCount }
+                        : e
+                )
+            );
+
+            return nextThreadEmails;
+        });
+
+        if (emailDetailSelected?.threadId === email.threadId) {
+            setEmailDetailSelected({
+                ...emailDetailSelected,
+                threadCount: Math.max(1, (emailDetailSelected.threadCount ?? 1) - 1),
+            });
+        }
+    }, [email.threadId, emailDetailSelected, setEmailDetailSelected, setEmails]);
+
     // Called by socket 'outboundReplySent' — flip row from pending → sent (light → full opacity)
     const clearPendingReply = useCallback((clientMessageId: string) => {
         setPendingReplies(prev =>
@@ -213,10 +303,59 @@ const EmailDetail = ({ email }: Props) => {
         showError(errorMessage || 'Failed to send reply. Please try again.');
     }, []);
 
-    // Clear pending rows when switching to a different email
+    // Clear pending rows / collapse state when switching to a different thread
     useEffect(() => {
         setPendingReplies([]);
-    }, [email.messageId]);
+        setIsThreadExpanded(false);
+        setIsRootOpen(true);
+        setIsCcBccExpanded(false);
+        setAutoOpenMessageId(null);
+        prevAutoOpenRef.current = null;
+    }, [email.threadId]);
+
+    // Gmail-style collapse: with >4 messages show first + second-last + last only.
+    // Main detail is always the first; threadEmails holds the rest (oldest → newest).
+    const THREAD_COLLAPSE_THRESHOLD = 4;
+    const totalThreadCount = 1 + threadEmails.length;
+    const shouldCollapseThread = !isThreadExpanded && totalThreadCount > THREAD_COLLAPSE_THRESHOLD;
+    const hiddenThreadCount = shouldCollapseThread ? totalThreadCount - 3 : 0;
+    const visibleThreadEmails = useMemo(() => {
+        if (!shouldCollapseThread) return threadEmails;
+        // Keep only second-last and last of the full thread (= last 2 of threadEmails)
+        return threadEmails.slice(-2);
+    }, [shouldCollapseThread, threadEmails]);
+
+    const hasThreadReplies = threadEmails.length > 0 || pendingReplies.length > 0;
+
+    // In a thread, keep the root collapsed and expand only the newest reply
+    // (including when a new reply arrives while this thread is open).
+    useEffect(() => {
+        if (threadEmails.length === 0) {
+            if (prevAutoOpenRef.current !== null) {
+                prevAutoOpenRef.current = null;
+                setAutoOpenMessageId(null);
+                setIsRootOpen(true);
+            }
+            return;
+        }
+
+        const newest = threadEmails[threadEmails.length - 1];
+        const nextId = newest?.messageId ?? null;
+
+        if (prevAutoOpenRef.current !== nextId) {
+            prevAutoOpenRef.current = nextId;
+            setAutoOpenMessageId(nextId);
+            setIsRootOpen(false);
+        }
+    }, [threadEmails]);
+
+    const toggleRootOpen = () => {
+        if (!hasThreadReplies) return;
+        setIsRootOpen(prev => {
+            if (prev) setIsCcBccExpanded(false);
+            return !prev;
+        });
+    };
 
     // Socket: reply confirmed → resolve pending row
     useSocketEvent('outboundReplySent', (data: { clientMessageId: string }) => {
@@ -227,6 +366,31 @@ const EmailDetail = ({ email }: Props) => {
     useSocketEvent('outboundReplyFailed', (data: { clientMessageId: string; error?: string }) => {
         markPendingReplyFailed(data.clientMessageId, data.error);
     });
+
+    // Socket: inbound reply for the currently open thread → append it live
+    const handleInboundThreadReply = useCallback((payload: any) => {
+        const replies: Email[] = Array.isArray(payload)
+            ? payload
+            : (payload?.emails ?? (payload ? [payload] : []));
+
+        const matchesOpenThread = replies.some(
+            e => e?.threadId && e.threadId === email.threadId
+        );
+        if (!matchesOpenThread) return;
+
+        // Keep the thread section visible by bumping the open detail's count
+        const current = emailDetailSelected ?? email;
+        if (current.threadId === email.threadId) {
+            setEmailDetailSelected({
+                ...current,
+                threadCount: (current.threadCount ?? 1) + 1,
+            });
+        }
+        loadThreadEmails();
+    }, [email, emailDetailSelected, setEmailDetailSelected, loadThreadEmails]);
+
+    useSocketEvent('newEmail', handleInboundThreadReply);
+    useSocketEvent('threadReply', handleInboundThreadReply);
 
     const handleEditScheduleEmail = async (id: string) => {
         try {
@@ -272,11 +436,24 @@ const EmailDetail = ({ email }: Props) => {
 
             {/* mail-details-information-details-box */}
             {isDesktop ? (
-                <div className="mail-message-send--information-details-box">
+                <div
+                    className={`mail-message-send--information-details-box ${hasThreadReplies ? 'thread-root-header' : ''}`}
+                    role={hasThreadReplies ? 'button' : undefined}
+                    tabIndex={hasThreadReplies ? 0 : undefined}
+                    onClick={hasThreadReplies ? toggleRootOpen : undefined}
+                    onKeyDown={hasThreadReplies ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleRootOpen();
+                        }
+                    } : undefined}
+                >
                     <div className="d-block">
                         <div className="mail-details-information-details-box d-flex align-items-start justify-content-between">
                             <div className="d-flex align-items-center justify-content-between position-relative profile-main-box">
-                                <span className="label-sm">From</span>
+                                {(!hasThreadReplies || isRootOpen) && (
+                                    <span className="label-sm">From</span>
+                                )}
                                 <div className="d-flex align-items-center profile-section">
                                     <span className="mail-profile-label ms-0">
                                         {initial.charAt(0).toUpperCase()}
@@ -290,7 +467,9 @@ const EmailDetail = ({ email }: Props) => {
                                         </span>
                                     </div>
                                 </div>
-                                <CopyEmail name={fromName} email={fromEmail} initial={initial} />
+                                <div onClick={(e) => e.stopPropagation()}>
+                                    <CopyEmail name={fromName} email={fromEmail} initial={initial} />
+                                </div>
                             </div>
 
                             <span className="info-received-details d-block">
@@ -299,30 +478,32 @@ const EmailDetail = ({ email }: Props) => {
                         </div>
 
                         <div className="d-flex align-items-end justify-content-between cc-bcc-to-info">
-                            <div className="d-block">
-                                {/* To */}
-                                <div className="mail-details-information-details-box d-flex align-items-start m-0">
-                                    <span className="label-sm flex-shrink-0">To</span>
-                                    <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
-                                        <EmailRecipientList
-                                            emails={email.to}
-                                            searchTerm={highlightTerm}
-                                            reserveWidth={toReserveWidth}
-                                            onVisibleCountChange={(visible, total) => setToVisibleInfo({ visible, total })}
-                                            trailingElement={!isCcBccExpanded && hasMore ? <ToggleChevronButton /> : null}
-                                            expanded={isCcBccExpanded}
-                                        />
-                                        {!isCcBccExpanded && !hasMore && hasHiddenTo && (
-                                            <span className="hidden-count-badge flex-shrink-0">
-                                                +{toVisibleInfo.total - toVisibleInfo.visible}
-                                            </span>
-                                        )}
+                            <div className="d-block" style={{ minWidth: 0, flex: 1 }}>
+                                {/* To — only when root is expanded (or standalone) */}
+                                {(!hasThreadReplies || isRootOpen) && (
+                                    <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
+                                        <span className="label-sm flex-shrink-0">To</span>
+                                        <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
+                                            <EmailRecipientList
+                                                emails={email.to}
+                                                searchTerm={highlightTerm}
+                                                reserveWidth={toReserveWidth}
+                                                onVisibleCountChange={(visible, total) => setToVisibleInfo({ visible, total })}
+                                                trailingElement={!isCcBccExpanded && hasMore ? <ToggleChevronButton /> : null}
+                                                expanded={isCcBccExpanded}
+                                            />
+                                            {!isCcBccExpanded && !hasMore && hasHiddenTo && (
+                                                <span className="hidden-count-badge flex-shrink-0">
+                                                    +{toVisibleInfo.total - toVisibleInfo.visible}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* CC */}
-                                {isCcBccExpanded && email.cc.length > 0 && (
-                                    <div className="mail-details-information-details-box d-flex align-items-start m-0">
+                                {(!hasThreadReplies || isRootOpen) && isCcBccExpanded && email.cc.length > 0 && (
+                                    <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
                                         <span className="label-sm flex-shrink-0">CC</span>
                                         <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
                                             <EmailRecipientList
@@ -337,8 +518,8 @@ const EmailDetail = ({ email }: Props) => {
                                 )}
 
                                 {/* BCC */}
-                                {isCcBccExpanded && email.bcc.length > 0 && (
-                                    <div className="mail-details-information-details-box d-flex align-items-start m-0">
+                                {(!hasThreadReplies || isRootOpen) && isCcBccExpanded && email.bcc.length > 0 && (
+                                    <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
                                         <span className="label-sm flex-shrink-0">BCC</span>
                                         <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
                                             <EmailRecipientList
@@ -351,10 +532,16 @@ const EmailDetail = ({ email }: Props) => {
                                         </div>
                                     </div>
                                 )}
+
+                                {hasThreadReplies && !isRootOpen && (
+                                    <p className="shot-message-info-thread mb-0" style={{ display: "block" }}>
+                                        {getEmailPreviewText(email)}
+                                    </p>
+                                )}
                             </div>
                             {/* Actions */}
-                            {!isScheduleBox && (
-                                <div className="application-btn-multi" id="emailActionsBtn">
+                            {(!hasThreadReplies || isRootOpen) && !isScheduleBox && (
+                                <div className="application-btn-multi" id="emailActionsBtn" onClick={(e) => e.stopPropagation()}>
                                     <ul>
                                         <li>
                                             <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("reply", email, "reply-forward-bottom-box"); }}>
@@ -419,7 +606,7 @@ const EmailDetail = ({ email }: Props) => {
 
             { /** Schedule info box */}
 
-            {isScheduleBox && (
+            {isScheduleBox && (!hasThreadReplies || isRootOpen) && (
                 <div className="schedule-info-box">
                     <div className="d-flex align-items-center">
                         <img src="images/scheduled-icon.svg" alt="" className="me-3" />
@@ -456,7 +643,7 @@ const EmailDetail = ({ email }: Props) => {
             )}
 
             {/* Body */}
-            {email.body && (
+            {email.body && (!hasThreadReplies || isRootOpen) && (
                 <div className="mail-content-details-box" id="emailBodySection">
                     <div className="horizontal-scroll-container" >
                         {email.body && (
@@ -474,15 +661,20 @@ const EmailDetail = ({ email }: Props) => {
             )}
 
             {/* Attachments */}
-            <EmailDetailAttachmentPreview
-                attachments={email.attachments}
-                messageId={email.messageId}
-                remainingAttachments={email.remainingAttachments}
-                onDownloadAttachment={downloadAttachments}
-                onOpenAttachment={openAttachment}
-            />
+            {(!hasThreadReplies || isRootOpen) && (
+                <EmailDetailAttachmentPreview
+                    attachments={email.attachments}
+                    messageId={email.messageId}
+                    remainingAttachments={email.remainingAttachments}
+                    onDownloadAttachment={downloadAttachments}
+                    onOpenAttachment={openAttachment}
+                />
+            )}
 
-            {!isScheduleBox && (
+            {/* Bottom Reply/Forward — only for standalone emails.
+                In a thread the root already has actions in its header, and
+                each ThreadEmailItem has its own reply/forward controls. */}
+            {!isScheduleBox && threadEmails.length === 0 && pendingReplies.length === 0 && (
                 <div className="application-btn-multi" id="replyForwardActionButtons">
                     <ul>
                         <li>
@@ -547,8 +739,7 @@ const EmailDetail = ({ email }: Props) => {
                         </li>
                     </ul>
                 </div>
-            )
-            }
+            )}
 
             <div className="reply-section mt-3" id="replyForwardSection">
                 {replyForwardState.isOpen && replyForwardState.sourceEmail?.messageId === email.messageId && replyForwardState.sourceEmail && (
@@ -568,13 +759,21 @@ const EmailDetail = ({ email }: Props) => {
             {(threadEmails.length > 0 || pendingReplies.length > 0) &&
                 <div className="thread-email" id="threadEmailsSection">
                     <Suspense fallback={null}>
-                        {threadEmails.map((threadEmail, index) => (
+                        {shouldCollapseThread && (
+                            <ThreadExpandDivider
+                                hiddenCount={hiddenThreadCount}
+                                onExpand={() => setIsThreadExpanded(true)}
+                            />
+                        )}
+                        {visibleThreadEmails.map((threadEmail, index) => (
                             <ThreadEmailItem
                                 key={threadEmail.messageId}
                                 email={threadEmail}
-                                index={index}
+                                index={shouldCollapseThread ? (threadEmails.length - visibleThreadEmails.length + index) : index}
+                                defaultOpen={threadEmail.messageId === autoOpenMessageId}
                                 onEmailSent={handleEmailReplyForward}
                                 onPendingReply={handlePendingReply}
+                                onThreadEmailRemoved={handleThreadEmailRemoved}
                             />
                         ))}
                         {pendingReplies.map((reply, index) => (

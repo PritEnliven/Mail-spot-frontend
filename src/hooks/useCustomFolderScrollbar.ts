@@ -31,7 +31,7 @@ export function useCustomFolderScrollbar() {
             handle.style.height = '100%';
             handle.style.top = '0px';
             return;
-        }
+        }                
 
         bar.classList.add('visible');
 
@@ -39,6 +39,7 @@ export function useCustomFolderScrollbar() {
         const ratio = visibleHeight / contentHeight;
         const barHeight = bar.clientHeight;
         const handleHeight = Math.max(ratio * barHeight, 30);
+
         handle.style.height = `${handleHeight}px`;
 
         // ── Handle position

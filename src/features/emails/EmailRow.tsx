@@ -41,6 +41,8 @@ export interface EmailDetail {
     threadCount: number;
     threadId: string;
     isDeleted: boolean;
+    body?: string;
+    bodyText?: string;
     relativeDate?: {
         value: string;
         isOld: boolean;
@@ -158,7 +160,9 @@ const EmailRow = memo(({
                                 </div>
 
                                 <div className="d-flex align-items-center justify-content-between c-mb-2">
-                                    <div className="mail-received-subject"> {email.subject} </div>
+                                    <div className="mail-received-subject">
+                                        {email.subject || ""}
+                                    </div>
                                     {safeAttachments.length > 0 && (
                                         <a href="#"
                                             className="hover-link d-inline-flex align-items-center justify-content-end"

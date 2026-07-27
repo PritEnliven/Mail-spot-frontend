@@ -483,7 +483,6 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                             />
                         )}
                     />
-
                 </div>
                 <div className="compose-modal-footer">
                     {attachments.length > 0 && (
@@ -594,16 +593,17 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                             </div>
 
                             {userPermissions?.aiFeatures && (
-                                <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
-                                    <img className="me-2" src={generateAiIcon} />
-                                    Generate Email
-                                </button>
+                            <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
+                                <img className="me-2" src={generateAiIcon} />
+                                Generate Email
+                            </button>
                             )}
 
                             <button className="btn-new ms-3" onClick={openScheduleModal}>
                                 <img className="me-2" src={scheduledIcon} />
                                 Schedule
                             </button>
+
                             <SubmitButton
                                 className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
                                 onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
