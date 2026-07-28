@@ -53,6 +53,8 @@ const ApiInterceptor = {
 
   clearAdminData() {
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUsername');
+    localStorage.removeItem('adminId');
   },
 
   clearAllData() {

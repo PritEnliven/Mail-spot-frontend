@@ -40,15 +40,6 @@ const AdminDashboard = () => {
     const { openModal } = useAdminUI();
     const { setSettingPayLoad } = useAdmin();
 
-    // Clear leftover user session once on mount only — do not clear after login-as-user
-    useEffect(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('id');
-        localStorage.removeItem('username');
-        localStorage.removeItem('email');
-    }, []);
-
     useEffect(() => {
         const fetchUsers = async () => {
             try {

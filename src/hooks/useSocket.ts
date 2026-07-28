@@ -162,7 +162,71 @@ export const useMailSocket = () => {
 
         const handleNewEmail = (payload: { emails: Email[]; unreadCount: number; totalCount: number; boxName: string }) => {
             console.log('handleNewEmail', payload);
-            ingestInboundEmails(payload?.emails ?? []);
+            const incoming = payload?.emails ?? [];
+            const payloadBox = payload?.boxName;
+            if (!incoming.length) return;
+
+            const payloadBoxLower = (payloadBox || '').toLowerCase().trim();
+            const isInboxPayload =
+                payloadBoxLower === 'inbox' ||
+                payloadBoxLower.endsWith('/inbox') ||
+                payloadBoxLower.endsWith('.inbox');
+            const isAllMailPayload =
+                payloadBoxLower.includes('all mail') || payloadBoxLower.includes('allmail');
+            const isSentPayload = payloadBoxLower.includes('sent');
+
+            // Inbox / All Mail — existing thread-aware ingest
+            if (!payloadBox || isInboxPayload || isAllMailPayload) {
+                ingestInboundEmails(incoming);
+                return;
+            }
+
+            // Sent (and other non-inbox boxes): always bump sidebar count for that box
+            const addedUnread = incoming.filter(
+                (e) => !e.isSeen && !(Array.isArray(e.flags) && e.flags.includes('\\Seen'))
+            ).length;
+            updateBoxCount(payloadBox, addedUnread, incoming.length);
+
+            const currentBoxLower = boxNameRef.current.toLowerCase().trim();
+            const viewingThisBox =
+                currentBoxLower === payloadBoxLower ||
+                (isSentPayload && currentBoxLower.includes('sent'));
+
+            if (!viewingThisBox) return;
+
+            const normalized = incoming
+                .map((e) => ({
+                    ...e,
+                    from: Array.isArray(e.from) ? e.from : [e.from],
+                    to: Array.isArray(e.to) ? e.to : e.to ? [e.to] : [],
+                    isSeen: true,
+                    flags: Array.isArray(e.flags) && e.flags.length ? e.flags : ['\\Seen'],
+                }))
+                .filter(
+                    (e) =>
+                        e?.messageId &&
+                        !emailsRef.current.some((ex) => ex.messageId === e.messageId)
+                );
+
+            if (!normalized.length) return;
+
+            const currentPagination = paginationRef.current;
+            if (currentPagination) {
+                setPagination({
+                    ...currentPagination,
+                    totalEmails: currentPagination.totalEmails + normalized.length,
+                    endCount: currentPagination.endCount + normalized.length,
+                });
+            }
+
+            setEmailsRef.current((prev: Email[]) => {
+                let next = [...prev];
+                for (const email of normalized) {
+                    if (next.some((e) => e.messageId === email.messageId)) continue;
+                    next = [email, ...next];
+                }
+                return next;
+            });
         };
 
         const handleEmailUpdated = (data: Partial<Email> & { messageId: string }) => {

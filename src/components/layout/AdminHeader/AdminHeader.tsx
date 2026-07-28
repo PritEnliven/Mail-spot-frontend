@@ -1,8 +1,9 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import { AUTH_STORAGE_KEYS } from "@features/login/Login";
 import enlivenLogo from "@images/enliven-logo.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
 import { useNavigate } from "react-router-dom";
+
+const ADMIN_AUTH_STORAGE_KEYS = ["adminToken", "adminUsername", "adminId"] as const;
 
 interface adminHeaderProps {
     title: string;
@@ -11,8 +12,8 @@ interface adminHeaderProps {
 const AdminHeader = ({ title }: adminHeaderProps) => {
     const navigate = useNavigate();
     const logout = () => {
-        // Clear only auth keys, preserve rememberedEmail
-        AUTH_STORAGE_KEYS.forEach((key) => {
+        // Clear only admin session — do not wipe user token/email in the same window
+        ADMIN_AUTH_STORAGE_KEYS.forEach((key) => {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
         });

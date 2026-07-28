@@ -28,9 +28,10 @@ const LoginPage = () => {
         try {
             const response = await adminLogin(data);
             if (response.statusCode === 200) {
+                // Keep admin keys separate so user session in the same window is preserved
                 localStorage.setItem("adminToken", response.data.token);
-                localStorage.setItem("username", response.data.username);
-                localStorage.setItem("id", response.data.id);
+                localStorage.setItem("adminUsername", response.data.username);
+                localStorage.setItem("adminId", response.data.id);
                 showSuccess("Login successful!");
                 navigate('/admin/dashboard');
             }

@@ -65,8 +65,9 @@ const EmailDetail = ({ email }: Props) => {
     const [threadEmails, setThreadEmails] = useState<any[]>([]);
     const [pendingReplies, setPendingReplies] = useState<PendingReply[]>([]);
     const [isThreadExpanded, setIsThreadExpanded] = useState(false);
-    // Root starts open; collapses when a thread reply should be focused instead.
-    const [isRootOpen, setIsRootOpen] = useState(true);
+    // Collapse immediately when opening a known multi-message thread so the root
+    // body never flashes open before fetch-threadEmails finishes.
+    const [isRootOpen, setIsRootOpen] = useState(() => !((email.threadCount ?? 0) > 1));
     const [autoOpenMessageId, setAutoOpenMessageId] = useState<string | null>(null);
     const prevAutoOpenRef = useRef<string | null>(null);
     const { settings } = useSettings();
@@ -119,6 +120,7 @@ const EmailDetail = ({ email }: Props) => {
     // (messageId changes) and does not retrigger the fetch effect.
     const emailRef = useRef(email);
     emailRef.current = email;
+
     const lastThreadFetchRef = useRef<{ threadId: string; threadCount: number } | null>(null);
 
     const loadThreadEmails = useCallback(async () => {
@@ -130,38 +132,32 @@ const EmailDetail = ({ email }: Props) => {
             });
             const siblings = response.data.threadEmails || [];
 
-            // Build full thread (current + siblings), unique by messageId, oldest → newest
-            // so the latest reply always appears last (Gmail-style).
+            // Keep get-single-email result as the root/first message.
+            // Only append other thread messages below it (oldest → newest).
+            // Re-sorting the opened email into the sibling list was demoting the
+            // root to near the end when dates disagreed across the two APIs.
             const byId = new Map<string, any>();
-            for (const item of [...siblings, current]) {
-                if (item?.messageId) byId.set(item.messageId, item);
+            for (const item of siblings) {
+                if (item?.messageId && item.messageId !== current.messageId) {
+                    byId.set(item.messageId, item);
+                }
             }
-            const chronological = [...byId.values()].sort(
+            const rest = [...byId.values()].sort(
                 (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
             );
 
-            if (chronological.length === 0) {
-                setThreadEmails([]);
-                setPendingReplies([]);
-                return;
-            }
-
-            const [oldest, ...rest] = chronological;
-
-            // Record what we loaded so promoting the root (messageId swap) does not
-            // kick off a second fetch-threadEmails call for the same thread.
+            const nextCount = rest.length + 1;
             lastThreadFetchRef.current = {
                 threadId: current.threadId,
-                threadCount: chronological.length,
+                threadCount: nextCount,
             };
 
-            // If the user opened a newer reply, promote the oldest to the main detail
-            // so the newest lands at the bottom of the thread list.
-            if (oldest.messageId !== current.messageId) {
+            // Keep the opened get-single-email message as root; only refresh count.
+            if ((current.threadCount ?? 0) !== nextCount) {
                 setEmailDetailSelected({
-                    ...oldest,
-                    threadCount: chronological.length,
-                    isSearchEmail: emailDetailSelected?.isSearchEmail,
+                    ...current,
+                    threadCount: nextCount,
+                    isSearchEmail: current.isSearchEmail,
                 });
             }
 
@@ -170,38 +166,43 @@ const EmailDetail = ({ email }: Props) => {
         } catch (error) {
             console.error('Error loading thread emails:', error);
         }
-    }, [emailDetailSelected?.isSearchEmail, setEmailDetailSelected]);
+    }, [setEmailDetailSelected]);
 
     const listThreadCount = emails.find(e => e.threadId === email.threadId)?.threadCount ?? 0;
+    const expectedThreadCount = Math.max(
+        email.threadCount ?? 0,
+        emailDetailSelected?.threadCount ?? 0,
+        listThreadCount
+    );
+    const isExcludedThreadBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'trash');
+    // Known multi-message thread (from list/detail count) — used to avoid opening the
+    // root body before siblings arrive, which caused an open→close UI flash.
+    const expectsThreadReplies = expectedThreadCount > 1
+        && !isExcludedThreadBox
+        && !emailDetailSelected?.isSearchEmail
+        && settings.threadView;
 
     useEffect(() => {
-        const isExcludedBox = verifyBoxName(boxName, 'schedule') || verifyBoxName(boxName, 'trash');
-
-        // Fall back to the inbox list row's count — socket may have updated it before
-        // get-single-email returned a stale threadCount of 1.
-        const hasThread = Math.max(emailDetailSelected?.threadCount ?? 0, listThreadCount) > 1;
-
-        const shouldLoad = !isExcludedBox
-            && hasThread
-            && !emailDetailSelected?.isSearchEmail && settings.threadView;
-
-        if (!shouldLoad) {
+        if (!expectsThreadReplies) {
             setThreadEmails([]);
             lastThreadFetchRef.current = null;
             return;
         }
 
-        const threadCount = Math.max(emailDetailSelected?.threadCount ?? 0, listThreadCount);
+        const threadCount = expectedThreadCount;
         const prev = lastThreadFetchRef.current;
-        // Same thread + same count → skip (covers root promotion changing messageId only)
+        // Same thread + same count → skip (covers count-only updates after load)
         if (prev && prev.threadId === email.threadId && prev.threadCount === threadCount) {
             return;
         }
 
         lastThreadFetchRef.current = { threadId: email.threadId, threadCount };
-        setThreadEmails([]);
+        // Clear only when switching threads — avoids a blank flash on count bumps
+        if (prev?.threadId !== email.threadId) {
+            setThreadEmails([]);
+        }
         loadThreadEmails();
-    }, [loadThreadEmails, boxName, email.threadId, emailDetailSelected?.isSearchEmail, emailDetailSelected?.threadCount, listThreadCount, settings.threadView]);
+    }, [loadThreadEmails, email.threadId, expectsThreadReplies, expectedThreadCount]);
 
     const handleCancelScheduleEmail = async (id: string) => {
         try {
@@ -307,11 +308,12 @@ const EmailDetail = ({ email }: Props) => {
     useEffect(() => {
         setPendingReplies([]);
         setIsThreadExpanded(false);
-        setIsRootOpen(true);
         setIsCcBccExpanded(false);
         setAutoOpenMessageId(null);
         prevAutoOpenRef.current = null;
-    }, [email.threadId]);
+        // Collapse root immediately for known threads so the body never flashes open
+        setIsRootOpen(!expectsThreadReplies);
+    }, [email.threadId, expectsThreadReplies]);
 
     // Gmail-style collapse: with >4 messages show first + second-last + last only.
     // Main detail is always the first; threadEmails holds the rest (oldest → newest).
@@ -326,6 +328,9 @@ const EmailDetail = ({ email }: Props) => {
     }, [shouldCollapseThread, threadEmails]);
 
     const hasThreadReplies = threadEmails.length > 0 || pendingReplies.length > 0;
+    // While a thread is loading, treat root as collapsed so the full body doesn't flash
+    const isRootExpanded = !expectsThreadReplies || isRootOpen;
+    const canToggleRoot = expectsThreadReplies || hasThreadReplies;
 
     // In a thread, keep the root collapsed and expand only the newest reply
     // (including when a new reply arrives while this thread is open).
@@ -334,6 +339,9 @@ const EmailDetail = ({ email }: Props) => {
             if (prevAutoOpenRef.current !== null) {
                 prevAutoOpenRef.current = null;
                 setAutoOpenMessageId(null);
+            }
+            // Don't reopen root while we still expect thread siblings to load
+            if (!expectsThreadReplies) {
                 setIsRootOpen(true);
             }
             return;
@@ -347,10 +355,10 @@ const EmailDetail = ({ email }: Props) => {
             setAutoOpenMessageId(nextId);
             setIsRootOpen(false);
         }
-    }, [threadEmails]);
+    }, [threadEmails, expectsThreadReplies]);
 
     const toggleRootOpen = () => {
-        if (!hasThreadReplies) return;
+        if (!canToggleRoot) return;
         setIsRootOpen(prev => {
             if (prev) setIsCcBccExpanded(false);
             return !prev;
@@ -437,11 +445,11 @@ const EmailDetail = ({ email }: Props) => {
             {/* mail-details-information-details-box */}
             {isDesktop ? (
                 <div
-                    className={`mail-message-send--information-details-box ${hasThreadReplies ? 'thread-root-header' : ''}`}
-                    role={hasThreadReplies ? 'button' : undefined}
-                    tabIndex={hasThreadReplies ? 0 : undefined}
-                    onClick={hasThreadReplies ? toggleRootOpen : undefined}
-                    onKeyDown={hasThreadReplies ? (e) => {
+                    className={`mail-message-send--information-details-box ${canToggleRoot ? 'thread-root-header' : ''}`}
+                    role={canToggleRoot ? 'button' : undefined}
+                    tabIndex={canToggleRoot ? 0 : undefined}
+                    onClick={canToggleRoot ? toggleRootOpen : undefined}
+                    onKeyDown={canToggleRoot ? (e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             toggleRootOpen();
@@ -451,7 +459,7 @@ const EmailDetail = ({ email }: Props) => {
                     <div className="d-block">
                         <div className="mail-details-information-details-box d-flex align-items-start justify-content-between">
                             <div className="d-flex align-items-center justify-content-between position-relative profile-main-box">
-                                {(!hasThreadReplies || isRootOpen) && (
+                                {isRootExpanded && (
                                     <span className="label-sm">From</span>
                                 )}
                                 <div className="d-flex align-items-center profile-section">
@@ -480,7 +488,7 @@ const EmailDetail = ({ email }: Props) => {
                         <div className="d-flex align-items-end justify-content-between cc-bcc-to-info">
                             <div className="d-block" style={{ minWidth: 0, flex: 1 }}>
                                 {/* To — only when root is expanded (or standalone) */}
-                                {(!hasThreadReplies || isRootOpen) && (
+                                {isRootExpanded && (
                                     <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
                                         <span className="label-sm flex-shrink-0">To</span>
                                         <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
@@ -502,7 +510,7 @@ const EmailDetail = ({ email }: Props) => {
                                 )}
 
                                 {/* CC */}
-                                {(!hasThreadReplies || isRootOpen) && isCcBccExpanded && email.cc.length > 0 && (
+                                {isRootExpanded && isCcBccExpanded && email.cc.length > 0 && (
                                     <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
                                         <span className="label-sm flex-shrink-0">CC</span>
                                         <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
@@ -518,7 +526,7 @@ const EmailDetail = ({ email }: Props) => {
                                 )}
 
                                 {/* BCC */}
-                                {(!hasThreadReplies || isRootOpen) && isCcBccExpanded && email.bcc.length > 0 && (
+                                {isRootExpanded && isCcBccExpanded && email.bcc.length > 0 && (
                                     <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
                                         <span className="label-sm flex-shrink-0">BCC</span>
                                         <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
@@ -533,14 +541,14 @@ const EmailDetail = ({ email }: Props) => {
                                     </div>
                                 )}
 
-                                {hasThreadReplies && !isRootOpen && (
+                                {expectsThreadReplies && !isRootOpen && (
                                     <p className="shot-message-info-thread mb-0" style={{ display: "block" }}>
                                         {getEmailPreviewText(email)}
                                     </p>
                                 )}
                             </div>
                             {/* Actions */}
-                            {(!hasThreadReplies || isRootOpen) && !isScheduleBox && (
+                            {isRootExpanded && !isScheduleBox && (
                                 <div className="application-btn-multi" id="emailActionsBtn" onClick={(e) => e.stopPropagation()}>
                                     <ul>
                                         <li>
@@ -606,7 +614,7 @@ const EmailDetail = ({ email }: Props) => {
 
             { /** Schedule info box */}
 
-            {isScheduleBox && (!hasThreadReplies || isRootOpen) && (
+            {isScheduleBox && isRootExpanded && (
                 <div className="schedule-info-box">
                     <div className="d-flex align-items-center">
                         <img src="images/scheduled-icon.svg" alt="" className="me-3" />
@@ -643,7 +651,7 @@ const EmailDetail = ({ email }: Props) => {
             )}
 
             {/* Body */}
-            {email.body && (!hasThreadReplies || isRootOpen) && (
+            {email.body && isRootExpanded && (
                 <div className="mail-content-details-box" id="emailBodySection">
                     <div className="horizontal-scroll-container" >
                         {email.body && (
@@ -661,7 +669,7 @@ const EmailDetail = ({ email }: Props) => {
             )}
 
             {/* Attachments */}
-            {(!hasThreadReplies || isRootOpen) && (
+            {isRootExpanded && (
                 <EmailDetailAttachmentPreview
                     attachments={email.attachments}
                     messageId={email.messageId}
@@ -786,7 +794,7 @@ const EmailDetail = ({ email }: Props) => {
                     </Suspense>
                 </div>
             }
-        </div >
+        </div>
     );
 };
 
