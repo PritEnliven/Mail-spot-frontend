@@ -49,8 +49,9 @@ export const getSelectStyles = (
         border: moduleName === "datepickermodal" ? 'none' : moduleName === "compose" ? 'none' : state.isFocused ? '1px solid #0097EF' : '1px solid #BBC0C4',
       },
       boxShadow: moduleName == "datepickermodal" ? (state.isFocused ? 'none' : '') : moduleName === "compose" ? 'none' : (state.isFocused ? '0 0 0 3px #E3F2FB' : `0px 1px 3px 0px #0000001F ${isMultiple ? "inset" : ""}`),
-      backgroundColor: '#fff',
-      cursor: 'text',
+      backgroundColor: state.isDisabled ? '#F5F6F7' : '#fff',
+      opacity: state.isDisabled ? 0.65 : 1,
+      cursor: state.isDisabled ? 'not-allowed' : 'text',
       '.input-icon-add &': {
         paddingLeft: '28px !important',
       },
@@ -83,19 +84,19 @@ export const getSelectStyles = (
     }),
 
     /** Placeholder */
-    placeholder: (base) => ({
+    placeholder: (base, state) => ({
       ...base,
       backgroundColor: '',
-      color: '#212121',
+      color: state.isDisabled ? '#9AA0A6' : '#212121',
       fontSize: '13px',
       fontWeight: '400',
       fontFamily: "`DM Sans`, sans-serif",
     }),
 
     /** Single value (mostly irrelevant for isMulti) */
-    singleValue: (base) => ({
+    singleValue: (base, state) => ({
       ...base,
-      color: '#212121',
+      color: state.isDisabled ? '#9AA0A6' : '#212121',
       fontSize: '13px',
       fontWeight: '400',
       fontFamily: "`DM Sans`, sans-serif",
@@ -319,6 +320,7 @@ type SingleSelectProps = {
   moduleName?: string;
   isModal?: boolean | false;
   typeable?: boolean | true;
+  isDisabled?: boolean;
   formatOptionLabel?: (option: any, meta?: { context: 'menu' | 'value' }) => React.ReactNode;
 };
 
@@ -509,6 +511,7 @@ const renderSingleSelect = ({
   moduleName,
   isModal = false,
   typeable = false,
+  isDisabled = false,
   formatOptionLabel,
 }: SingleSelectProps, isMobile: boolean) => {
   const selectedOption = getSelectedSingleOption(options, value);
@@ -524,6 +527,7 @@ const renderSingleSelect = ({
       value={selectedOption}
       placeholder={placeholder}
       classNamePrefix="react-select"
+      isDisabled={isDisabled}
       menuPortalTarget={isMobile ? null : document.body}
       styles={getSelectStyles("single", moduleName, isModal) as any}
       components={{

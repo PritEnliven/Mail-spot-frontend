@@ -286,10 +286,17 @@ const Header = () => {
 
     const handleOnSubmitForCreateRule = async (data: CreateRuleFormValues) => {
         const currentFormValues = getValues();
+        const hasForwardRecipients = data.forwardEmails.length > 0;
+        const actions: CreateRuleFormValues = {
+            ...data,
+            // Only send forwardIt when there is at least one recipient
+            forwardIt: data.forwardIt && hasForwardRecipients,
+            forwardEmails: hasForwardRecipients ? data.forwardEmails : [],
+        };
         const payload: any = {
             ...currentFormValues,
             createRule: true,
-            actions: data
+            actions,
         }
 
         let dateRangeStr: string | undefined = undefined;

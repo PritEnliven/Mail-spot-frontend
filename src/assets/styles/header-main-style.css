@@ -5256,7 +5256,7 @@ nav#navbarList.nav-collepse::after {
 .creat-folder-custom-modal {
     overflow: auto;
     padding: 16px ;
-    height: calc(30dvh - 52px);
+    max-height: calc(100dvh - 120px);
 }
 /* END:: create foder */
 

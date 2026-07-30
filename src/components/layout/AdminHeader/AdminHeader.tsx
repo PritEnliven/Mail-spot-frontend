@@ -1,5 +1,5 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import enlivenLogo from "@images/enliven-logo.svg";
+    import enlivenLogo from "@images/enliven-logo.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
 import { useNavigate } from "react-router-dom";
 

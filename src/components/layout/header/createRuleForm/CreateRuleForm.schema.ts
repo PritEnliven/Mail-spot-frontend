@@ -17,6 +17,14 @@ export const createRuleSchema = z.object({
     deleteIt: true,
     applyTheLabel: true,
     neverSendToSpam: true,
+}).superRefine((data, ctx) => {
+    if (data.forwardIt && data.forwardEmails.length === 0) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['forwardEmails'],
+            message: 'Add at least one forward recipient before saving',
+        });
+    }
 });
 
 export type CreateRuleFormValues = {

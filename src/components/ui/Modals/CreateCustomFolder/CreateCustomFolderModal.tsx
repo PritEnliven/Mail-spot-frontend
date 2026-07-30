@@ -135,8 +135,7 @@ function CreateCustomFolderModal(
                         >
                            <SimpleBar
                                 className="creat-folder-custom-modal"
-                                autoHide={false}
-                                forceVisible="y"
+                                autoHide={true}
                             >
                             <div className="d-block">
                                 <div className="form-group form-row mb-0">
@@ -220,12 +219,10 @@ function CreateCustomFolderModal(
                             </div>
                              </SimpleBar>
                         </div>
-                       
                     </div>
                 </div>
             </div>
         </BaseModal >
-
     )
 };
 

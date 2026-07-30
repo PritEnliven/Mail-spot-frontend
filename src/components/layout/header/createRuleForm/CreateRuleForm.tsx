@@ -1,10 +1,11 @@
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import SubmitButton from '@components/ui/form/SubmitButton';
+import { showError } from '@components/ui/toast/toastNotification';
 import { useMailData } from '@context/MailDataContext';
 import { useMailUI } from '@context/MailUIContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import type { SubmitHandler } from 'react-hook-form';
+import type { FieldErrors, SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { createRuleSchema, type CreateRuleFormValues } from './CreateRuleForm.schema';
 
@@ -81,6 +82,7 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
     }
 
     const forwardItChecked = watch('forwardIt');
+    const moveToFolderChecked = watch('moveToFolder');
 
     const onSubmit = (data: any) => {
         submitForm(data);
@@ -132,7 +134,12 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
                                         id="create-filter-check4"
                                         className="list-child"
                                         checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
+                                        onChange={(e) => {
+                                            field.onChange(e.target.checked);
+                                            if (!e.target.checked) {
+                                                setValue('selectedFolder', '');
+                                            }
+                                        }}
                                     />
                                     <label htmlFor="create-filter-check4" className="label-text" />
                                 </div>
@@ -155,6 +162,7 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
                                         placeholder="Select one"
                                         isMulti={false}
                                         isModal={true}
+                                        isDisabled={!moveToFolderChecked}
                                     />
                                 )}
                             />
@@ -177,6 +185,7 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
                                         onChange={(e) => {
                                             field.onChange(e.target.checked);
                                             if (!e.target.checked) {
+                                                setValue('forwardEmails', []);
                                             }
                                         }}
                                     />
@@ -252,8 +261,12 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
                 <button type="button" className="btn-new create-filter-cancel-btn" onClick={handleReset} onSubmit={handleReset}>Reset</button>
                 <SubmitButton
                     className="btn-new loading-spinner"
-                    onClick={handleSubmit(onSubmit, (errors: any) => {
-                        console.log('SUBMIT BLOCKED BY ERRORS:', errors);
+                    onClick={handleSubmit(onSubmit, (errors: FieldErrors<CreateRuleFormValues>) => {
+                        if (errors.forwardEmails?.message) {
+                            showError(String(errors.forwardEmails.message));
+                            return;
+                        }
+                        showError('Please fix the form errors before saving');
                     })}
                 >
                     Save
