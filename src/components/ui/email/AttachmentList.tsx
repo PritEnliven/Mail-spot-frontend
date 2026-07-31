@@ -36,6 +36,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
                         src={fileIcon}
                         alt="File icon"
                     />
+                    
                     <span className="mail-attachment-text">{attachment.filename}</span>
                 </a>
             ))}
