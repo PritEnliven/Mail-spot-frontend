@@ -173,6 +173,7 @@ export const useMailSocket = () => {
                 payloadBoxLower.endsWith('.inbox');
             const isAllMailPayload =
                 payloadBoxLower.includes('all mail') || payloadBoxLower.includes('allmail');
+                
             const isSentPayload = payloadBoxLower.includes('sent');
 
             // Inbox / All Mail — existing thread-aware ingest
@@ -185,9 +186,11 @@ export const useMailSocket = () => {
             const addedUnread = incoming.filter(
                 (e) => !e.isSeen && !(Array.isArray(e.flags) && e.flags.includes('\\Seen'))
             ).length;
+
             updateBoxCount(payloadBox, addedUnread, incoming.length);
 
             const currentBoxLower = boxNameRef.current.toLowerCase().trim();
+
             const viewingThisBox =
                 currentBoxLower === payloadBoxLower ||
                 (isSentPayload && currentBoxLower.includes('sent'));
@@ -255,9 +258,7 @@ export const useMailSocket = () => {
             // Normalise the various payload shapes a backend might use for a reply,
             // then reuse the same list-ingestion path as 'newEmail'. The messageId
             // dedupe + idempotency guard keep the count correct if both events fire.
-            const emails: Email[] = Array.isArray(data)
-                ? data
-                : ((data as { emails?: Email[] })?.emails ?? (data ? [data as Email] : []));
+            const emails: Email[] = Array.isArray(data)? data : ((data as { emails?: Email[] })?.emails ?? (data ? [data as Email] : []));
             ingestInboundEmails(emails);
         };
 
@@ -308,3 +309,7 @@ export const useMailSocket = () => {
         };
     }, []); // empty array — runs once on mount, cleans up on unmount
 };
+
+
+
+

@@ -5,19 +5,21 @@ import chevronRightIcon from "@images/chevron-right-icon.svg";
 import chevronRightIconHover from "@images/chevron-right-icon-hover.svg";
 import chevronDownIcon from "@images/chevron-down-icon.svg"
 import chevronDownIconHover from "@images/chevron-down-icon-hover.svg";
-import blackColorIcon from "@images/folder-dark-icon.svg";              
-import redColorIcon from "@images/folder-red-icon.svg";                 
-import grayColorIcon from "@images/folder-gray-icon.svg";               
-import orangeColorIcon from "@images/folder-orange-icon.svg";           
-import pinkColorIcon from "@images/folder-pink-icon.svg";               
-import yellowColorIcon from "@images/folder-yellow-icon.svg";           
+import blackColorIcon from "@images/folder-dark-icon.svg";
+import redColorIcon from "@images/folder-red-icon.svg";
+import grayColorIcon from "@images/folder-gray-icon.svg";
+import orangeColorIcon from "@images/folder-orange-icon.svg";
+import pinkColorIcon from "@images/folder-pink-icon.svg";
+import yellowColorIcon from "@images/folder-yellow-icon.svg";
 import deepRoyalBlueColorIcon from "@images/folder-deep-royal-blue-icon.svg";
-import greenLiteColorIcon from "@images/folder-green-lite-icon.svg";     
-import brightBlueColorIcon from "@images/folder-bright-blue-icon.svg";   
-import greenDarkColorIcon from "@images/folder-green-dark-icon.svg";     
+import greenLiteColorIcon from "@images/folder-green-lite-icon.svg";
+import brightBlueColorIcon from "@images/folder-bright-blue-icon.svg";
+import greenDarkColorIcon from "@images/folder-green-dark-icon.svg";
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import folderIcon from "@images/plus-icon.svg";
 import folderIconHover from "@images/plus-icon-hover.svg";
+import arrowSubFolderIcon from "@images/arrow-sub-folder-icon-16.svg";
+import arrowSubFolderHoverIcon from "@images/arrow-sub-folder-hover-icon-16.svg"
 import FolderActionsDropdown from '@components/ui/sidebar/FolderActionsDropdown';
 import { useMailUI } from "@context/MailUIContext";
 import { useCustomFolderScrollbar } from '@hooks/useCustomFolderScrollbar';
@@ -234,7 +236,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                     id={`${folder.name}`}
                     onClick={() => handleFolderClick(folder)}
                     ref={openDropdownId === folder.id ? dropdownRef : null}
-                    style={isSidebarOpen ? { paddingLeft: `${depth * 12}px` } : undefined}
+                    style={isSidebarOpen ? { paddingLeft: `${depth * 22}px` } : undefined}
                   >
                     <div className={`m-link ${!isSidebarOpen && openDropdownId === folder.id ? 'sub-open-hover-active' : ''} ${isActive ? 'active' : ''}`}>
 
@@ -258,9 +260,20 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                       )}
 
                       {/* Leaf-child connector (expanded sidebar only, no children) */}
-                      {isSidebarOpen && isChild && !hasChildren && (
-                        <span style={{ color: '#BBC0C4', fontSize: '11px', marginRight: '2px', flexShrink: 0, lineHeight: 1 }}>{'└'}</span>
-                      )}
+                      {/* {isSidebarOpen && isChild && !hasChildren && (
+                        <span className='create-new-sab-folder-icon'>
+                          <InteractiveIcon
+                            defaultIcon={arrowSubFolderHoverIcon}
+                            hoverIcon={arrowSubFolderHoverIcon}
+                            activeIcon=""
+                            isActive={false}
+                            alt="sub-folder"
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip=""                            
+                          />
+                        </span>
+                      )} */}
 
                       <img className="hover-image" src={getFolderIcon(folder.color)} />
                       <span className="active-line-t"

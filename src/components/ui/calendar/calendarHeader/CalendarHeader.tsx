@@ -480,7 +480,6 @@ import searchIcon from "@images/search-icon.svg";
 import searchIconHover from "@images/search-icon-hover.svg";
 import backBtnIcon from "@images/back-btn-icon.svg";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
-import menuIcon from "@images/menu-icon.svg";
 import sidebarcloseIcon from "@images/side-bar-close-icon.svg";
 import sidebarcloseHoverIcon from "@images/side-bar-close-hover-icon.svg";
 import sidebaropenIcon from "@images/side-bar-open-icon.svg";
@@ -508,7 +507,6 @@ function CalendarHeader() {
     const { setCalendarAllSearchedEvents, setIsCalendarAllSearchActive, isSidebarCalendarOpen, setIsSidebarCalendarOpen } = useCalendar();
     const debouncedSearchText = useDebounce(searchText, 1000);
     const allowSearchDropdownRef = useRef(true);
-    const prevDebouncedSearchRef = useRef(debouncedSearchText);
 
     const startFromMonth = new Date().getMonth();
     const mountMonthDropdown = useFlatpickrMonthDropdown(startFromMonth);
@@ -549,9 +547,7 @@ function CalendarHeader() {
 
     useEffect(() => {
         const trimmedSearchText = searchText.trim();
-        const previousSearch = prevDebouncedSearchRef.current.trim();
         const currentSearch = debouncedSearchText.trim();
-        prevDebouncedSearchRef.current = debouncedSearchText;
 
         if (!trimmedSearchText && currentSearch) {
             return;

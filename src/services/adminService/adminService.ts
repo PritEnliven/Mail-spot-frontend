@@ -44,9 +44,16 @@ async function adminLogin(payload: loginPayload) {
     }
 }
 
-async function adminGetUserList() {
+interface GetUserListParams {
+    page: number;
+    limit: number;
+}
+
+async function adminGetUserList({ page, limit }: GetUserListParams) {
     try {
-        const response = await getData('admin/getUserList');
+        const response = await getData('admin/getUserList', {
+            params: { page, limit },
+        });
         return response;
     } catch (error: any) {
         return error;

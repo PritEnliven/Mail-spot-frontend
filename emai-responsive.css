@@ -6,7 +6,8 @@
 /* ==========================================================================
    1. Breakpoint: max-width 1400px
    ========================================================================== */
-@media screen and (max-width: 1400px) {}
+@media screen and (max-width: 1400px) {
+}
 
 
 /* ==========================================================================
@@ -213,7 +214,7 @@
         height: calc(100dvh - 108px);
     }
 
-    .mail-message-box .mail-list-filter+.mail-received-table-news .mailReceivedTableNewsSimpleBar {
+    .mail-message-box .mail-list-filter + .mail-received-table-news .mailReceivedTableNewsSimpleBar {
         height: calc(100dvh - 146px);
     }
 
@@ -498,6 +499,13 @@
         transition: unset;
     }
 
+    .left-sidebar-main-collapsed-mobile {
+        left: 0;
+        transition: all 0.4s ease;
+        border-right: 1px solid #BBC0C4;
+        box-shadow: 1px 0px 4px 0px #0000001F;
+    }
+
     .left-sidebar-main-collapsed {
         width: 200px;
         min-width: 200px;
@@ -506,16 +514,6 @@
         z-index: 50;
         border: 0;
         box-shadow: none;
-    }
-
-    /* Mobile "open" state must win over .left-sidebar-main-collapsed.
-       Declared after it, and repeated with the base selector for extra specificity. */
-    .left-side-bar-main.left-sidebar-main-collapsed-mobile,
-    .left-sidebar-main-collapsed-mobile {
-        left: 0 !important;
-        transition: all 0.4s ease;
-        border-right: 1px solid #BBC0C4;
-        box-shadow: 1px 0px 4px 0px #0000001F;
     }
 
     .nav-collepse-button {
@@ -549,10 +547,9 @@
         z-index: 1050;
     }
 
-    .single-navbar-collapse-sec button {
+    .single-navbar-collapse-sec button{
         display: none;
     }
-
     /* -------------------- Right Sidebar -------------------- */
     .right-side-bar-main {
         width: calc(100% - 0px);
@@ -591,7 +588,7 @@
         width: 100% !important;
     }
 
-    .modal-content-shadow.modal-show-open>div {
+    .modal-content-shadow.modal-show-open > div {
         animation: fadeUp 0.3s ease-out forwards;
     }
 
@@ -600,7 +597,6 @@
             opacity: 0;
             transform: translateY(100%);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
@@ -640,8 +636,8 @@
         max-height: calc(100dvh - 102px);
     }
 
-    #composeEmailModal .ck-rounded-corners .ck.ck-editor__main>.ck-editor__editable,
-    #composeEmailModal .ck.ck-editor__main>.ck-editor__editable.ck-rounded-corners {
+    #composeEmailModal .ck-rounded-corners .ck.ck-editor__main > .ck-editor__editable,
+    #composeEmailModal .ck.ck-editor__main > .ck-editor__editable.ck-rounded-corners {
         height: calc(100dvh - 236px) !important;
     }
 
@@ -654,7 +650,6 @@
             opacity: 0;
             transform: translatex(-100%);
         }
-
         to {
             opacity: 1;
             transform: translatex(0);
@@ -669,12 +664,11 @@
     /* .compose-email-modal .btn-close, .modal-title { display: none; } */
 
     /* -------------------- CC BCC to info -------------------- */
-    .cc-bcc-to-info {
+    .cc-bcc-to-info{
         flex-direction: column !important;
         align-items: start !important;
         gap: 16px;
     }
-
     /* -------------------- Schedule -------------------- */
     .modal-schedule-box .modal-dialog {
         max-width: 100%;
@@ -717,7 +711,7 @@
         padding: 12px !important;
     }
 
-
+    
 }
 
 
@@ -727,26 +721,16 @@
 @media screen and (max-width: 425px) {
 
     /* -------------------- Attachment -------------------- */
-    .mail-attachment-text {
+    .mail-attachment-text{
         width: 50px;
     }
 
-    /* -------------------- Left Sidebar -------------------- */
-    .left-side-bar-main.left-sidebar-main-collapsed-mobile,
-    .left-sidebar-main-collapsed-mobile {
-        left: 0 !important;
-    }
-
-    .add-floder-single-box .dropdown-menu {
-        top: 21px !important;
-        margin: 0 !important;
-        left: -180px !important;
-    }
-
+    
 }
 
 /* ==========================================================================
-   7. Breakpoint: max-width 320px
+   7. Breakpoint: max-width 320px — CKEditor sticky toolbar
+   Show icons that fit; overflow into three-dots (.ck-toolbar__grouped-dropdown)
    ========================================================================== */
 @media screen and (max-width: 320px) {
 
@@ -767,12 +751,12 @@
     }
 
     /* Tighter gaps so more icons fit before three-dots */
-    .compose-email-modal .ck.ck-toolbar>.ck-toolbar__items>*:not(.ck-toolbar__line-break),
-    .compose-email-modal .ck.ck-toolbar>.ck.ck-toolbar__grouped-dropdown,
-    .reply-mail-box .ck.ck-toolbar>.ck-toolbar__items>*:not(.ck-toolbar__line-break),
-    .reply-mail-box .ck.ck-toolbar>.ck.ck-toolbar__grouped-dropdown,
-    .forward-it-modal .ck.ck-toolbar>.ck-toolbar__items>*:not(.ck-toolbar__line-break),
-    .forward-it-modal .ck.ck-toolbar>.ck.ck-toolbar__grouped-dropdown {
+    .compose-email-modal .ck.ck-toolbar > .ck-toolbar__items > *:not(.ck-toolbar__line-break),
+    .compose-email-modal .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown,
+    .reply-mail-box .ck.ck-toolbar > .ck-toolbar__items > *:not(.ck-toolbar__line-break),
+    .reply-mail-box .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown,
+    .forward-it-modal .ck.ck-toolbar > .ck-toolbar__items > *:not(.ck-toolbar__line-break),
+    .forward-it-modal .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown {
         margin: 0 2px 0 0;
     }
 
@@ -814,7 +798,7 @@
 }
 
 /* ==========================================================================
-   8. Global :: Mobile Sidebar Backdrop
+   End :: General Responsive CSS
    ========================================================================== */
 .mobile-sidebar-backdrop {
     position: fixed;
@@ -823,11 +807,6 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    /* below sidebar, above rest of content */
+    z-index: 999; /* below sidebar, above rest of content */
 }
 
-
-/* ==========================================================================
-   End :: General Responsive CSS
-   ========================================================================== */

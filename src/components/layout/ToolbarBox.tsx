@@ -173,7 +173,7 @@ const ToolbarBox = () => {
 
         openModal('confirmDelete', {
             messageIds,
-            onConfirm: () => deleteEmailToolbar(messageIds, false)
+            onConfirm: () => deleteEmailToolbar(messageIds, verifyBoxName(boxName, 'draft'))
         });
     }
 

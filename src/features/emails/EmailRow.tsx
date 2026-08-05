@@ -143,7 +143,7 @@ const EmailRow = memo(({
                                     { /* Thread Count */}
                                     <div className="d-flex align-items-center">
                                         <div className="mail-received-name mb-0">{emailNameOrEmail}</div>
-                                        {email.threadCount > 1 && (
+                                        {!verifyBoxName(boxName, 'trash') && email.threadCount > 1 && (
                                             <span className="badge thread-badge">
                                                 {email.threadCount}
                                             </span>
@@ -210,7 +210,7 @@ const EmailRow = memo(({
                                     className="hover-link mail-received-hover-btn-link"
                                     title="Delete"
                                     onClick={() =>
-                                        onDelete([email.messageId], false)
+                                        onDelete([email.messageId], verifyBoxName(boxName, 'draft'))
                                     }
                                 >
                                     <InteractiveIcon
@@ -234,3 +234,6 @@ const EmailRow = memo(({
 });
 
 export default memo(EmailRow);
+
+
+

@@ -360,7 +360,6 @@ const LeftPanel = () => {
                         >
                             <InteractiveIcon
                                 defaultIcon={isSidebarExpandedMobile ? navCollapseIconHover : menuIcon}
-
                                 activeIcon=""
                                 isActive={false}
                                 alt=""
@@ -449,7 +448,8 @@ const LeftPanel = () => {
                 {/* END:: Compose box */}
             </div>
 
-            <nav id="navbarList" className={`nav-custom-scroll-wrapper ${isSidebarOpen ? '' : 'nav-collepse expanded-nav'}`}>
+           <nav id="navbarList"    className={`nav-custom-scroll-wrapper ${isMobile ? (isSidebarExpandedMobile ? '' : 'nav-collepse expanded-nav')
+            : (isSidebarOpen ? '' : 'nav-collepse expanded-nav')}`}>
                 <div className="nav-custom-scroll-content" ref={scrollRef}>
                     <div ref={fadeTopRef} className="nav-custom-scroll-fade-top" style={{ opacity: 0 }} />
                     <ul id="sidebarMainMenu" className="left-side-manu-link-list">
@@ -507,8 +507,6 @@ const LeftPanel = () => {
             </nav>
 
         </>
-
-
     );
 };
 

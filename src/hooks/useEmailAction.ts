@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMailData } from '../context/index';
 import { deleteEmails, readUnreadEmails } from '../services/emailAction/emailActionService';
+import { verifyBoxName } from '@utils/emailUtil';
 
 export function useEmailAction() {
     const [loading, setLoading] = useState(false);
@@ -59,16 +60,25 @@ export function useEmailAction() {
         setLoading(true);
         setError(null);
         try {
+            const isDraftBox = isDraftMail || verifyBoxName(boxName, 'draft');
+            // isTotal boxes show totalCount; local list removal often races ahead of
+            // emailDeleted, so the socket path finds no rows and skips the decrement.
+            // Update sidebar locally for those boxes. deleteEmailState is idempotent
+            // against the live list, so a later socket event won't double-decrement.
+            const shouldUpdateSidebarLocally =
+                isDraftBox
+                || verifyBoxName(boxName, 'junk')
+                || verifyBoxName(boxName, 'spam')
+                || verifyBoxName(boxName, 'trash');
+
             const response = await deleteEmails({
                 messageIds,
                 current_active_box: boxName,
-                isDraftMail
+                isDraftMail: isDraftBox
             });
             if (response.statusCode === 200) {
                 const remainingEmails = emails.filter(email => !messageIds.includes(email.messageId));
-                // Draft has no emailDeleted socket event, so update sidebar here.
-                // Other folders (e.g. Junk) rely on socket deleteEmail, which must preserve isTotal.
-                deleteEmailState(messageIds, !isDraftMail);
+                deleteEmailState(messageIds, !shouldUpdateSidebarLocally);
 
                 if (activeEmailMessageId && messageIds.includes(activeEmailMessageId)) {
                     setActiveEmailMessageId(null);

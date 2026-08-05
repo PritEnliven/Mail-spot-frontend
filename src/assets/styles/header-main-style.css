@@ -5090,6 +5090,11 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
     padding-bottom: 0;
 }
 
+.create-new-sab-folder-icon{
+    margin-right: 2px;
+    display: inline-block;
+}
+
 
 nav#navbarList.nav-collepse::before,
 nav#navbarList.nav-collepse::after {

@@ -25,8 +25,6 @@ import enlivenLogo from "@images/enliven-logo.svg";
 import functionIconHover from "@images/function-icon-hover.svg";
 import functionIcon from "@images/function-icon.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
-import menuIcon from "@images/menu-icon.svg";
-import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import searchIconHover from "@images/search-icon-hover.svg";
 import searchIcon from "@images/search-icon.svg";
 import sidebaropenIcon from "@images/side-bar-open-icon.svg"
@@ -84,7 +82,7 @@ const Header = () => {
     const { setSelectedEmails } = useMailSelection();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const { isDesktop, isMobile, isTrueMobile } = useScreen();
+    const { isDesktop, isMobile } = useScreen();
     const prevDebouncedSearchRef = useRef(debouncedSearchText);
     const allowSearchDropdownRef = useRef(true);
 

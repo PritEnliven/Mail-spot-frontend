@@ -562,38 +562,43 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     // };
 
     const deleteEmailState = (messageIds: string[], skipSidebarUpdate = false) => {
-        const deletedEmails = emails.filter(email => messageIds.includes(email.messageId));
-        const unreadDeletedCount = deletedEmails.filter(email => !email.isSeen).length;
-        const removedCount = deletedEmails.length;
-
-        setEmails(prev => prev.filter(email => !messageIds.includes(email.messageId)));
         setHeaderSearchResults(prev => prev.filter(email => !messageIds.includes(email.messageId)));
 
-        if (removedCount === 0) return;
+        // Derive removals from current list state (same pattern as socket deleteEmail).
+        // If the socket already removed these rows, removedCount is 0 → no double-decrement.
+        setEmails(prev => {
+            const deletedEmails = prev.filter(email => messageIds.includes(email.messageId));
+            const removedCount = deletedEmails.length;
+            if (removedCount === 0) return prev;
 
-        const newPagination = pagination ? {
-            ...pagination,
-            endCount: pagination.endCount - removedCount,
-            totalEmails: pagination.totalEmails - removedCount
-        } : null;
-        setPagination(newPagination);
-        setTotalEmailBadge(prevBadge => Math.max(0, prevBadge - removedCount));
+            const unreadDeletedCount = deletedEmails.filter(email => !email.isSeen).length;
 
-        // Only update sidebar when explicitly requested (e.g. draft delete where no socket event fires).
-        // Spread existing box entry so isTotal stays intact for Junk/Draft/Trash.
-        if (skipSidebarUpdate === false && boxName) {
-            setSidebarState(prev => ({
-                ...prev,
-                boxCounts: {
-                    ...prev.boxCounts,
-                    [boxName]: {
-                        ...prev.boxCounts[boxName],
-                        unreadCount: Math.max(0, (prev.boxCounts[boxName]?.unreadCount || 0) - unreadDeletedCount),
-                        totalCount: Math.max(0, (prev.boxCounts[boxName]?.totalCount || 0) - removedCount)
+            setPagination(prevPagination => prevPagination ? {
+                ...prevPagination,
+                endCount: Math.max(0, prevPagination.endCount - removedCount),
+                totalEmails: Math.max(0, prevPagination.totalEmails - removedCount)
+            } : prevPagination);
+            
+            setTotalEmailBadge(prevBadge => Math.max(0, prevBadge - removedCount));
+
+            // Only update sidebar when explicitly requested (e.g. draft/junk where socket can't help).
+            // Spread existing box entry so isTotal stays intact for Junk/Draft/Trash.
+            if (skipSidebarUpdate === false && boxName) {
+                setSidebarState(prevSidebar => ({
+                    ...prevSidebar,
+                    boxCounts: {
+                        ...prevSidebar.boxCounts,
+                        [boxName]: {
+                            ...prevSidebar.boxCounts[boxName],
+                            unreadCount: Math.max(0, (prevSidebar.boxCounts[boxName]?.unreadCount || 0) - unreadDeletedCount),
+                            totalCount: Math.max(0, (prevSidebar.boxCounts[boxName]?.totalCount || 0) - removedCount)
+                        }
                     }
-                }
-            }));
-        }
+                }));
+            }
+
+            return prev.filter(email => !messageIds.includes(email.messageId));
+        });
     };
 
     /* -------------------- Socket-safe helpers -------------------- */
@@ -681,8 +686,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
             const removedCount = removedEmails.length;
 
-            // Update total email badge
-            // setTotalEmailBadge(prev => Math.max(0, prev - removedCount));
+            // Keep badge in sync when socket wins the race against local deleteEmailState.
+            setTotalEmailBadge(prev => Math.max(0, prev - removedCount));
 
             // Update pagination
             setPagination(prev => prev ? {

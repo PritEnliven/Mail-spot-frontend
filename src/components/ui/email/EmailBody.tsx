@@ -60,6 +60,7 @@ function EmailBody({ html, searchTerm }: EmailBodyProps) {
       const wrapper = document.createElement("div");
 
       const toggle = document.createElement("button");
+      
       toggle.type = "button";
       toggle.innerHTML = `<img src="${threeDotIcon}" alt="Show quoted text" className="input-icon-1'/>`;
       toggle.style.border = "none";
@@ -106,7 +107,8 @@ function EmailBody({ html, searchTerm }: EmailBodyProps) {
         if (isOpen) {
           toggle.innerHTML = "";
           toggle.appendChild(createIcon());
-        } else {
+        } 
+        else {
           toggle.textContent = "Hide quoted text";
         }
       });

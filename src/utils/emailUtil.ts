@@ -2,6 +2,11 @@ import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import inboxIconActive from '@images/inbox-icon-active.svg';
 import inboxIcon from '@images/inbox-icon.svg';
 import { getSingleEmailService, type GetSingleEmailPayload } from "@services/email/emailService";
+import {
+    MAX_CUSTOM_FOLDER_DEPTH,
+    MAX_CUSTOM_FOLDER_LEVELS,
+    NO_PARENT_FOLDER_VALUE,
+} from "../constants/customFolder";
 import sidebarConfig from "../config/sidebar.config";
 import type { BoxCount } from "../context/MailDataContext";
 
@@ -203,34 +208,30 @@ function getAttachmentIcon(filename: string): string {
     return `images/${iconName}-image.png`;
 }
 
-const buildParentFolderOptions = (
-    _boxes: any[],
-    customBoxes: any[],
-    boxName?: string
-) => {
-    // Remove current folder in edit case
-    let filteredCustomBoxes = customBoxes;
-    if (boxName) {
-        filteredCustomBoxes = customBoxes.filter(
-            (box) => box.value.value.toLowerCase() !== boxName.toLowerCase()
-        );
-    }
+const getCustomBoxImap = (box: any): string =>
+    typeof box.value === "object" ? box.value.value : box.value;
 
-    interface TreeNode {
-        box: any;
-        children: TreeNode[];
-    }
+const getCustomBoxParentImap = (box: any): string | undefined =>
+    typeof box.value === "object" ? box.value.parentBox : undefined;
 
-    const nodeMap = new Map<string, TreeNode>();
-    filteredCustomBoxes.forEach((box) => {
-        const imap = typeof box.value === "object" ? box.value.value : box.value;
-        nodeMap.set(imap, { box, children: [] });
+interface CustomFolderTreeNode {
+    box: any;
+    children: CustomFolderTreeNode[];
+}
+
+const buildCustomBoxTree = (customBoxes: any[]): {
+    nodeMap: Map<string, CustomFolderTreeNode>;
+    roots: CustomFolderTreeNode[];
+} => {
+    const nodeMap = new Map<string, CustomFolderTreeNode>();
+    customBoxes.forEach((box) => {
+        nodeMap.set(getCustomBoxImap(box), { box, children: [] });
     });
 
-    const roots: TreeNode[] = [];
-    filteredCustomBoxes.forEach((box) => {
-        const imap = typeof box.value === "object" ? box.value.value : box.value;
-        const parentImap = typeof box.value === "object" ? box.value.parentBox : undefined;
+    const roots: CustomFolderTreeNode[] = [];
+    customBoxes.forEach((box) => {
+        const imap = getCustomBoxImap(box);
+        const parentImap = getCustomBoxParentImap(box);
         const node = nodeMap.get(imap)!;
 
         if (parentImap && nodeMap.has(parentImap)) {
@@ -240,19 +241,109 @@ const buildParentFolderOptions = (
         }
     });
 
-    const options: any[] = [];
-    options.push({ label: "Select a folder", value: "noFolderSelect", depth: 0 });
+    return { nodeMap, roots };
+};
 
-    const flatten = (nodes: TreeNode[], depth: number) => {
+/** Max depth of descendants relative to the node (0 = leaf). */
+const getRelativeSubtreeHeight = (node: CustomFolderTreeNode): number => {
+    if (node.children.length === 0) return 0;
+    return 1 + Math.max(...node.children.map(getRelativeSubtreeHeight));
+};
+
+const collectDescendantImaps = (node: CustomFolderTreeNode, into: Set<string>) => {
+    node.children.forEach((child) => {
+        into.add(getCustomBoxImap(child.box));
+        collectDescendantImaps(child, into);
+    });
+};
+
+/**
+ * Whether placing a folder (optionally with an existing subtree) under this parent
+ * would stay within MAX_CUSTOM_FOLDER_DEPTH.
+ * parentDepth: -1 means no parent (new root at depth 0).
+ */
+const wouldExceedCustomFolderDepth = (
+    parentDepth: number,
+    relativeSubtreeHeight = 0
+): boolean => parentDepth + 1 + relativeSubtreeHeight > MAX_CUSTOM_FOLDER_DEPTH;
+
+const buildParentFolderOptions = (
+    _boxes: any[],
+    customBoxes: any[],
+    /** IMAP path of the folder being edited (excluded with its descendants). */
+    excludeBoxImap?: string
+) => {
+    const { nodeMap: fullNodeMap } = buildCustomBoxTree(customBoxes);
+
+    const excludedImaps = new Set<string>();
+    let relativeSubtreeHeight = 0;
+
+    if (excludeBoxImap) {
+        const editNode = fullNodeMap.get(excludeBoxImap);
+        if (editNode) {
+            excludedImaps.add(excludeBoxImap);
+            collectDescendantImaps(editNode, excludedImaps);
+            relativeSubtreeHeight = getRelativeSubtreeHeight(editNode);
+        }
+    }
+
+    const filteredCustomBoxes = excludedImaps.size
+        ? customBoxes.filter((box) => !excludedImaps.has(getCustomBoxImap(box)))
+        : customBoxes;
+
+    const { roots } = buildCustomBoxTree(filteredCustomBoxes);
+
+    const options: any[] = [];
+    options.push({
+        label: "Select a folder",
+        value: NO_PARENT_FOLDER_VALUE,
+        depth: -1,
+        isDisabled: wouldExceedCustomFolderDepth(-1, relativeSubtreeHeight),
+    });
+
+    const flatten = (nodes: CustomFolderTreeNode[], depth: number) => {
         nodes.forEach((node) => {
-            const imap = typeof node.box.value === "object" ? node.box.value.value : node.box.value;
-            options.push({ label: node.box.key, value: imap, depth });
+            const imap = getCustomBoxImap(node.box);
+            const exceeds = wouldExceedCustomFolderDepth(depth, relativeSubtreeHeight);
+            options.push({
+                label: exceeds
+                    ? `${node.box.key} (max ${MAX_CUSTOM_FOLDER_LEVELS} levels)`
+                    : node.box.key,
+                value: imap,
+                depth,
+                isDisabled: exceeds,
+            });
             flatten(node.children, depth + 1);
         });
     };
 
     flatten(roots, 0);
     return options;
+};
+
+/** Resolve parent depth for validation (-1 = no parent / root). */
+const getParentFolderDepth = (
+    parentFolder: string | undefined,
+    parentFolderOptions: { value: string; depth?: number }[]
+): number => {
+    if (!parentFolder || parentFolder === NO_PARENT_FOLDER_VALUE) return -1;
+    const match = parentFolderOptions.find((opt) => opt.value === parentFolder);
+    return match?.depth ?? -1;
+};
+
+/**
+ * Uses options built by buildParentFolderOptions (including isDisabled / subtree height on edit).
+ */
+const isCustomFolderDepthAllowed = (
+    parentFolder: string | undefined,
+    parentFolderOptions: { value: string; depth?: number; isDisabled?: boolean }[]
+): boolean => {
+    const value = parentFolder || NO_PARENT_FOLDER_VALUE;
+    const match = parentFolderOptions.find((opt) => opt.value === value);
+    if (!match) {
+        return !wouldExceedCustomFolderDepth(getParentFolderDepth(parentFolder, parentFolderOptions));
+    }
+    return !match.isDisabled;
 };
 
 function resolveSidebarItem(box: any, category: 'boxes' | 'customBoxes' | 'otherMenu', boxCounts: Record<string, BoxCount>): any {
@@ -444,4 +535,4 @@ const getEmailPreviewText = (email: {
     return withoutQuote || email.subject || "";
 };
 
-export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText };
+export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText, isCustomFolderDepthAllowed, getParentFolderDepth, wouldExceedCustomFolderDepth };

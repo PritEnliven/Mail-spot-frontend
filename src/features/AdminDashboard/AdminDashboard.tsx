@@ -11,14 +11,14 @@ import chevronRightIconBig from "@images/chevron-right-icon-big.svg";
 import searchIcon from "@images/search-icon.svg";
 import { adminGetUserList, deleteUser, loginAdminAsUser } from '@services/adminService/adminService';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
-import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
-import { useEffect, useRef, useState } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Register all Community features
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const PAGE_SIZE_OPTIONS: SingleOption[] = [
+    { label: "2", value: "2" },
     { label: "10", value: "10" },
     { label: "25", value: "25" },
     { label: "50", value: "50" },
@@ -29,39 +29,63 @@ const AdminDashboard = () => {
     usePageStylesheet([pageStyles.agGridCss, pageStyles.agGridCustomCss, pageStyles.agGridThemeAlpineCss])
     const navigate = useNavigate();
     const [rowData, setRowData] = useState<any[]>([]);
-    const [gridApi, setGridApi] = useState<any>(null);
     const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0].value);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [totalRows, setTotalRows] = useState(0);
     const [searchText, setSearchText] = useState('');
     const [goToPage, setGoToPage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const gridRef = useRef<AgGridReact>(null);
     const { openModal } = useAdminUI();
     const { setSettingPayLoad } = useAdmin();
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await adminGetUserList();
-                setRowData(response.data ?? []);
-            } catch (err) {
-                console.error('Failed to load users', err);
+    const pageSizeNum = Number(pageSize) || 10;
+    const totalPages = Math.max(1, Math.ceil(totalRows / pageSizeNum) || 1);
+
+    const fetchUsers = useCallback(async (page: number, limit: number) => {
+        setIsLoading(true);
+        try {
+            const response = await adminGetUserList({ page, limit });
+            const users = Array.isArray(response?.data) ? response.data : [];
+            const total = Number(response?.total ?? response?.totalCount ?? users.length) || 0;
+
+            setRowData(users);
+            setTotalRows(total);
+
+            // If current page is past the last page after a size/delete change, clamp it
+            const maxPage = Math.max(1, Math.ceil(total / limit) || 1);
+            if (page > maxPage) {
+                setCurrentPage(maxPage);
             }
-        };
+        } catch (err) {
+            console.error('Failed to load users', err);
+            setRowData([]);
+            setTotalRows(0);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-        fetchUsers();
-    }, [pageSize]);
-
+    useEffect(() => {
+        fetchUsers(currentPage, pageSizeNum);
+    }, [currentPage, pageSizeNum, fetchUsers]);
 
     const colDefs = [
         {
             headerName: 'No.',
-            sortable: true,
+            sortable: false,
             minWidth: 67,
             maxWidth: 67,
             flex: 0,
-            valueGetter: (params: any) => params.node.rowIndex + 1,
+            getQuickFilterText: () => '',
+            valueGetter: (params: any) => {
+                const sourceIndex = params.node?.sourceRowIndex;
+                const index =
+                    typeof sourceIndex === 'number' && sourceIndex >= 0
+                        ? sourceIndex
+                        : (params.node?.rowIndex ?? 0);
+                return (currentPage - 1) * pageSizeNum + index + 1;
+            },
         },
         {
             headerName: 'User',
@@ -115,7 +139,6 @@ const AdminDashboard = () => {
         }
     ];
 
-    // Action handlers
     const handleChangePassword = (userId: string) => {
         openModal('changePassword', {
             userId
@@ -141,8 +164,15 @@ const AdminDashboard = () => {
             onConfirm: async () => {
                 const response = await deleteUser(userId);
                 if (response.statusCode === 200) {
-                    setRowData(prev => prev.filter(user => user.id !== userId));
                     showSuccess('User deleted successfully');
+                    // Refetch so page totals stay in sync with the server
+                    const nextTotal = Math.max(0, totalRows - 1);
+                    const maxPage = Math.max(1, Math.ceil(nextTotal / pageSizeNum) || 1);
+                    if (currentPage > maxPage) {
+                        setCurrentPage(maxPage);
+                    } else {
+                        await fetchUsers(currentPage, pageSizeNum);
+                    }
                 } else {
                     showError(response.message || 'Failed to delete user');
                     throw new Error(response.message);
@@ -156,7 +186,6 @@ const AdminDashboard = () => {
         if (response.statusCode === 200) {
             const { token, email, username, id } = response.data;
 
-            // Match Login.tsx AUTH_STORAGE_KEYS so ProtectedRoute + mail APIs work
             localStorage.setItem('token', token);
             localStorage.setItem('email', email);
             localStorage.setItem('username', username);
@@ -179,24 +208,21 @@ const AdminDashboard = () => {
         unSortIcon: true
     };
 
-    // Pagination
     const goToPrevPage = () => {
-        gridRef.current?.api.paginationGoToPreviousPage();
+        setCurrentPage(prev => Math.max(1, prev - 1));
     };
 
     const goToNextPage = () => {
-        gridRef.current?.api.paginationGoToNextPage();
+        setCurrentPage(prev => Math.min(totalPages, prev + 1));
     };
 
     const handleGoToPage = () => {
-        if (!goToPage || !gridRef.current) return;
+        if (!goToPage) return;
 
         const pageNumber = parseInt(goToPage, 10);
-        const maxPage = gridRef.current.api.paginationGetTotalPages();
-
-        if (pageNumber >= 1 && pageNumber <= maxPage) {
-            gridRef.current.api.paginationGoToPage(pageNumber - 1); // AG Grid uses 0-based index
-            setGoToPage(''); // Clear the input after navigation
+        if (pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+            setGoToPage('');
         }
     };
 
@@ -205,6 +231,15 @@ const AdminDashboard = () => {
             handleGoToPage();
         }
     };
+
+    const handlePageSizeChange = (value: string | null) => {
+        if (!value) return;
+        setPageSize(value);
+        setCurrentPage(1);
+    };
+
+    const rangeStart = totalRows === 0 ? 0 : (currentPage - 1) * pageSizeNum + 1;
+    const rangeEnd = Math.min(currentPage * pageSizeNum, totalRows);
 
     return (
         <div className="admin-data-tabl-box">
@@ -235,9 +270,7 @@ const AdminDashboard = () => {
                         <div className="input-control" style={{ width: "68px" }}>
                             <Select2Wrapper
                                 value={pageSize}
-                                onChange={(option: any) => {
-                                    setPageSize(option);
-                                }}
+                                onChange={handlePageSizeChange}
                                 options={PAGE_SIZE_OPTIONS}
                                 placeholder="Select one"
                                 isMulti={false}
@@ -246,7 +279,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
-            {rowData.length === 0 ? (
+            {!isLoading && rowData.length === 0 ? (
                 <div className="admin-data-grid-empty text-center py-5">
                     No users found
                 </div>
@@ -258,26 +291,18 @@ const AdminDashboard = () => {
                             rowData={rowData}
                             columnDefs={colDefs}
                             defaultColDef={defaultColDef}
-                            pagination
-                            paginationPageSize={Number(pageSize)}
+                            // Server-side paging: one API page of rows at a time
+                            pagination={false}
                             headerHeight={26}
                             rowHeight={42}
                             quickFilterText={searchText}
-                            onGridReady={(params) => {
-                                setGridApi(params.api);
-                                setTotalRows(params.api.getDisplayedRowCount());
-                                // Set viewport height after grid is ready
+                            suppressNoRowsOverlay={isLoading}
+                            onGridReady={() => {
                                 const viewport: any = document.querySelector('.ag-center-cols-viewport');
                                 if (viewport) {
                                     viewport.style.height = '100%';
                                     viewport.style.width = '100%';
                                 }
-                            }}
-                            onPaginationChanged={() => {
-                                if (!gridApi) return
-                                setCurrentPage(gridApi.paginationGetCurrentPage() + 1);
-                                setTotalPages(gridApi.paginationGetTotalPages());
-                                setTotalRows(gridApi.getDisplayedRowCount());
                             }}
                         />
                     </div>
@@ -288,7 +313,7 @@ const AdminDashboard = () => {
                                     className="btn hover-link icon-hover-effect"
                                     id="prevPage"
                                     data-bs-title="Previous"
-                                    disabled={currentPage <= 1}
+                                    disabled={currentPage <= 1 || isLoading}
                                     onClick={goToPrevPage}
                                 >
                                 <img className="hover-image" src={chevronLeftIconBig} alt="Previous" />
@@ -297,7 +322,7 @@ const AdminDashboard = () => {
                                     className="btn hover-link icon-hover-effect"
                                     id="nextPage"
                                     data-bs-title="Next"
-                                    disabled={currentPage >= totalPages || totalPages === 0}
+                                    disabled={currentPage >= totalPages || totalPages === 0 || isLoading}
                                     onClick={goToNextPage}
                                 >
                                     <img className="hover-image" src={chevronRightIconBig} alt="Next" />
@@ -306,7 +331,7 @@ const AdminDashboard = () => {
                             <ul className="pagination-cus me-3">
                                 <li className="pagination-count">
                                     <span id="currentPageRange" className="email-count">
-                                        {(currentPage - 1) * Number(pageSize) + 1} - {Math.min(currentPage * Number(pageSize), totalRows)}
+                                        {rangeStart} - {rangeEnd}
                                     </span>
                                     <span className="of"> of </span>
                                     <span id="totalRecordsCount" className="total-email-count">
@@ -333,7 +358,7 @@ const AdminDashboard = () => {
                                 id="goToPageBtn"
                                 className="btn-new"
                                 onClick={handleGoToPage}
-                                disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages}
+                                disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages || isLoading}
                             >
                                 Go
                             </button>
