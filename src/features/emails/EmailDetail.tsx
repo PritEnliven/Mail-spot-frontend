@@ -381,17 +381,24 @@ const EmailDetail = ({ email }: Props) => {
             ? payload
             : (payload?.emails ?? (payload ? [payload] : []));
 
-        const matchesOpenThread = replies.some(
-            e => e?.threadId && e.threadId === email.threadId
+        const matched = replies.find(
+            e =>
+                (e?.threadId && e.threadId === email.threadId) ||
+                (e?.messageId && e.messageId === email.messageId)
         );
-        if (!matchesOpenThread) return;
+        if (!matched) return;
 
-        // Keep the thread section visible by bumping the open detail's count
+        // Prefer authoritative root-shaped threadCount; otherwise bump for reply-shaped.
         const current = emailDetailSelected ?? email;
-        if (current.threadId === email.threadId) {
+        if (current.threadId === email.threadId || current.messageId === email.messageId) {
+            const existingCount = current.threadCount ?? 1;
+            const nextCount =
+                typeof matched.threadCount === 'number' && matched.threadCount > existingCount
+                    ? matched.threadCount
+                    : existingCount + 1;
             setEmailDetailSelected({
                 ...current,
-                threadCount: (current.threadCount ?? 1) + 1,
+                threadCount: nextCount,
             });
         }
         loadThreadEmails();

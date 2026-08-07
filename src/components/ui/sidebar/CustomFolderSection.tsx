@@ -18,8 +18,8 @@ import greenDarkColorIcon from "@images/folder-green-dark-icon.svg";
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import folderIcon from "@images/plus-icon.svg";
 import folderIconHover from "@images/plus-icon-hover.svg";
-import arrowSubFolderIcon from "@images/arrow-sub-folder-icon-16.svg";
-import arrowSubFolderHoverIcon from "@images/arrow-sub-folder-hover-icon-16.svg"
+// import arrowSubFolderIcon from "@images/arrow-sub-folder-icon-16.svg";
+// import arrowSubFolderHoverIcon from "@images/arrow-sub-folder-hover-icon-16.svg"
 import FolderActionsDropdown from '@components/ui/sidebar/FolderActionsDropdown';
 import { useMailUI } from "@context/MailUIContext";
 import { useCustomFolderScrollbar } from '@hooks/useCustomFolderScrollbar';
@@ -226,7 +226,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
               {visibleFolders.map((folder) => {
                 const isActive = activeBoxId === folder.id;
                 const depth = folder.depth ?? 0;
-                const isChild = depth > 0;
+                // const isChild = depth > 0;
                 const hasChildren = foldersWithChildren.has(folder.id);
                 const isCollapsedFolder = collapsedFolders.has(folder.id);
                 return (

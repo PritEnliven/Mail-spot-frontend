@@ -12,7 +12,7 @@ import { createMainCalendarConfig, createSidebarCalendarConfig } from '../../con
 
 
 function CalendarPage() {
-    usePageStylesheet([pageStyles.calendarCss]);
+    usePageStylesheet([pageStyles.calendarCss, pageStyles.responsiveCss]);
 
     const { setBoxName } = useMailData()
     const { mainCalendarRef, sidebarCalendarRef, setCalendarTitle, setCalendarView, getAllEventList, registerResetLastClickedDate, isCalendarAllSearchActive } = useCalendar()

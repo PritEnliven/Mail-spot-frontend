@@ -17,7 +17,7 @@
 /* ============================================================
    3. MAIL RECEIVED BOX (left mail list panel)
    ============================================================ */
-.mail-message-box { position: relative; width: 370px; height: calc(100vh - 99px); background-color: #F5F5F5; border-right: 1px solid #D0D9DE; border-radius: 0 0 0 11px; opacity: 1; }
+.mail-message-box { position: relative; width: 370px; height: calc(100vh - 99px); background-color: #F5F5F5; border-right: 1px solid #D0D9DE; border-radius: 0 0 0 11px; opacity: 1; overflow: hidden; }
 .mail-message-box::after { content: ""; width: 4px; height: 100%; display: block; background: linear-gradient(270deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0) 100%); position: absolute; top: 0; right: 0; opacity: 1; transition: width 0.3s ease; }
 .mail-message-box-aft::after { content: none; }
 .mail-message-box .mail-list-filter+.mail-received-table-news .mailReceivedTableNewsSimpleBar { height: calc(100vh - 139px); }
@@ -26,7 +26,19 @@
 
 /* --- Mail list table wrapper --- */
 .mail-received-table-news { border-radius: 0 0 0 11px; width: 100%; overflow-x: auto; padding-left: 1px; margin-left: -1px; }
-.mail-received-table-news:has(.no-new-mail) { padding: 23px 20px 15px 20px; }
+/* Empty state: keep height inside panel (filter + padding) so body does not scroll */
+.mail-received-table-news:has(.no-new-mail) {
+    padding: 23px 20px 15px 20px;
+    height: calc(100vh - 99px);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+.mail-message-box .mail-list-filter + .mail-received-table-news:has(.no-new-mail) {
+    height: calc(100vh - 139px);
+}
+.mail-received-table-news > .no-new-mail {
+    height: 100%;
+}
 .mail-received-table-news .table tr td { margin: 0; padding: 0; border: none; }
 .mail-received-table-news .table { margin: 0; }
 .mailReceivedTableNewsSimpleBar { height: calc(100vh - 99px); }

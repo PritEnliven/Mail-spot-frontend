@@ -21,6 +21,21 @@ const plugins = [
     rrulePlugin
 ]
 
+const MOBILE_CALENDAR_MAX_WIDTH = 992
+
+const isMobileCalendarWidth = () =>
+    typeof window !== 'undefined' && window.innerWidth <= MOBILE_CALENDAR_MAX_WIDTH
+
+/** Desktop: "Sun 1" — Mobile: "S 1" */
+const formatWeekDayHeader = (date: Date) => {
+    const weekday = date.toLocaleDateString('en-US', {
+        weekday: isMobileCalendarWidth() ? 'narrow' : 'short',
+    })
+    return `${weekday} ${date.getDate()}`
+}
+
+let lastDayHeaderWasMobile = isMobileCalendarWidth()
+
 /* ===========================
    MAIN CALENDAR CONFIG
 =========================== */
@@ -62,9 +77,7 @@ export function createMainCalendarConfig(params: {
         views: {
             timeGridWeek: {
                 dayHeaderContent: (arg) => ({
-                    html: `${arg.date.toLocaleDateString('en-US', {
-                        weekday: 'short',
-                    })} ${arg.date.getDate()}`,
+                    html: formatWeekDayHeader(arg.date),
                 }),
                 dayMaxEvents: true,
                 titleFormat: { year: 'numeric', month: 'long' },
@@ -77,9 +90,7 @@ export function createMainCalendarConfig(params: {
 
             dayGridWeek: {
                 dayHeaderContent: (arg) => ({
-                    html: `${arg.date.toLocaleDateString('en-US', {
-                        weekday: 'short',
-                    })} ${arg.date.getDate()}`,
+                    html: formatWeekDayHeader(arg.date),
                 }),
             },
 
@@ -97,6 +108,17 @@ export function createMainCalendarConfig(params: {
                     hour12: true,
                 },
             },
+        },
+
+        // Refresh week headers when crossing the mobile breakpoint
+        windowResize: (arg) => {
+            const nowMobile = isMobileCalendarWidth()
+            if (nowMobile === lastDayHeaderWasMobile) return
+            lastDayHeaderWasMobile = nowMobile
+            const viewType = arg.view.type
+            if (viewType === 'timeGridWeek' || viewType === 'dayGridWeek') {
+                arg.view.calendar.changeView(viewType)
+            }
         },
 
         datesSet: onDatesSet,

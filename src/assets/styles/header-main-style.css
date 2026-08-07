@@ -260,6 +260,7 @@ p {
     border-top: 1px solid #BBC0C4;
     border-radius: 10px 0 0 10px;
     height: 100vh;
+    overflow: hidden;
 }
 
 .right-side-bar-main-expanded{
@@ -280,6 +281,18 @@ p {
     display: block !important;
 }
 
+/* Allow left header column to shrink so long folder names ellipsis instead of breaking layout */
+.mail-details-header > .d-flex.align-items-center:has(#dynamicHeaderSection) {
+    min-width: 0;
+    overflow: hidden;
+}
+
+#dynamicHeaderSection {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
 .box-title {
     font-size: 20px;
     font-weight: 500;
@@ -288,6 +301,17 @@ p {
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+}
+
+/* Header mailbox/folder title: truncate with … within available header space */
+#boxTitle {
+    min-width: 0;
+    max-width: 100%;
+    flex-shrink: 1;
+}
+
+#dynamicHeaderSection .badge {
+    flex-shrink: 0;
 }
 
 /* .mail-profile-dropdown{
@@ -5261,7 +5285,7 @@ nav#navbarList.nav-collepse::after {
 .creat-folder-custom-modal {
     overflow: auto;
     padding: 16px ;
-    max-height: calc(100dvh - 120px);
+    /* max-height: calc(100dvh - 120px); */
 }
 /* END:: create foder */
 

@@ -35,10 +35,11 @@ import { filterEmailAndCreateRuleService, getSingleEmailService, searchAndFilter
 import { getUserDetail } from "@services/user/userService";
 import { logoutUser } from "@services/login/loginService";
 import { getSocket, disconnectSocket } from "@services/socket/socket";
+import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { verifyBoxName } from "@utils/emailUtil";
 import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
 import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dropdown } from 'react-bootstrap';
 import { Controller } from 'react-hook-form';
 import { useNavigate } from "react-router-dom";
@@ -299,9 +300,11 @@ const Header = () => {
 
         let dateRangeStr: string | undefined = undefined;
         if (payload.dateRange && Array.isArray(payload.dateRange)) {
-            const dates = payload.dateRange
-                .filter((d: any) => d instanceof Date)
-                .map((d: Date) => d.toISOString().split('T')[0]);
+            // Local calendar dates only — toISOString() shifts back one day in IST
+            const dates = (payload.dateRange as unknown[])
+                .filter((d): d is Date => d instanceof Date)
+                .map((d: Date) => formatDate(d, TimeFormat.YYYYMMDD) as string)
+                .filter(Boolean);
 
             if (dates.length === 1) {
                 dateRangeStr = dates[0];
@@ -320,11 +323,14 @@ const Header = () => {
 
         const response = await filterEmailAndCreateRuleService(payload);
 
-        if (response?.emailList?.length > 0) {
+        // Close on success even when no emails matched the filter (emailList can be [])
+        if (Array.isArray(response?.emailList)) {
             showSuccess('Rule created successfully');
             setIsCreateRuleModalOpen(false);
             reset();
             setIsFilterDropdownOpen(false);
+        } else {
+            showError(response?.message || 'Failed to create filter rule');
         }
     };
 
@@ -617,13 +623,33 @@ const Header = () => {
         setIsProfileOpen(false);
     }
 
+
+    
     const isCalendar = verifyBoxName(boxName, "calendar");
     const isSettings = verifyBoxName(boxName, "settings");
 
     const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
+    const mountFilterMonthDropdownRef = useRef(mountFilterMonthDropdown);
+    mountFilterMonthDropdownRef.current = mountFilterMonthDropdown;
+
+    // Keep options referentially stable so selecting the first range date
+    // does not remount Flatpickr and close the calendar prematurely.
+    const filterDateFlatpickrOptions = useMemo(() => ({
+        mode: 'range' as const,
+        dateFormat: 'd-m-Y',
+        allowInput: true,
+        // Stay open after the first date so the user can pick an end date.
+        // Close when the range is complete (second date, or same date clicked again).
+        // Outside click still closes via Flatpickr's default blur behavior.
+        closeOnSelect: false,
+        onReady: (_dates: Date[], _str: string, instance: any) => {
+            mountFilterMonthDropdownRef.current(instance);
+        },
+    }), []);
+
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
     return (
-        <div className={`mail-details-header `}>
+        <div className={`mail-details-header ${isCalendar && !isDesktop ? 'calendar-mobile-header-wrap' : ''}`}>
             {isCalendar ? (
                 <Suspense fallback={null}>
                     <CalendarHeader />
@@ -662,7 +688,7 @@ const Header = () => {
 
                         {/* LEFT: Dynamic header section */}
                         <div className="d-flex align-items-center two-sc-in" id="dynamicHeaderSection">
-                            <h2 className="box-title" id="boxTitle">{boxTitle}</h2>
+                            <h2 className="box-title" id="boxTitle" title={boxTitle}>{boxTitle}</h2>
                             {!isSettings && totalEmailBadge > 0 && readUnreadFilter !== 'read' && (
                                 <span className="badge" id="boxBadge">{totalEmailBadge}</span>
                             )}
@@ -904,14 +930,15 @@ const Header = () => {
                                                                         <Suspense fallback={<input className="form-control" placeholder="Loading date picker..." readOnly />}>
                                                                             <Flatpickr
                                                                                 value={field.value as Date[] | undefined}
-                                                                                onChange={(dates) => field.onChange(dates)}
-                                                                                options={{
-                                                                                    mode: 'range',
-                                                                                    dateFormat: 'd-m-Y',
-                                                                                    allowInput: true,
-                                                                                    defaultDate: [new Date(), new Date()],
-                                                                                    onReady: (_, __, instance) => mountFilterMonthDropdown(instance)
+                                                                                onChange={(dates, _dateStr, instance) => {
+                                                                                    field.onChange(dates);
+                                                                                    // Close once the user finishes a range, or confirms a
+                                                                                    // single day by clicking the same date again.
+                                                                                    if (dates.length === 2) {
+                                                                                        instance.close();
+                                                                                    }
                                                                                 }}
+                                                                                options={filterDateFlatpickrOptions}
                                                                                 className="form-control DateRangePickerStaticTop"
                                                                                 placeholder="Select date range"
                                                                             />
@@ -971,7 +998,7 @@ const Header = () => {
                         />
                     </button>
                 )}
-                {isCalendar && (
+                {isCalendar && isDesktop && (
                     <div className="form-group recurrence-div mb-0 me-3" id="calendarViewDropdownSection">
                         <Select2Wrapper
                             value={calendarView}
@@ -994,8 +1021,14 @@ const Header = () => {
 
                 <Dropdown
                     className="mail-profile-dropdown"
-                    show={isProfileOpen}
-                    onToggle={(nextShow) => setIsProfileOpen(nextShow)}
+                     show={isProfileOpen}
+    onToggle={(nextShow) => {
+        
+        if (isMobile && !nextShow) {
+            return;
+        }
+        setIsProfileOpen(nextShow);
+    }}
                 >
                     <Dropdown.Toggle className="btn btn-secondary dropdown-toggle d-flex align-items-center">
                         <div className="d-block" id="profileBox">

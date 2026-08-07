@@ -76,88 +76,104 @@ export const useMailSocket = () => {
         let cancelled = false;
         let socket: Socket | null = null;
         // Shared ingest for inbound mail — used by both 'newEmail' and 'threadReply'.
-        // A reply to an existing thread updates its root row (increment count + move to top)
-        // so it groups immediately instead of appearing as a standalone email.
+        // Upsert by messageId (root-shaped payload) or threadId (reply-shaped), then move
+        // the row to top. Only prepend when the thread isn't already on the list.
         const ingestInboundEmails = (rawEmails: Email[]) => {
             const boxLower = boxNameRef.current.toLowerCase().trim();
             const isInbox = boxLower === 'inbox' || boxLower.endsWith('/inbox') || boxLower.endsWith('.inbox');
             const isAllMail = boxLower.includes('all mail') || boxLower.includes('allmail');
             if (!isInbox && !isAllMail) return;
 
-            // Normalise + deduplicate against current state
+            const seenInBatch = new Set<string>();
             const incoming = (rawEmails ?? [])
                 .map(e => ({ ...e, from: Array.isArray(e.from) ? e.from : [e.from] }))
-                .filter(e => e?.messageId && !emailsRef.current.some(ex => ex.messageId === e.messageId));
+                .filter(e => {
+                    if (!e?.messageId || seenInBatch.has(e.messageId)) return false;
+                    seenInBatch.add(e.messageId);
+                    return true;
+                });
 
             if (!incoming.length) return;
 
-            const currentPagination = paginationRef.current;
+            let next = [...emailsRef.current];
+            let addedRows = 0;
+            let unreadDelta = 0;
+            const notifications: Email[] = [];
 
-            if (currentPagination) {
-                setPagination({
-                    ...currentPagination,
-                    totalEmails: currentPagination.totalEmails + incoming.length,
-                    endCount: currentPagination.endCount + incoming.length
-                });
-            }
+            for (const email of incoming) {
+                const byMessageId = next.findIndex(e => e.messageId === email.messageId);
+                const byThreadId =
+                    byMessageId === -1 && email.threadId
+                        ? next.findIndex(e => e.threadId === email.threadId)
+                        : -1;
+                const idx = byMessageId !== -1 ? byMessageId : byThreadId;
 
-            const addedUnreadCount = incoming.filter(e => !e.isSeen).length;
-            updateBoxCount(boxNameRef.current, addedUnreadCount, incoming.length);
-
-            // Single setState call — one re-render for the whole batch
-            setEmailsRef.current((prev: Email[]) => {
-                let next = [...prev];
-
-                for (const email of incoming) {
-                    // Idempotency guard: skip if this message is already in the list
-                    // (protects against the same reply arriving on two socket events).
-                    if (next.some(e => e.messageId === email.messageId)) continue;
-
-                    if (email.threadId) {
-                        const idx = next.findIndex(e => e.threadId === email.threadId);
-                        if (idx !== -1) {
-                            const existing = next[idx];
-                            // Trust an authoritative count from the backend; otherwise
-                            // increment the existing row so the thread groups immediately.
-                            const nextCount =
-                                (email.threadCount && email.threadCount > 1)
-                                    ? email.threadCount
-                                    : (existing.threadCount ?? 1) + 1;
-
-                            // Keep the existing list-row identity (messageId/uid) so opening
-                            // still loads the thread root first. Keep the root subject as the
-                            // list title; refresh sender/date/count from the newest reply.
-                            const updated = {
-                                ...existing,
-                                from: email.from,
-                                subject: existing.subject,
-                                date: email.date || existing.date,
-                                relativeDate: email.relativeDate ?? existing.relativeDate,
-                                attachments: email.attachments ?? existing.attachments,
-                                remainingAttachments:
-                                    email.remainingAttachments ?? existing.remainingAttachments,
-                                flags: email.flags?.filter(f => f !== '\\Seen') ?? [],
-                                isSeen: false,
-                                threadCount: nextCount,
-                            };
-                            next.splice(idx, 1);
-                            next = [updated, ...next];
-                            notificationManager.showNewEmailNotification({
-                                ...updated,
-                                // Prefer the new reply's identity for the desktop notification
-                                messageId: email.messageId || updated.messageId,
-                                from: email.from,
-                                subject: email.subject || updated.subject,
-                            });
-                            continue;
-                        }
+                if (idx !== -1) {
+                    const existing = next[idx];
+                    const existingCount = existing.threadCount ?? 1;
+                    // Prefer authoritative backend count; for reply-shaped payloads
+                    // (new messageId into an existing thread) bump when count is missing.
+                    let nextCount = existingCount;
+                    if (typeof email.threadCount === 'number' && email.threadCount > existingCount) {
+                        nextCount = email.threadCount;
+                    } else if (byMessageId === -1) {
+                        nextCount = existingCount + 1;
                     }
-                    next = [email, ...next];
-                    notificationManager.showNewEmailNotification(email);
+
+                    if (existing.isSeen) unreadDelta += 1;
+
+                    // Keep list-row identity (messageId/uid) so opening still loads the
+                    // thread root. Keep root subject; refresh sender/date/count from newest.
+                    const updated: Email = {
+                        ...existing,
+                        from: email.from ?? existing.from,
+                        subject: byMessageId !== -1
+                            ? (email.subject || existing.subject)
+                            : existing.subject,
+                        date: email.date || existing.date,
+                        relativeDate: email.relativeDate ?? existing.relativeDate,
+                        attachments: email.attachments ?? existing.attachments,
+                        remainingAttachments:
+                            email.remainingAttachments ?? existing.remainingAttachments,
+                        flags: email.flags?.filter(f => f !== '\\Seen') ?? existing.flags ?? [],
+                        isSeen: false,
+                        threadCount: nextCount,
+                        threadId: email.threadId || existing.threadId,
+                    };
+                    next.splice(idx, 1);
+                    next = [updated, ...next];
+                    notifications.push({
+                        ...updated,
+                        messageId: email.messageId || updated.messageId,
+                        from: email.from,
+                        subject: email.subject || updated.subject,
+                    });
+                    continue;
                 }
 
-                return next;
-            });
+                addedRows += 1;
+                if (!email.isSeen) unreadDelta += 1;
+                next = [email, ...next];
+                notifications.push(email);
+            }
+
+            if (addedRows > 0) {
+                const currentPagination = paginationRef.current;
+                if (currentPagination) {
+                    setPagination({
+                        ...currentPagination,
+                        totalEmails: currentPagination.totalEmails + addedRows,
+                        endCount: currentPagination.endCount + addedRows
+                    });
+                }
+            }
+            if (unreadDelta !== 0 || addedRows > 0) {
+                updateBoxCount(boxNameRef.current, unreadDelta, addedRows);
+            }
+
+            emailsRef.current = next;
+            setEmailsRef.current(next);
+            notifications.forEach(e => notificationManager.showNewEmailNotification(e));
         };
 
         const handleNewEmail = (payload: { emails: Email[]; unreadCount: number; totalCount: number; boxName: string }) => {

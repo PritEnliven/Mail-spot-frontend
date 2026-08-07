@@ -400,19 +400,6 @@
     transform: translateY(-50%);
 }
 
-.Calendar-main #sidebar-calendar .fc-col-header thead tr {
-    display: flex;
-    justify-content: end;
-}
-
-.Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number) {
-    text-align: center;
-    font-weight: bold;
-    min-width: 43px;
-    max-width: 43px;
-    border: 0;
-}
-
 .Calendar-main #sidebar-calendar .fc-scrollgrid-section-liquid>td {
     border: 0;
 }
@@ -420,20 +407,20 @@
 .Calendar-main #sidebar-calendar .fc-daygrid-body {
     z-index: 0;
     display: flex;
-    justify-content: end;
 }
 
 .Calendar-main #sidebar-calendar .fc-col-header-cell {
-    width: 36.14px !important;
-    max-width: 36.14px !important;
-    min-width: 36.14px !important;
     padding: 0;
     text-align: center;
 }
 
+.Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number) {
+    text-align: center;
+    font-weight: bold;
+    border: 0;
+}
+
 .Calendar-main #sidebar-calendar .fc-daygrid-day {
-    min-width: 43px;
-    max-width: 43px;
     text-align: center;
 }
 
@@ -452,7 +439,6 @@
 
 .Calendar-main #sidebar-calendar .fc-scrollgrid-sync-table {
     border-left: none !important;
-    width: 253px !important;
 }
 
 .Calendar-main #sidebar-calendar .fc-daygrid-body::after {
@@ -463,6 +449,38 @@
     height: calc(100% - 2px);
     border-left: 1px dashed #d0d9de30;
     z-index: 1;
+}
+
+/* Desktop sidebar month grid keeps fixed column sizes */
+@media screen and (min-width: 993px) {
+    .Calendar-main #sidebar-calendar .fc-col-header thead tr {
+        display: flex;
+        justify-content: end;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number) {
+        min-width: 43px;
+        max-width: 43px;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-daygrid-body {
+        justify-content: end;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-col-header-cell {
+        width: 36.14px !important;
+        max-width: 36.14px !important;
+        min-width: 36.14px !important;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-daygrid-day {
+        min-width: 43px;
+        max-width: 43px;
+    }
+
+    .Calendar-main #sidebar-calendar .fc-scrollgrid-sync-table {
+        width: 253px !important;
+    }
 }
 
 .Calendar-main #sidebar-calendar .fc-daygrid-day-frame {

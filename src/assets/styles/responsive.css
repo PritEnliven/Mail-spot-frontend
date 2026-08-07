@@ -19,6 +19,12 @@
     .mail-details-header .mail-profile-id {
         display: none !important;
     }
+    .mail-profile-dropdown .dropdown-toggle::after{
+        content: none;
+    }
+    .mail-profile-dropdown .mail-profile-label{
+        margin-right:0 ;
+    }
 
     /* -------------------- Settings -------------------- */
     .setting-signature-box {
@@ -139,6 +145,163 @@
         display: flex !important;
     }
 
+    /* -------------------- Calendar mobile header (mock layout) -------------------- */
+    .Calendar-main .mail-details-header.calendar-mobile-header-wrap {
+        display: block !important;
+        position: relative;
+        padding: 0;
+        background: #fff;
+        overflow: visible;
+        z-index: 5;
+    }
+
+    .Calendar-main .calendar-mobile-header {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .Calendar-main .calendar-mobile-header__top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #E8EEF2;
+        min-height: 52px;
+    }
+
+    .Calendar-main .calendar-mobile-header__top > .d-flex {
+        align-items: center;
+        gap: 8px;
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
+    .Calendar-main .calendar-mobile-header__menu-btn {
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .Calendar-main .calendar-mobile-header__title {
+        justify-content: flex-start;
+        text-align: left;
+        width: fit-content;
+        min-width: 0 !important;
+        flex: 0 0 auto;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .Calendar-main .calendar-mobile-header__top-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        justify-content: flex-end;
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .Calendar-main .calendar-mobile-header__profile-spacer {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+    }
+
+    .Calendar-main .calendar-mobile-header__top-actions .mobile-search-btn {
+        margin: 0 !important;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .Calendar-main .calendar-mobile-header__controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+
+    .Calendar-main .calendar-mobile-header__controls .fc-today-button {
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    .Calendar-main .calendar-mobile-header__nav {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 4px;
+        flex: 0 0 auto;
+        width: auto;
+    }
+
+    .Calendar-main .calendar-mobile-header__nav .fc-icon-chevron-left {
+        margin: 0;
+    }
+
+    .Calendar-main .calendar-mobile-header__view {
+        width: 94px;
+        margin: 0 0 0 auto !important;
+        flex-shrink: 0;
+    }
+
+    .Calendar-main .calendar-mobile-header__view .react-select__control {
+        /* border-radius: 8px !important;
+        min-height: 32px !important;
+        box-shadow: none !important;
+        border-color: #BBC0C4 !important; */
+    }
+
+    .Calendar-main .calendar-mobile-header__weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        align-items: center;
+        padding: 10px 8px 12px;
+        text-align: center;
+        border-top: 1px solid #E8EEF2;
+    }
+
+    .Calendar-main .calendar-mobile-header__weekdays span {
+        font-size: 12px;
+        font-weight: 500;
+        color: #9AA6AD;
+        font-family: 'DM Sans', sans-serif;
+        line-height: 1;
+    }
+
+    /* Keep profile avatar in the top-right of the mobile calendar header card */
+    .Calendar-main .mail-details-header.calendar-mobile-header-wrap > .two-sc-in.justify-content-end {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        z-index: 6;
+        width: auto;
+        margin: 0;
+    }
+
+    .Calendar-main .mail-details-header.calendar-mobile-header-wrap .mail-profile-label {
+        margin: 0;
+       
+    }
+
+    /* Hide FullCalendar month weekday row — shown in mobile header instead */
+    /* .Calendar-main #calendar .fc-dayGridMonth-view .fc-scrollgrid-section-header {
+        display: none !important;
+    }
+
+    .Calendar-main #calendar .fc-daygrid-week-number {
+        display: none !important;
+    } */
+
     /* -------------------- Toolbar -------------------- */
     .Tool-bar-box {
         padding: 10px;
@@ -213,6 +376,14 @@
         height: calc(100dvh - 108px);
     }
 
+    .mail-received-table-news:has(.no-new-mail) {
+        height: calc(100dvh - 108px);
+    }
+
+    .mail-message-box .mail-list-filter + .mail-received-table-news:has(.no-new-mail) {
+        height: calc(100dvh - 146px);
+    }
+
     .mail-message-box .mail-list-filter+.mail-received-table-news .mailReceivedTableNewsSimpleBar {
         height: calc(100dvh - 146px);
     }
@@ -221,8 +392,17 @@
     .calendar-body-box {
         display: flex;
         flex-direction: column;
-        height: calc(100dvh - 55px);
+        height: calc(100dvh - 116px);
         overflow: hidden;
+    }
+
+    .Calendar-main #calendar .fc-dayGridMonth-view .fc-daygrid-body {
+        justify-content: stretch;
+    }
+
+    .Calendar-main #calendar .fc-dayGridMonth-view .fc-scrollgrid-sync-table {
+        width: 100% !important;
+        margin-left: 0 !important;
     }
 
     .Calendar-main .left-side-calendar-box {
@@ -233,23 +413,102 @@
         border-radius: 0 !important;
         flex: 0 0 auto;
         transition: all 0.3s ease;
+        padding: 16px 12px;
+        overflow-x: hidden;
+        box-sizing: border-box;
     }
 
-    .Calendar-main #sidebar-calendar .fc-col-header thead tr {
-        display: flex;
-        justify-content: end;
-        justify-content: space-around;
-        max-width: calc(100% - 50px);
-        margin-left: 49px;
+    /*
+      Fluid sidebar month grid (320–992):
+      Same 7-column grid for weekday labels AND date cells so they stay aligned.
+    */
+    .Calendar-main .left-side-calendar-box #sidebar-calendar {
+        --week-gutter: 32px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-view-harness,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-view,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scrollgrid,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scroller,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scroller-harness {
+        width: 100% !important;
+        max-width: 100%;
+        overflow: visible !important;
+        box-sizing: border-box;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scrollgrid-sync-table {
+        width: calc(100% - var(--week-gutter)) !important;
+        max-width: none !important;
+        margin-left: var(--week-gutter) !important;
+        table-layout: fixed !important;
+        border-collapse: collapse;
+        box-sizing: border-box;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header thead tr,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scrollgrid-sync-table tbody tr {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        width: 100% !important;
+        margin: 0 !important;
         border-left: 1px dashed #d0d9de30 !important;
+        box-sizing: border-box;
     }
 
-    .Calendar-main #sidebar-calendar .fc-scrollgrid-sync-table {
-        border-left: none !important;
-        width: calc(100% - 50px) !important;
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header-cell,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header-cell:not(.fc-week-number),
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex: none !important;
+        padding: 0 !important;
+        box-sizing: border-box;
+        text-align: center;
     }
 
-    .Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type {
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header-cell-cushion,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day-frame {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-body {
+        width: 100% !important;
+        max-width: 100%;
+        margin: 0;
+        justify-content: flex-start !important;
+        box-sizing: border-box;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scrollgrid-sync-table col,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header col {
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-week-number {
+        left: calc(var(--week-gutter) * -1);
+        min-width: var(--week-gutter) !important;
+        max-width: var(--week-gutter) !important;
+        width: var(--week-gutter) !important;
+        box-sizing: border-box;
+        padding: 4px 0 !important;
+        justify-content: center;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-body::after {
+        left: var(--week-gutter);
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type {
         border: 0 !important;
     }
 
@@ -264,6 +523,24 @@
 
     .fc .fc-scrollgrid-liquid {
         border: 0;
+    }
+}
+
+/* Extra-narrow phones: shrink week gutter so 7 day columns fit */
+@media screen and (max-width: 380px) {
+    .Calendar-main .left-side-calendar-box {
+        padding: 14px 8px;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar {
+        --week-gutter: 26px;
+    }
+
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day .fc-daygrid-day-number,
+    .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+        width: 22px;
+        height: 22px;
+        font-size: 13px;
     }
 }
 
@@ -418,7 +695,6 @@
         left: 0 !important;
         width: 100%;
         height: 100%;
-        display: flex;
         align-items: center;
         justify-content: center;
         transform: unset !important;
@@ -831,3 +1107,10 @@
 /* ==========================================================================
    End :: General Responsive CSS
    ========================================================================== */
+
+
+
+
+
+
+   

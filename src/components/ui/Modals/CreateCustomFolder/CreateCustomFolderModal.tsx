@@ -327,10 +327,12 @@ function CreateCustomFolderModal(
         }
 
         const payload: any = { ...data };
+
         if (props.isEdit) {
             payload.isEdit = true;
             payload.editFolderId = props.editFolderId;
         }
+        
         const response = await createCustomBox(payload);
         if (response.statusCode === 200) {
             showSuccess(`Folder ${props.isEdit ? 'updated' : 'created'} successfully`);

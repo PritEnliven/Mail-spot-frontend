@@ -60,12 +60,58 @@ const SAFE_INPUT_FORMATS: moment.MomentFormatSpecification[] = [
 
 type DateInput = Moment | Date | string | number | null | undefined;
 
+const DATE_ONLY_FORMATS = new Set<TimeFormat>([
+    TimeFormat.DDMMYYYY,
+    TimeFormat.MMDDYYYY,
+    TimeFormat.YYYYMMDD,
+    TimeFormat.DD_MM_YYYY,
+    TimeFormat.DDMMYYYY_SCHEDULE,
+    TimeFormat.SCHEDULE_MODAL,
+]);
+
+/** Format using local calendar fields — never UTC — to avoid off-by-one day shifts. */
+function formatLocalDateOnly(
+    date: Date,
+    pattern: 'DD-MM-YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD' | 'MM/DD/YYYY',
+): string {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(date.getFullYear());
+
+    switch (pattern) {
+        case 'DD-MM-YYYY':
+            return `${dd}-${mm}-${yyyy}`;
+        case 'DD/MM/YYYY':
+            return `${dd}/${mm}/${yyyy}`;
+        case 'YYYY-MM-DD':
+            return `${yyyy}-${mm}-${dd}`;
+        case 'MM/DD/YYYY':
+            return `${mm}/${dd}/${yyyy}`;
+    }
+}
 
 function formatDate(
     date: DateInput,
     formatType: TimeFormat = TimeFormat.ISO
 ): string | number {
     if (date === null || date === undefined) return '';
+
+    // Date-only formats must use local Y/M/D. toISOString() / UTC would shift
+    // e.g. 1 Aug 00:00 IST → 31 Jul in the API payload.
+    if (date instanceof Date && !isNaN(date.getTime()) && DATE_ONLY_FORMATS.has(formatType)) {
+        switch (formatType) {
+            case TimeFormat.DDMMYYYY:
+                return formatLocalDateOnly(date, 'DD/MM/YYYY');
+            case TimeFormat.MMDDYYYY:
+                return formatLocalDateOnly(date, 'MM/DD/YYYY');
+            case TimeFormat.YYYYMMDD:
+                return formatLocalDateOnly(date, 'YYYY-MM-DD');
+            case TimeFormat.DD_MM_YYYY:
+            case TimeFormat.DDMMYYYY_SCHEDULE:
+            case TimeFormat.SCHEDULE_MODAL:
+                return formatLocalDateOnly(date, 'DD-MM-YYYY');
+        }
+    }
 
     // Convert input to Moment
     let m: Moment;
