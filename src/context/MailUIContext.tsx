@@ -1,6 +1,7 @@
 import type { Email } from '@models/Email';
 import type { ModalClosePayload } from '@models/ModalClosePayload';
 import type { ModalType } from '@models/ModalType';
+import { useScreen } from '@context/ScreenContext';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 interface ToolbarState {
@@ -41,6 +42,8 @@ interface MailUIType {
     setIsComposeExpanded: (open: boolean) => void;
     isSidebarExpandedMobile: boolean;
     setIsSidebarExpandedMobile: (open: boolean) => void;
+    isFilterPanelOpen: boolean;
+    setIsFilterPanelOpen: (open: boolean) => void;
     activeBoxId: string;
     setActiveBoxId: (boxId: string) => void;
 }
@@ -52,6 +55,8 @@ interface MailUIProviderProps {
     activeEmailMessageId: string | null;
 }
 
+const REMOUNT_ON_REOPEN_MODALS: ModalType[] = ['calendarEvent'];
+
 const MailUIContext = createContext<MailUIType | undefined>(undefined);
 
 export const useMailUI = () => {
@@ -61,6 +66,7 @@ export const useMailUI = () => {
 };
 
 export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMessageId }: MailUIProviderProps) => {
+    const { isDesktop } = useScreen();
     const [isLoading, setIsLoading] = useState(false);
     const [activeModals, setActiveModals] = useState<ActiveModal[]>([]);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -68,6 +74,7 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
     const [customToolbarState, setCustomToolbarState] = useState<ToolbarState | null>(null);
     const [isComposeExpanded, setIsComposeExpanded] = useState(false);
     const [isSidebarExpandedMobile, setIsSidebarExpandedMobile] = useState(false);
+    const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
     const [activeBoxId, setActiveBoxId] = useState<string>('box-li-0');
 
     // Add this effect to reset customToolbarState when selection changes
@@ -90,24 +97,25 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
             };
         }
 
-        // If single email is active (detail view)
+        // Open email with no checkbox selection.
+        // Desktop: hide Mark as Read/Unread (row actions cover it; avoids global toggle flip).
+        // <=992: show it from the open email's isSeen (detail view has no row actions).
         if (activeEmailMessageId && selectedEmails.size === 0) {
             const activeEmail = emails.find(email => email.messageId === activeEmailMessageId);
-            if (activeEmail) {
-                const isRead = activeEmail.isSeen;
-                return {
-                    showBack: !isMailListOpen,
-                    showSelectAll: true,
-                    showRefresh: false,
-                    showDelete: true,
-                    showMarkAsRead: !isRead,
-                    showMarkAsUnread: isRead,
-                    showMove: true,
-                };
-            }
+            const isRead = !!activeEmail?.isSeen;
+
+            return {
+                showBack: !isMailListOpen,
+                showSelectAll: isDesktop,
+                showRefresh: false,
+                showDelete: true,
+                showMarkAsRead: !isDesktop && !isRead,
+                showMarkAsUnread: !isDesktop && isRead,
+                showMove: true,
+            };
         }
 
-        // If emails are selected (bulk selection or single selection)
+        // Mark as Read/Unread from checkbox selection (all breakpoints)
         if (selectedEmails.size > 0) {
             const selectedEmailsData = emails.filter(email => selectedEmails.has(email.messageId));
             const hasReadEmails = selectedEmailsData.some(email => email.isSeen);
@@ -120,7 +128,6 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
                 showDelete: true,
                 showMarkAsRead: hasUnreadEmails,
                 showMarkAsUnread: hasReadEmails && !hasUnreadEmails,
-                // Show move whenever exactly one email is selected, regardless of activeEmailMessageId
                 showMove: selectedEmails.size > 0,
             };
         }
@@ -135,7 +142,7 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
             showMarkAsUnread: false,
             showMove: false,
         };
-    }, [emails, selectedEmails, activeEmailMessageId, isMailListOpen]);
+    }, [emails, selectedEmails, activeEmailMessageId, isMailListOpen, isDesktop]);
 
     const toolbarState = customToolbarState || derivedToolbarState;
 
@@ -154,6 +161,11 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
     const openModal = (type: ModalType, props?: any) => {
         const modalId = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         setActiveModals(prev => {
+            // Re-opening must remount these so a previous payload can't leak into a fresh modal
+            if (REMOUNT_ON_REOPEN_MODALS.includes(type)) {
+                return [...prev.filter(modal => modal.type !== type), { id: modalId, type, props }];
+            }
+
             const existingModalIndex = prev.findIndex(modal => modal.type === type);
 
             // if (existingModalIndex >= 0) {
@@ -205,6 +217,8 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
         setIsComposeExpanded,
         isSidebarExpandedMobile,
         setIsSidebarExpandedMobile,
+        isFilterPanelOpen,
+        setIsFilterPanelOpen,
         activeBoxId,
         setActiveBoxId
     };

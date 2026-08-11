@@ -12,6 +12,7 @@ const ChangeImapSmtpPasswordModal = lazy(() => import('@components/ui/Modals/Pas
 const SignatureModal = lazy(() => import('./Modals/SignatureModal/SignatureModal'));
 const ChangePassword = lazy(() => import('@components/ui/Modals/ChangePassword/ChangePassword'));
 const ForwardEmail = lazy(() => import('./Modals/forwardEmailModal/ForwardEmail'));
+const MoveToFolderModal = lazy(() => import('./Modals/MoveToFolder/MoveToFolderModal'));
 
 const BASE_Z_INDEX = 1050;
 const Z_INDEX_STEP = 20;
@@ -143,6 +144,16 @@ function ModalRoot() {
                     case 'forwardIt':
                         return (
                             <ForwardEmail
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    case 'moveToFolder':
+                        return (
+                            <MoveToFolderModal
                                 key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}

@@ -9,13 +9,14 @@ const RightPanel = () => {
 
     // Check if current path is settings or calendar
 const isSettingsOrCalendar = location.pathname.includes('/settings') || location.pathname.includes('/calendar');
-    const { activeEmailMessageId, emailDetailSelected } = useMailData();
+    const { activeEmailMessageId } = useMailData();
     const { isDesktop } = useScreen();
 
     return (
         <>
 
-            {(isDesktop || !activeEmailMessageId || !emailDetailSelected) && <Header />}
+            {/* On mobile/tablet, hide list header whenever a mail is open (including load gaps between swipes) */}
+            {(isDesktop || !activeEmailMessageId) && <Header />}
 
             {!isSettingsOrCalendar && <ToolbarBox />}
 

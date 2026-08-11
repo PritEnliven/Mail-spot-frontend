@@ -20,6 +20,8 @@ import signatureIcon from "@images/signature-icon.svg";
 import smartMessageIcon from '@images/smart-message-icon.svg';
 import trashIconHover from '@images/trash-icon-hover.svg';
 import trashIcon from '@images/trash-icon.svg';
+import moreActionIcon from "@images/ellipsis-vertical-icon.svg";
+import moreActionIconHover from "@images/ellipsis-vertical-icon-hover.svg";
 import type { Email } from "@models/Email";
 import type { PendingReply } from "@models/PendingReply";
 import { sendReply } from "@services/emailSending/emailSendingService";
@@ -33,6 +35,7 @@ import SimpleBar from "simplebar-react";
 import { useContacts, useMailData, useMailUI } from '../../context/index';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import { useSettings } from "@context/SettingsContext";
+import { useScreen } from '@context/ScreenContext';
 
 const extractBodyHtml = (html: string): string => {
     try {
@@ -84,6 +87,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     const [signatureInserted, setSignatureInserted] = useState(false);
     const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => { });
     const instanceId = useId();
+    const { isComposeActionsCompact } = useScreen();
 
     const normalizeRecipients = (recipients: any[]): string[] => {
         if (!recipients?.length) return [];
@@ -490,7 +494,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                             <AttachmentPreview attachments={attachments} onRemove={removeFile} />
                         </div>
                     )}
-                    <div className="compose-btn-box d-flex align-items-center justify-content-between">
+
+                    <div className="compose-btn-box d-flex align-items-center justify-content-between px-0">
                         <a className="hover-link icon-hover-effect" onClick={handleClose} >
                             <InteractiveIcon
                                 defaultIcon={trashIcon}
@@ -592,17 +597,70 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                 </div>
                             </div>
 
-                            {userPermissions?.aiFeatures && (
-                            <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
-                                <img className="me-2" src={generateAiIcon} />
-                                Generate Email
-                            </button>
+                            {!isComposeActionsCompact ? (
+                                <>
+                                    {userPermissions?.aiFeatures && (
+                                        <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
+                                            <img className="me-2" src={generateAiIcon} />
+                                            Generate Email
+                                        </button>
+                                    )}
+
+                                    <button className="btn-new ms-3" onClick={openScheduleModal}>
+                                        <img className="me-2" src={scheduledIcon} />
+                                        Schedule
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+
+                                    <Dropdown drop="up" align="end"
+                                        className={`more-actions-dropdown react-dropdown signature-dropdown ms-3`}
+                                    >
+                                        <Dropdown.Toggle
+                                            as="a"
+                                            className="hover-link d-flex align-items-center icon-hover-effect"
+                                        >
+                                            <InteractiveIcon
+                                                defaultIcon={moreActionIcon}
+                                                hoverIcon={moreActionIconHover}
+                                                activeIcon=""
+                                                isActive={false}
+                                                alt=""
+                                                className="interactive-icon hover-image"
+                                                renderAs="img"
+                                                tooltip="More"
+                                            />
+                                        </Dropdown.Toggle>
+
+                                        <Dropdown.Menu>
+                                            {/* Manage Signature Option */}
+                                            {userPermissions?.aiFeatures && (
+                                            <Dropdown.Item
+                                                as="div"
+                                                className="dropdown-item d-flex  align-items-center"
+                                                onClick={toggleGenerateEmailCard}
+                                            >
+                                                <img className="me-2" src={generateAiIcon} />
+                                                Generate Email
+                                            </Dropdown.Item>
+                                            )}
+                                            <Dropdown.Item
+                                                as="div"
+                                                className="dropdown-item d-flex  align-items-center"
+                                                onClick={openScheduleModal}
+                                            >
+                                                <img className="me-2" src={scheduledIcon} />
+                                                Schedule
+                                            </Dropdown.Item>
+
+
+
+                                        </Dropdown.Menu>
+                                    </Dropdown>                                    
+                                </>
                             )}
 
-                            <button className="btn-new ms-3" onClick={openScheduleModal}>
-                                <img className="me-2" src={scheduledIcon} />
-                                Schedule
-                            </button>
 
                             <SubmitButton
                                 className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
@@ -613,6 +671,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                             </SubmitButton>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

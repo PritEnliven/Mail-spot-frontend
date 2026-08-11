@@ -11,5 +11,6 @@ export type ModalType =
     'changeImapSmtpPassword' |
     'changePassword' |
     'createSignature' |
-    'forwardIt'
+    'forwardIt' |
+    'moveToFolder' |
 null;

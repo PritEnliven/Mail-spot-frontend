@@ -160,6 +160,10 @@ export const useResponsive = () => {
         if (typeof window === "undefined") return "desktop";
         return getScreenType();
     });
+    const [width, setWidth] = useState(() => {
+        if (typeof window === "undefined") return BREAKPOINTS.desktop;
+        return window.innerWidth;
+    });
 
     useEffect(() => {
         let ticking = false;
@@ -168,7 +172,9 @@ export const useResponsive = () => {
             if (!ticking) {
                 ticking = true;
                 window.requestAnimationFrame(() => {
+                    const nextWidth = window.innerWidth;
                     const newType = getScreenType();
+                    setWidth(nextWidth);
                     setScreenType((prev) => (prev !== newType ? newType : prev));
                     ticking = false;
                 });
@@ -184,8 +190,13 @@ export const useResponsive = () => {
         isMobileSmall: screenType === "mobileSmall",
         isTablet: screenType === "tablet",
         isDesktop: screenType === "desktop",
+          // ✅ true at and below 768px (mobile + mobileSmall + extraSmall)
+          isMobilebig:screenType === "mobile" || screenType === "mobileSmall" || screenType === "extraSmall",
         // ✅ true at and below 575px (mobileSmall + extraSmall)
         isMobile: screenType === "mobileSmall" || screenType === "extraSmall",
+        // ✅ reply/forward: collapse Generate Email + Schedule into ⋮ (≤1100px)
+        isComposeActionsCompact: width <= BREAKPOINTS.composeActionsCompact,
         screenType,
+        width,
     };
 };

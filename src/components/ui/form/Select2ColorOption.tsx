@@ -241,7 +241,7 @@
 
 import Select, { components, type SingleValue } from "react-select";
 import { DropdownIndicator, getSelectStyles } from "./Select2Wrapper";
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 export interface ColorOption {
     value: string;

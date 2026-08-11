@@ -38,6 +38,8 @@ interface ProfileContextType {
     updateProfile: (name: string, email: string) => void;
     isSidebarOpen: boolean;
     setIsSidebarOpen: (open: boolean) => void;
+    isSidebarExpandedMobile: boolean;
+    setIsSidebarExpandedMobile: (open: boolean) => void;
     adminSidebarItems: any;
     setAdminSidebarItems: (items: any) => void;
     adminBoxTitle: string;
@@ -57,6 +59,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     const [profileEmail, setProfileEmail] = useState("admin@example.com");
     const [profileInitial, setProfileInitial] = useState("AD");
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarExpandedMobile, setIsSidebarExpandedMobile] = useState(false);
     const [adminSidebarItems, setAdminSidebarItems] = useState(sidebarOptions);
     const [adminBoxTitle, setAdminBoxTitle] = useState('User Management');
     const [settingPayLoad, setSettingPayLoad] = useState<AdminSettingsType | null>({
@@ -92,6 +95,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
                 updateProfile,
                 isSidebarOpen,
                 setIsSidebarOpen,
+                isSidebarExpandedMobile,
+                setIsSidebarExpandedMobile,
                 adminSidebarItems,
                 setAdminSidebarItems,
                 adminBoxTitle,

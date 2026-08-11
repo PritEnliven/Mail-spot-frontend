@@ -506,6 +506,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                             mode: 'single',
                                                                             dateFormat: 'd-m-Y',
                                                                             allowInput: false,
+                                                                            disableMobile: true,
                                                                             onReady: (_, __, instance) => mountMonthDropdown(instance)
                                                                         }}
                                                                         className="form-control DateRangePickerStaticTop datepickermodal"
@@ -569,6 +570,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                                 dateFormat: 'd-m-Y',
                                                                                 allowInput: false,
                                                                                 minDate: getMinEndDate(),
+                                                                                disableMobile: true,
                                                                                 onReady: (_, __, instance) => mountMonthDropdown(instance)
 
                                                                             }}

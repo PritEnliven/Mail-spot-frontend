@@ -46,9 +46,6 @@ export default function BaseModal({
   const nodeRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const isCompose = moduleName === "compose";
-  const isExpanded = isCompose && isComposeExpanded;
-
   // --- Animation state ---
   // `mounted`  controls whether the DOM node exists at all
   // `visible`  controls whether `.show` is applied (triggers CSS transition)
@@ -57,6 +54,9 @@ export default function BaseModal({
   const [isNarrowViewport, setIsNarrowViewport] = useState(
     () => typeof window !== "undefined" && window.matchMedia(MODAL_BACKDROP_MQ).matches
   );
+
+  const isCompose = moduleName === "compose";
+  const isExpanded = isCompose && isComposeExpanded;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(MODAL_BACKDROP_MQ);
@@ -231,14 +231,13 @@ export default function BaseModal({
             ref={contentRef}
             style={{
               position: "absolute",
-              width: width || "fit-content",
-              height: "fit-content",
-              maxWidth,
-              minWidth,
+              height: isCompose && isNarrowViewport ? "100dvh" : "fit-content",
               pointerEvents: "auto",
-              ...(isCompose && !isExpanded
-                ? { bottom: "20px", right: "20px", top: "auto", left: "auto", margin: 0 }
-                : { top: 0, left: 0, right: 0, bottom: 0, margin: "auto" }
+              ...(isCompose && isNarrowViewport
+                ? { top: 0, left: 0, right: 0, bottom: 0, margin: 0, width: "100%", maxWidth: "100%", minWidth: "100%" }
+                : isCompose && !isExpanded
+                ? { width: width || "fit-content", maxWidth, minWidth, bottom: "20px", right: "20px", top: "auto", left: "auto", margin: 0 }
+                : { width: width || "fit-content", maxWidth, minWidth, top: 0, left: 0, right: 0, bottom: 0, margin: "auto" }
               ),
             }}
             className={`modal-content-shadow ${dynamicClass} ${modalHidden}`}

@@ -200,7 +200,7 @@ div.accordion-button.custom-toggle-btn .mail-message-send--information-details-b
 
 /* --- Thread row extras --- */
 .shot-message-info-thrad { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; width: 50%; }
-.application-btn-multi { pointer-events: auto; position: relative; z-index: 10; min-width: 103px; }
+.application-btn-multi { pointer-events: auto; position: relative; z-index: 10;  }
 .thread-mail-to-box { display: flex; }
 
 /* --- Gmail-style collapsed middle-thread expand control --- */
@@ -305,7 +305,9 @@ div.accordion-button.custom-toggle-btn .mail-message-send--information-details-b
 .thread-email-pending .pending-status-badge { display: inline-block; font-size: 11px; font-weight: 500; color: #0073B6; background-color: #ddeef9; border-radius: 10px; padding: 2px 10px; white-space: nowrap; }
 .thread-email-pending .pending-status-badge--failed { color: #dc3545; background-color: rgba(220, 53, 69, 0.08); }
 
-
+.thread-email-react-dropdown-replay-btn .dropdown-toggle {padding: 2px !important;}
+.show-on-mobile-thread-email-only {display: none !important;}
+.thread-email-react-dropdown-replay-btnyyyy.dropdown-menu.show {margin: 4px -5px 0 0;}
 /* ============================================================
    7. COMPOSE / REPLY MODAL (CKEditor)
    ============================================================ */

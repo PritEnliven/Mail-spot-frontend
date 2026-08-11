@@ -4,7 +4,6 @@ import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
 import { ATTACHMENT_SIZE_OPTIONS, attachmentSizeLabelToApiType } from "@constants/attachmentSizeOptions";
 import { useCalendar, type CalendarView } from "@context/CalendarContext";
-import { useMailSelection } from "@context/MailSelectionContext";
 import { useScreen } from "@context/ScreenContext";
 import { useProfile } from "@context/userContext";
 import { AUTH_STORAGE_KEYS } from "@features/login/Login";
@@ -69,7 +68,8 @@ const Header = () => {
         setIsSidebarOpen,
         isSidebarExpandedMobile,
         setIsSidebarExpandedMobile,
-        setActiveBoxId
+        setActiveBoxId,
+        setIsFilterPanelOpen
     } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
@@ -80,9 +80,9 @@ const Header = () => {
     const { contacts, fetchContacts } = useContacts();
     const { calendarView, setCalendarView, changeView } = useCalendar();
     const [noResult, setNoResult] = useState(false);
-    const { setSelectedEmails } = useMailSelection();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
     const { isDesktop, isMobile } = useScreen();
     const prevDebouncedSearchRef = useRef(debouncedSearchText);
     const allowSearchDropdownRef = useRef(true);
@@ -90,6 +90,12 @@ const Header = () => {
     useEffect(() => {
         fetchContacts();
     }, []);
+
+    useEffect(() => {
+        setIsFilterPanelOpen(isFilterDropdownOpen || isCreateRuleModalOpen);
+    }, [isFilterDropdownOpen, isCreateRuleModalOpen]);
+
+    useEffect(() => () => setIsFilterPanelOpen(false), []);
 
     const handleLogout = async () => {
         try {
@@ -244,6 +250,26 @@ const Header = () => {
         }
     };
 
+    // On mobile the results list is hidden whenever a detail view is open, so searching
+    // while reading an email would otherwise leave both panels collapsed.
+    const revealSearchResultsView = () => {
+        setIsResponsiveSearch(false);
+        if (isDesktop) return;
+
+        setIsMailListOpen(true);
+        setEmailDetailSelected(null);
+        setActiveEmailMessageId(null);
+        setToolbarState({
+            showBack: false,
+            showSelectAll: true,
+            showRefresh: true,
+            showDelete: false,
+            showMarkAsRead: false,
+            showMarkAsUnread: false,
+            showMove: false,
+        });
+    };
+
     const onSubmit = async (data: FilterEmailFormValues) => {
         const { searchTerm: existingSearchTerm } = resolveSearchFromQuery(searchText, filterForm);
 
@@ -277,6 +303,7 @@ const Header = () => {
                 setPagination(response.data.pagination);
                 setTotalEmailBadge(response.data.pagination.totalEmails);
                 setBoxTitle("Search Results");
+                revealSearchResultsView();
             }
         } catch (err) {
             console.error('Filter failed:', err);
@@ -412,6 +439,7 @@ const Header = () => {
                 setNoResult(false);
                 setTotalEmailBadge(response.data.pagination.totalEmails);
                 setBoxTitle("Search Results");
+                revealSearchResultsView();
                 // setBoxTitle(
                 //     resolvedFilter && getAppliedFilterCount(resolvedFilter) > 0
                 //         ? 'Filtered Results'
@@ -464,18 +492,17 @@ const Header = () => {
             }
 
             setEmailDetailSelected(data.emailList);
-            setSelectedEmails(new Set([messageId]));
             setActiveEmailMessageId(messageId);
             setActiveBoxId('');
 
-            const isRead = data.emailList.isSeen;
+            const isRead = !!data.emailList.isSeen;
             setToolbarState({
                 showBack: !isDesktop,
                 showSelectAll: isDesktop,
                 showRefresh: false,
                 showDelete: true,
-                showMarkAsRead: !isRead,
-                showMarkAsUnread: isRead,
+                showMarkAsRead: !isDesktop && !isRead,
+                showMarkAsUnread: !isDesktop && isRead,
                 showMove: true,
             });
             setIsSearchResultDropdownOpen(false);
@@ -647,9 +674,8 @@ const Header = () => {
         },
     }), []);
 
-    const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
     return (
-        <div className={`mail-details-header ${isCalendar && !isDesktop ? 'calendar-mobile-header-wrap' : ''}`}>
+        <div className={`mail-details-header ${isCalendar ? 'is-calendar-header' : ''} ${isCalendar && !isDesktop ? 'calendar-mobile-header-wrap' : ''}`}>
             {isCalendar ? (
                 <Suspense fallback={null}>
                     <CalendarHeader />
@@ -1031,7 +1057,7 @@ const Header = () => {
     }}
                 >
                     <Dropdown.Toggle className="btn btn-secondary dropdown-toggle d-flex align-items-center">
-                        <div className="d-block" id="profileBox">
+                        <div className={`d-block${isCalendar ? ' calendar-header-profile-text' : ''}`} id="profileBox">
                             <span className="mail-profile-name d-block text-end" id="profileName"> {profileName}</span>
                             <span className="mail-profile-id d-block text-end" id="profileEmail"> {profileEmail}</span>
                         </div>

@@ -1589,7 +1589,7 @@ const renderMultiSelect = ({
   moduleName,
   isModal = false,
   isEmail,
-}: MultiSelectProps, isMobile: boolean) => {
+}: MultiSelectProps, _isMobile: boolean) => {
   const { selectRef, menuPlacement, handleMenuOpen } = useMenuPlacement();
 
   const handleChange = (selected: MultiValue<MappedOption>) => {
@@ -1683,7 +1683,7 @@ const renderSingleSelect = ({
   typeable = false,
   isDisabled = false,
   formatOptionLabel,
-}: SingleSelectProps, isMobile: boolean) => {
+}: SingleSelectProps, _isMobile: boolean) => {
   const selectedOption = getSelectedSingleOption(options, value);
   const { selectRef, menuPlacement, handleMenuOpen } = useMenuPlacement();
 

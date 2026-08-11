@@ -13,6 +13,7 @@ import { useMailUI } from '@context/MailUIContext';
 import GuestTag from '@components/ui/calendar/GuestTag';
 import { copyEmailToClipBoard } from "@utils/generalUtil";
 import { parseEmailAddress } from "@utils/emailUtil";
+import SimpleBar from "simplebar-react";
 
 interface ForwardEmailProps {
     modalId: string,
@@ -64,6 +65,7 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
         >
             <div className="forward-it-modal modal-center-draggable">
                 <div className="modal-dialog modal-dialog-centered ">
+                    
                     <div className="modal-content">
                         <div className="modal-header drag-handle">
                             <button className="expand-btn btn hover-link icon-hover-effect drag-handle-btn">
@@ -92,7 +94,11 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
                                 />
                             </button>
                         </div>
-                        <div className="modal-body">
+                        <SimpleBar
+                        className="forward-it-modal-simple-scroll-bar-body"
+                        autoHide={true}
+                    >
+                        <div className="modal-body p-0">
                             <div className="form-group form-row select2-profile mb-2">
                                 <label className="control-label">Enter email</label>
                                 <div className="input-control">
@@ -137,6 +143,7 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
                                 </div>
                             </div>
                         </div>
+                    </SimpleBar>
                         <div className="compose-btn-box d-flex align-items-center justify-content-between pt-2" style={{ bottom: 'unset' }}>
                             <button type="button" className="btn-new" onClick={onClose}>Cancel</button>
                             <button className="btn-new btn-new-bg"

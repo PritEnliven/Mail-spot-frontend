@@ -24,7 +24,10 @@ const ActionsCell = ({ id, onClickChangePassword, onClickEditUser, onClickDelete
             <a
                 href="#"
                 className="hover-link d-flex align-items-center me-2"
-                onClick={() => onClickChangePassword(id)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    onClickChangePassword(id);
+                }}
             >
                 <InteractiveIcon
                     defaultIcon={changePasswordIcon}
@@ -41,7 +44,10 @@ const ActionsCell = ({ id, onClickChangePassword, onClickEditUser, onClickDelete
             <a
                 href="#"
                 className="hover-link d-flex align-items-center me-2"
-                onClick={() => onClickEditUser(id)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    onClickEditUser(id);
+                }}
             >
                 <InteractiveIcon
                     defaultIcon={editIcon}
@@ -58,7 +64,10 @@ const ActionsCell = ({ id, onClickChangePassword, onClickEditUser, onClickDelete
             <a
                 href="#"
                 className="hover-link d-flex align-items-center me-2"
-                onClick={() => onClickDeleteUser(id)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    onClickDeleteUser(id);
+                }}
             >
                 <InteractiveIcon
                     defaultIcon={deleteIcon}
@@ -75,7 +84,10 @@ const ActionsCell = ({ id, onClickChangePassword, onClickEditUser, onClickDelete
             <a
                 href="#"
                 className="hover-link d-flex align-items-center me-2"
-                onClick={() => onClickLoginAsUser(id)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    onClickLoginAsUser(id);
+                }}
             >
                 <InteractiveIcon
                     defaultIcon={loginIcon}

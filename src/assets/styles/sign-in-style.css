@@ -551,3 +551,77 @@ hr {
 .register .power-by-box {
     padding: 20px;
 }
+
+@media (max-width: 575.98px) {
+    .login-main .login-box-main {
+        width: 100%;
+        max-width: 100%;
+        padding: 16px;
+        margin-top: 32px;
+    }
+
+    .login-main .login-main-right-section {
+        width: 100%;
+    }
+
+    .login-main .breadcrumb-sec {
+        min-width: 0;
+        width: 100%;
+        padding: 24px 16px 0;
+    }
+
+    .login-main .breadcrumb-item {
+        font-size: 17px;
+    }
+
+    .login-main .progress-line-wrapper {
+        gap: 8px;
+        padding: 0 16px;
+    }
+
+    .login-main .progress-segment {
+        min-width: 0;
+        flex: 1 1 0;
+    }
+
+    .login-main .input-group2,
+    .login-main .input-group-re-size,
+    .login-main .input-group-re-size-2 {
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .login-main .form-group {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .login-main .form-step .d-flex.align-items-start.w-100 {
+        gap: 12px;
+    }
+
+    .login-main .form-step .d-flex.align-items-start.w-100 .form-group.me-3 {
+        margin-right: 0 !important;
+        flex: 1 1 auto;
+    }
+
+    .login-main .form-step .d-flex.align-items-start.w-100 .form-group:last-child {
+        flex: 0 0 84px;
+        max-width: 84px;
+    }
+
+    .login-main .login-btn {
+        gap: 12px;
+    }
+
+    .login-main .login-btn .btn-new {
+        flex: 1 1 0;
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    .login-main .login-btn .btn-new.prev-step {
+        margin-right: 0 !important;
+    }
+}

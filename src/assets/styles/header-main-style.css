@@ -348,6 +348,21 @@ p {
     white-space: nowrap;
 }
 
+/* Calendar header: hide name/email at ≤1500px, keep profile icon */
+@media screen and (max-width: 1500px) {
+    .mail-details-header.is-calendar-header #profileBox.calendar-header-profile-text,
+    .mail-details-header.is-calendar-header .mail-profile-name,
+    .mail-details-header.is-calendar-header .mail-profile-id {
+        display: none !important;
+    }
+    .mail-details-header.is-calendar-header .mail-profile-dropdown .dropdown-toggle::after {
+        content: none;
+    }
+    .mail-details-header.is-calendar-header .mail-profile-dropdown .mail-profile-label {
+        margin-right: 0;
+    }
+}
+
 .mail-profile-label {
     width: 40px;
     height: 40px;
@@ -5285,7 +5300,7 @@ nav#navbarList.nav-collepse::after {
 .creat-folder-custom-modal {
     overflow: auto;
     padding: 16px ;
-    /* max-height: calc(100dvh - 120px); */
+    max-height: calc(100dvh - 200px);
 }
 /* END:: create foder */
 
@@ -5532,7 +5547,10 @@ nav#navbarList.nav-collepse::after {
     border-radius: 5px;
     min-height: 30px;
 }
-
+.forward-it-modal-simple-scroll-bar-body {
+    padding: 16px;
+    max-height: calc(100dvh - 300px);
+}
 
 /* Generate email */
 .generate-panel-ai {
@@ -5601,10 +5619,10 @@ nav#navbarList.nav-collepse::after {
     max-width: 64px;
 }
 
-/* .password-change-modal .input-group-re-size {
-   width: 100%;
-} */
 
+.changePasswordModalSimpleBar{
+    max-height: calc(100dvh - 200px);
+}
 /* END:: password modal */
 
 /* START::General css*/

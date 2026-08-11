@@ -11,6 +11,7 @@ import AttachmentList from "@components/ui/email/AttachmentList";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { verifyBoxName } from "@utils/emailUtil";
+import { useSettings } from "@context/SettingsContext";
 import { useMailData, useMailSelection } from "../../context/index";
 
 interface EmailRowProps {
@@ -64,6 +65,7 @@ const EmailRow = memo(({
     onToggleSelection: _onToggleSelection,
 }: EmailRowProps) => {
     const { boxName } = useMailData();
+    const { settings } = useSettings();
     let emailNameOrEmail = email.from?.[0] ?? "Unknown";
     if (verifyBoxName(boxName, 'draft') || verifyBoxName(boxName, 'sent')) {
         const recipients = email.to;
@@ -80,6 +82,10 @@ const EmailRow = memo(({
             ? email.attachments
             : email.attachments.attachments || []
         : [];
+    const showThreadCount =
+        settings.threadView &&
+        !verifyBoxName(boxName, 'trash') &&
+        email.threadCount > 1;
 
     return (
         <tr
@@ -143,7 +149,7 @@ const EmailRow = memo(({
                                     { /* Thread Count */}
                                     <div className="d-flex align-items-center">
                                         <div className="mail-received-name mb-0">{emailNameOrEmail}</div>
-                                        {!verifyBoxName(boxName, 'trash') && email.threadCount > 1 && (
+                                        {showThreadCount && (
                                             <span className="badge thread-badge">
                                                 {email.threadCount}
                                             </span>

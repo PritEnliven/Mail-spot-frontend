@@ -2,6 +2,7 @@ import NoEmailList from '@components/ui/email/NoEmailList';
 import EmailSkeletonLoader from '@components/ui/EmailSkeletonLoader';
 import { useScreen } from '@context/ScreenContext';
 import { useEmailAction } from '@hooks/useEmailAction';
+import { useSwipeGesture, type SwipeDirection } from '@hooks/useSwipeGesture';
 import { handleEmailDeletion, verifyBoxName } from '@utils/emailUtil';
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
@@ -38,6 +39,7 @@ const MailBoxPage = () => {
 
     // Ref to track the current markAsRead timeout
     const markAsReadTimeoutRef = useRef<number | null>(null);
+    const swipeNavInFlightRef = useRef(false);
     const scrollMailListToTop = useCallback(() => {
         const scrollEl = simpleBarRef.current?.getScrollElement?.();
         if (scrollEl) {
@@ -140,18 +142,6 @@ const MailBoxPage = () => {
         } else {
             markAsUnread(messageIds);
         }
-
-        if (activeEmailMessageId) {
-            setToolbarState({
-                showBack: false,
-                showSelectAll: true,
-                showRefresh: false,
-                showDelete: true,
-                showMarkAsRead: !shouldMarkAsRead,
-                showMarkAsUnread: shouldMarkAsRead,
-                showMove: true,
-            });
-        }
     }
 
     const setupDeleteConfirmation = (mesageIds: string[], isDraftEmail: boolean) => {
@@ -177,12 +167,17 @@ const MailBoxPage = () => {
         });
     }
 
-    const openEmailDetailHandler = async (
+    const openEmailDetailHandler = useCallback(async (
         currentActiveBox: string,
         uid: number,
         messageId: string,
         isSearch: boolean
     ) => {
+        // Clear pending mark-as-read from the previously open email before switching
+        if (markAsReadTimeoutRef.current) {
+            clearTimeout(markAsReadTimeoutRef.current);
+            markAsReadTimeoutRef.current = null;
+        }
 
         let loaderTimeout: number | null = window.setTimeout(() => {
             setIsEmailDetailLoading(true);
@@ -190,8 +185,14 @@ const MailBoxPage = () => {
         }, 200);
 
         try {
+            const isAlreadyViewingEmail = !isDesktop && !!activeEmailMessageId && !isMailListOpen;
+
             setActiveEmailMessageId(messageId);
-            setEmailDetailSelected(null);
+            // Keep current detail mounted while fetching the next mail so the mobile
+            // list header (profile / inbox counts) cannot flash between swipes.
+            if (!isAlreadyViewingEmail) {
+                setEmailDetailSelected(null);
+            }
 
             if (!isDesktop) {
                 setIsMailListOpen(false);
@@ -229,15 +230,24 @@ const MailBoxPage = () => {
                 threadCount: Math.max(listThreadCount, apiThreadCount) || apiThreadCount || 1,
             });
 
+            // Scroll detail pane to top when opening / swiping to another email
+            if (emailScrollRef.current) {
+                emailScrollRef.current.scrollTop = 0;
+            }
+
             const isRead = emailInList ? emailInList.isSeen : data.emailList.isSeen;
+            const markAsReadDelay = settings?.markAsReadDelay ?? 0;
+            // On <=992, show Mark as Unread when the open mail is (or will be) read.
+            const willAutoMarkAsRead = !isRead && markAsReadDelay !== -1;
+            const toolbarIsRead = isRead || willAutoMarkAsRead;
 
             setToolbarState({
                 showBack: !isDesktop,
                 showSelectAll: isDesktop,
                 showRefresh: false,
                 showDelete: true,
-                showMarkAsRead: !isRead,
-                showMarkAsUnread: isRead,
+                showMarkAsRead: !isDesktop && !toolbarIsRead,
+                showMarkAsUnread: !isDesktop && toolbarIsRead,
                 showMove: true,
             });
 
@@ -246,7 +256,7 @@ const MailBoxPage = () => {
             }
 
             if (!isRead) {
-                const delay = settings?.markAsReadDelay ?? 0;
+                const delay = markAsReadDelay;
 
                 // Never
                 if (delay === -1) {
@@ -257,11 +267,6 @@ const MailBoxPage = () => {
                 if (delay === 0) {
                     markAsRead([messageId]);
                     return;
-                }
-
-                // Clear any existing timeout
-                if (markAsReadTimeoutRef.current) {
-                    clearTimeout(markAsReadTimeoutRef.current);
                 }
 
                 // Delayed mark as read
@@ -281,11 +286,62 @@ const MailBoxPage = () => {
                 setIsEmailDetailLoading(false);
             }
         }
-    };
+    }, [
+        activeEmailMessageId,
+        boxName,
+        emails,
+        isDesktop,
+        isMailListOpen,
+        markAsRead,
+        openModal,
+        setActiveEmailMessageId,
+        setEmailDetailSelected,
+        setIsMailListOpen,
+        setToolbarState,
+        settings?.markAsReadDelay,
+    ]);
+
+    const handleSwipeNavigate = useCallback((direction: SwipeDirection) => {
+        if (!activeEmailMessageId || emails.length === 0 || swipeNavInFlightRef.current) return;
+
+        const currentIndex = emails.findIndex((email) => email.messageId === activeEmailMessageId);
+        if (currentIndex < 0) return;
+
+        // Swipe left → next (down the list); swipe right → previous (up the list)
+        const targetIndex = direction === 'left' ? currentIndex + 1 : currentIndex - 1;
+        if (targetIndex < 0 || targetIndex >= emails.length) return;
+
+        const target = emails[targetIndex];
+        if (!target?.messageId) return;
+
+        swipeNavInFlightRef.current = true;
+        void openEmailDetailHandler(
+            currentActiveBox,
+            target.uid,
+            target.messageId,
+            !!target.isSearchEmail || isSearchOrFilterMailList
+        ).finally(() => {
+            swipeNavInFlightRef.current = false;
+        });
+    }, [
+        activeEmailMessageId,
+        currentActiveBox,
+        emails,
+        isSearchOrFilterMailList,
+        openEmailDetailHandler,
+    ]);
+
+    const swipeHandlers = useSwipeGesture({
+        enabled: !isDesktop && !!activeEmailMessageId && !isDraftBox,
+        onSwipe: handleSwipeNavigate,
+    });
 
     const isSchedule = boxName?.toLocaleLowerCase().includes('schedule');
-    const mailListStyleOpenViaSearch = !isMailListOpen ? { width: '0px', 'min-width': '0px', 'border-right': '0px', overflow: 'hidden', opacity: '0' } : {};
-    const mailDetailStyleOpenViaSearch = !isMailListOpen ? { width: '100%' } : {};
+    // On mobile the detail panel is only mounted for an active email, so collapsing the
+    // list without one would leave a blank screen.
+    const isMailListCollapsed = !isMailListOpen && (isDesktop || !!activeEmailMessageId);
+    const mailListStyleOpenViaSearch = isMailListCollapsed ? { width: '0px', 'min-width': '0px', 'border-right': '0px', overflow: 'hidden', opacity: '0' } : {};
+    const mailDetailStyleOpenViaSearch = isMailListCollapsed ? { width: '100%' } : {};
 
     const noConversationSelected = (
         <div className="no-new-mail">
@@ -417,7 +473,15 @@ const MailBoxPage = () => {
 
             {/* START:: Application Form */}
             {(isDesktop || !!activeEmailMessageId) && (
-                <div id="emailDetailSection" className="mail-details-box" style={mailDetailStyleOpenViaSearch} ref={emailScrollRef}>
+                <div
+                    id="emailDetailSection"
+                    className="mail-details-box"
+                    style={mailDetailStyleOpenViaSearch}
+                    ref={emailScrollRef}
+                    onTouchStart={swipeHandlers.onTouchStart}
+                    onTouchEnd={swipeHandlers.onTouchEnd}
+                    onTouchCancel={swipeHandlers.onTouchCancel}
+                >
                     {!isDraftBox && activeEmailMessageId && isEmailDetailLoading ? (
                         <EmailDetailSkeletonLoader />
                     ) : !isDraftBox && activeEmailMessageId && emailDetailSelected ? (

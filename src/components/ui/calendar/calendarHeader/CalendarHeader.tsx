@@ -502,12 +502,10 @@ const CALENDAR_VIEW_OPTIONS = [
     { label: "Day", value: "timeGridDay" },
 ];
 
-const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
-
 function CalendarHeader() {
     const { goPrev, goNext, goToday, calendarTitle, calendarView, changeView, mainCalendarRef, searchText, setSearchText, searchResults, setSearchResults, noResult, setNoResult, isSearchResultDropdownOpen, setIsSearchResultDropdownOpen } = useCalendar();
     const { control, handleSubmit, reset, getValues } = useCalendarFilterForm();
-    const { isDesktop } = useScreen();
+    const { isDesktop, isMobile } = useScreen();
     const { isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { contacts } = useContacts();
     const [isCalendarFilterDropdownOpen, setIsCalendarFilterDropdownOpen] = useState(false);
@@ -516,15 +514,25 @@ function CalendarHeader() {
     const debouncedSearchText = useDebounce(searchText, 1000);
     const allowSearchDropdownRef = useRef(true);
 
+
+     const {
+            isSidebarOpen,
+            setIsSidebarOpen,
+           
+    } = useMailUI();
+
     const startFromMonth = new Date().getMonth();
     const mountMonthDropdown = useFlatpickrMonthDropdown(startFromMonth);
 
     const toggleCalendarFilterDropdown = () => {
         setIsCalendarFilterDropdownOpen(!isCalendarFilterDropdownOpen);
     };
-
     const toggleSidebarHandler = () => {
-        setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+        if (isMobile) {
+            setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+        } else {
+            setIsSidebarOpen(!isSidebarOpen);
+        }
     };
 
     const searchDropdownRef = useRef<HTMLUListElement | null>(null);
@@ -916,6 +924,7 @@ function CalendarHeader() {
                                                         dateFormat: 'd-m-Y',
                                                         allowInput: true,
                                                         defaultDate: [new Date(), new Date()],
+                                                        disableMobile: true,
                                                         onReady: (_, __, instance) => mountMonthDropdown(instance)
                                                     }}
                                                     className="form-control DateRangePickerStaticTop"

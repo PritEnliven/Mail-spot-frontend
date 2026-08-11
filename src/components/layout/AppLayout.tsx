@@ -1,5 +1,6 @@
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
+import MobileComposeFab from "./MobileComposeFab";
 import MailProviders from "../../context/MailProviders";
 import ModalRoot from "@components/ui/ModalRoot";
 import { useMailUI } from "@context/MailUIContext";
@@ -46,6 +47,8 @@ const AppContent = () => {
                 <RightPanel />
             </div>
             {/* END: Right Side  */}
+
+            <MobileComposeFab />
 
             <ModalRoot />
         </main>

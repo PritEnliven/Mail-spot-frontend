@@ -57,7 +57,7 @@ const PendingThreadEmailItem = ({ reply, index }: PendingThreadEmailItemProps) =
                                     </div>
                                 </div>
 
-                                <div className="text-end">
+                                <div className="text-end thread-mail-date-meta thread-mail-date-meta--inline">
                                     <span className="info-received-details d-block mb-1">
                                         {isDateInCurrentWeek(reply.sentAt)
                                             ? formatDate(reply.sentAt, TimeFormat.CALENDAR_SEARCH)
@@ -82,6 +82,21 @@ const PendingThreadEmailItem = ({ reply, index }: PendingThreadEmailItemProps) =
                                         {reply.toEmails.join(', ')}
                                     </span>
                                 </div>
+                            </div>
+                            <div className="thread-mail-date-meta thread-mail-date-meta--below">
+                                <span className="info-received-details d-block mb-1">
+                                    {isDateInCurrentWeek(reply.sentAt)
+                                        ? formatDate(reply.sentAt, TimeFormat.CALENDAR_SEARCH)
+                                        : formatDate(reply.sentAt, TimeFormat.EMAIL_DETAIL_DATE)
+                                    }
+                                </span>
+                                {(isPending || isFailed) && (
+                                    <span className={`pending-status-badge${isFailed ? ' pending-status-badge--failed' : ''}`}>
+                                        {isFailed
+                                            ? (reply.errorMessage || 'Send failed')
+                                            : 'Pending'}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

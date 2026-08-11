@@ -123,6 +123,7 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
         closeOnSelect: false,
         minDate: 'today' as const,
         minTime: new Date().toTimeString().slice(0, 5),
+        disableMobile: true,
         onReady: (_: Date[], __: string, instance: any) => mountMonthDropdown(instance),
         onClose: (dates: Date[]) => {
             const date = dates?.[0];

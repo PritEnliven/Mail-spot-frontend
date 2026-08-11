@@ -1,10 +1,12 @@
 import ActionCell from '@components/ui/AdminDashboard/ActionCell';
+import AdminUserCard from '@components/ui/AdminDashboard/AdminUserCard';
 import StatusCell from "@components/ui/AdminDashboard/StatusCell";
 import UserCell from '@components/ui/AdminDashboard/UserCell';
 import Select2Wrapper, { type SingleOption } from '@components/ui/form/Select2Wrapper';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useAdmin } from "@context/AdminDataContext";
 import { useAdminUI } from "@context/AdminUIContext";
+import { useScreen } from "@context/ScreenContext";
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import chevronLeftIconBig from "@images/chevron-left-icon-big.svg";
 import chevronRightIconBig from "@images/chevron-right-icon-big.svg";
@@ -12,13 +14,13 @@ import searchIcon from "@images/search-icon.svg";
 import { adminGetUserList, deleteUser, loginAdminAsUser } from '@services/adminService/adminService';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const PAGE_SIZE_OPTIONS: SingleOption[] = [
-    { label: "2", value: "2" },
+    // { label: "2", value: "2" },
     { label: "10", value: "10" },
     { label: "25", value: "25" },
     { label: "50", value: "50" },
@@ -28,6 +30,7 @@ const PAGE_SIZE_OPTIONS: SingleOption[] = [
 const AdminDashboard = () => {
     usePageStylesheet([pageStyles.agGridCss, pageStyles.agGridCustomCss, pageStyles.agGridThemeAlpineCss])
     const navigate = useNavigate();
+    const { isMobile } = useScreen();
     const [rowData, setRowData] = useState<any[]>([]);
     const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0].value);
     const [currentPage, setCurrentPage] = useState(1);
@@ -218,7 +221,6 @@ const AdminDashboard = () => {
 
     const handleGoToPage = () => {
         if (!goToPage) return;
-
         const pageNumber = parseInt(goToPage, 10);
         if (pageNumber >= 1 && pageNumber <= totalPages) {
             setCurrentPage(pageNumber);
@@ -241,8 +243,82 @@ const AdminDashboard = () => {
     const rangeStart = totalRows === 0 ? 0 : (currentPage - 1) * pageSizeNum + 1;
     const rangeEnd = Math.min(currentPage * pageSizeNum, totalRows);
 
+    const filteredMobileUsers = useMemo(() => {
+        const query = searchText.trim().toLowerCase();
+        if (!query) return rowData;
+        return rowData.filter((user) => {
+            const name = String(user?.name ?? '').toLowerCase();
+            const email = String(user?.email ?? '').toLowerCase();
+            const domain = String(user?.domain ?? '').toLowerCase();
+            return name.includes(query) || email.includes(query) || domain.includes(query);
+        });
+    }, [rowData, searchText]);
+
+    const paginationControls = (
+        <div className="d-flex align-items-center justify-content-between pt-3 admin-pagination-row">
+            <div className="pagination-box d-flex align-items-center">
+                <div className="d-flex align-items-center pagination-btn-box">
+                    <button
+                        className="btn hover-link icon-hover-effect"
+                        id="prevPage"
+                        data-bs-title="Previous"
+                        disabled={currentPage <= 1 || isLoading}
+                        onClick={goToPrevPage}
+                    >
+                        <img className="hover-image" src={chevronLeftIconBig} alt="Previous" />
+                    </button>
+                    <button
+                        className="btn hover-link icon-hover-effect"
+                        id="nextPage"
+                        data-bs-title="Next"
+                        disabled={currentPage >= totalPages || totalPages === 0 || isLoading}
+                        onClick={goToNextPage}
+                    >
+                        <img className="hover-image" src={chevronRightIconBig} alt="Next" />
+                    </button>
+                </div>
+                <ul className="pagination-cus me-3">
+                    <li className="pagination-count">
+                        <span id="currentPageRange" className="email-count">
+                            {rangeStart} - {rangeEnd}
+                        </span>
+                        <span className="of"> of </span>
+                        <span id="totalRecordsCount" className="total-email-count">
+                            {totalRows}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+            {!isMobile && (
+                <div className="go-to-sec d-flex align-items-center">
+                    <div className="form-group m-0 me-2">
+                        <input
+                            type="number"
+                            className="form-control"
+                            id="goToPageInput"
+                            placeholder="Page"
+                            min={1}
+                            max={totalPages}
+                            value={goToPage}
+                            onChange={(e) => setGoToPage(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                        />
+                    </div>
+                    <button
+                        id="goToPageBtn"
+                        className="btn-new"
+                        onClick={handleGoToPage}
+                        disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages || isLoading}
+                    >
+                        Go
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+
     return (
-        <div className="admin-data-tabl-box">
+        <div className={`admin-data-tabl-box ${isMobile ? 'admin-data-tabl-box--mobile' : ''}`}>
             <div className="Tool-bar-box d-flex align-items-center justify-content-between mb-3">
                 <div className="top-search">
                     <div className="input-icon-add">
@@ -265,8 +341,8 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 </div>
-                <div className="d-flex align-items-center">
-                    <div className="form-group m-0 me-2">
+                <div className="d-flex align-items-center admin-page-size">
+                    <div className="form-group m-0">
                         <div className="input-control" style={{ width: "68px" }}>
                             <Select2Wrapper
                                 value={pageSize}
@@ -279,7 +355,30 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
-            {!isLoading && rowData.length === 0 ? (
+
+            {isMobile ? (
+                <>
+                    {!isLoading && filteredMobileUsers.length === 0 ? (
+                        <div className="admin-data-grid-empty text-center py-5">
+                            No users found
+                        </div>
+                    ) : (
+                        <div className="admin-user-card-list">
+                            {filteredMobileUsers.map((user) => (
+                                <AdminUserCard
+                                    key={user.id}
+                                    user={user}
+                                    onClickChangePassword={handleChangePassword}
+                                    onClickEditUser={handleEditUser}
+                                    onClickDeleteUser={handleDeleteUser}
+                                    onClickLoginAsUser={handleLoginAsUser}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    {paginationControls}
+                </>
+            ) : !isLoading && rowData.length === 0 ? (
                 <div className="admin-data-grid-empty text-center py-5">
                     No users found
                 </div>
@@ -291,7 +390,6 @@ const AdminDashboard = () => {
                             rowData={rowData}
                             columnDefs={colDefs}
                             defaultColDef={defaultColDef}
-                            // Server-side paging: one API page of rows at a time
                             pagination={false}
                             headerHeight={26}
                             rowHeight={42}
@@ -306,64 +404,7 @@ const AdminDashboard = () => {
                             }}
                         />
                     </div>
-                    <div className="d-flex align-items-center justify-content-between pt-3">
-                        <div className="pagination-box d-flex align-items-center">
-                            <div className="d-flex align-items-center pagination-btn-box">
-                                <button
-                                    className="btn hover-link icon-hover-effect"
-                                    id="prevPage"
-                                    data-bs-title="Previous"
-                                    disabled={currentPage <= 1 || isLoading}
-                                    onClick={goToPrevPage}
-                                >
-                                <img className="hover-image" src={chevronLeftIconBig} alt="Previous" />
-                                </button>
-                                <button
-                                    className="btn hover-link icon-hover-effect"
-                                    id="nextPage"
-                                    data-bs-title="Next"
-                                    disabled={currentPage >= totalPages || totalPages === 0 || isLoading}
-                                    onClick={goToNextPage}
-                                >
-                                    <img className="hover-image" src={chevronRightIconBig} alt="Next" />
-                                </button>
-                            </div>
-                            <ul className="pagination-cus me-3">
-                                <li className="pagination-count">
-                                    <span id="currentPageRange" className="email-count">
-                                        {rangeStart} - {rangeEnd}
-                                    </span>
-                                    <span className="of"> of </span>
-                                    <span id="totalRecordsCount" className="total-email-count">
-                                        {totalRows}
-                                    </span>
-                                </li>
-                            </ul>
-                        </div>
-                        <div className="go-to-sec d-flex align-items-center">
-                            <div className="form-group m-0 me-2">
-                                <input
-                                    type="number"
-                                    className="form-control"
-                                    id="goToPageInput"
-                                    placeholder="Page"
-                                    min={1}
-                                    max={totalPages}
-                                    value={goToPage}
-                                    onChange={(e) => setGoToPage(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                />
-                            </div>
-                            <button
-                                id="goToPageBtn"
-                                className="btn-new"
-                                onClick={handleGoToPage}
-                                disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages || isLoading}
-                            >
-                                Go
-                            </button>
-                        </div>
-                    </div>
+                    {paginationControls}
                 </>
             )}
         </div>

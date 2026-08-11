@@ -59,7 +59,7 @@ const LeftPanel = () => {
         clearMailSearch } = useMailData();
     const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, activeBoxId, setActiveBoxId } = useMailUI();
     const { fetchContacts } = useContacts();
-    const { isMobile } = useScreen();
+    const { isMobile, isDesktop } = useScreen();
 
     const customFolders = useMemo(() => {
         const items = sidebarItems.filter(item => item.category === 'customBoxes');
@@ -394,7 +394,7 @@ const LeftPanel = () => {
                 {/* END:: Brand-box */}
 
                 {/* START:: Compose box */}
-                <div className="compose-box" id="composeBoxSection" style={{ display: isMobile ? 'none' : '' }}>
+                <div className="compose-box" id="composeBoxSection" style={{ display: isDesktop ? '' : 'none' }}>
                     {!isCalendar ?
                         (<a
                             onClick={openComposeModal}

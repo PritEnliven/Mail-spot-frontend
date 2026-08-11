@@ -314,7 +314,25 @@
 }
 
 .Calendar-main .mail-details-header {
-    grid-template-columns: auto auto 1fr !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+}
+
+/* Calendar header: hide name/email at ≤1500px, keep profile icon */
+@media screen and (max-width: 1500px) {
+    .Calendar-main .mail-details-header #profileBox,
+    .Calendar-main .mail-details-header .mail-profile-name,
+    .Calendar-main .mail-details-header .mail-profile-id,
+    .mail-details-header.is-calendar-header #profileBox.calendar-header-profile-text {
+        display: none !important;
+    }
+    .Calendar-main .mail-profile-dropdown .dropdown-toggle::after,
+    .mail-details-header.is-calendar-header .mail-profile-dropdown .dropdown-toggle::after {
+        content: none;
+    }
+    .Calendar-main .mail-profile-dropdown .mail-profile-label,
+    .mail-details-header.is-calendar-header .mail-profile-dropdown .mail-profile-label {
+        margin-right: 0;
+    }
 }
 
 .Calendar-main #calendar-main .btn-new.dropdown-toggle {

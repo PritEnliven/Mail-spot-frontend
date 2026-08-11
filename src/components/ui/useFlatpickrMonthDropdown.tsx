@@ -3,7 +3,10 @@ import { MonthDropdown } from "./MonthDropdown";
 
 export function useFlatpickrMonthDropdown(startFromMonth: number) {
     return (instance: any) => {
+        // Flatpickr skips building its calendar on mobile user-agents (native date input instead)
         const container = instance.calendarContainer;
+        if (!container) return;
+
         const header = container.querySelector(".flatpickr-current-month");
         if (!header) return;
 

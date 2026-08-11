@@ -35,8 +35,6 @@ const ToolbarBox = () => {
     const [moveToFolderOptions, setMoveToFolderOptions] = useState<any>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
     const { isDesktop } = useScreen();
-    // On mobile/tablet, open "Move to" below the item instead of to the right
-    const moveToDropDirection = isDesktop ? "end" : "down";
 
     // Hide pagination when mailbox is empty (all counts are 0)
     // const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
@@ -69,14 +67,13 @@ const ToolbarBox = () => {
     const handleBack = () => {
         // TODO: implement back logic
         setIsMailListOpen(true);
-        const isRead = emailDetailSelected?.isSeen ? true : false;
         setToolbarState({
             showBack: false,
             showSelectAll: true,
-            showRefresh: false,
-            showDelete: true,
-            showMarkAsRead: !isRead,
-            showMarkAsUnread: isRead,
+            showRefresh: true,
+            showDelete: false,
+            showMarkAsRead: false,
+            showMarkAsUnread: false,
             showMove: false,
         });
         if (!isDesktop) {
@@ -132,9 +129,11 @@ const ToolbarBox = () => {
 
     const markAsReadUnreadHandler = (isRead: boolean) => {
         let messageIds: string[] = Array.from(selectedEmails) as string[];
+        const markingOpenEmail =
+            messageIds.length === 0 && !!activeEmailMessageId && !!emailDetailSelected;
 
-        // If no selected emails but isMailSelected is true, use the emailDetailSelected's messageId
-        if (messageIds.length === 0 && activeEmailMessageId && emailDetailSelected) {
+        // If no selected emails but an email is open, act on the open email
+        if (markingOpenEmail) {
             messageIds = [emailDetailSelected.messageId];
         }
 
@@ -155,14 +154,45 @@ const ToolbarBox = () => {
             checkboxAll.checked = false;
         }
 
+        // On <=992, Mark as unread returns to the mail list (inbox) view
+        if (!isDesktop && !isRead && (markingOpenEmail || !!activeEmailMessageId)) {
+            setIsMailListOpen(true);
+            setEmailDetailSelected(null);
+            setActiveEmailMessageId(null);
+            setToolbarState({
+                showBack: false,
+                showSelectAll: true,
+                showRefresh: true,
+                showDelete: false,
+                showMarkAsRead: false,
+                showMarkAsUnread: false,
+                showMove: false,
+            });
+            return;
+        }
+
+        if (!isDesktop && markingOpenEmail && activeEmailMessageId) {
+            setToolbarState({
+                showBack: true,
+                showSelectAll: false,
+                showRefresh: false,
+                showDelete: true,
+                showMarkAsRead: !isRead,
+                showMarkAsUnread: isRead,
+                showMove: true,
+            });
+            return;
+        }
+
+        // Desktop / selection: hide Mark as Read/Unread after clearing selection
         setToolbarState({
             showBack: false,
             showSelectAll: true,
-            showRefresh: false,
-            showDelete: true,
-            showMarkAsRead: !isRead,
-            showMarkAsUnread: isRead,
-            showMove: false,
+            showRefresh: !activeEmailMessageId,
+            showDelete: !!activeEmailMessageId,
+            showMarkAsRead: false,
+            showMarkAsUnread: false,
+            showMove: !!activeEmailMessageId,
         });
     }
 
@@ -248,6 +278,12 @@ const ToolbarBox = () => {
 
     const createFolderHandler = () => {
         openModal('createCustomFolder');
+    }
+
+    const openMoveToFolderSheet = () => {
+        openModal('moveToFolder', {
+            onSelectFolder: moveToFolderHandler,
+        });
     }
 
     const isAllSelected = emails.length > 0 && selectedEmails.size === emails.length;
@@ -380,51 +416,60 @@ const ToolbarBox = () => {
                                     </Dropdown.Toggle>
 
                                     <Dropdown.Menu>
-                                        {/* Move To Submenu — down on mobile, right on desktop */}
-                                        <Dropdown drop={moveToDropDirection}>
-                                            <Dropdown.Toggle
-                                                as="div"
-                                                className="dropdown-item react-subdropdown-menu  d-flex justify-content-between align-items-center"
+                                        {/* Mobile/tablet: open bottom sheet. Desktop: nested submenu. */}
+                                        {!isDesktop ? (
+                                            <Dropdown.Item
+                                                className="d-flex justify-content-between align-items-center"
+                                                onClick={openMoveToFolderSheet}
                                             >
                                                 Move to
-                                            </Dropdown.Toggle>
-
-                                            <Dropdown.Menu className={`react-subdropdown ${!isDesktop ? 'react-subdropdown-mobile-down' : ''}`}>
-                                                <SimpleBar
-                                                    className="eventInfoModalSimpleBar"
-                                                    autoHide={false}
-                                                    forceVisible="y"
-                                                    style={{ maxHeight: '300px' }}
+                                            </Dropdown.Item>
+                                        ) : (
+                                            <Dropdown drop="end">
+                                                <Dropdown.Toggle
+                                                    as="div"
+                                                    className="dropdown-item react-subdropdown-menu  d-flex justify-content-between align-items-center"
                                                 >
-                                                    {moveToFolderOptions.boxes && moveToFolderOptions.boxes.map((box: any) => (
-                                                        <Dropdown.Item key={box.value} onClick={() => moveToFolderHandler(box.value)}>
-                                                            {box.key}
+                                                    Move to
+                                                </Dropdown.Toggle>
+
+                                                <Dropdown.Menu className="react-subdropdown">
+                                                    <SimpleBar
+                                                        className="eventInfoModalSimpleBar"
+                                                        autoHide={false}
+                                                        forceVisible="y"
+                                                        style={{ maxHeight: '300px' }}
+                                                    >
+                                                        {moveToFolderOptions.boxes && moveToFolderOptions.boxes.map((box: any) => (
+                                                            <Dropdown.Item key={box.value} onClick={() => moveToFolderHandler(box.value)}>
+                                                                {box.key}
+                                                            </Dropdown.Item>
+                                                        ))}
+
+                                                        {moveToFolderOptions.customBoxes?.length > 0 && (
+                                                            <>
+                                                                <Dropdown.Divider />
+
+                                                                {moveToFolderOptions.customBoxes.map((box: any) => (
+                                                                    <Dropdown.Item
+                                                                        key={box.value.value}
+                                                                        onClick={() => moveToFolderHandler(box.value.value)}
+                                                                    >
+                                                                        {box.key}
+                                                                    </Dropdown.Item>
+                                                                ))}
+                                                            </>
+                                                        )}
+
+                                                        <Dropdown.Divider />
+
+                                                        <Dropdown.Item onClick={() => createFolderHandler()}>
+                                                            Create folder
                                                         </Dropdown.Item>
-                                                    ))}
-
-                                                    {moveToFolderOptions.customBoxes?.length > 0 && (
-                                                        <>
-                                                            <Dropdown.Divider />
-
-                                                            {moveToFolderOptions.customBoxes.map((box: any) => (
-                                                                <Dropdown.Item
-                                                                    key={box.value.value}
-                                                                    onClick={() => moveToFolderHandler(box.value.value)}
-                                                                >
-                                                                    {box.key}
-                                                                </Dropdown.Item>
-                                                            ))}
-                                                        </>
-                                                    )}
-
-                                                    <Dropdown.Divider />
-
-                                                    <Dropdown.Item onClick={() => createFolderHandler()}>
-                                                        Create folder
-                                                    </Dropdown.Item>
-                                                </SimpleBar>
-                                            </Dropdown.Menu>
-                                        </Dropdown>
+                                                    </SimpleBar>
+                                                </Dropdown.Menu>
+                                            </Dropdown>
+                                        )}
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </div>
@@ -451,7 +496,8 @@ const ToolbarBox = () => {
                         </li>
                     </ul>
 
-                    {hasEmails && (
+                    {/* On mobile/tablet with an open email, hide prev/next — swipe navigates instead */}
+                    {hasEmails && (isDesktop || !activeEmailMessageId) && (
                         <div className="d-flex align-items-center pagination-btn-box">
                             <button
                                 id="previousPageBtn"

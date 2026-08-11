@@ -26,11 +26,12 @@ import deleteIcon from "@images/trash-icon.svg";
 import type { PendingReply } from "@models/PendingReply";
 import { deleteEmails } from "@services/emailAction/emailActionService";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
+import { getEmailPreviewText } from "@utils/emailUtil";
+import { useScreen } from "@context/ScreenContext";
 import moment from 'moment';
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import { useMailData, useMailUI } from '../../../context/index';
-import { getEmailPreviewText } from "@utils/emailUtil";
 
 // Lazy loaded components
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
@@ -77,6 +78,33 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
     const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar();
     const { boxName, updateBoxCount } = useMailData();
     const { openModal } = useMailUI();
+    const { isDesktop } = useScreen();
+
+    const formattedDate = isDateInCurrentWeek(email.date)
+        ? formatDate(email.date, TimeFormat.CALENDAR_SEARCH)
+        : formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
+
+    const DateMeta = ({ className = "" }: { className?: string }) => (
+        <div className={className}>
+            <span className="info-received-details d-block mb-1">
+                {formattedDate}
+            </span>
+            {email.attachments?.length > 0 &&
+                <a href="#" className="hover-link d-inline-flex align-items-center justify-content-end" onClick={(e) => e.preventDefault()}>
+                    <InteractiveIcon
+                        defaultIcon={attachmentStrokesRoundedIcon}
+                        hoverIcon={attachmentStrokesRoundedIconHover}
+                        activeIcon=""
+                        isActive={false}
+                        alt=""
+                        className="interactive-icon hover-image"
+                        renderAs="img"
+                        tooltip=""
+                    />
+                </a>
+            }
+        </div>
+    );
 
     const toggleThread = () => {
         setisThreadItemOpen(prev => {
@@ -161,6 +189,147 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
         });
     };
 
+    const replyActionsEl = isThreadItemOpen ? (
+        <div
+            className="application-btn-multi flex-shrink-0"
+            id={`replyForwardActionButtons-${index}`}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+        >
+            <ul>
+                <li>
+                    <a href="" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("reply", email, `threadReplyForwardSection${index}`); }} className="hover-link">
+                        <InteractiveIcon
+                            defaultIcon={replyIcon}
+                            hoverIcon={replyIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt=""
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip="Reply"
+                        />
+                    </a>
+                </li>
+                <li className="thread-email-hide-on-mobile">
+                    <a href="" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("replyAll", email, `threadReplyForwardSection${index}`); }} className="hover-link">
+                        <InteractiveIcon
+                            defaultIcon={replyAllIcon}
+                            hoverIcon={replyAllIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt=""
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip="Reply all"
+                        />
+                    </a>
+                </li>
+                <li className="thread-email-hide-on-mobile">
+                    <a href="" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("forward", email, `threadReplyForwardSection${index}`); }} className="hover-link">
+                        <InteractiveIcon
+                            defaultIcon={forwardIcon}
+                            hoverIcon={forwardIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt=""
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip="Forward"
+                        />
+                    </a>
+                </li>
+                <li>
+                    <Dropdown
+                        className="more-actions-dropdown react-dropdown thread-email-react-dropdown-replay-btn"
+                        show={showMoreMenu}
+                        onToggle={(next) => setShowMoreMenu(next)}
+                        autoClose="outside"
+                    >
+                        <Dropdown.Toggle
+                            as="button"
+                            type="button"
+                            className="hover-link d-flex align-items-center icon-hover-effect btn btn-link p-0 border-0"
+                            onClick={(e: React.MouseEvent) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowMoreMenu((prev) => !prev);
+                            }}
+                        >
+                            <InteractiveIcon
+                                defaultIcon={moreActionIcon}
+                                hoverIcon={moreActionIconHover}
+                                activeIcon=""
+                                isActive={false}
+                                alt=""
+                                className="interactive-icon hover-image"
+                                renderAs="img"
+                                tooltip="More"
+                            />
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu
+                            renderOnMount
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Dropdown.Item
+                                className="show-on-mobile-thread-email-only justify-content-start"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("replyAll", email, `threadReplyForwardSection${index}`); setShowMoreMenu(false); }}
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={replyAllIcon}
+                                    hoverIcon={replyAllIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="interactive-icon hover-image"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                                <span className="d-flex align-items-center ms-3">Reply all</span>
+                            </Dropdown.Item>
+
+                            <Dropdown.Item
+                                className="show-on-mobile-thread-email-only justify-content-start"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("forward", email, `threadReplyForwardSection${index}`); setShowMoreMenu(false); }}
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={forwardIcon}
+                                    hoverIcon={forwardIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="interactive-icon hover-image"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                                <span className="d-flex align-items-center ms-3">Forward</span>
+                            </Dropdown.Item>
+
+                            <Dropdown.Item
+                                className="justify-content-start"
+                                disabled={isActionLoading}
+                                onClick={handleDeleteClick}
+                            >
+                                <InteractiveIcon
+                                    defaultIcon={deleteIcon}
+                                    hoverIcon={deleteIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="interactive-icon hover-image"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                                <span className="d-flex align-items-center ms-3">Delete</span>
+                            </Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown>
+                </li>
+            </ul>
+        </div>
+    ) : null;
+
     return (
         <div className={`accordion-item pb-0 ${isThreadItemOpen ? 'open' : ''}`} id={`thread-${index}`}
             data-message-id={email.messageId}
@@ -184,15 +353,15 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                         }}
                     >
                         <div className="d-block mb-3">
-                            <div className="mail-details-information-details-box d-flex align-items-start justify-content-between">
-                                <div className="d-flex align-items-center justify-content-between position-relative profile-main-box">
+                            <div className="mail-details-information-details-box d-flex align-items-start justify-content-between gap-2">
+                                <div className="d-flex align-items-center justify-content-between position-relative profile-main-box" style={{ minWidth: 0, flex: 1 }}>
                                     {isThreadItemOpen &&
                                         (
-                                            <span className="label-sm thread-label-text">From</span>
+                                            <span className="label-sm thread-label-text flex-shrink-0">From</span>
                                         )}
-                                    <div className="d-flex align-items-center profile-section">
-                                        <span className="mail-profile-label ms-0">{fromInitial}</span>
-                                        <div className="d-block">
+                                    <div className="d-flex align-items-center profile-section" style={{ minWidth: 0, flex: 1 }}>
+                                        <span className="mail-profile-label ms-0 flex-shrink-0">{fromInitial}</span>
+                                        <div className="d-block" style={{ minWidth: 0, overflow: "hidden" }}>
                                             <span className="mail-profile-name d-block ">{fromName}</span>
                                             <span className="mail-profile-id d-block">{fromEmail}</span>
                                         </div>
@@ -205,30 +374,13 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                                         />
                                     </div>
                                 </div>
-                                <div className="text-end">
-                                    <span className="info-received-details d-block mb-1">
-                                        {isDateInCurrentWeek(email.date)
-                                            ? formatDate(email.date, TimeFormat.CALENDAR_SEARCH)
-                                            : formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE)
-                                        }
-                                    </span>
-                                    {email.attachments?.length > 0 &&
-                                        <a href="#" className="hover-link d-inline-flex align-items-center justify-content-end" onClick={(e) => e.preventDefault()}>
-                                            <InteractiveIcon
-                                                defaultIcon={attachmentStrokesRoundedIcon}
-                                                hoverIcon={attachmentStrokesRoundedIconHover}
-                                                activeIcon=""
-                                                isActive={false}
-                                                alt=""
-                                                className="interactive-icon hover-image"
-                                                renderAs="img"
-                                                tooltip=""
-                                            />
-                                        </a>
-                                    }
-                                </div>
+                                {/* Mobile: Reply/Forward align with From (same as root email). Desktop: date stays here. */}
+                                {!isDesktop && replyActionsEl}
+                                {isDesktop && (
+                                    <DateMeta className="text-end thread-mail-date-meta thread-mail-date-meta--inline" />
+                                )}
                             </div>
-                            <div className="d-flex align-items-end justify-content-between ">
+                            <div className="d-flex align-items-end justify-content-between thread-mail-to-row">
                                 <div className="cc-bcc-to-info" style={{ minWidth: 0, flex: 1 }}>
                                     {isThreadItemOpen &&
                                         (
@@ -285,113 +437,10 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                                             </p>
                                         )}
                                 </div>
-                                {isThreadItemOpen && (
-                                    <div
-                                        className="application-btn-multi"
-                                        id={`replyForwardActionButtons-${index}`}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                    >
-                                        <ul>
-                                            <li>
-                                                <a href="" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("reply", email, `threadReplyForwardSection${index}`); }} className="hover-link">
-                                                    <InteractiveIcon
-                                                        defaultIcon={replyIcon}
-                                                        hoverIcon={replyIconHover}
-                                                        activeIcon=""
-                                                        isActive={false}
-                                                        alt=""
-                                                        className="interactive-icon hover-image"
-                                                        renderAs="img"
-                                                        tooltip="Reply"
-                                                    />
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("replyAll", email, `threadReplyForwardSection${index}`); }} className="hover-link">
-                                                    <InteractiveIcon
-                                                        defaultIcon={replyAllIcon}
-                                                        hoverIcon={replyAllIconHover}
-                                                        activeIcon=""
-                                                        isActive={false}
-                                                        alt=""
-                                                        className="interactive-icon hover-image"
-                                                        renderAs="img"
-                                                        tooltip="Reply all"
-                                                    />
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReplyForward("forward", email, `threadReplyForwardSection${index}`); }} className="hover-link">
-                                                    <InteractiveIcon
-                                                        defaultIcon={forwardIcon}
-                                                        hoverIcon={forwardIconHover}
-                                                        activeIcon=""
-                                                        isActive={false}
-                                                        alt=""
-                                                        className="interactive-icon hover-image"
-                                                        renderAs="img"
-                                                        tooltip="Forward"
-                                                    />
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <Dropdown
-                                                    className="more-actions-dropdown react-dropdown"
-                                                    show={showMoreMenu}
-                                                    onToggle={(next) => setShowMoreMenu(next)}
-                                                    autoClose="outside"
-                                                >
-                                                    <Dropdown.Toggle
-                                                        as="button"
-                                                        type="button"
-                                                        className="hover-link d-flex align-items-center icon-hover-effect btn btn-link p-0 border-0"
-                                                        onClick={(e: React.MouseEvent) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            setShowMoreMenu((prev) => !prev);
-                                                        }}
-                                                    >
-                                                        <InteractiveIcon
-                                                            defaultIcon={moreActionIcon}
-                                                            hoverIcon={moreActionIconHover}
-                                                            activeIcon=""
-                                                            isActive={false}
-                                                            alt=""
-                                                            className="interactive-icon hover-image"
-                                                            renderAs="img"
-                                                            tooltip="More"
-                                                        />
-                                                    </Dropdown.Toggle>
-
-                                                    <Dropdown.Menu
-                                                        renderOnMount
-                                                        popperConfig={{ strategy: 'fixed' }}
-                                                        style={{ zIndex: 1080 }}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        <Dropdown.Item
-                                                            className="justify-content-start"
-                                                            disabled={isActionLoading}
-                                                            onClick={handleDeleteClick}
-                                                        >
-                                                            <InteractiveIcon
-                                                                defaultIcon={deleteIcon}
-                                                                hoverIcon={deleteIconHover}
-                                                                activeIcon=""
-                                                                isActive={false}
-                                                                alt=""
-                                                                className="interactive-icon hover-image"
-                                                                renderAs="img"
-                                                                tooltip=""
-                                                            />
-                                                            <span className="d-flex align-items-center ms-3">Delete</span>
-                                                        </Dropdown.Item>
-                                                    </Dropdown.Menu>
-                                                </Dropdown>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                {/* Desktop: Reply/Forward stay beside To. Mobile/tablet: date beside To (stacks below at ≤775). */}
+                                {isDesktop && replyActionsEl}
+                                {!isDesktop && (
+                                    <DateMeta className="text-end thread-mail-date-meta thread-mail-date-meta--to-side flex-shrink-0 ms-2" />
                                 )}
                             </div>
                         </div>

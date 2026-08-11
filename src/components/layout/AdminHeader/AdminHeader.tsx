@@ -1,6 +1,10 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-    import enlivenLogo from "@images/enliven-logo.svg";
+import { useAdmin } from "@context/AdminDataContext";
+import { useScreen } from "@context/ScreenContext";
+import enlivenLogo from "@images/enliven-logo.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
+import menuIcon from "@images/menu-icon.svg";
+import menuIconHover from "@images/menu-icon-hover.svg";
 import { useNavigate } from "react-router-dom";
 
 const ADMIN_AUTH_STORAGE_KEYS = ["adminToken", "adminUsername", "adminId"] as const;
@@ -11,17 +15,43 @@ interface adminHeaderProps {
 
 const AdminHeader = ({ title }: adminHeaderProps) => {
     const navigate = useNavigate();
+    const { isMobile } = useScreen();
+    const { isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useAdmin();
+
     const logout = () => {
-        // Clear only admin session — do not wipe user token/email in the same window
         ADMIN_AUTH_STORAGE_KEYS.forEach((key) => {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
         });
         navigate('/admin/login');
-    }
+    };
+
+    const toggleMobileSidebar = () => {
+        setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+    };
+
     return (
-        <div className="mail-details-header d-flex align-items-center justify-content-between">
+        <div className={`mail-details-header d-flex align-items-center justify-content-between ${isMobile ? 'admin-mobile-header' : ''}`}>
             <div className="d-flex align-items-center">
+                {isMobile && (
+                    <button
+                        type="button"
+                        className="btn hover-link admin-mobile-menu-btn"
+                        onClick={toggleMobileSidebar}
+                        aria-label="Open menu"
+                    >
+                        <InteractiveIcon
+                            defaultIcon={menuIcon}
+                            hoverIcon={menuIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt=""
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip=""
+                        />
+                    </button>
+                )}
                 <h2 className="box-title">{title}</h2>
             </div>
             <div className="btn-group mail-profile-dropdown">

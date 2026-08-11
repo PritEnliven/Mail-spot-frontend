@@ -417,6 +417,7 @@ function CustomRecurrenceModal({ modalId, zIndex, onConfirm, initialData }: Cust
                                                                                     dateFormat: 'd-m-Y',
                                                                                     allowInput: false,
                                                                                     minDate: formatDate(initialData?.endDate, TimeFormat.DDMMYYYY),
+                                                                                    disableMobile: true,
                                                                                     onReady: (_, __, instance) => mountMonthDropdown(instance)
                                                                                 }}
                                                                                 readOnly={false}
