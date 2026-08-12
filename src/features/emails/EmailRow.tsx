@@ -10,7 +10,7 @@ import eventIcon from "@images/event-icon.svg";
 import AttachmentList from "@components/ui/email/AttachmentList";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { verifyBoxName } from "@utils/emailUtil";
+import { getParticipantsLabel, getSenderLabel, verifyBoxName } from "@utils/emailUtil";
 import { useSettings } from "@context/SettingsContext";
 import { useMailData, useMailSelection } from "../../context/index";
 
@@ -30,14 +30,17 @@ interface EmailRowProps {
     onToggleSelection: (messageId: string) => void;
 }
 
+/** List payloads may be legacy string[] or `{ email, name }[]`. */
+export type ListMailboxParticipant = string | { email?: string; name?: string; address?: string };
+
 export interface EmailDetail {
     _id: string;
     messageId: string;
     uid: number;
     subject: string;
     date: string;
-    from: string[];
-    to: string[];
+    from: ListMailboxParticipant[];
+    to: ListMailboxParticipant[];
     attachments: any;
     threadCount: number;
     threadId: string;
@@ -66,12 +69,9 @@ const EmailRow = memo(({
 }: EmailRowProps) => {
     const { boxName } = useMailData();
     const { settings } = useSettings();
-    let emailNameOrEmail = email.from?.[0] ?? "Unknown";
+    let emailNameOrEmail = getSenderLabel(email.from) || "Unknown";
     if (verifyBoxName(boxName, 'draft') || verifyBoxName(boxName, 'sent')) {
-        const recipients = email.to;
-        emailNameOrEmail = recipients && recipients.length
-            ? recipients.join(', ')
-            : 'No Recipients';
+        emailNameOrEmail = getParticipantsLabel(email.to) || 'No Recipients';
     }
     const emailDate = formatDate(email.date, TimeFormat.MONTH_DAY)
     const { toggleEmailSelection, toggleEmailSelectionWithShift, setLastSelectedIndex } = useMailSelection();

@@ -43,12 +43,14 @@ import { Dropdown } from 'react-bootstrap';
 import { Controller } from 'react-hook-form';
 import { useNavigate } from "react-router-dom";
 import { useContacts, useMailData, useMailUI } from '../../../context/index';
+import { clearAccountSession } from "@context/AccountContext";
 import type { CreateRuleFormValues } from "./createRuleForm/CreateRuleForm.schema";
 import type { FilterEmailFormValues } from "./filterEmailForm.schema";
 const Flatpickr = lazy(() => import('react-flatpickr'));
 const SearchEmailRow = lazy(() => import("./SearchEmailRow"));
 const CalendarHeader = lazy(() => import("@components/ui/calendar/calendarHeader/CalendarHeader"));
 const CreateRuleForm = lazy(() => import("@components/layout/header/createRuleForm/CreateRuleForm"));
+const AccountSwitcher = lazy(() => import("@components/ui/AccountSwitcher/AccountSwitcher"));
 
 const Header = () => {
     const navigate = useNavigate();
@@ -109,6 +111,7 @@ const Header = () => {
                 localStorage.removeItem(key);
                 sessionStorage.removeItem(key);
             });
+            clearAccountSession();
             navigate('/login');
         }
     }
@@ -651,7 +654,7 @@ const Header = () => {
     }
 
 
-    
+
     const isCalendar = verifyBoxName(boxName, "calendar");
     const isSettings = verifyBoxName(boxName, "settings");
 
@@ -1047,14 +1050,14 @@ const Header = () => {
 
                 <Dropdown
                     className="mail-profile-dropdown"
-                     show={isProfileOpen}
-    onToggle={(nextShow) => {
-        
-        if (isMobile && !nextShow) {
-            return;
-        }
-        setIsProfileOpen(nextShow);
-    }}
+                    show={isProfileOpen}
+                    onToggle={(nextShow) => {
+
+                        if (isMobile && !nextShow) {
+                            return;
+                        }
+                        setIsProfileOpen(nextShow);
+                    }}
                 >
                     <Dropdown.Toggle className="btn btn-secondary dropdown-toggle d-flex align-items-center">
                         <div className={`d-block${isCalendar ? ' calendar-header-profile-text' : ''}`} id="profileBox">
@@ -1094,6 +1097,9 @@ const Header = () => {
                                         id="profileEmail1"> {profileEmail}</span>
                                 </div>
                             </div>
+                            <Suspense fallback={null}>
+                                <AccountSwitcher onAccountSwitch={() => setIsProfileOpen(false)} />
+                            </Suspense>
                             <ul className="profile-link-list">
                                 <li className="profile-link-items">
                                     <a href="#" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>

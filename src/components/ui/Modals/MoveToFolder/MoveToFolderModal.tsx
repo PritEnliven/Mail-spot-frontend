@@ -127,13 +127,13 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
             minWidth="100%"
         >
             <div className="move-to-folder-sheet">
-                <div className="move-to-folder-sheet__handle" aria-hidden="true" />
+                {/* <div className="move-to-folder-sheet__handle" aria-hidden="true" /> */}
 
-                <div className="move-to-folder-sheet__header">
-                    <h5 className="move-to-folder-sheet__title">Move to</h5>
+                <div className="modal-header justify-content-end">
+                    <h5 className="modal-title modal-title-center">Move to</h5>
                     <button
                         type="button"
-                        className="move-to-folder-sheet__close btn hover-link icon-hover-effect"
+                        className="btn-close hover-link btn icon-hover-effect"
                         onClick={onClose}
                         aria-label="Close"
                     >

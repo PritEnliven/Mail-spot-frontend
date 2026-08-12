@@ -72,7 +72,7 @@ interface MailDataType {
     /* Sidebar */
     sidebarState: SidebarStateProps;
     setSidebarState: (state: SidebarStateProps) => void;
-    setSidebarStateFromAPI: () => Promise<SidebarApiResult>;
+    setSidebarStateFromAPI: (boxNameOverride?: string) => Promise<SidebarApiResult>;
     sidebarItems: SidebarItemType[];
     setSidebarItems: (items: SidebarItemType[]) => void;
     socketId: string | null;
@@ -102,6 +102,8 @@ interface MailDataType {
     /* API */
     fetchEmails: (page?: number, boxName?: string, isPrevious?: boolean, mailAction?: string, forceRefresh?: boolean) => Promise<void>;
     fetchSearchEmails: (isPrevious?: boolean) => Promise<void>;
+    /** Wipe mailbox UI state and reload INBOX/sidebar for a newly switched account */
+    reloadForAccountSwitch: () => Promise<void>;
 
     /* Mail mutations */
     updateEmailReadState: (messageIds: string[], isRead: boolean) => void;
@@ -258,8 +260,9 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 else if (mailAction === 'read') isReadTotal = true;
 
                 if (mailAction === 'all') {
+                    const activeBox = boxNameParam || boxName;
                     const payload = {
-                        current_active_box: boxName,
+                        current_active_box: activeBox,
                         vPage: page,
                         lastMailId: page === 1 ? '' : isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
                         firstMailId: page === 1 ? '' : isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
@@ -721,7 +724,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     /* -------------------- Sidebar helpers -------------------- */
-    const setSidebarStateFromAPI = async (): Promise<SidebarApiResult> => {
+    const setSidebarStateFromAPI = async (boxNameOverride?: string): Promise<SidebarApiResult> => {
         setIsSidebarLoading(true);
         try {
             const response = await getBoxes()
@@ -740,9 +743,10 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             );
 
             // Fire getCounts without blocking - update counts when response arrives
-            if (boxName) {
+            const countBox = boxNameOverride || boxName;
+            if (countBox) {
                 setIsSidebarCountLoading(true);
-                getCounts(boxName, true, null).then((boxCountResponse) => {
+                getCounts(countBox, true, null).then((boxCountResponse) => {
                     if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
                         setSidebarState(prev => {
                             const updatedBoxCounts = { ...prev.boxCounts };
@@ -793,6 +797,39 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             setIsSidebarLoading(false);
         }
     };
+
+    /** Clear all mailbox UI for previous account, then load INBOX for the new active account */
+    const reloadForAccountSwitch = useCallback(async () => {
+        // Never keep previous account emails visible while loading the new one
+        setEmails([]);
+        setPagination(null);
+        setEmailDetailSelected(null);
+        setActiveEmailMessageId(null);
+        setSearchTerm('');
+        setFilterForm(null);
+        setHeaderSearchResults([]);
+        setAllSearchResult(false);
+        setMailListPage(1);
+        setReadUnreadFilter('all');
+        setTotalEmailBadge(0);
+        setMailSearchResetKey((key) => key + 1);
+        setIsSidebarDataReady(false);
+        setSidebarItems([]);
+        setSidebarState({
+            boxes: [],
+            customBoxes: [],
+            otherMenu: [],
+            boxCounts: {},
+            parentFolderOptions: [],
+            delimiter: null,
+        });
+
+        setBoxName('INBOX');
+        setBoxTitle('Inbox');
+
+        await setSidebarStateFromAPI('INBOX');
+        await fetchEmails(1, 'INBOX', false, 'all', true);
+    }, [fetchEmails]);
 
     const clearMailSearch = useCallback(async (options?: { restoreMailbox?: boolean; preserveFilter?: boolean }) => {
         const restoreMailbox = options?.restoreMailbox !== false;
@@ -954,6 +991,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setFilterForm,
         fetchEmails,
         fetchSearchEmails,
+        reloadForAccountSwitch,
         updateEmailReadState,
         deleteEmailState,
         updateBoxCount,

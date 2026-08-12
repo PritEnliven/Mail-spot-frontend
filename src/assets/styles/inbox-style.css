@@ -190,7 +190,7 @@ button.accordion-button.collapsed { padding: 0; }
 div.accordion-button.custom-toggle-btn { cursor: default; width: 100%; }
 div.accordion-button.custom-toggle-btn .mail-message-send--information-details-box { cursor: pointer; }
 .thread-email .application-btn-multi { cursor: default; }
-.thread-email .more-actions-dropdown .dropdown-menu { z-index: 1080; }
+.thread-email .more-actions-dropdown .dropdown-menu { z-index: 1080;margin: 5px -5px; }
 .accordion-item:last-child .accordion-button:not(.collapsed) { border-bottom: 0; }
 .custom-accordion-body { display: none; }
 .thread-email .accordion-item::after { content: ""; width: calc(100% - -40px); height: 1px; background-color: #D0D9DE; position: absolute; bottom: 1px; margin: 0 -20px 0; }
@@ -226,11 +226,11 @@ div.accordion-button.custom-toggle-btn .mail-message-send--information-details-b
     background-color: #D0D9DE;
 }
 /* Align count badge center with .mail-profile-label (40px, ms-0) center at 20px */
-.thread-expand-divider__line:first-child {
+/* .thread-expand-divider__line:first-child {
     flex: 0 0 2px;
     width: 2px;
     min-width: 2px;
-}
+} */
 .thread-expand-divider__line:last-child {
     flex: 1 1 auto;
     min-width: 12px;
@@ -270,8 +270,8 @@ div.accordion-button.custom-toggle-btn .mail-message-send--information-details-b
     line-height: 0;
 }
 .thread-expand-divider__arrow {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     display: block;
     opacity: 0.75;
 }

@@ -97,6 +97,10 @@ p {
     text-align: center;
     min-height: 71px;
 }
+.Brand-logo-collepse{
+    max-width: 40px !important;
+    height: 40px !important;
+}
 
 .compose-box {
     margin: 0 0 8px 0;
@@ -301,12 +305,12 @@ p {
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+    max-width: 200px;
 }
 
 /* Header mailbox/folder title: truncate with … within available header space */
 #boxTitle {
     min-width: 0;
-    max-width: 100%;
     flex-shrink: 1;
 }
 
@@ -5836,3 +5840,109 @@ nav#navbarList.nav-collepse::after {
 
 
 
+
+.add-account-section {
+    width: 100%;
+    background: transparent;
+    padding: 8px 4px 4px 4px;
+    border-bottom: 1px dashed #D0D9DE;
+  }
+
+  .add-account-label {
+    font-size: 13px;
+    color: #717D84;
+    padding: 4px 8px 8px;
+    margin: 0;
+  }
+
+  .add-account-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    margin-bottom: 4px;
+  }
+  .add-account-item:hover {
+    background-color: #E5E8EA;
+  }
+  .add-account-item.active {
+    background-color: #E5E8EA;
+  }
+  .add-account-item .mail-profile-label {
+    margin: 0;
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .add-account-item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .add-account-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .add-account-name {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 100%;
+    margin: 0;
+    color: #212121;
+  }
+  .add-account-email {
+    font-size: 12px;
+    color: #717D84;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .add-account-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  .add-account-btn:hover {
+    background-color: #E5E8EA;
+  }
+  .add-account-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    outline: 1px dashed #D0D9DE;
+    outline-offset: -1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .add-account-btn span {
+    font-size: 13px;
+    font-weight: 400;
+    color: #212121;
+  }
+  .add-account-primary{
+    font-size: 10px;
+    background: rgb(212 235 249);
+    color: rgb(0 151 239);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 600;
+  }

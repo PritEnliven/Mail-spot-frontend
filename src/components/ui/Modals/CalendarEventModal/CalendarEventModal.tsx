@@ -482,8 +482,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                     Show time zone
                                                 </a>
                                             </div>
-                                            <div className="col-md-6 p-0 d-flex flex-wrap">
-                                                <div className="col-md-6">
+                                            <div className="col-md-6 p-0 d-flex flex-wrap event-datetime-fields">
+                                                <div className="col-md-6 event-date-field">
                                                     <div className="form-group mb-2">
                                                         <div className="input-icon-add custom-datepicker-month-selector-c2-vm">
                                                             <Controller
@@ -522,7 +522,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className={`col-md-6 all-day-time-show-hid ${watch('allDayCheckbox') ? 'd-none' : ''}`} id="eventStartTimeSection">
+                                                <div className={`col-md-6 all-day-time-show-hid event-time-field ${watch('allDayCheckbox') ? 'd-none' : ''}`} id="eventStartTimeSection">
                                                     <div className="form-group mb-2">
                                                         <div className="input-icon-add position-relative custom-datepicker-month-selector-c2-vm">
                                                             <Controller
@@ -542,7 +542,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                         <div className="custom-time-dropdown-container" id="eventStartTimeDropdown"></div>
                                                     </div>
                                                 </div>
-                                                <div className="col-md-6 ">
+                                                <div className="col-md-6 event-date-field">
                                                     <div className="form-group mb-2">
                                                         <div className="input-icon-add custom-datepicker-month-selector-c2-vm">
                                                             <Controller
@@ -584,7 +584,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className={`col-md-6 all-day-time-show-hid ${watch('allDayCheckbox') ? 'd-none' : ''}`} id="eventEndTimeSection">
+                                                <div className={`col-md-6 all-day-time-show-hid event-time-field ${watch('allDayCheckbox') ? 'd-none' : ''}`} id="eventEndTimeSection">
                                                     <div className="form-group mb-2">
                                                         <div className="input-icon-add position-relative">
                                                             <Controller

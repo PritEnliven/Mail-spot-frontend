@@ -232,14 +232,6 @@
 // export default CreateCustomFolderModal;
 
 
-
-
-
-
-
-
-
-
 import arrowPointingOutIcon from "@images/arrows-pointing-out-icon.svg";
 import arrowPointingOutIconHover from "@images/arrows-pointing-out-icon-hover.svg";
 import closeIcon from "@images/close-icon.svg";

@@ -1,6 +1,6 @@
 import attachmentIcon from "@images/attachment-stroke-rounded-icon.svg";
 import { HighlightText } from "@components/ui/HighlightText";
-import { normalizeMailboxList } from "@utils/emailUtil";
+import { getParticipantsLabel, getSenderLabel, normalizeMailboxList } from "@utils/emailUtil";
 
 
 interface Email {
@@ -35,25 +35,30 @@ function htmlToPlainText(html: string): string {
 
 function getSearchPreviewText(email: Email, searchTerm: string): string {
     const term = searchTerm.trim();
-    const fromStr = normalizeMailboxList(email.from).join(", ");
-    const toStr = normalizeMailboxList(email.to).join(", ");
-    const ccStr = normalizeMailboxList(email.cc).join(", ");
-    const bccStr = normalizeMailboxList(email.bcc).join(", ");
+    const fromLabel = getSenderLabel(email.from);
+    const toLabel = getParticipantsLabel(email.to);
+    const ccLabel = getParticipantsLabel(email.cc);
+    const bccLabel = getParticipantsLabel(email.bcc);
+    // Keep full name <email> strings for term matching (email address search still works).
+    const fromSearch = normalizeMailboxList(email.from).join(", ");
+    const toSearch = normalizeMailboxList(email.to).join(", ");
+    const ccSearch = normalizeMailboxList(email.cc).join(", ");
+    const bccSearch = normalizeMailboxList(email.bcc).join(", ");
     const bodyPlain = (email.bodyText || htmlToPlainText(email.body || "")).trim();
 
     if (!term) {
-        return toStr || fromStr;
+        return toLabel || fromLabel;
     }
 
     if (bodyPlain && fieldContainsTerm(bodyPlain, term)) {
         return truncateAroundMatch(bodyPlain, term);
     }
-    if (fromStr && fieldContainsTerm(fromStr, term)) return fromStr;
-    if (toStr && fieldContainsTerm(toStr, term)) return toStr;
-    if (ccStr && fieldContainsTerm(ccStr, term)) return ccStr;
-    if (bccStr && fieldContainsTerm(bccStr, term)) return bccStr;
+    if (fromSearch && fieldContainsTerm(fromSearch, term)) return fromLabel || fromSearch;
+    if (toSearch && fieldContainsTerm(toSearch, term)) return toLabel || toSearch;
+    if (ccSearch && fieldContainsTerm(ccSearch, term)) return ccLabel || ccSearch;
+    if (bccSearch && fieldContainsTerm(bccSearch, term)) return bccLabel || bccSearch;
 
-    return toStr || fromStr || ccStr || bccStr || bodyPlain.slice(0, 120);
+    return toLabel || fromLabel || ccLabel || bccLabel || bodyPlain.slice(0, 120);
 }
 
 function fieldContainsTerm(text: string, term: string): boolean {

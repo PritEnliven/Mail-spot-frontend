@@ -5,6 +5,7 @@ import type { Email } from '@models/Email';
 import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
+import { getActiveAccountId } from '@services/apiService';
 
 type EventCallback = (...args: any[]) => void;
 
@@ -176,8 +177,9 @@ export const useMailSocket = () => {
             notifications.forEach(e => notificationManager.showNewEmailNotification(e));
         };
 
-        const handleNewEmail = (payload: { emails: Email[]; unreadCount: number; totalCount: number; boxName: string }) => {
+        const handleNewEmail = (payload: { accountId?: string; emails: Email[]; unreadCount: number; totalCount: number; boxName: string }) => {
             console.log('handleNewEmail', payload);
+            if (payload.accountId && payload.accountId !== getActiveAccountId()) return;
             const incoming = payload?.emails ?? [];
             const payloadBox = payload?.boxName;
             if (!incoming.length) return;
@@ -248,8 +250,9 @@ export const useMailSocket = () => {
             });
         };
 
-        const handleEmailUpdated = (data: Partial<Email> & { messageId: string }) => {
+        const handleEmailUpdated = (data: Partial<Email> & { messageId: string; accountId?: string }) => {
             console.log('handleEmailUpdated', data);
+            if (data.accountId && data.accountId !== getActiveAccountId()) return;
             if (!data.messageId) return;
 
             if (typeof data.isSeen === 'boolean') {
@@ -260,12 +263,20 @@ export const useMailSocket = () => {
             updateRef.current(data as Email);
         };
 
-        const handleEmailDeleted = (data: Email | Email[]) => {
+        const handleEmailDeleted = (data: (Email | Email[]) | { accountId?: string; emails?: Email[] }) => {
             console.log('handleEmailDeleted', data);
+            // New payload shape: { accountId, emails: [...] }
+            if (data && !Array.isArray(data) && 'emails' in data && Array.isArray((data as any).emails)) {
+                const typed = data as { accountId?: string; emails: Email[] };
+                if (typed.accountId && typed.accountId !== getActiveAccountId()) return;
+                typed.emails.forEach(e => deleteRef.current(e.messageId));
+                return;
+            }
+            // Legacy shapes
             if (Array.isArray(data)) {
                 data.forEach(e => deleteRef.current(e.messageId));
             } else {
-                deleteRef.current(data.messageId);
+                deleteRef.current((data as Email).messageId);
             }
         };
 

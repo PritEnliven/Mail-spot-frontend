@@ -1,5 +1,4 @@
 import ActionCell from '@components/ui/AdminDashboard/ActionCell';
-import AdminUserCard from '@components/ui/AdminDashboard/AdminUserCard';
 import StatusCell from "@components/ui/AdminDashboard/StatusCell";
 import UserCell from '@components/ui/AdminDashboard/UserCell';
 import Select2Wrapper, { type SingleOption } from '@components/ui/form/Select2Wrapper';
@@ -14,7 +13,7 @@ import searchIcon from "@images/search-icon.svg";
 import { adminGetUserList, deleteUser, loginAdminAsUser } from '@services/adminService/adminService';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -243,17 +242,6 @@ const AdminDashboard = () => {
     const rangeStart = totalRows === 0 ? 0 : (currentPage - 1) * pageSizeNum + 1;
     const rangeEnd = Math.min(currentPage * pageSizeNum, totalRows);
 
-    const filteredMobileUsers = useMemo(() => {
-        const query = searchText.trim().toLowerCase();
-        if (!query) return rowData;
-        return rowData.filter((user) => {
-            const name = String(user?.name ?? '').toLowerCase();
-            const email = String(user?.email ?? '').toLowerCase();
-            const domain = String(user?.domain ?? '').toLowerCase();
-            return name.includes(query) || email.includes(query) || domain.includes(query);
-        });
-    }, [rowData, searchText]);
-
     const paginationControls = (
         <div className="d-flex align-items-center justify-content-between pt-3 admin-pagination-row">
             <div className="pagination-box d-flex align-items-center">
@@ -356,35 +344,16 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {isMobile ? (
-                <>
-                    {!isLoading && filteredMobileUsers.length === 0 ? (
-                        <div className="admin-data-grid-empty text-center py-5">
-                            No users found
-                        </div>
-                    ) : (
-                        <div className="admin-user-card-list">
-                            {filteredMobileUsers.map((user) => (
-                                <AdminUserCard
-                                    key={user.id}
-                                    user={user}
-                                    onClickChangePassword={handleChangePassword}
-                                    onClickEditUser={handleEditUser}
-                                    onClickDeleteUser={handleDeleteUser}
-                                    onClickLoginAsUser={handleLoginAsUser}
-                                />
-                            ))}
-                        </div>
-                    )}
-                    {paginationControls}
-                </>
-            ) : !isLoading && rowData.length === 0 ? (
+            {!isLoading && rowData.length === 0 ? (
                 <div className="admin-data-grid-empty text-center py-5">
                     No users found
                 </div>
             ) : (
                 <>
-                    <div className="ag-theme-alpine admin-data-grid" style={{ width: '100%', height: '500px' }}>
+                    <div
+                        className="ag-theme-alpine admin-data-grid"
+                        style={{ width: '100%', height: isMobile ? 'calc(100dvh - 220px)' : '500px' }}
+                    >
                         <AgGridReact
                             ref={gridRef}
                             rowData={rowData}

@@ -59,7 +59,7 @@ const LeftPanel = () => {
         clearMailSearch } = useMailData();
     const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, activeBoxId, setActiveBoxId } = useMailUI();
     const { fetchContacts } = useContacts();
-    const { isMobile, isDesktop } = useScreen();
+    const { isMobile } = useScreen();
 
     const customFolders = useMemo(() => {
         const items = sidebarItems.filter(item => item.category === 'customBoxes');
@@ -387,14 +387,15 @@ const LeftPanel = () => {
                                 src={mailBoxLogo40}
                                 alt="Mailspot Logo Small"
                                 className="Brand-logo-collepse"
+                                  width={40}
                             />
                         }
                     </a>
                 </div>
                 {/* END:: Brand-box */}
 
-                {/* START:: Compose box */}
-                <div className="compose-box" id="composeBoxSection" style={{ display: isDesktop ? '' : 'none' }}>
+                {/* START:: Compose box — left sidebar for ≥575px; FAB handles <575 */}
+                <div className="compose-box" id="composeBoxSection" style={{ display: isMobile ? 'none' : '' }}>
                     {!isCalendar ?
                         (<a
                             onClick={openComposeModal}

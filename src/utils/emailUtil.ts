@@ -32,6 +32,36 @@ export function mailboxParticipantToString(participant: unknown): string {
     return addr || name;
 }
 
+/**
+ * Display label for list UIs: prefer display name, fall back to email.
+ * Supports legacy string payloads and `{ email, name }` objects.
+ */
+export function getSenderLabel(from: unknown): string {
+    const first = Array.isArray(from) ? from[0] : from;
+    if (first == null || first === '') return '';
+    if (typeof first === 'string') {
+        return first.replace(/['"]+/g, '').trim();
+    }
+    if (typeof first === 'object') {
+        const o = first as Record<string, unknown>;
+        const name = typeof o.name === 'string' ? o.name.trim() : '';
+        const emailVal = typeof o.email === 'string' ? o.email.trim() : '';
+        const address = typeof o.address === 'string' ? o.address.trim() : '';
+        return name || emailVal || address || '';
+    }
+    return String(first);
+}
+
+/** Comma-separated display labels for to/cc/bcc-style lists. */
+export function getParticipantsLabel(participants: unknown): string {
+    if (participants == null) return '';
+    const list = Array.isArray(participants) ? participants : [participants];
+    return list
+        .map((p) => getSenderLabel(p))
+        .filter((s) => s.length > 0)
+        .join(', ');
+}
+
 export function normalizeMailboxList(
     participants: unknown[] | undefined | null
 ): string[] {

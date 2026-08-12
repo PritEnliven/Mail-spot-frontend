@@ -1,5 +1,6 @@
 import mailSpotLogo from "@images/no-new-mail.svg";
 import type { Email } from '@models/Email';
+import { getSenderLabel } from '@utils/emailUtil';
 
 export class NotificationManager {
   private static instance: NotificationManager;
@@ -112,9 +113,7 @@ export class NotificationManager {
     }
 
     try {
-      const sender = Array.isArray(email.from) && email.from.length > 0
-        ? email.from[0]
-        : 'Unknown Sender';
+      const sender = getSenderLabel(email.from) || 'Unknown Sender';
 
       const notification = new Notification(`New Email from ${sender}`, {
         body: email.subject || 'No Subject',

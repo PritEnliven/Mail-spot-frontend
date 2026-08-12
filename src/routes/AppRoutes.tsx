@@ -1,5 +1,6 @@
 import { AdminUIProvider } from '@context/AdminUIContext';
 import { ProfileProvider } from '@context/userContext';
+import { AccountProvider } from '@context/AccountContext';
 import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
@@ -54,9 +55,11 @@ const AppRoutes = () => {
         {/* User protected routes */}
         <Route path="/" element={
           <ProtectedRoute>
-            <ProfileProvider>
-              <AppLayout />
-            </ProfileProvider>
+            <AccountProvider>
+              <ProfileProvider>
+                <AppLayout />
+              </ProfileProvider>
+            </AccountProvider>
           </ProtectedRoute>
         }>
           {/* Default redirect */}

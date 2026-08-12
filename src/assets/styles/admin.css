@@ -3887,6 +3887,11 @@ hr {
         flex: 0 0 auto;
     }
 
+    .admin-data-tabl-box--mobile .admin-data-grid {
+        min-height: 280px;
+        overflow: auto;
+    }
+
     .admin-user-card-list {
         display: flex;
         flex-direction: column;

@@ -14,19 +14,11 @@
     .mail-details-header.is-calendar-header .mail-profile-id,
     .Calendar-main .mail-details-header #profileBox,
     .Calendar-main .mail-details-header .mail-profile-name,
-    .Calendar-main .mail-details-header .mail-profile-id {
-        display: none !important;
-    }
-
+    .Calendar-main .mail-details-header .mail-profile-id {display: none !important;}
     .mail-details-header.is-calendar-header .mail-profile-dropdown .dropdown-toggle::after,
-    .Calendar-main .mail-profile-dropdown .dropdown-toggle::after {
-        content: none;
-    }
-
+    .Calendar-main .mail-profile-dropdown .dropdown-toggle::after {content: none;}
     .mail-details-header.is-calendar-header .mail-profile-dropdown .mail-profile-label,
-    .Calendar-main .mail-profile-dropdown .mail-profile-label {
-        margin-right: 0;
-    }
+    .Calendar-main .mail-profile-dropdown .mail-profile-label {margin-right: 0;}
 }
 
 
@@ -37,26 +29,13 @@
 
     /* -------------------- Mail Details Header -------------------- */
     .mail-details-header .mail-profile-name,
-    .mail-details-header .mail-profile-id {
-        display: none !important;
-    }
-
-    .mail-profile-dropdown .dropdown-toggle::after {
-        content: none;
-    }
-
-    .mail-profile-dropdown .mail-profile-label {
-        margin-right: 0;
-    }
+    .mail-details-header .mail-profile-id {display: none !important;}
+    .mail-profile-dropdown .dropdown-toggle::after {content: none;}
+    .mail-profile-dropdown .mail-profile-label {margin-right: 0;}
 
     /* -------------------- Settings -------------------- */
-    .setting-signature-box {
-        max-width: 100% !important;
-    }
-
-    .setting-features {
-        padding: 20px !important;
-    }
+    .setting-signature-box {max-width: 100% !important;}
+    .setting-features {padding: 20px !important;}
 
     .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content {
         border-radius: 5px !important;
@@ -744,6 +723,9 @@
     .mobile-search-btn {
         display: flex !important;
     }
+    .thread-email .shot-message-info-thread{
+        white-space: normal;
+    }
 }
 
 
@@ -1148,6 +1130,22 @@
         max-width: 100%;
     }
 
+    /* -------------------- Create Event: date/time row -------------------- */
+    /* Dates share row 1; times share row 2 (each field 50% width). */
+    .Calendar-main .calendar-event-modal-body .event-datetime-fields > .event-date-field {
+        order: 1;
+        flex: 0 0 50%;
+        max-width: 50%;
+        width: 50%;
+    }
+
+    .Calendar-main .calendar-event-modal-body .event-datetime-fields > .event-time-field {
+        order: 2;
+        flex: 0 0 50%;
+        max-width: 50%;
+        width: 50%;
+    }
+
     /* -------------------- Flatpickr Calendar -------------------- */
     body .flatpickr-calendar {
         display: none;
@@ -1461,7 +1459,7 @@
     flex-direction: column;
     max-height: min(88dvh, 720px);
     overflow: hidden;
-    padding: 8px 0 12px;
+    /* padding: 8px 0 12px; */
 }
 
 .move-to-folder-sheet__handle {
@@ -1490,14 +1488,10 @@
 }
 
 .move-to-folder-sheet__close {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: #f2f4f5;
     border: 0;
     flex-shrink: 0;
 }

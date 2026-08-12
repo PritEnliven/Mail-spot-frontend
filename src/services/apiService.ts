@@ -6,6 +6,30 @@ let lastNetworkErrorTime = 0;
 let lastTimeoutErrorTime = 0;
 const NETWORK_ERROR_THROTTLE = 5000; // Show same network error only once every 5 seconds
 
+// Active account tracking for multi-account support
+let _activeAccountId: string | null = null;
+
+export const setActiveAccountId = (id: string | null) => {
+  _activeAccountId = id;
+};
+
+export const getActiveAccountId = (): string | null => _activeAccountId;
+
+// URLs that require x-active-account-id header (mailbox-scoped APIs)
+const MAILBOX_SCOPED_PREFIXES = [
+  'email/',
+  'customBox/',
+  'event/',
+  'rule/',
+  'contact/',
+  'importData/',
+];
+
+const isMailboxScopedRequest = (url = '') => {
+  const normalized = url.replace(/^\//, '');
+  return MAILBOX_SCOPED_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+};
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 120000, // Increased to 2 minutes for long-running operations
@@ -105,6 +129,18 @@ api.interceptors.request.use(
         config.headers = {
           ...config.headers,
           Authorization: `Bearer ${token}`,
+        };
+      }
+    }
+
+    // Attach active account header for mailbox-scoped APIs
+    if (isMailboxScopedRequest(url) && _activeAccountId) {
+      if (typeof config.headers?.set === 'function') {
+        config.headers.set('x-active-account-id', _activeAccountId);
+      } else {
+        config.headers = {
+          ...config.headers,
+          'x-active-account-id': _activeAccountId,
         };
       }
     }
