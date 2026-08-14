@@ -5,26 +5,31 @@ import MailProviders from "../../context/MailProviders";
 import ModalRoot from "@components/ui/ModalRoot";
 import { useMailUI } from "@context/MailUIContext";
 import { SettingsProvider } from "@context/SettingsContext";
-import { useMailSocket } from "@hooks/useSocket";
+import { useLinkedAccountRevoked, useMailSocket } from "@hooks/useSocket";
 import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
 import AppLoader from "@components/layout/AppLoader";
 import { useGlobalShortcuts } from "@hooks/useGlobalShortcuts";
 import { useScreen } from "@context/ScreenContext";
+import { useAccount } from "@context/AccountContext";
 
 const AppContent = () => {
     useMailSocket();
+    useLinkedAccountRevoked();
     useGlobalShortcuts();
 
     const cssLoaded = usePageStylesheet([pageStyles.customCss, pageStyles.inboxCss, pageStyles.scheduleCss, pageStyles.headerCss, pageStyles.settingsCss, pageStyles.responsiveCss]);
     const { isSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
     const { isMobile } = useScreen();
+    const { isSwitchingAccount } = useAccount();
 
     if (!cssLoaded) {
         return <AppLoader />;
     }
 
     return (
-        <main className="d-flex">
+        <>
+            {isSwitchingAccount && <AppLoader />}
+            <main className="d-flex">
             {/* START: Left Side  */}
             <div className={`left-side-bar-main position-relative mainNav p-0 ${isMobile
                     ? (isSidebarExpandedMobile ? 'left-sidebar-main-collapsed-mobile' : '')
@@ -52,6 +57,7 @@ const AppContent = () => {
 
             <ModalRoot />
         </main>
+        </>
     );
 };
 

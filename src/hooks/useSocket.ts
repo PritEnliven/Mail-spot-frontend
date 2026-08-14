@@ -1,11 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { getSocket, disconnectSocket } from '@services/socket/socket';
 import { useMailData } from '@context/MailDataContext';
+import { useAccount } from '@context/AccountContext';
+import { useContacts } from '@context/ContactsContext';
+import { useProfile } from '@context/userContext';
+import { useMailUI } from '@context/MailUIContext';
 import type { Email } from '@models/Email';
 import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
 import { getActiveAccountId } from '@services/apiService';
+import { showWarning } from '@components/ui/toast/toastNotification';
 
 type EventCallback = (...args: any[]) => void;
 
@@ -335,6 +340,70 @@ export const useMailSocket = () => {
             }
         };
     }, []); // empty array — runs once on mount, cleans up on unmount
+};
+
+type LinkedAccountRevokedPayload = {
+    accountId: string;
+    email?: string;
+    switchedToPrimary?: boolean;
+};
+
+const profileInitials = (email: string, username?: string): string => {
+    const name = username || email.split('@')[0];
+    const parts = name.split(/[\s._-]/);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+};
+
+/** Drop a revoked linked account from the switcher; reload primary mailbox when backend switched us. */
+export const useLinkedAccountRevoked = () => {
+    const {
+        primaryAccount,
+        prepareMailboxForAccount,
+        removeRevokedAccount,
+        fetchLinkedAccounts,
+        activeAccountId,
+    } = useAccount();
+    const { reloadForAccountSwitch } = useMailData();
+    const { fetchContacts } = useContacts();
+    const { updateProfile, setProfileInitial } = useProfile();
+    const { activeModals, closeModal } = useMailUI();
+    const navigate = useNavigate();
+
+    useSocketEvent('linked_account_revoked', async (payload: LinkedAccountRevokedPayload) => {
+        const { accountId, email, switchedToPrimary } = payload ?? {};
+        if (!accountId) return;
+
+        removeRevokedAccount(accountId, !!switchedToPrimary);
+        void fetchLinkedAccounts();
+
+        showWarning(
+            `${email || 'Linked account'} is no longer linked. Re-link with the new password to use it again.`
+        );
+
+        const shouldReloadPrimary = switchedToPrimary || accountId === activeAccountId;
+        if (!shouldReloadPrimary || !primaryAccount) return;
+
+        try {
+            prepareMailboxForAccount(primaryAccount.id);
+            activeModals
+                .filter((m) => m.type === 'compose')
+                .forEach((m) => closeModal(m.id));
+
+            navigate('/mail/INBOX', { replace: true });
+            await reloadForAccountSwitch();
+            await fetchContacts();
+
+            const name = primaryAccount.username || primaryAccount.email.split('@')[0];
+            updateProfile(name, primaryAccount.email);
+            setProfileInitial(profileInitials(primaryAccount.email, primaryAccount.username));
+        } catch (err) {
+            console.error('Failed to reload mailbox after linked account revoked', err);
+            prepareMailboxForAccount(activeAccountId);
+        }
+    });
 };
 
 

@@ -5,6 +5,25 @@
     overflow: auto;
 }
 
+.calendar-body-box {
+    position: relative;
+    width: 100%;
+    min-height: calc(100vh - 54px);
+}
+
+.calendar-ready-wrap {
+    display: flex;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    opacity: 0;
+}
+
+.calendar-ready-wrap.is-visible {
+    opacity: 1;
+    transition: opacity 0.15s ease;
+}
+
 .Calendar-main .left-side-calendar-box {
     position: relative;
     min-width: 340px;

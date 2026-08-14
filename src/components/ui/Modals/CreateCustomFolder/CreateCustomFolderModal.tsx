@@ -247,7 +247,7 @@ import SubmitButton from "@components/ui/form/SubmitButton";
 import ColorSingleSelect from "@components/ui/form/Select2ColorOption";
 import { colorListConfi } from "../../../../config/fullCalendar.config";
 import { useMailData } from "@context/MailDataContext";
-import { createCustomBox } from "@services/customBox/customBoxService";
+import { createCustomBox, editCustomBox } from "@services/customBox/customBoxService";
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import { useMemo } from "react";
 import { buildParentFolderOptions, isCustomFolderDepthAllowed } from "@utils/emailUtil";
@@ -278,9 +278,11 @@ function CreateCustomFolderModal(
 
     const editFolderImap = useMemo(() => {
         if (!props.isEdit || !props.editFolderId) return undefined;
+
         const box = sidebarState.customBoxes.find(
             (b: any) => b.value?._id === props.editFolderId || b.value?.value === props.editFolderId
         );
+        
         return box ? (typeof box.value === "object" ? box.value.value : box.value) : undefined;
     }, [props.isEdit, props.editFolderId, sidebarState.customBoxes]);
 
@@ -318,14 +320,18 @@ function CreateCustomFolderModal(
             return;
         }
 
-        const payload: any = { ...data };
-
-        if (props.isEdit) {
-            payload.isEdit = true;
-            payload.editFolderId = props.editFolderId;
-        }
-        
-        const response = await createCustomBox(payload);
+        const response = props.isEdit && props.editFolderId
+            ? await editCustomBox({
+                editFolderId: props.editFolderId,
+                folderName: data.folderName,
+                parentFolder: data.parentFolder,
+                folderIconColor: data.folderIconColor,
+            })
+            : await createCustomBox({
+                folderName: data.folderName,
+                folderIconColor: data.folderIconColor,
+                parentFolder: data.parentFolder,
+            });
         if (response.statusCode === 200) {
             showSuccess(`Folder ${props.isEdit ? 'updated' : 'created'} successfully`);
             setSidebarStateFromAPI();
@@ -342,13 +348,13 @@ function CreateCustomFolderModal(
 
     return (
         <BaseModal
-            isOpen={true}
-            onClose={onClose}
-            zIndex={zIndex}
+            isOpen={ true }
+            onClose={ onClose }
+            zIndex={ zIndex }
             className=""
-            closeOnBackdrop={true}
-            closeOnEsc={true}
-            draggable={true}
+            closeOnBackdrop={ true }
+            closeOnEsc={ true }
+            draggable={ true }
             dragHandleSelector=".drag-handle"
             width="min(100vw, 498px)"
         >
@@ -398,7 +404,7 @@ function CreateCustomFolderModal(
                             >
                                 <div className="d-block">
                                     <div className="form-group form-row mb-0">
-                                        <label className="control-label">Folder Name</label>
+                                        <label className="control-label"> Folder Name </label>
                                     </div>
                                     <div className="d-flex align-items-start">
                                         <div className="form-group form-row mb-3 me-3 w-100">

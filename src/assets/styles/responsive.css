@@ -446,6 +446,13 @@
         overflow: hidden;
     }
 
+    .calendar-ready-wrap {
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        flex: 1;
+    }
+
     /* .Calendar-main #calendar .fc-dayGridMonth-view .fc-daygrid-body {
         justify-content: stretch;
     } */

@@ -3,9 +3,14 @@ import { postData } from '../apiService';
 interface createCustomBoxPayload {
     folderName: string;
     folderIconColor: string;
-    parentFolder: string;
+    parentFolder?: string;
+}
+
+interface editCustomBoxPayload {
     editFolderId: string;
-    isEdit: boolean;
+    folderName: string;
+    parentFolder?: string;
+    folderIconColor: string;
 }
 
 interface deleteCustomBoxPayload {
@@ -16,6 +21,15 @@ interface deleteCustomBoxPayload {
 async function createCustomBox(payload: createCustomBoxPayload) {
     try {
         const response = await postData('customBox/create', payload);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function editCustomBox(payload: editCustomBoxPayload) {
+    try {
+        const response = await postData('customBox/edit', payload);
         return response;
     } catch (error: any) {
         return error;
@@ -33,5 +47,6 @@ async function deleteCustomBox(payload: deleteCustomBoxPayload) {
 
 export {
     createCustomBox,
+    editCustomBox,
     deleteCustomBox
 }

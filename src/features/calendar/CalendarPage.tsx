@@ -7,21 +7,32 @@ import FullCalendar from '@fullcalendar/react'
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet'
 import { getEventById } from '@services/calendar/calendarService'
 import { focusDate, focusEvent, normalizeEventForModal } from '@utils/calendarUtil'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createMainCalendarConfig, createSidebarCalendarConfig } from '../../config/fullCalendar.config'
 
 
 function CalendarPage() {
-    usePageStylesheet([pageStyles.calendarCss, pageStyles.responsiveCss]);
+    const cssLoaded = usePageStylesheet([pageStyles.calendarCss, pageStyles.responsiveCss]);
 
     const { setBoxName } = useMailData()
-    const { mainCalendarRef, sidebarCalendarRef, setCalendarTitle, setCalendarView, getAllEventList, registerResetLastClickedDate, isCalendarAllSearchActive } = useCalendar()
+    const {
+        mainCalendarRef,
+        sidebarCalendarRef,
+        setCalendarTitle,
+        calendarTitle,
+        setCalendarView,
+        getAllEventList,
+        registerResetLastClickedDate,
+        isCalendarAllSearchActive,
+        setSelectedEvent,
+        isSidebarCalendarOpen,
+    } = useCalendar()
     const { openModal } = useMailUI()
-    const { setSelectedEvent, isSidebarCalendarOpen } = useCalendar();
     const titleRef = useRef<HTMLDivElement | null>(null);
     const popoverObserverRef = useRef<MutationObserver | null>(null)
     const lastClickedDateRef = useRef<string | null>(null)
     const [currentDateRange, setCurrentDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' })
+    const [isCalendarReady, setIsCalendarReady] = useState(false)
 
     const setupMorePopoverObserver = () => {
         if (popoverObserverRef.current) return;
@@ -74,7 +85,6 @@ function CalendarPage() {
     useEffect(() => {
         setBoxName('calendar')
 
-        // Register the reset function for the context
         if (registerResetLastClickedDate) {
             registerResetLastClickedDate(() => {
                 lastClickedDateRef.current = null
@@ -83,13 +93,12 @@ function CalendarPage() {
     }, [setBoxName, registerResetLastClickedDate])
 
     useEffect(() => {
+        if (!cssLoaded || !isCalendarReady) return
         if (!mainCalendarRef.current) return
 
         setupMorePopoverObserver()
 
-        // Setup sidebar calendar click handler
         const setupSidebarClickHandler = () => {
-            // Use querySelector to find the sidebar calendar element
             const sidebarCalendarEl = document.querySelector('#sidebar-calendar .fc-daygrid')
             if (!sidebarCalendarEl) return
 
@@ -103,7 +112,6 @@ function CalendarPage() {
                     if (dateStr && mainCalendarRef.current) {
                         const calendar = mainCalendarRef.current.getApi();
 
-                        // If the same date was clicked twice
                         if (lastClickedDateRef.current === dateStr) {
                             calendar.changeView('timeGridDay', dateStr);
                             setCalendarView('timeGridDay');
@@ -119,7 +127,6 @@ function CalendarPage() {
                                 }
                             });
 
-                            // Add highlight to clicked date
                             const dayTopLink = target.querySelector('.fc-daygrid-day-top a');
                             if (dayTopLink) {
                                 dayTopLink.classList.add('subcalendar-day-box');
@@ -134,13 +141,11 @@ function CalendarPage() {
 
             sidebarCalendarEl.addEventListener('click', handleClick);
 
-            // Cleanup function
             return () => {
                 sidebarCalendarEl.removeEventListener('click', handleClick);
             };
         };
 
-        // Wait for sidebar calendar to be rendered
         const timeoutId = setTimeout(setupSidebarClickHandler, 100);
 
         return () => {
@@ -148,14 +153,21 @@ function CalendarPage() {
             popoverObserverRef.current = null
             clearTimeout(timeoutId)
         }
-    }, [mainCalendarRef, sidebarCalendarRef])
+    }, [cssLoaded, isCalendarReady, mainCalendarRef, sidebarCalendarRef, setCalendarView])
 
     useEffect(() => {
-        getAllEventList()
-    }, [getAllEventList])
+        if (!cssLoaded || !isCalendarAllSearchActive) return
+        setIsCalendarReady(true)
+    }, [cssLoaded, isCalendarAllSearchActive])
 
-    // Setup Today button functionality
     useEffect(() => {
+        if (!cssLoaded || isCalendarReady) return
+        const timeoutId = window.setTimeout(() => setIsCalendarReady(true), 1500)
+        return () => window.clearTimeout(timeoutId)
+    }, [cssLoaded, isCalendarReady])
+
+    useEffect(() => {
+        if (!isCalendarReady) return
         const todayBtn = document.getElementById('btnToday')
         if (todayBtn && sidebarCalendarRef.current) {
             const handleTodayClick = () => {
@@ -168,7 +180,7 @@ function CalendarPage() {
                 todayBtn.removeEventListener('click', handleTodayClick)
             }
         }
-    }, [sidebarCalendarRef])
+    }, [sidebarCalendarRef, isCalendarReady])
 
     const handleSidebarPrev = () => {
         sidebarCalendarRef.current?.getApi().prev()
@@ -178,10 +190,7 @@ function CalendarPage() {
         sidebarCalendarRef.current?.getApi().next()
     }
 
-    /* ===========================
-       CALENDAR CALLBACKS
-    =========================== */
-    const handleDatesSet = (info: DatesSetArg) => {
+    const handleDatesSet = useCallback((info: DatesSetArg) => {
         let title = info.view.title
 
         if (title.includes('–')) {
@@ -197,29 +206,30 @@ function CalendarPage() {
             }
         }
 
-        // Update both the local title ref and the context title
         if (titleRef.current) {
             titleRef.current.textContent = title
         }
         setCalendarTitle(title)
-
-        // Update the calendar view state when view changes
         setCalendarView(info.view.type as CalendarView)
 
-        // Update current date range for CalendarAllEventList
         const start = info.view.activeStart?.toISOString() || ''
         const end = info.view.activeEnd?.toISOString() || ''
         setCurrentDateRange({ start, end })
-
-        // Fetch events for the new date range
         getAllEventList()
-    }
+        setIsCalendarReady(true)
+    }, [getAllEventList, setCalendarTitle, setCalendarView])
 
-    const handleSelect = () => {
+    const handleSidebarDatesSet = useCallback((info: DatesSetArg) => {
+        if (titleRef.current) {
+            titleRef.current.textContent = info.view.title
+        }
+    }, [])
+
+    const handleSelect = useCallback(() => {
         mainCalendarRef.current?.getApi().unselect()
-    }
+    }, [mainCalendarRef])
 
-    const handleEventClick = async (info: any) => {
+    const handleEventClick = useCallback(async (info: any) => {
         focusEvent(info)
         const response = await getEventById(info.event.id)
         if (response.statusCode === 200) {
@@ -229,56 +239,91 @@ function CalendarPage() {
             setSelectedEvent(event);
             openModal('eventInfo', { event })
         }
-    }
+    }, [openModal, setSelectedEvent])
 
-    const handleDateClick = (info: any) => {
+    const handleDateClick = useCallback((info: any) => {
         focusDate(info)
         openModal('calendarEvent', info)
-    }
+    }, [openModal])
 
-    const mainCalendarConfig = createMainCalendarConfig({
+    const mainCalendarConfig = useMemo(() => createMainCalendarConfig({
         onDatesSet: handleDatesSet,
         onSelect: handleSelect,
         onEventClick: handleEventClick,
         onDateClick: handleDateClick,
-    })
+    }), [handleDatesSet, handleSelect, handleEventClick, handleDateClick])
 
-    const sidebarCalendarConfig = createSidebarCalendarConfig(handleDatesSet)
+    const sidebarCalendarConfig = useMemo(
+        () => createSidebarCalendarConfig(handleSidebarDatesSet),
+        [handleSidebarDatesSet]
+    )
+
+    const showLoader = !cssLoaded || !isCalendarReady
 
     return (
-        <div className="calendar-body-box d-flex">
-            {/* LEFT SIDEBAR */}
-            <div className={`left-side-calendar-box ${isSidebarCalendarOpen ? '' : 'd-none'}`}>
-                <div className="d-flex align-items-center justify-content-between mb-3">
-                    <div id="sidebar-title" ref={titleRef}>
-                        Month Year
+        <div className="calendar-body-box d-flex position-relative" style={{ minHeight: 'calc(100vh - 54px)', width: '100%' }}>
+            {showLoader && (
+                <div
+                    className="calendar-loading-overlay"
+                    aria-label="Loading calendar"
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#ffffff',
+                        zIndex: 5,
+                    }}
+                >
+                    <div
+                        className="calendar-loading-spinner"
+                        style={{
+                            width: 40,
+                            height: 40,
+                            border: '3px solid #e0e0e0',
+                            borderTop: '3px solid #0097ef',
+                            borderRadius: '50%',
+                            animation: 'spin 0.75s linear infinite',
+                        }}
+                    />
+                </div>
+            )}
+
+            {cssLoaded && (
+                <div className={`calendar-ready-wrap ${isCalendarReady ? 'is-visible' : ''}`}>
+                    <div className={`left-side-calendar-box ${isSidebarCalendarOpen ? '' : 'd-none'}`}>
+                        <div className="d-flex align-items-center justify-content-between mb-3">
+                            <div id="sidebar-title" ref={titleRef}>
+                                {calendarTitle}
+                            </div>
+                            <div id="sidebar-nav" className="d-flex align-items-center">
+                                <button
+                                    className="fc-icon-chevron-left-left-box btn-new"
+                                    onClick={handleSidebarPrev}
+                                />
+                                <button
+                                    className="fc-icon-chevron-right-left-box btn-new"
+                                    onClick={handleSidebarNext}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="sidebar" id="sidebar-calendar">
+                            <FullCalendar ref={sidebarCalendarRef} {...sidebarCalendarConfig} />
+                        </div>
                     </div>
-                    <div id="sidebar-nav" className="d-flex align-items-center">
-                        <button
-                            className="fc-icon-chevron-left-left-box btn-new"
-                            onClick={handleSidebarPrev}
-                        />
-                        <button
-                            className="fc-icon-chevron-right-left-box btn-new"
-                            onClick={handleSidebarNext}
-                        />
+
+                    <div className="right-side-calendar-box" id="calendar">
+                        {isCalendarAllSearchActive ?
+                            <CalendarAllEventList startDate={currentDateRange.start} endDate={currentDateRange.end} />
+                            : <FullCalendar
+                                ref={mainCalendarRef}
+                                {...mainCalendarConfig}
+                            />}
                     </div>
                 </div>
-
-                <div className="sidebar" id="sidebar-calendar">
-                    <FullCalendar ref={sidebarCalendarRef} {...sidebarCalendarConfig} />
-                </div>
-            </div>
-
-            {/* MAIN CALENDAR */}
-            <div className="right-side-calendar-box" id="calendar">
-                {isCalendarAllSearchActive ?
-                    <CalendarAllEventList startDate={currentDateRange.start} endDate={currentDateRange.end} />
-                    : <FullCalendar
-                        ref={mainCalendarRef}
-                        {...mainCalendarConfig}
-                    />}
-            </div>
+            )}
         </div>
     )
 }

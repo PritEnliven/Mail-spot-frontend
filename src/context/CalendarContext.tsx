@@ -66,7 +66,9 @@ export const useCalendar = () => {
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     const mainCalendarRef = useRef<FullCalendar | null>(null)
     const sidebarCalendarRef = useRef<FullCalendar | null>(null)
-    const [calendarTitle, setCalendarTitle] = useState('');
+    const [calendarTitle, setCalendarTitle] = useState(() =>
+        new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    );
     const [calendarView, setCalendarView] = useState<CalendarView>('dayGridMonth');
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null)

@@ -8,6 +8,7 @@ import { useScreen } from "@context/ScreenContext";
 import { useProfile } from "@context/userContext";
 import { AUTH_STORAGE_KEYS } from "@features/login/Login";
 import { useDebounce } from "@hooks/useDebounce";
+import { useProfileAccountSwipe } from "@hooks/useProfileAccountSwipe";
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
 import backBtnIcon from "@images/back-btn-icon.svg";
@@ -52,6 +53,48 @@ const CalendarHeader = lazy(() => import("@components/ui/calendar/calendarHeader
 const CreateRuleForm = lazy(() => import("@components/layout/header/createRuleForm/CreateRuleForm"));
 const AccountSwitcher = lazy(() => import("@components/ui/AccountSwitcher/AccountSwitcher"));
 
+const CalendarHeaderFallback = ({ isDesktop, title }: { isDesktop: boolean; title: string }) => {
+    if (!isDesktop) {
+        return (
+            <div className="calendar-mobile-header">
+                <div className="calendar-mobile-header__top">
+                    <div className="d-flex">
+                        <div id="calendar-title" className="fc-toolbar-title calendar-mobile-header__title">
+                            {title}
+                        </div>
+                    </div>
+                    <div className="calendar-mobile-header__top-actions">
+                        <div className="calendar-mobile-header__profile-spacer" aria-hidden="true" />
+                    </div>
+                </div>
+                <div className="calendar-mobile-header__controls">
+                    <button id="btnToday" className="btn-new fc-today-button" type="button">Today</button>
+                    <div className="calendar-mobile-header__nav">
+                        <button id="btnPrev" className="fc-icon-chevron-left btn-new" type="button" />
+                        <button id="btnNext" className="fc-icon-chevron-right btn-new" type="button" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <div className="d-flex align-items-center">
+                <div className="btn-group">
+                    <button id="btnToday" className="btn-new fc-today-button me-3" type="button">Today</button>
+                    <div className="d-flex align-items-center me-3">
+                        <button id="btnPrev" className="fc-icon-chevron-left btn-new" type="button" />
+                        <button id="btnNext" className="fc-icon-chevron-right btn-new" type="button" />
+                    </div>
+                    <div id="calendar-title" className="fc-toolbar-title">{title}</div>
+                </div>
+            </div>
+            <div className="d-flex align-items-center justify-content-between w-100" />
+        </>
+    );
+};
+
 const Header = () => {
     const navigate = useNavigate();
     const { profileName, setProfileName, profileEmail, setProfileEmail, profileInitial, setProfileInitial } = useProfile();
@@ -80,12 +123,24 @@ const Header = () => {
         headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
         clearMailSearch, mailSearchResetKey } = useMailData();
     const { contacts, fetchContacts } = useContacts();
-    const { calendarView, setCalendarView, changeView } = useCalendar();
+    const { calendarView, setCalendarView, changeView, calendarTitle } = useCalendar();
     const [noResult, setNoResult] = useState(false);
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
     const { isDesktop, isMobile } = useScreen();
+    const {
+        hasMultipleAccounts,
+        isSwitchingAccount: isSwipeSwitchingAccount,
+        dragOffset,
+        isSettling,
+        displayInitials,
+        prevInitials,
+        nextInitials,
+        wasSwipeGesture,
+        handlers: accountSwipeHandlers,
+    } = useProfileAccountSwipe({ enabled: !isDesktop });
+    const avatarInitials = displayInitials || profileInitial;
     const prevDebouncedSearchRef = useRef(debouncedSearchText);
     const allowSearchDropdownRef = useRef(true);
 
@@ -680,7 +735,7 @@ const Header = () => {
     return (
         <div className={`mail-details-header ${isCalendar ? 'is-calendar-header' : ''} ${isCalendar && !isDesktop ? 'calendar-mobile-header-wrap' : ''}`}>
             {isCalendar ? (
-                <Suspense fallback={null}>
+                <Suspense fallback={<CalendarHeaderFallback isDesktop={isDesktop} title={calendarTitle} />}>
                     <CalendarHeader />
                 </Suspense>
             ) : (
@@ -1052,7 +1107,7 @@ const Header = () => {
                     className="mail-profile-dropdown"
                     show={isProfileOpen}
                     onToggle={(nextShow) => {
-
+                        if (wasSwipeGesture() || isSwipeSwitchingAccount) return;
                         if (isMobile && !nextShow) {
                             return;
                         }
@@ -1064,8 +1119,48 @@ const Header = () => {
                             <span className="mail-profile-name d-block text-end" id="profileName"> {profileName}</span>
                             <span className="mail-profile-id d-block text-end" id="profileEmail"> {profileEmail}</span>
                         </div>
-                        <span className="mail-profile-label" id="profileInitial">
-                            {profileInitial}
+                        <span
+                            className={`mail-profile-label${hasMultipleAccounts ? ' account-swipe-avatar' : ''}${isSwipeSwitchingAccount ? ' is-switching' : ''}`}
+                            id="profileInitial"
+                            title={hasMultipleAccounts ? 'Swipe up or down to switch accounts' : undefined}
+                            {...(hasMultipleAccounts && !isDesktop
+                                ? {
+                                    ...accountSwipeHandlers,
+                                    onTouchEnd: (e) => {
+                                        accountSwipeHandlers.onTouchEnd(e);
+                                        if (wasSwipeGesture() || isSwipeSwitchingAccount) {
+                                            setIsProfileOpen(false);
+                                        }
+                                    },
+                                    onClick: (e) => {
+                                        if (wasSwipeGesture() || isSwipeSwitchingAccount) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                        }
+                                    },
+                                }
+                                : {})}
+                        >
+                            {hasMultipleAccounts ? (
+                                <span
+                                    className={`account-swipe-avatar-track${isSettling ? ' is-settling' : ''}`}
+                                    style={{ transform: `translateY(${dragOffset}px)` }}
+                                >
+                                    {prevInitials && (
+                                        <span className="account-swipe-avatar-item is-adjacent is-prev" aria-hidden>
+                                            {prevInitials}
+                                        </span>
+                                    )}
+                                    <span className="account-swipe-avatar-item">{avatarInitials}</span>
+                                    {nextInitials && (
+                                        <span className="account-swipe-avatar-item is-adjacent is-next" aria-hidden>
+                                            {nextInitials}
+                                        </span>
+                                    )}
+                                </span>
+                            ) : (
+                                profileInitial
+                            )}
                         </span>
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="dropdown-menu dropdown-menu-lg-end mail-profile-box p-0">

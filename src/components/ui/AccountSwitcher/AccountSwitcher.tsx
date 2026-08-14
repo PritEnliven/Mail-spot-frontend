@@ -4,9 +4,12 @@ import { useAccount } from '@context/AccountContext';
 import { useMailUI } from '@context/MailUIContext';
 import { useMailData } from '@context/MailDataContext';
 import { useContacts } from '@context/ContactsContext';
-import { useProfile } from '@context/userContext';
 import { AddAccountModal } from '@components/ui/Modals/LinkAccount/LinkAccountModal';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
+import {
+  getAccountInitials,
+  usePerformAccountSwitch,
+} from '@hooks/usePerformAccountSwitch';
 import trashIcon from '@images/trash-icon.svg';
 import trashIconHover from '@images/trash-icon-hover.svg';
 
@@ -14,34 +17,23 @@ interface AccountSwitcherProps {
   onAccountSwitch?: () => void;
 }
 
-const getInitials = (email: string, username?: string): string => {
-  const name = username || email.split('@')[0];
-  const parts = name.split(/[\s._-]/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
-
 const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
   const {
     primaryAccount,
     linkedAccounts,
     activeAccountId,
-    isSwitchingAccount,
-    switchAccount,
-    prepareMailboxForAccount,
-    commitActiveAccount,
-    endAccountSwitch,
     unlinkAccount,
     fetchLinkedAccounts,
+    prepareMailboxForAccount,
+    commitActiveAccount,
   } = useAccount();
 
-  const { openModal, activeModals, closeModal } = useMailUI();
+  const { openModal } = useMailUI();
   const { reloadForAccountSwitch } = useMailData();
   const { fetchContacts } = useContacts();
-  const { updateProfile, setProfileInitial } = useProfile();
   const navigate = useNavigate();
+  const { isSwitchingAccount, switchToAccount, applyActiveProfile } =
+    usePerformAccountSwitch();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -53,50 +45,9 @@ const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
       ? primaryAccount.email
       : linkedAccounts.find((a) => a.id === activeAccountId)?.email || '';
 
-  const applyActiveProfile = (accountId: string) => {
-    const all = primaryAccount
-      ? [primaryAccount, ...linkedAccounts]
-      : linkedAccounts;
-    const account = all.find((a) => a.id === accountId);
-    if (!account) return;
-    const name = account.username || account.email.split('@')[0];
-    updateProfile(name, account.email);
-    setProfileInitial(getInitials(account.email, account.username));
-  };
-
   const handleSwitch = async (accountId: string) => {
-    if (isSwitchingAccount) return;
-
-    const all = primaryAccount
-      ? [primaryAccount, ...linkedAccounts]
-      : linkedAccounts;
-    const account = all.find((a) => a.id === accountId);
-    if (!account) return;
-
-    const ok = await switchAccount(accountId);
-    if (!ok) return;
-
-    try {
-      // Mailbox APIs need the new account header, but keep listing/profile unchanged
-      prepareMailboxForAccount(accountId);
-
-      activeModals
-        .filter((m) => m.type === 'compose')
-        .forEach((m) => closeModal(m.id));
-
-      navigate('/mail/INBOX', { replace: true });
-      await reloadForAccountSwitch();
-      await fetchContacts();
-
-      commitActiveAccount(accountId, account.email);
-      applyActiveProfile(accountId);
-      onAccountSwitch?.();
-    } catch (err) {
-      console.error('Failed to reload mailbox after account switch', err);
-      prepareMailboxForAccount(activeAccountId);
-    } finally {
-      endAccountSwitch();
-    }
+    const ok = await switchToAccount(accountId);
+    if (ok) onAccountSwitch?.();
   };
 
   const handleUnlinkConfirmed = (accountId: string) => {
@@ -155,7 +106,7 @@ const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
             onKeyDown={(e) => e.key === 'Enter' && handleSwitch(primaryAccount!.id)}
           >
             <span className="mail-profile-label">
-              {getInitials(primaryAccount!.email, primaryAccount!.username)}
+              {getAccountInitials(primaryAccount!.email, primaryAccount!.username)}
             </span>
             <div className="add-account-info">
               <p className="add-account-name">
@@ -188,7 +139,7 @@ const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
               onKeyDown={(e) => e.key === 'Enter' && handleSwitch(account.id)}
             >
               <span className="mail-profile-label">
-                {getInitials(account.email, account.username)}
+                {getAccountInitials(account.email, account.username)}
               </span>
               <div className="add-account-info">
                 <p className="add-account-name">

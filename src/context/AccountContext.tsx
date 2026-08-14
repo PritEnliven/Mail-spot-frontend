@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -41,6 +42,8 @@ interface AccountContextType {
   commitActiveAccount: (accountId: string, email: string) => void;
   endAccountSwitch: () => void;
   unlinkAccount: (accountId: string) => Promise<void>;
+  /** Drop a linked account locally (socket revoke) and fall back to primary if needed */
+  removeRevokedAccount: (accountId: string, switchedToPrimary?: boolean) => void;
   checkEmail: (email: string) => Promise<CheckEmailResponse | null>;
   linkMailspot: (email: string, password: string) => Promise<boolean>;
   linkExternal: (email: string, imap: ImapConfig, smtp: SmtpConfig) => Promise<boolean>;
@@ -59,6 +62,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   );
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+  const accountsFetchIdRef = useRef(0);
 
   const setActiveId = useCallback((id: string | null, email: string | null) => {
     setActiveAccountIdState(id);
@@ -86,9 +90,12 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    const fetchId = ++accountsFetchIdRef.current;
     setIsLoadingAccounts(true);
     try {
       const res = await getLinkedAccounts();
+      if (fetchId !== accountsFetchIdRef.current) return;
+
       const primary = res.primary_account;
       const linked = res.linked_accounts || [];
 
@@ -121,7 +128,9 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('fetchLinkedAccounts error', err);
     } finally {
-      setIsLoadingAccounts(false);
+      if (fetchId === accountsFetchIdRef.current) {
+        setIsLoadingAccounts(false);
+      }
     }
   }, [setActiveId]);
 
@@ -189,6 +198,18 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     [activeAccountId, primaryAccount, fetchLinkedAccounts]
   );
 
+  const removeRevokedAccount = useCallback(
+    (accountId: string, switchedToPrimary = false) => {
+      setLinkedAccounts((prev) => prev.filter((a) => a.id !== accountId));
+
+      const wasActive = accountId === activeAccountId;
+      if ((switchedToPrimary || wasActive) && primaryAccount) {
+        setActiveId(primaryAccount.id, primaryAccount.email);
+      }
+    },
+    [activeAccountId, primaryAccount, setActiveId]
+  );
+
   const checkEmail = useCallback(
     async (email: string): Promise<CheckEmailResponse | null> => {
       try {
@@ -246,6 +267,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         commitActiveAccount,
         endAccountSwitch,
         unlinkAccount,
+        removeRevokedAccount,
         checkEmail,
         linkMailspot,
         linkExternal,

@@ -386,6 +386,61 @@ p {
     outline-offset: -1px;
 }
 
+.mail-profile-label.account-swipe-avatar {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.mail-profile-label.account-swipe-avatar,
+.mail-profile-label.account-swipe-avatar * {
+    touch-action: none;
+}
+
+.mail-profile-label.account-swipe-avatar.is-switching {
+    opacity: 0.7;
+}
+
+.account-swipe-avatar-track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    will-change: transform;
+}
+
+.account-swipe-avatar-track.is-settling {
+    transition: transform 0.2s ease;
+}
+
+.account-swipe-avatar-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.account-swipe-avatar-item.is-adjacent {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.85;
+}
+
+.account-swipe-avatar-item.is-prev {
+    top: -100%;
+}
+
+.account-swipe-avatar-item.is-next {
+    top: 100%;
+}
+
 .mail-profile-label img {
     width: 40px;
     height: 40px;
@@ -413,8 +468,18 @@ p {
     margin-bottom: 2px !important;
 }
 
-.profile-main-box:hover .profile-hover-v {
+/* Only show copy-email popup when hovering the email address, not the whole sender row */
+.profile-main-box:has(> .profile-section .mail-profile-id:hover) .profile-hover-v,
+.profile-main-box .profile-hover-v:hover {
     display: block;
+}
+
+.profile-main-box > .profile-section .mail-profile-id {
+    cursor: pointer;
+}
+
+.profile-main-box .profile-hover-v {
+    left: 0;
 }
 
 .from-cc-details:hover .profile-hover-v {
