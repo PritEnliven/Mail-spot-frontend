@@ -1,5 +1,5 @@
 ﻿import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import SimpleBar from 'simplebar-react';
 
@@ -49,6 +49,8 @@ interface AddAccountModalProps {
   onClose: () => void;
   currentEmail: string;
   onSuccess?: () => void;
+  /** When set, skip the email step and prompt for this mailbox's platform password. */
+  reauthEmail?: string | null;
 }
 
 export const AddAccountModal = ({
@@ -56,11 +58,11 @@ export const AddAccountModal = ({
   onClose,
   currentEmail,
   onSuccess,
+  reauthEmail,
 }: AddAccountModalProps) => {
   const { checkEmail, linkMailspot, linkExternal, switchAccount } = useAccount();
 
   const [step, setStep] = useState<LinkStep>('email');
-  const [emailNotFound, setEmailNotFound] = useState(false);
   const [checkError, setCheckError] = useState('');
   const [linkedEmail, setLinkedEmail] = useState('');
   const [linkedAccountId, setLinkedAccountId] = useState('');
@@ -95,7 +97,6 @@ export const AddAccountModal = ({
 
   const resetAll = () => {
     setStep('email');
-    setEmailNotFound(false);
     setCheckError('');
     setLinkedEmail('');
     setLinkedAccountId('');
@@ -109,13 +110,32 @@ export const AddAccountModal = ({
     onClose();
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (reauthEmail) {
+      setStep('password');
+      setLinkedEmail(reauthEmail);
+      setCheckError('');
+      setShowPassword(false);
+      passwordForm.reset();
+      return;
+    }
+    setStep('email');
+    setLinkedEmail('');
+    setLinkedAccountId('');
+    setCheckError('');
+    setShowPassword(false);
+    emailForm.reset();
+    passwordForm.reset();
+    externalForm.reset();
+  }, [isOpen, reauthEmail]); // forms reset only when the modal opens or re-auth target changes
+
   const handleCheckEmail = async () => {
     const ok = await emailForm.trigger('email');
     if (!ok) return;
 
     const email = emailForm.getValues('email');
     setCheckError('');
-    setEmailNotFound(false);
 
     if (email.toLowerCase() === currentEmail.toLowerCase()) {
       emailForm.setError('email', { message: 'Cannot link your own account' });
@@ -128,7 +148,6 @@ export const AddAccountModal = ({
     setLinkedEmail(email);
 
     if (!result.exists) {
-      setEmailNotFound(true);
       setCheckError('This email is not registered in MailSpot.');
       return;
     }
@@ -146,8 +165,12 @@ export const AddAccountModal = ({
     if (!ok) return;
     const success = await linkMailspot(linkedEmail, passwordForm.getValues('password'));
     if (success) {
-      setStep('linkSuccess');
       onSuccess?.();
+      if (reauthEmail) {
+        handleClose();
+        return;
+      }
+      setStep('linkSuccess');
     }
   };
 
@@ -179,10 +202,6 @@ export const AddAccountModal = ({
   const handleSwitchToLinked = async () => {
     if (linkedAccountId) await switchAccount(linkedAccountId);
     handleClose();
-  };
-
-  const openRegistrationPage = () => {
-    window.open('/register', '_blank', 'noopener,noreferrer');
   };
 
   const stepTitles: Record<LinkStep, string> = {
@@ -307,40 +326,18 @@ export const AddAccountModal = ({
                           {checkError && !emailForm.formState.errors.email && (
                             <div className="invalid-feedback d-block">{checkError}</div>
                           )}
-                          {emailNotFound && (
-                            <span className="sub-input-label">
-                              Not in MailSpot?{' '}
-                              <button
-                                type="button"
-                                className="btn btn-link p-0"
-                                style={{ fontSize: 'inherit', verticalAlign: 'baseline' }}
-                                onClick={openRegistrationPage}
-                              >
-                                Create account
-                              </button>
-                            </span>
-                          )}
                         </div>
 
                         <div className="d-flex align-items-center justify-content-between mt-2">
                           <button type="button" className="btn-new me-3" onClick={handleClose}>
                             Cancel
                           </button>
-                          <div className="d-flex gap-2">
-                            <button
-                              type="button"
-                              className="btn-new"
-                              onClick={openRegistrationPage}
-                            >
-                              Create account
-                            </button>
-                            <SubmitButton
-                              className="btn-new loading-spinner"
-                              onClick={handleCheckEmail}
-                            >
-                              Next
-                            </SubmitButton>
-                          </div>
+                          <SubmitButton
+                            className="btn-new loading-spinner"
+                            onClick={handleCheckEmail}
+                          >
+                            Next
+                          </SubmitButton>
                         </div>
                       </>
                     )}
@@ -349,12 +346,22 @@ export const AddAccountModal = ({
                     {step === 'password' && (
                       <>
                         <p className="text-muted small mb-3">
-                          <strong>{linkedEmail}</strong> is a MailSpot account. Enter its
-                          platform password to link it.
+                          {reauthEmail ? (
+                            <>
+                              This mailbox was signed out. Enter the password for{' '}
+                              <strong>{linkedEmail}</strong> to use it again.
+                            </>
+                          ) : (
+                            <>
+                              <strong>{linkedEmail}</strong> is a MailSpot account. Enter its
+                              password to link it.
+                            </>
+                          )}
                         </p>
+                        
                         <div className="form-group">
                           <div className="d-flex align-items-center justify-content-between">
-                            <label className="control-label">Platform Password</label>
+                            <label className="control-label">Password</label>
                           </div>
                           <div className="input-group2 icon-right2 password-show-hide">
                             <div className="input-control">
@@ -400,15 +407,15 @@ export const AddAccountModal = ({
                           <button
                             type="button"
                             className="btn-new me-3"
-                            onClick={() => setStep('email')}
+                            onClick={() => (reauthEmail ? handleClose() : setStep('email'))}
                           >
-                            ← Back
+                            {reauthEmail ? 'Cancel' : '← Back'}
                           </button>
                           <SubmitButton
                             className="btn-new loading-spinner"
                             onClick={handleLinkPassword}
                           >
-                            Link Account
+                            {reauthEmail ? 'Sign in' : 'Link Account'}
                           </SubmitButton>
                         </div>
                       </>

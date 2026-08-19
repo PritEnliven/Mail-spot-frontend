@@ -104,7 +104,20 @@ tr:has(+ tr .mail-message-list.mail-message-active) .mail-message-list { border-
    ============================================================ */
 .mail-details-box { width: calc(100% - 370px); padding: 23px 20px 15px 20px; overflow-x: auto; height: calc(100vh - 99px); }
 .mail-details-box .mail-details-header { padding: 0 0 16px 0; margin: 0 0 16px 0; }
-.mail-details-box .box-title { font-size: 21px; white-space: normal }
+.mail-details-box .box-title {
+    font-size: 21px;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+.email-detail-section .mail-details-header > .d-flex.align-items-center {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+}
 .mail-message-send--information-details-box { padding: 0 0 16px 0; margin: 0 0 16px 0; border-bottom: 1px solid #D0D9DE; position: relative; }
 
 /* --- Sender/recipient info block --- */

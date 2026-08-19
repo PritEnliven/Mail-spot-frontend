@@ -1,6 +1,7 @@
 import { AdminUIProvider } from '@context/AdminUIContext';
 import { ProfileProvider } from '@context/userContext';
 import { AccountProvider } from '@context/AccountContext';
+import { ApiInterceptor, isJwtExpired } from '@services/apiService';
 import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
@@ -22,7 +23,13 @@ const AdminDashboard = lazy(() => import('@features/AdminDashboard/AdminDashboar
 // Admin protected route component
 const AdminProtectedRoute = () => {
   const token = localStorage.getItem('adminToken');
-  return token ? <Outlet /> : <Navigate to="/admin/login" replace />;
+  if (!token || isJwtExpired(token)) {
+    if (token) {
+      ApiInterceptor.clearAdminData();
+    }
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <Outlet />;
 };
 
 const AppRoutes = () => {

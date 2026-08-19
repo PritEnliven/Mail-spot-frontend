@@ -5,7 +5,7 @@ import MailProviders from "../../context/MailProviders";
 import ModalRoot from "@components/ui/ModalRoot";
 import { useMailUI } from "@context/MailUIContext";
 import { SettingsProvider } from "@context/SettingsContext";
-import { useLinkedAccountRevoked, useMailSocket } from "@hooks/useSocket";
+import { useLinkedAccountRevoked, useLinkedAccountSignedOut, useMailSocket } from "@hooks/useSocket";
 import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
 import AppLoader from "@components/layout/AppLoader";
 import { useGlobalShortcuts } from "@hooks/useGlobalShortcuts";
@@ -15,6 +15,7 @@ import { useAccount } from "@context/AccountContext";
 const AppContent = () => {
     useMailSocket();
     useLinkedAccountRevoked();
+    useLinkedAccountSignedOut();
     useGlobalShortcuts();
 
     const cssLoaded = usePageStylesheet([pageStyles.customCss, pageStyles.inboxCss, pageStyles.scheduleCss, pageStyles.headerCss, pageStyles.settingsCss, pageStyles.responsiveCss]);

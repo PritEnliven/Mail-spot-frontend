@@ -1,4 +1,4 @@
-import { clearAllToasts, showError } from '@components/ui/toast/toastNotification';
+import { clearAllToasts, showError, suppressAllToasts } from '@components/ui/toast/toastNotification';
 import axios from 'axios';
 
 // Network error notification throttling
@@ -14,6 +14,60 @@ export const setActiveAccountId = (id: string | null) => {
 };
 
 export const getActiveAccountId = (): string | null => _activeAccountId;
+
+export const LINKED_ACCOUNT_SIGNED_OUT_EVENT = 'mailspot:linked-account-signed-out';
+
+export type LinkedAccountSignedOutEventDetail = {
+  accountId?: string | null;
+  email?: string;
+  switchedToPrimary?: boolean;
+  isSignedOut?: boolean;
+};
+
+const isAccountSignedOutError = (status: number, data: any): boolean => {
+  if (status !== 403) return false;
+  const text = [
+    data?.error,
+    data?.message,
+    data?.data?.error,
+    data?.data?.message,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return /signed out/i.test(text);
+};
+
+const readRequestAccountId = (config: any): string | null => {
+  const headers = config?.headers;
+  const headerId =
+    (typeof headers?.get === 'function' ? headers.get('x-active-account-id') : null) ||
+    headers?.['x-active-account-id'] ||
+    headers?.['X-Active-Account-Id'];
+  if (headerId) return String(headerId);
+
+  let body = config?.data;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      body = null;
+    }
+  }
+  return body?.userId ? String(body.userId) : null;
+};
+
+const dispatchLinkedAccountSignedOut = (accountId: string | null) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent<LinkedAccountSignedOutEventDetail>(LINKED_ACCOUNT_SIGNED_OUT_EVENT, {
+      detail: {
+        accountId,
+        switchedToPrimary: true,
+        isSignedOut: true,
+      },
+    })
+  );
+};
 
 // URLs that require x-active-account-id header (mailbox-scoped APIs)
 const MAILBOX_SCOPED_PREFIXES = [
@@ -73,6 +127,8 @@ const ApiInterceptor = {
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
     localStorage.removeItem('id');
+    sessionStorage.removeItem('activeAccountId');
+    sessionStorage.removeItem('activeAccountEmail');
   },
 
   clearAdminData() {
@@ -97,7 +153,40 @@ const isCredentialLoginRequest = (url = '') =>
 const isLoginAsUserRequest = (url = '') => url.includes('loginAdminAsUser');
 
 const getErrorMessage = (data: any, fallback: string) =>
-  data?.message || data?.data?.message || fallback;
+  data?.message || data?.error || data?.data?.message || data?.data?.error || fallback;
+
+const isAccountLinkPostRequest = (url = '', method = '') =>
+  /^(post)$/i.test(method) && /(^|\/)accounts\/link(\?|$)/.test(url);
+
+/** True when a JWT is past `exp`. Non-JWT tokens return false so the API can decide. */
+export const isJwtExpired = (token: string | null | undefined): boolean => {
+  if (!token) return true;
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    if (typeof payload.exp !== 'number') return false;
+    return payload.exp * 1000 <= Date.now();
+  } catch {
+    return false;
+  }
+};
+
+let isRedirectingForAuth = false;
+
+const redirectToLogin = (isAdmin: boolean) => {
+  if (isRedirectingForAuth) return;
+  isRedirectingForAuth = true;
+  suppressAllToasts();
+  if (isAdmin) {
+    ApiInterceptor.clearAdminData();
+    window.location.replace('/admin/login');
+  } else {
+    ApiInterceptor.clearUserData();
+    window.location.replace('/login');
+  }
+};
 
 // Initialize the interceptor
 ApiInterceptor.init();
@@ -154,8 +243,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: any) => response,
   (error) => {
-    clearAllToasts();
     if (!error.response) {
+      clearAllToasts();
       // Handle different types of network errors with throttling
       const currentTime = Date.now();
 
@@ -175,8 +264,26 @@ api.interceptors.response.use(
         return Promise.reject({ message: 'Network error. Please check your connection and try again.', statusCode: 500 });
       }
     }
+    if (isAccountSignedOutError(error.response.status, error.response.data)) {
+      const signedOutAccountId = readRequestAccountId(error.config);
+      // Never keep sending a signed-out account id. Omit header until primary is restored.
+      if (!signedOutAccountId || _activeAccountId === signedOutAccountId) {
+        setActiveAccountId(null);
+      }
+      dispatchLinkedAccountSignedOut(signedOutAccountId);
+      return Promise.reject({
+        message: getErrorMessage(
+          error.response.data,
+          'Account signed out. Please sign in again.'
+        ),
+        statusCode: 403,
+        isLinkedAccountSignedOut: true,
+      });
+    }
+
+    clearAllToasts();
+
     if (error.response.status === 429) {
-      // Handle rate limiting specifically
       return Promise.reject({
         message: getErrorMessage(error.response.data, 'Too many requests. Please try again later.'),
         statusCode: 429,
@@ -185,29 +292,30 @@ api.interceptors.response.use(
     }
     if (error.response.status === 401) {
       const url = error.config?.url || '';
+      const method = error.config?.method || '';
 
-      // Don't redirect for credential login / login-as-user — let the caller handle the error
-      if (isCredentialLoginRequest(url) || isLoginAsUserRequest(url)) {
+      // Don't redirect for credential login / login-as-user / link re-auth — let the caller handle the error
+      if (
+        isCredentialLoginRequest(url) ||
+        isLoginAsUserRequest(url) ||
+        isAccountLinkPostRequest(url, method)
+      ) {
         return Promise.reject({
           message: getErrorMessage(
             error.response.data,
-            isLoginAsUserRequest(url) ? 'Failed to login as user' : 'Invalid credentials'
+            isLoginAsUserRequest(url)
+              ? 'Failed to login as user'
+              : isAccountLinkPostRequest(url, method)
+                ? 'Incorrect password for this account'
+                : 'Invalid credentials'
           ),
           statusCode: 401,
         });
       }
 
       // Keep admin and user sessions independent (login-as-user opens mail in another tab)
-      if (isAdminApiRequest(url)) {
-        ApiInterceptor.clearAdminData();
-        showError("Unauthorized - admin session expired");
-        window.location.href = '/admin/login';
-      } else {
-        ApiInterceptor.clearUserData();
-        showError("Unauthorized - token expired");
-        window.location.href = '/login';
-      }
-      return Promise.reject({ message: 'Unauthorized - token expired', statusCode: 401 });
+      redirectToLogin(isAdminApiRequest(url));
+      return Promise.reject({ message: 'Unauthorized - token expired', statusCode: 401, silent: true });
     }
     // return standardized error
     return Promise.reject({

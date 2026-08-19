@@ -220,7 +220,6 @@ span.Default-label-dot {
     left: calc(100% - 17px);
     background-color: #51B848;
     border-color: #36992E;
-
 }
 
 .switch-toggale label:active:after {

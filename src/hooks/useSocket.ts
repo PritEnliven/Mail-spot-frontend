@@ -9,7 +9,7 @@ import type { Email } from '@models/Email';
 import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
-import { getActiveAccountId } from '@services/apiService';
+import { getActiveAccountId, LINKED_ACCOUNT_SIGNED_OUT_EVENT, type LinkedAccountSignedOutEventDetail } from '@services/apiService';
 import { showWarning } from '@components/ui/toast/toastNotification';
 
 type EventCallback = (...args: any[]) => void;
@@ -348,6 +348,13 @@ type LinkedAccountRevokedPayload = {
     switchedToPrimary?: boolean;
 };
 
+type LinkedAccountSignedOutPayload = {
+    accountId: string;
+    email?: string;
+    switchedToPrimary?: boolean;
+    isSignedOut?: boolean;
+};
+
 const profileInitials = (email: string, username?: string): string => {
     const name = username || email.split('@')[0];
     const parts = name.split(/[\s._-]/);
@@ -405,6 +412,95 @@ export const useLinkedAccountRevoked = () => {
         }
     });
 };
+
+/** Keep signed-out linked accounts in the list; snap UI to primary when that mailbox was active. */
+export const useLinkedAccountSignedOut = () => {
+    const {
+        primaryAccount,
+        linkedAccounts,
+        prepareMailboxForAccount,
+        markAccountSignedOut,
+        commitActiveAccount,
+        activeAccountId,
+    } = useAccount();
+    const { reloadForAccountSwitch } = useMailData();
+    const { fetchContacts } = useContacts();
+    const { updateProfile, setProfileInitial } = useProfile();
+    const { activeModals, closeModal } = useMailUI();
+    const navigate = useNavigate();
+    const recoverRef = useRef<(payload: LinkedAccountSignedOutPayload) => Promise<void>>(
+        async () => undefined
+    );
+    const lastToastAtRef = useRef<{ accountId: string; at: number } | null>(null);
+
+    recoverRef.current = async (payload: LinkedAccountSignedOutPayload) => {
+        const { accountId, switchedToPrimary } = payload ?? {};
+        if (!accountId) return;
+
+        const existing = linkedAccounts.find((a) => a.id === accountId);
+        const email = payload.email || existing?.email;
+        const needsMailboxReload = markAccountSignedOut(accountId, !!switchedToPrimary);
+
+        const now = Date.now();
+        const lastToast = lastToastAtRef.current;
+        if (!lastToast || lastToast.accountId !== accountId || now - lastToast.at > 2000) {
+            lastToastAtRef.current = { accountId, at: now };
+            showWarning(
+                `${email || 'Linked account'} was signed out. Sign in again to use it.`
+            );
+        }
+
+        if (!needsMailboxReload || !primaryAccount) return;
+
+        try {
+            prepareMailboxForAccount(primaryAccount.id);
+            activeModals
+                .filter((m) => m.type === 'compose')
+                .forEach((m) => closeModal(m.id));
+
+            navigate('/mail/INBOX', { replace: true });
+            await reloadForAccountSwitch();
+            await fetchContacts();
+            commitActiveAccount(primaryAccount.id, primaryAccount.email);
+
+            const name = primaryAccount.username || primaryAccount.email.split('@')[0];
+            updateProfile(name, primaryAccount.email);
+            setProfileInitial(profileInitials(primaryAccount.email, primaryAccount.username));
+        } catch (err) {
+            console.error('Failed to reload mailbox after linked account signed out', err);
+            prepareMailboxForAccount(primaryAccount.id);
+        }
+    };
+
+    useSocketEvent('linked_account_signed_out', (payload: LinkedAccountSignedOutPayload) => {
+        void recoverRef.current(payload);
+    });
+
+    useEffect(() => {
+        const handler = (event: Event) => {
+            const detail = (event as CustomEvent<LinkedAccountSignedOutEventDetail>).detail || {};
+            if (!detail.accountId) {
+                if (primaryAccount) {
+                    prepareMailboxForAccount(primaryAccount.id);
+                    if (activeAccountId && activeAccountId !== primaryAccount.id) {
+                        commitActiveAccount(primaryAccount.id, primaryAccount.email);
+                    }
+                }
+                return;
+            }
+            void recoverRef.current({
+                accountId: detail.accountId,
+                email: detail.email,
+                switchedToPrimary: detail.switchedToPrimary !== false,
+                isSignedOut: true,
+            });
+        };
+
+        window.addEventListener(LINKED_ACCOUNT_SIGNED_OUT_EVENT, handler);
+        return () => window.removeEventListener(LINKED_ACCOUNT_SIGNED_OUT_EVENT, handler);
+    }, [activeAccountId, commitActiveAccount, prepareMailboxForAccount, primaryAccount]);
+};
+
 
 
 

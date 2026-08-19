@@ -5,7 +5,7 @@ import { useMailUI } from '@context/MailUIContext';
 import { useMailData } from '@context/MailDataContext';
 import { useContacts } from '@context/ContactsContext';
 import { useProfile } from '@context/userContext';
-import type { LinkedAccount, PrimaryAccount } from '@services/accounts/accountService';
+import { isLinkedAccountSignedOut, type LinkedAccount, type PrimaryAccount } from '@services/accounts/accountService';
 
 export type SwitchableAccount = PrimaryAccount | LinkedAccount;
 
@@ -57,7 +57,7 @@ export function usePerformAccountSwitch() {
       if (isSwitchingAccount) return false;
 
       const account = allAccounts.find((a) => a.id === accountId);
-      if (!account) return false;
+      if (!account || isLinkedAccountSignedOut(account)) return false;
 
       const ok = await switchAccount(accountId);
       if (!ok) return false;
@@ -106,10 +106,16 @@ export function usePerformAccountSwitch() {
       if (isSwitchingAccount || allAccounts.length < 2) return false;
       const currentIndex = allAccounts.findIndex((a) => a.id === activeAccountId);
       const fromIndex = currentIndex >= 0 ? currentIndex : 0;
-      const nextIndex = (fromIndex + offset + allAccounts.length) % allAccounts.length;
-      const next = allAccounts[nextIndex];
-      if (!next || next.id === activeAccountId) return false;
-      return switchToAccount(next.id);
+      const len = allAccounts.length;
+      let nextIndex = (fromIndex + offset + len) % len;
+      for (let i = 0; i < len; i++) {
+        const next = allAccounts[nextIndex];
+        if (next && next.id !== activeAccountId && !isLinkedAccountSignedOut(next)) {
+          return switchToAccount(next.id);
+        }
+        nextIndex = (nextIndex + offset + len) % len;
+      }
+      return false;
     },
     [isSwitchingAccount, allAccounts, activeAccountId, switchToAccount]
   );

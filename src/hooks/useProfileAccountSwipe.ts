@@ -3,6 +3,7 @@ import {
   getAccountInitials,
   usePerformAccountSwitch,
 } from '@hooks/usePerformAccountSwitch';
+import { isLinkedAccountSignedOut } from '@services/accounts/accountService';
 
 const SWIPE_THRESHOLD = 24;
 const TAP_SLOP = 8;
@@ -34,14 +35,16 @@ export function useProfileAccountSwipe({ enabled }: UseProfileAccountSwipeOption
     const currentIndex = allAccounts.findIndex((a) => a.id === activeAccountId);
     const fromIndex = currentIndex >= 0 ? currentIndex : 0;
     const current = allAccounts[fromIndex];
-    const prev =
-      allAccounts.length > 1
-        ? allAccounts[(fromIndex - 1 + allAccounts.length) % allAccounts.length]
-        : null;
-    const next =
-      allAccounts.length > 1
-        ? allAccounts[(fromIndex + 1) % allAccounts.length]
-        : null;
+    const findNeighbor = (dir: number) => {
+      if (allAccounts.length < 2) return null;
+      for (let i = 1; i < allAccounts.length; i++) {
+        const candidate = allAccounts[(fromIndex + dir * i + allAccounts.length) % allAccounts.length];
+        if (candidate && !isLinkedAccountSignedOut(candidate)) return candidate;
+      }
+      return null;
+    };
+    const prev = findNeighbor(-1);
+    const next = findNeighbor(1);
 
     return {
       prevAccount: prev,

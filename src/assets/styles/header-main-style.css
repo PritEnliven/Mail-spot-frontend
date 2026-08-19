@@ -6011,3 +6011,25 @@ nav#navbarList.nav-collepse::after {
     padding: 1px 5px;
     font-weight: 600;
   }
+
+  .add-account-signed-out {
+    font-size: 10px;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 600;
+  }
+
+  .add-account-more-btn {
+    flex-shrink: 0;
+  }
+
+  .add-account-more-menu {
+    position: fixed;
+    z-index: 3000;
+    min-width: 160px;
+    padding: 4px 0;
+    margin: 0;
+    display: block;
+  }

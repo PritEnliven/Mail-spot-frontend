@@ -596,7 +596,6 @@ const Header = () => {
                 smtpSecurityType: response.data.smtpSecureType,
                 smtpHost: response.data.smtpHost
             }
-            //check if changePassword modal is open then close it
             const changePasswordModal = activeModals.find((modal) => modal.type === 'changePassword');
             if (changePasswordModal) {
                 closeModal(changePasswordModal.id);
@@ -1037,11 +1036,13 @@ const Header = () => {
                                                         <button type="button" className="btn-new " onClick={handleReset}>Reset</button>
                                                         <div className="d-flex align-items-center">
                                                             <button type="button" className="btn-new search-create-filter me-2"
-                                                                id="createRuleBtn" onClick={handleCreateRuleModal}>Create Filter</button>
+                                                                id="createRuleBtn" onClick={handleCreateRuleModal}>Create Filter
+                                                            </button>
                                                             <button type="button" className="btn-new btn-new-bg searchBtn-cm" onClick={handleSubmit((data) => onSubmit(data),
                                                                 (errors) => {
                                                                     console.log('Form validation errors:', errors)
-                                                                })}>Search</button>
+                                                                })}>Search
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </form>
@@ -1106,7 +1107,15 @@ const Header = () => {
                 <Dropdown
                     className="mail-profile-dropdown"
                     show={isProfileOpen}
-                    onToggle={(nextShow) => {
+                    onToggle={(nextShow, meta) => {
+                        const target = (meta as { originalEvent?: { target?: EventTarget } } | undefined)
+                            ?.originalEvent?.target as HTMLElement | undefined;
+                        if (
+                            !nextShow &&
+                            target?.closest?.('.add-account-more-menu, .add-account-more-btn')
+                        ) {
+                            return;
+                        }
                         if (wasSwipeGesture() || isSwipeSwitchingAccount) return;
                         if (isMobile && !nextShow) {
                             return;

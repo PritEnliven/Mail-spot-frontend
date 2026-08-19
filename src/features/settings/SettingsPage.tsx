@@ -108,14 +108,14 @@ function SettingsPage() {
             if (response.statusCode === 200) {
                 setRules(response.data ?? []);
             }
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Failed to load settings', error);
         }
     }
 
     useEffect(() => {
-        setBoxName('settings')
-
+        setBoxName('settings');
         loadSettings();
         loadRules();
     }, [setBoxName, reset])

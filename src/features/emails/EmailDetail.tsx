@@ -443,7 +443,7 @@ const EmailDetail = ({ email }: Props) => {
                 data-uid={email.uid}
             >
                 <div className="d-flex align-items-center">
-                    <h2 className="box-title">
+                    <h2 className="box-title" title={email.subject || "No Subject"}>
                         <HighlightText text={email.subject || "No Subject"} searchTerm={highlightTerm} />
                     </h2>
                 </div>

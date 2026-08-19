@@ -15,13 +15,14 @@ import {
   linkExternalAccount,
   switchAccountApi,
   unlinkAccountApi,
+  isLinkedAccountSignedOut,
   type LinkedAccount,
   type PrimaryAccount,
   type CheckEmailResponse,
   type ImapConfig,
   type SmtpConfig,
 } from '@services/accounts/accountService';
-import { setActiveAccountId as setApiActiveAccountId } from '@services/apiService';
+import { setActiveAccountId as setApiActiveAccountId, getActiveAccountId as getApiActiveAccountId } from '@services/apiService';
 
 const ACTIVE_ACCOUNT_ID_KEY = 'activeAccountId';
 const ACTIVE_ACCOUNT_EMAIL_KEY = 'activeAccountEmail';
@@ -44,6 +45,8 @@ interface AccountContextType {
   unlinkAccount: (accountId: string) => Promise<void>;
   /** Drop a linked account locally (socket revoke) and fall back to primary if needed */
   removeRevokedAccount: (accountId: string, switchedToPrimary?: boolean) => void;
+  /** Mark a linked account signed out (password change). Does not remove the row. Returns true if mailbox should snap to primary. */
+  markAccountSignedOut: (accountId: string, switchedToPrimary?: boolean) => boolean;
   checkEmail: (email: string) => Promise<CheckEmailResponse | null>;
   linkMailspot: (email: string, password: string) => Promise<boolean>;
   linkExternal: (email: string, imap: ImapConfig, smtp: SmtpConfig) => Promise<boolean>;
@@ -63,6 +66,12 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   const accountsFetchIdRef = useRef(0);
+  const activeAccountIdRef = useRef(activeAccountId);
+  const primaryAccountRef = useRef(primaryAccount);
+  const lastSignedOutSnapRef = useRef<{ accountId: string; at: number } | null>(null);
+
+  activeAccountIdRef.current = activeAccountId;
+  primaryAccountRef.current = primaryAccount;
 
   const setActiveId = useCallback((id: string | null, email: string | null) => {
     setActiveAccountIdState(id);
@@ -98,29 +107,23 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
 
       const primary = res.primary_account;
       const linked = res.linked_accounts || [];
+      if (!primary?.id) return;
 
       setPrimaryAccount(primary);
       setLinkedAccounts(linked);
 
       const storedActiveId = sessionStorage.getItem(ACTIVE_ACCOUNT_ID_KEY);
-      const allAccountIds = [primary.id, ...linked.map((a) => a.id)];
+      const storedLinked = linked.find((a) => a.id === storedActiveId);
 
-      if (storedActiveId && allAccountIds.includes(storedActiveId)) {
-        const account =
-          storedActiveId === primary.id
-            ? primary
-            : linked.find((a) => a.id === storedActiveId);
-        if (account) {
-          setActiveId(account.id, account.email);
-          // Restore non-primary active account on the backend
-          if (storedActiveId !== primary.id) {
-            try {
-              await switchAccountApi(storedActiveId);
-            } catch {
-              // Fall back to primary if restore fails
-              setActiveId(primary.id, primary.email);
-            }
-          }
+      if (storedActiveId && storedActiveId === primary.id) {
+        setActiveId(primary.id, primary.email);
+      } else if (storedActiveId && storedLinked && !isLinkedAccountSignedOut(storedLinked)) {
+        try {
+          await switchAccountApi(storedActiveId);
+          if (fetchId !== accountsFetchIdRef.current) return;
+          setActiveId(storedLinked.id, storedLinked.email);
+        } catch {
+          setActiveId(primary.id, primary.email);
         }
       } else {
         setActiveId(primary.id, primary.email);
@@ -145,6 +148,9 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     async (accountId: string): Promise<boolean> => {
       if (accountId === activeAccountId || isSwitchingAccount) return false;
 
+      const target = linkedAccounts.find((a) => a.id === accountId);
+      if (isLinkedAccountSignedOut(target)) return false;
+
       const allAccounts = primaryAccount
         ? [primaryAccount, ...linkedAccounts]
         : linkedAccounts;
@@ -156,8 +162,11 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         await switchAccountApi(accountId);
         return true;
       } catch (err: any) {
-        showError(err?.message || 'Failed to switch account');
         setIsSwitchingAccount(false);
+        if (err?.isLinkedAccountSignedOut) {
+          return false;
+        }
+        showError(err?.message || 'Failed to switch account');
         return false;
       }
     },
@@ -165,14 +174,21 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const prepareMailboxForAccount = useCallback((accountId: string | null) => {
+    if (accountId && isLinkedAccountSignedOut(linkedAccounts.find((a) => a.id === accountId))) {
+      setApiActiveAccountId(primaryAccount?.id ?? null);
+      return;
+    }
     setApiActiveAccountId(accountId);
-  }, []);
+  }, [linkedAccounts, primaryAccount]);
 
   const commitActiveAccount = useCallback(
     (accountId: string, email: string) => {
+      if (isLinkedAccountSignedOut(linkedAccounts.find((a) => a.id === accountId))) {
+        return;
+      }
       setActiveId(accountId, email);
     },
-    [setActiveId]
+    [linkedAccounts, setActiveId]
   );
 
   const endAccountSwitch = useCallback(() => {
@@ -210,6 +226,45 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     [activeAccountId, primaryAccount, setActiveId]
   );
 
+  const markAccountSignedOut = useCallback(
+    (accountId: string, switchedToPrimary = false): boolean => {
+      setLinkedAccounts((prev) =>
+        prev.map((a) =>
+          a.id === accountId ? { ...a, isSignedOut: true, isActive: false } : a
+        )
+      );
+
+      const currentActiveId = activeAccountIdRef.current;
+      const primary = primaryAccountRef.current;
+      const needsSnap = switchedToPrimary || currentActiveId === accountId;
+
+      if (!primary) {
+        if (currentActiveId === accountId) {
+          setActiveId(null, null);
+        }
+        return false;
+      }
+
+      const now = Date.now();
+      const lastSnap = lastSignedOutSnapRef.current;
+      const recentlySnapped =
+        lastSnap?.accountId === accountId && now - lastSnap.at < 2000;
+
+      if (!needsSnap) {
+        if (getApiActiveAccountId() === accountId) {
+          setActiveId(primary.id, primary.email);
+        }
+        return false;
+      }
+
+      lastSignedOutSnapRef.current = { accountId, at: now };
+      const alreadyOnPrimary = currentActiveId === primary.id;
+      setActiveId(primary.id, primary.email);
+      return !alreadyOnPrimary && !recentlySnapped;
+    },
+    [setActiveId]
+  );
+
   const checkEmail = useCallback(
     async (email: string): Promise<CheckEmailResponse | null> => {
       try {
@@ -225,16 +280,42 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const linkMailspot = useCallback(
     async (email: string, password: string): Promise<boolean> => {
       try {
-        await linkMailspotAccount(email, password);
-        showSuccess('Account linked successfully');
+        const res = await linkMailspotAccount(email, password);
+        const existing = linkedAccounts.find(
+          (a) => a.email.toLowerCase() === email.toLowerCase()
+        );
+
+        if (existing) {
+          setLinkedAccounts((prev) =>
+            prev.map((a) =>
+              a.email.toLowerCase() === email.toLowerCase()
+                ? {
+                    ...a,
+                    isSignedOut: false,
+                    ...(res?.account
+                      ? {
+                          id: res.account.id,
+                          email: res.account.email,
+                          username: res.account.username,
+                        }
+                      : {}),
+                  }
+                : a
+            )
+          );
+          showSuccess(res?.message || 'Account signed in successfully');
+          return true;
+        }
+
+        showSuccess(res?.message || 'Account linked successfully');
         await fetchLinkedAccounts();
         return true;
       } catch (err: any) {
-        showError(err?.message || 'Failed to link account');
+        showError(err?.error || err?.message || 'Failed to link account');
         return false;
       }
     },
-    [fetchLinkedAccounts]
+    [fetchLinkedAccounts, linkedAccounts]
   );
 
   const linkExternal = useCallback(
@@ -268,6 +349,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         endAccountSwitch,
         unlinkAccount,
         removeRevokedAccount,
+        markAccountSignedOut,
         checkEmail,
         linkMailspot,
         linkExternal,

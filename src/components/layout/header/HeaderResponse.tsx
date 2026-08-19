@@ -1,26 +1,20 @@
 
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import { useProfile } from "@context/userContext";
-import changePasswordIconHover from "@images/change-password-icon-hover.svg";
-import changePasswordIcon from "@images/change-password-icon.svg";
-import changePasswordNewIconHover from "@images/change-password-new-icon-hover.svg";
-import changePasswordNewIcon from "@images/change-password-new-icon.svg";
 import closeIconHover from '@images/close-icon-hover.svg';
 import closeIcon from '@images/close-icon.svg';
 import enlivenLogo from "@images/enliven-logo.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
-import { getUserDetail } from "@services/user/userService";
 import { logoutUser } from "@services/login/loginService";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useContacts, useMailData, useMailUI } from '../../../context/index';
+import { useContacts, useMailData } from '../../../context/index';
 
 const Header = () => {
     const navigate = useNavigate();
     const { profileName, setProfileName, profileEmail, setProfileEmail, profileInitial, setProfileInitial } = useProfile();
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [searchText,] = useState("");
-    const { openModal, closeModal, activeModals, } = useMailUI();
     const { socketId } = useMailData();
     const { fetchContacts } = useContacts();
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
@@ -35,35 +29,6 @@ const Header = () => {
         localStorage.clear();
         navigate('/login');
     };
-
-    const openChangeImapSmtpPasswordModal = async () => {
-        const response = await getUserDetail(profileEmail);
-        if (response?.statusCode === 200) {
-            const userData = {
-                imapPassword: response.data.imapPassword,
-                imapServer: response.data.imapHost,
-                imapPort: response.data.imapPort,
-                imapSecurityType: response.data.imapSecureType,
-                smtpPassword: response.data.smtpPassword,
-                smtpServer: response.data.smtpHost,
-                smtpPort: response.data.smtpPort,
-                smtpSecurityType: response.data.smtpSecureType,
-                smtpHost: response.data.smtpHost
-            }
-            //check if changePassword modal is open then close it
-            const changePasswordModal = activeModals.find((modal) => modal.type === 'changePassword');
-
-            if (changePasswordModal) {
-                closeModal(changePasswordModal.id);
-            }
-
-            openModal('changeImapSmtpPassword', userData)
-        }
-    }
-
-    const openChangePasswordModal = () => {
-        openModal('changePassword')
-    }
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -186,32 +151,6 @@ const Header = () => {
                             </div>
                         </div>
                         <ul className="profile-link-list">
-                            <li className="profile-link-items">
-                                <a href="#" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>
-                                    <InteractiveIcon
-                                        defaultIcon={changePasswordNewIcon}
-                                        hoverIcon={changePasswordNewIconHover}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip=""
-                                    />Change IMAP/SMTP Configuration</a>
-                            </li>
-                            <li className="profile-link-items">
-                                <a href="#" className="profile-link hover-link" onClick={openChangePasswordModal}>
-                                    <InteractiveIcon
-                                        defaultIcon={changePasswordIcon}
-                                        hoverIcon={changePasswordIconHover}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip=""
-                                    />Change password</a>
-                            </li>
                             <li className="profile-link-items">
                                 <a href="#" className="profile-link hover-link" onClick={handleLogout}>
                                     <InteractiveIcon

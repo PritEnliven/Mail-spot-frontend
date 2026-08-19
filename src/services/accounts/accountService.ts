@@ -5,6 +5,31 @@ export interface LinkedAccount {
   email: string;
   username: string;
   isActive: boolean;
+  /** True when this linked mailbox needs a platform password re-auth. Default false. */
+  isSignedOut?: boolean;
+}
+
+export const isLinkedAccountSignedOut = (
+  account: { isSignedOut?: boolean } | null | undefined
+): boolean => account?.isSignedOut === true;
+
+export const normalizeLinkedAccount = (account: LinkedAccount): LinkedAccount => {
+  const isSignedOut = account.isSignedOut === true;
+  return {
+    ...account,
+    isSignedOut,
+    isActive: isSignedOut ? false : Boolean(account.isActive),
+  };
+};
+
+export interface LinkMailspotResponse {
+  message?: string;
+  account?: {
+    id: string;
+    email: string;
+    username: string;
+  };
+  isSignedOut?: boolean;
 }
 
 export interface PrimaryAccount {
@@ -43,14 +68,21 @@ export interface SmtpConfig {
 /** Unwrap backend envelope: { statusCode, data: {...} } → {...} */
 const unwrap = (res: any) => res?.data ?? res;
 
-export const getLinkedAccounts = async (): Promise<LinkedAccountsResponse> =>
-  unwrap(await getData('accounts/linked'));
+export const getLinkedAccounts = async (): Promise<LinkedAccountsResponse> => {
+  const data = unwrap(await getData('accounts/linked'));
+  return {
+    primary_account: data?.primary_account,
+    linked_accounts: (data?.linked_accounts || []).map(normalizeLinkedAccount),
+  };
+};
 
 export const checkEmailForLink = async (email: string): Promise<CheckEmailResponse> =>
   unwrap(await postData('accounts/check-email', { email }));
 
-export const linkMailspotAccount = async (email: string, password: string) =>
-  unwrap(await postData('accounts/link', { email, password }));
+export const linkMailspotAccount = async (
+  email: string,
+  password: string
+): Promise<LinkMailspotResponse> => unwrap(await postData('accounts/link', { email, password }));
 
 export const linkExternalAccount = async (
   email: string,
