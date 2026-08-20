@@ -1,5 +1,5 @@
 ﻿import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import SimpleBar from 'simplebar-react';
 
@@ -204,6 +204,11 @@ export const AddAccountModal = ({
     handleClose();
   };
 
+  const submitStep = (action: () => void | Promise<void>) => (e: FormEvent) => {
+    e.preventDefault();
+    void action();
+  };
+
   const stepTitles: Record<LinkStep, string> = {
     email: 'Add Account',
     password: 'Enter Password',
@@ -291,7 +296,7 @@ export const AddAccountModal = ({
 
                     {/* Email step */}
                     {step === 'email' && (
-                      <>
+                      <form onSubmit={submitStep(handleCheckEmail)}>
                         <div className="form-group form-row">
                           <label className="control-label">Email address</label>
                           <div className="input-control">
@@ -339,12 +344,12 @@ export const AddAccountModal = ({
                             Next
                           </SubmitButton>
                         </div>
-                      </>
+                      </form>
                     )}
 
                     {/* Password step */}
                     {step === 'password' && (
-                      <>
+                      <form onSubmit={submitStep(handleLinkPassword)}>
                         <p className="text-muted small mb-3">
                           {reauthEmail ? (
                             <>
@@ -409,7 +414,7 @@ export const AddAccountModal = ({
                             className="btn-new me-3"
                             onClick={() => (reauthEmail ? handleClose() : setStep('email'))}
                           >
-                            {reauthEmail ? 'Cancel' : '← Back'}
+                            {reauthEmail ? 'Cancel' : 'Back'}
                           </button>
                           <SubmitButton
                             className="btn-new loading-spinner"
@@ -418,12 +423,12 @@ export const AddAccountModal = ({
                             {reauthEmail ? 'Sign in' : 'Link Account'}
                           </SubmitButton>
                         </div>
-                      </>
+                      </form>
                     )}
 
                     {/* External IMAP/SMTP step */}
                     {step === 'external' && (
-                      <>
+                      <form onSubmit={submitStep(handleLinkExternal)}>
                         <p className="text-muted small mb-3">
                           Configure IMAP and SMTP for <strong>{linkedEmail}</strong>.
                         </p>
@@ -652,7 +657,7 @@ export const AddAccountModal = ({
                             Link Account
                           </SubmitButton>
                         </div>
-                      </>
+                      </form>
                     )}
                   </div>
                 </SimpleBar>

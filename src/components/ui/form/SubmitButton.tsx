@@ -5,9 +5,10 @@ interface SubmitButtonProps {
     onClick: () => Promise<void> | void;
     className?: string;
     loading?: boolean;
+    type?: 'button' | 'submit';
 }
 
-function SubmitButton({ children, onClick, className = '', loading: propLoading = false }: SubmitButtonProps) {
+function SubmitButton({ children, onClick, className = '', loading: propLoading = false, type = 'button' }: SubmitButtonProps) {
     const [internalLoading, setInternalLoading] = useState(false);
     const isLoading = propLoading || internalLoading;
 
@@ -22,6 +23,7 @@ function SubmitButton({ children, onClick, className = '', loading: propLoading 
 
     return (
         <button
+            type={type}
             className={`${className} ${isLoading ? '' : 'btn-new-bg'} ${isLoading ? 'disabled' : ''}`}
             disabled={isLoading}
             onClick={handleClick}

@@ -77,7 +77,11 @@ const LoginPage = () => {
                             <a href="#" className="brand-logo-login">
                                 <img src={mailSpotLogo} alt="" />
                             </a>
-                            <form onSubmit={handleSubmit(onSubmit)}>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                }}
+                            >
                                 <div className="form-group">
                                     <label className="control-label required">Username</label>
                                     <div className="input-group2 icon-left2">
@@ -135,7 +139,9 @@ const LoginPage = () => {
                                     }
                                 </div>
                                 <div className="login-btn">
-                                    <SubmitButton className="btn-new btn-new-bg w-100"
+                                    <SubmitButton
+                                        type="submit"
+                                        className="btn-new btn-new-bg w-100"
                                         onClick={handleSubmit(onSubmit)}
                                     >Login</SubmitButton>
                                 </div>
