@@ -10,18 +10,10 @@ export const adminSettingsSchema = z.object({
   both: z.boolean(),
   aiFeatures: z.boolean(),
   status: z.boolean()
-}).refine(
-  (data) => {
-    if (data.both) {
-      return data.send && data.receive;
-    }
-    return true;
-  },
-  {
-    message: "When 'Both' is enabled, Send and Receive must be enabled",
-    path: ["both"],
-  }
-)
+}).transform((data) => ({
+  ...data,
+  both: data.send && data.receive,
+}))
 
 
 

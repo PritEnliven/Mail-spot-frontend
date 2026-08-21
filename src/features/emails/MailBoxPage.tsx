@@ -337,6 +337,12 @@ const MailBoxPage = () => {
     });
 
     const isSchedule = boxName?.toLocaleLowerCase().includes('schedule');
+
+    useEffect(() => {
+        if (isSchedule && readUnreadFilter !== MAIL_ACTION.ALL) {
+            setReadUnreadFilter(MAIL_ACTION.ALL);
+        }
+    }, [isSchedule, readUnreadFilter, setReadUnreadFilter]);
     // On mobile the detail panel is only mounted for an active email, so collapsing the
     // list without one would leave a blank screen.
     const isMailListCollapsed = !isMailListOpen && (isDesktop || !!activeEmailMessageId);
@@ -408,7 +414,7 @@ const MailBoxPage = () => {
         <>
             {/* START:: Mail received box */}
             <div className={`mail-message-box ${isSchedule ? 'schedule-message-box' : ''}`} id="mailMessageBoxSection" style={mailListStyleOpenViaSearch}>
-                {!isSearchOrFilterMailList && (
+                {!isSearchOrFilterMailList && !isSchedule && (
                     <div className="mail-list-filter">
                         <button
                             type="button"

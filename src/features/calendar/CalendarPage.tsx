@@ -297,7 +297,7 @@ function CalendarPage() {
                             <div id="sidebar-title" ref={titleRef}>
                                 {calendarTitle}
                             </div>
-                            <div id="sidebar-nav" className="d-flex align-items-center">
+                            {/* <div id="sidebar-nav" className="d-flex align-items-center">
                                 <button
                                     className="fc-icon-chevron-left-left-box btn-new"
                                     onClick={handleSidebarPrev}
@@ -306,7 +306,7 @@ function CalendarPage() {
                                     className="fc-icon-chevron-right-left-box btn-new"
                                     onClick={handleSidebarNext}
                                 />
-                            </div>
+                            </div> */}
                         </div>
 
                         <div className="sidebar" id="sidebar-calendar">

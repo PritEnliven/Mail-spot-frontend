@@ -131,6 +131,22 @@ const AdminSettings = () => {
         setValue('fileExtensionInput', currentExtensions.filter(ext => ext !== extensionToRemove));
     };
 
+    const handleSendToggle = (checked: boolean, onChange: (value: boolean) => void) => {
+        onChange(checked);
+        setValue('both', checked && getValues('receive'), { shouldDirty: true });
+    };
+
+    const handleReceiveToggle = (checked: boolean, onChange: (value: boolean) => void) => {
+        onChange(checked);
+        setValue('both', checked && getValues('send'), { shouldDirty: true });
+    };
+
+    const handleBothToggle = (checked: boolean, onChange: (value: boolean) => void) => {
+        onChange(checked);
+        setValue('send', checked, { shouldDirty: true });
+        setValue('receive', checked, { shouldDirty: true });
+    };
+
     return (
         <div>
             <div className="admin-setting-box" id="adminSettingBox">
@@ -259,7 +275,7 @@ const AdminSettings = () => {
                                     <input
                                         type="checkbox"
                                         checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
+                                        onChange={(e) => handleSendToggle(e.target.checked, field.onChange)}
                                         ref={field.ref}
                                         name={field.name}
                                         id="send"
@@ -279,7 +295,7 @@ const AdminSettings = () => {
                                     <input
                                         type="checkbox"
                                         checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
+                                        onChange={(e) => handleReceiveToggle(e.target.checked, field.onChange)}
                                         ref={field.ref}
                                         name={field.name}
                                         id="receive"
@@ -299,7 +315,7 @@ const AdminSettings = () => {
                                     <input
                                         type="checkbox"
                                         checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
+                                        onChange={(e) => handleBothToggle(e.target.checked, field.onChange)}
                                         ref={field.ref}
                                         name={field.name}
                                         id="both"
