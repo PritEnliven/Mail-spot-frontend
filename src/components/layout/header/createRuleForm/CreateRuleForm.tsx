@@ -1,4 +1,3 @@
-import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import SubmitButton from '@components/ui/form/SubmitButton';
 import { showError } from '@components/ui/toast/toastNotification';
 import { useMailData } from '@context/MailDataContext';
@@ -6,7 +5,8 @@ import { useMailUI } from '@context/MailUIContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import type { FieldErrors, SubmitHandler } from 'react-hook-form';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import CreateRuleActionsFields from './CreateRuleActionsFields';
 import { createRuleSchema, type CreateRuleFormValues } from './CreateRuleForm.schema';
 
 interface CreateRuleFormProps {
@@ -41,6 +41,7 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
             forwardIt: false,
             forwardEmails: [],
             deleteIt: false,
+            applyTheLabel: false,
             neverSendToSpam: false,
         },
     });
@@ -50,18 +51,16 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
 
         const validBoxes = [
             ...sidebarState.boxes.filter((box: any) => validSystemBoxes.has(box.key.toLowerCase())),
-            ...(sidebarState.customBoxes || [])
+            ...(sidebarState.customBoxes || []),
         ];
 
-        const options = validBoxes.map(
-            (box: any) => ({
-                value: typeof box.value === 'object' ? box.value?.value : box.value,
-                label: box.key,
-            })
-        );
+        const options = validBoxes.map((box: any) => ({
+            value: typeof box.value === 'object' ? box.value?.value : box.value,
+            label: box.key,
+        }));
 
         setValidLabels(options);
-    }
+    };
 
     useEffect(() => {
         loadAllLabels();
@@ -69,22 +68,20 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
 
     const onForwardEmailSubmit = (data: any) => {
         setValue('forwardEmails', data.forwardToEmailList || []);
-    }
+    };
 
     const openForwardItModal = () => {
         const currentForwardItEmail = getValues('forwardEmails') || [];
-        openModal('forwardIt',
-            {
-                initialForwardEmailList: currentForwardItEmail,
-                onConfirm: onForwardEmailSubmit
-            }
-        );
-    }
+        openModal('forwardIt', {
+            initialForwardEmailList: currentForwardItEmail,
+            onConfirm: onForwardEmailSubmit,
+        });
+    };
 
     const forwardItChecked = watch('forwardIt');
     const moveToFolderChecked = watch('moveToFolder');
 
-    const onSubmit = (data: any) => {
+    const onSubmit = (data: CreateRuleFormValues) => {
         submitForm(data);
         reset();
     };
@@ -94,171 +91,23 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
         onReset();
     };
 
-
     return (
         <div className={`dropdown-menu dropdown-menu-end t-filter-dropdown-menu more-list search-create-filter-cmt ${isModalOpen ? 'show' : ''}`}>
             <div className="filter-body">
-                <div className="form-group d-flex align-items-center">
-                    <div className="mail-received-check-btn me-2">
-                        <Controller
-                            name="markAsRead"
-                            control={control}
-                            render={({ field }) => (
-                                <div className="checkbox-custom table-check">
-                                    <input
-                                        type="checkbox"
-                                        id="create-filter-check1"
-                                        className="list-child"
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                    />
-                                    <label htmlFor="create-filter-check1" className="label-text" />
-                                </div>
-                            )}
-                        />
-                    </div>
-                    <label htmlFor="create-filter-check1" className="control-label m-0 create-filter-check">
-                        Mark As Read
-                    </label>
-                </div>
-
-                <div className="form-group d-flex align-items-center">
-                    <div className="mail-received-check-btn me-2">
-                        <Controller
-                            name="moveToFolder"
-                            control={control}
-                            render={({ field }) => (
-                                <div className="checkbox-custom table-check">
-                                    <input
-                                        type="checkbox"
-                                        id="create-filter-check4"
-                                        className="list-child"
-                                        checked={field.value}
-                                        onChange={(e) => {
-                                            field.onChange(e.target.checked);
-                                            if (!e.target.checked) {
-                                                setValue('selectedFolder', '');
-                                            }
-                                        }}
-                                    />
-                                    <label htmlFor="create-filter-check4" className="label-text" />
-                                </div>
-                            )}
-                        />
-                    </div>
-                    <div className="control-label m-0 create-filter-check w-100 align-items-center d-flex justify-content-between">
-                        <label htmlFor="create-filter-check4" className="me-2 label-span flex-grow-1">
-                            Apply the label:
-                        </label>
-                        <div onClick={(e) => e.stopPropagation()} className='flex-grow-1'>
-                            <Controller
-                                name="selectedFolder"
-                                control={control}
-                                render={({ field }) => (
-                                    <Select2Wrapper
-                                        value={field.value || null}
-                                        onChange={(value) => field.onChange(value)}
-                                        options={validLabels}
-                                        placeholder="Select one"
-                                        isMulti={false}
-                                        isModal={true}
-                                        isDisabled={!moveToFolderChecked}
-                                    />
-                                )}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="form-group d-flex align-items-center">
-                    <div className="mail-received-check-btn me-2">
-                        <Controller
-                            name="forwardIt"
-                            control={control}
-                            render={({ field }) => (
-                                <div className="checkbox-custom table-check">
-                                    <input
-                                        type="checkbox"
-                                        id="create-filter-check5"
-                                        className="list-child"
-                                        checked={field.value}
-                                        onChange={(e) => {
-                                            field.onChange(e.target.checked);
-                                            if (!e.target.checked) {
-                                                setValue('forwardEmails', []);
-                                            }
-                                        }}
-                                    />
-                                    <label htmlFor="create-filter-check5" className="label-text" />
-                                </div>
-                            )}
-                        />
-                    </div>
-                    <div className='d-flex align-items-center justify-content-between w-100'>
-                        <label htmlFor="create-filter-check5" className="control-label m-0 create-filter-check">
-                            <span className="label-span me-2 flex-grow-1">Forward it</span>
-                        </label>
-                        <button
-                            type="button"
-                            className="btn w-100 flex-grow-1"
-                            onClick={openForwardItModal}
-                            disabled={!forwardItChecked}
-                        >
-                            Add Forward
-                        </button>
-                    </div>
-                </div>
-
-                <div className="form-group d-flex align-items-center">
-                    <div className="mail-received-check-btn me-2">
-                        <Controller
-                            name="deleteIt"
-                            control={control}
-                            render={({ field }) => (
-                                <div className="checkbox-custom table-check">
-                                    <input
-                                        type="checkbox"
-                                        id="create-filter-check6"
-                                        className="list-child"
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                    />
-                                    <label htmlFor="create-filter-check6" className="label-text" />
-                                </div>
-                            )}
-                        />
-                    </div>
-                    <label htmlFor="create-filter-check6" className="control-label m-0 create-filter-check">
-                        Delete it
-                    </label>
-                </div>
-
-                <div className="form-group d-flex align-items-center">
-                    <div className="mail-received-check-btn me-2">
-                        <Controller
-                            name="neverSendToSpam"
-                            control={control}
-                            render={({ field }) => (
-                                <div className="checkbox-custom table-check">
-                                    <input
-                                        type="checkbox"
-                                        id="create-filter-check7"
-                                        className="list-child"
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                    />
-                                    <label htmlFor="create-filter-check7" className="label-text" />
-                                </div>
-                            )}
-                        />
-                    </div>
-                    <label htmlFor="create-filter-check7" className="control-label m-0 create-filter-check">
-                        Never send it to Spam
-                    </label>
-                </div>
+                <CreateRuleActionsFields
+                    control={control}
+                    setValue={setValue}
+                    moveToFolderChecked={moveToFolderChecked}
+                    forwardItChecked={forwardItChecked}
+                    validLabels={validLabels}
+                    onOpenForwardModal={openForwardItModal}
+                    idPrefix="create-filter"
+                />
             </div>
             <div className="filter-footer">
-                <button type="button" className="btn-new create-filter-cancel-btn" onClick={handleReset} onSubmit={handleReset}>Reset</button>
+                <button type="button" className="btn-new create-filter-cancel-btn" onClick={handleReset}>
+                    Reset
+                </button>
                 <SubmitButton
                     className="btn-new loading-spinner"
                     onClick={handleSubmit(onSubmit, (errors: FieldErrors<CreateRuleFormValues>) => {

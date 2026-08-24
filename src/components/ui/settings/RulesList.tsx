@@ -6,37 +6,43 @@ import deleteIconHover from "@images/trash-icon-hover.svg"
 import { formatDate, TimeFormat } from '@utils/dateUtil';
 import InteractiveIcon from '../InteractiveIcon';
 
-interface RangeValue {
+export interface RangeValue {
     min?: number;
     max?: number;
     start?: string;
     end?: string;
 }
 
-type ConditionValue = string | number | boolean | string[] | RangeValue | null;
+export type ConditionValue = string | number | boolean | string[] | RangeValue | null;
 
-interface Condition {
+export interface Condition {
     field: string;
     operator: string;
     value: ConditionValue;
 }
 
-interface Action {
+export interface Action {
     type: string;
     value?: string;
     folderKey?: string;
 }
 
-interface Rule {
+export interface Rule {
     _id: string;
+    name?: string;
+    description?: string;
     conditions: Condition[];
     actions: Action[];
-    logic: 'AND' | 'OR';
+    logic?: 'AND' | 'OR';
+    order?: number;
+    stopProcessingMore?: boolean;
+    isActive?: boolean;
+    trigger?: string;
 }
 
 interface RulesListProps {
     rules: Rule[];
-    onEdit?: (id: string) => void;
+    onEdit?: (rule: Rule) => void;
     onDelete?: (id: string) => void;
 }
 
@@ -103,7 +109,7 @@ const formatConditionValue = (field: string, value: ConditionValue): string => {
     return String(value);
 };
 
-const formatCondition = (condition: Condition): string => {
+export const formatCondition = (condition: Condition): string => {
     if (!condition) return '';
     const { field, operator, value } = condition;
 
@@ -170,12 +176,8 @@ const RulesList: React.FC<RulesListProps> = ({ rules = [], onEdit, onDelete }) =
                             </div>
                             <div className="d-flex align-items-center justify-content-end">
                                 <a
-                                    className="hover-link d-flex align-items-center me-2 border-0 bg-transparent d-none icon-hover-effect"
-                                    onClick={() => onEdit?.(rule._id)}
-                                    data-bs-toggle="tooltip"
-                                    data-bs-placement="top"
-                                    data-bs-custom-class="custom-tooltip"
-                                    title="Edit"
+                                    className="hover-link d-flex align-items-center me-2"
+                                    onClick={() => onEdit?.(rule)}
                                 >
                                     <InteractiveIcon
                                         defaultIcon={editIcon}
@@ -185,7 +187,7 @@ const RulesList: React.FC<RulesListProps> = ({ rules = [], onEdit, onDelete }) =
                                         alt=""
                                         className="interactive-icon hover-image"
                                         renderAs="img"
-                                        tooltip=""
+                                        tooltip="Edit"
                                     />
                                 </a>
                                 <a

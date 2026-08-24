@@ -112,6 +112,7 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
                                                 options={contacts}
                                                 placeholder="Select or type to add"
                                                 isMulti={true}
+                                                isModal={true}
                                             />
                                         )}
                                     />

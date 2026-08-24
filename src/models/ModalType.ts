@@ -13,4 +13,5 @@ export type ModalType =
     'createSignature' |
     'forwardIt' |
     'moveToFolder' |
+    'editRule' |
 null;

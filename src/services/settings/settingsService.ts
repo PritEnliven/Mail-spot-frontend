@@ -27,6 +27,19 @@ interface deleteRulePayload {
     ruleId: string;
 }
 
+interface editRulePayload {
+    ruleId: string;
+    name: string;
+    conditions: unknown[];
+    actions: unknown[];
+    description?: string;
+    logic?: 'AND' | 'OR';
+    order?: number;
+    stopProcessingMore?: boolean;
+    isActive?: boolean;
+    trigger?: string;
+}
+
 interface updateShortcutPayload {
     id: string;
     shortcut: string;
@@ -86,6 +99,15 @@ async function deleteRule(payload: deleteRulePayload) {
     }
 }
 
+async function editRule(payload: editRulePayload) {
+    try {
+        const response = await postData('rule/editRule', payload);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 async function getSignatureForActions() {
     try {
         const response = await getData('email/get-signature', {
@@ -132,6 +154,7 @@ async function updateShortcut(data: updateShortcutPayload) {
 
 export {
     createSignatureName, deleteRule, deleteSignature,
+    editRule,
     getAllRules,
     getAllSignatures, getSettings, getSignatureForActions,
     getUserPermissions, saveSettings,

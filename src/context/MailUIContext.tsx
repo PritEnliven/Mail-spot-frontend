@@ -55,7 +55,7 @@ interface MailUIProviderProps {
     activeEmailMessageId: string | null;
 }
 
-const REMOUNT_ON_REOPEN_MODALS: ModalType[] = ['calendarEvent'];
+const REMOUNT_ON_REOPEN_MODALS: ModalType[] = ['calendarEvent', 'forwardIt'];
 
 const MailUIContext = createContext<MailUIType | undefined>(undefined);
 

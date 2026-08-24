@@ -1,7 +1,7 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import SubmitButton from '@components/ui/form/SubmitButton';
-import RulesList from '@components/ui/settings/RulesList';
+import RulesList, { type Rule } from '@components/ui/settings/RulesList';
 import SignatureList from '@components/ui/settings/SignatureList';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useMailData } from '@context/MailDataContext';
@@ -162,7 +162,11 @@ function SettingsPage() {
         })
     }
 
-    async function handleEditRule() {
+    async function handleEditRule(rule: Rule) {
+        openModal('editRule', {
+            rule,
+            onSuccess: () => loadRules(),
+        });
     }
 
     async function handleDelete(id: string) {

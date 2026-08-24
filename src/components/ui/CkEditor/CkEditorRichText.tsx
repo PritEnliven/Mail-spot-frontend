@@ -5,6 +5,7 @@ import { ClassicEditor } from 'ckeditor5';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import ckEditorConfig from '../../../config/ckeditor.config';
+import { useScreen } from "@context/ScreenContext";
 
 interface CkEditorRichTextProps {
   id: string;
@@ -56,6 +57,8 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
   const onCloseGenerateEmailHandler = () => {
     onGenerateEmailClose?.();
   }
+
+  const { isMobile } = useScreen();
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -160,6 +163,7 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
   return (
     <CKEditor
       id={id}
+      key={isMobile ? 'mobile' : 'desktop'}
       editor={ClassicEditor}
       config={editorConfig}
       data={value}

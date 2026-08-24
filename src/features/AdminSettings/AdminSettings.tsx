@@ -7,7 +7,7 @@ import { default as closeIcon, default as closeIconHover } from "@images/close-i
 import type { Response } from '@models/Response';
 import { adminSaveSettings, getAdminSettings } from '@services/adminService/adminService';
 import { isDangerousExtension } from './dangerousFileExtensions';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { adminSettingsSchema, type AdminSettingsFormValues } from './adminSettings.schema';
@@ -21,7 +21,6 @@ const AdminSettings = () => {
         reset,
         setValue,
         getValues,
-        watch,
         formState: { errors },
     } = useForm<AdminSettingsFormValues>({
         resolver: zodResolver(adminSettingsSchema),
@@ -38,6 +37,20 @@ const AdminSettings = () => {
         },
     });
 
+    const fileExtensionInputRef = useRef<HTMLInputElement>(null);
+    const [fileExtensions, setFileExtensions] = useState<string[]>([]);
+    const fileExtensionsRef = useRef<string[]>([]);
+
+    const syncFileExtensions = (next: string[]) => {
+        fileExtensionsRef.current = next;
+        setFileExtensions(next);
+        setValue('fileExtensionInput', next, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true,
+        });
+    };
+
     useEffect(() => {
         let isMounted = true;
 
@@ -50,6 +63,8 @@ const AdminSettings = () => {
                 if (isMounted && response.statusCode === 200) {
                     // Filter out dangerous extensions from backend data
                     const filteredExtensions = response.data.allowedFileTypes?.filter((ext: string) => !isDangerousExtension(ext)) || [];
+                    fileExtensionsRef.current = filteredExtensions;
+                    setFileExtensions(filteredExtensions);
 
                     reset({
                         name: response.data.userName,
@@ -75,11 +90,44 @@ const AdminSettings = () => {
         navigate('/admin/dashboard');
     }
 
+    const normalizeExtension = (value: string) =>
+        value.trim().replace(/^\.+/, '').toLowerCase();
+
+    const addExtension = (raw: string, current: string[] = fileExtensionsRef.current) => {
+        const input = normalizeExtension(raw);
+        if (!input) return current;
+
+        if (isDangerousExtension(input)) {
+            showError(`Dangerous file extension '${input}' is not allowed for security reasons.`);
+            return current;
+        }
+
+        if (current.some((ext) => ext.toLowerCase() === input)) {
+            return current;
+        }
+
+        const next = [...current, input];
+        syncFileExtensions(next);
+        return next;
+    };
+
+    const consumePendingExtension = () => {
+        const current = fileExtensionsRef.current;
+        const inputEl = fileExtensionInputRef.current;
+        if (!inputEl) return current;
+        const raw = inputEl.value;
+        if (!raw.trim()) return current;
+        const next = addExtension(raw, current);
+        inputEl.value = '';
+        return next;
+    };
+
     const onSubmit = async (data: any) => {
         const userId = settingPayLoad?.isAdmin ? null : settingPayLoad?.userId || null;
+        const allowedFileTypes = consumePendingExtension();
 
         // Validate file extensions for dangerous types before submission
-        const dangerousExtensions = data.fileExtensionInput?.filter((ext: string) => isDangerousExtension(ext)) || [];
+        const dangerousExtensions = allowedFileTypes.filter((ext: string) => isDangerousExtension(ext)) || [];
         if (dangerousExtensions.length > 0) {
             showError(`Cannot save settings. Dangerous file extensions found: ${dangerousExtensions.join(', ')}. Please remove them and try again.`);
             return;
@@ -87,7 +135,7 @@ const AdminSettings = () => {
 
         let payload = {
             fileSize: data.fileSize,
-            allowedFileTypes: data.fileExtensionInput,
+            allowedFileTypes,
             sendToOutsideDomain: data.send,
             receiveFromOutsideDomain: data.receive,
             both: data.both,
@@ -108,27 +156,13 @@ const AdminSettings = () => {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const input = e.currentTarget.value.trim();
-            if (input) {
-                // Check if the extension is dangerous
-                if (isDangerousExtension(input)) {
-                    showError(`Dangerous file extension '${input}' is not allowed for security reasons.`);
-                    e.currentTarget.value = '';
-                    return;
-                }
-
-                const currentExtensions = getValues('fileExtensionInput') || [];
-                if (!currentExtensions.includes(input)) {
-                    setValue('fileExtensionInput', [...currentExtensions, input]);
-                    e.currentTarget.value = '';
-                }
-            }
+            consumePendingExtension();
         }
     };
 
     const removeExtension = (extensionToRemove: string) => {
-        const currentExtensions = getValues('fileExtensionInput') || [];
-        setValue('fileExtensionInput', currentExtensions.filter(ext => ext !== extensionToRemove));
+        const next = fileExtensionsRef.current.filter(ext => ext !== extensionToRemove);
+        syncFileExtensions(next);
     };
 
     const handleSendToggle = (checked: boolean, onChange: (value: boolean) => void) => {
@@ -235,12 +269,14 @@ const AdminSettings = () => {
                                     className="form-control"
                                     id="fileExtensionInput"
                                     placeholder="Add extensions (e.g., doc, pdf)..."
+                                    ref={fileExtensionInputRef}
                                     onKeyDown={handleKeyDown}
+                                    onBlur={consumePendingExtension}
                                 />
                             </div>
                         </div>
                         <div className="tags-input-container mb-4 d-flex flex-wrap gap-2">
-                            {watch('fileExtensionInput')?.map((extension) => (
+                            {fileExtensions.map((extension) => (
                                 <span key={extension} className="input-tag d-flex align-items-center">
                                     <div className="file-icon-sprite">.{extension}</div>
                                     <button
@@ -379,7 +415,6 @@ const AdminSettings = () => {
                     >Save</SubmitButton>
                 </div>
             </div>
-
         </div >
     )
 }

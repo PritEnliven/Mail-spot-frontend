@@ -13,6 +13,7 @@ const SignatureModal = lazy(() => import('./Modals/SignatureModal/SignatureModal
 const ChangePassword = lazy(() => import('@components/ui/Modals/ChangePassword/ChangePassword'));
 const ForwardEmail = lazy(() => import('./Modals/forwardEmailModal/ForwardEmail'));
 const MoveToFolderModal = lazy(() => import('./Modals/MoveToFolder/MoveToFolderModal'));
+const EditRuleModal = lazy(() => import('./Modals/EditRuleModal/EditRuleModal'));
 
 const BASE_Z_INDEX = 1050;
 const Z_INDEX_STEP = 20;
@@ -154,6 +155,16 @@ function ModalRoot() {
                     case 'moveToFolder':
                         return (
                             <MoveToFolderModal
+                                key={modal.id}
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        )
+
+                    case 'editRule':
+                        return (
+                            <EditRuleModal
                                 key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}

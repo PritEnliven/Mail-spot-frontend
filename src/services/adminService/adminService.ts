@@ -24,7 +24,7 @@ interface getAdminSettingsPayload {
 
 interface adminSaveSettingsPayload {
     fileSize: number,
-    allowedFileTypes: [],
+    allowedFileTypes: string[],
     sendToOutsideDomain: boolean
     receiveFromOutsideDomain: boolean
     both: boolean

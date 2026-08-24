@@ -189,54 +189,54 @@ const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
         {visibleAccounts.map((account) => {
           const signedOut = isLinkedAccountSignedOut(account);
           return (
-          <div
-            key={account.id}
-            className={`add-account-item${signedOut ? ' is-signed-out' : ''}`}
-          >
             <div
-              className="add-account-item-main"
-              style={{
-                cursor: isSwitchingAccount ? 'not-allowed' : 'pointer',
-                opacity: isSwitchingAccount ? 0.6 : 1,
-              }}
-              onClick={() => handleSwitch(account.id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleSwitch(account.id)}
+              key={account.id}
+              className={`add-account-item${signedOut ? ' is-signed-out' : ''}`}
             >
-              <span className="mail-profile-label">
-                {getAccountInitials(account.email, account.username)}
-              </span>
-              <div className="add-account-info">
-                <p className="add-account-name">
-                  {account.username || account.email.split('@')[0]}
-                  {signedOut && (
-                    <span className="ms-1 add-account-signed-out">Signed out</span>
-                  )}
-                </p>
-                <p className="add-account-email">{account.email}</p>
+              <div
+                className="add-account-item-main"
+                style={{
+                  cursor: isSwitchingAccount ? 'not-allowed' : 'pointer',
+                  opacity: isSwitchingAccount ? 0.6 : 1,
+                }}
+                onClick={() => handleSwitch(account.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleSwitch(account.id)}
+              >
+                <span className="mail-profile-label">
+                  {getAccountInitials(account.email, account.username)}
+                </span>
+                <div className="add-account-info">
+                  <p className="add-account-name">
+                    {account.username || account.email.split('@')[0]}
+                    {signedOut && (
+                      <span className="ms-1 add-account-signed-out">Signed out</span>
+                    )}
+                  </p>
+                  <p className="add-account-email">{account.email}</p>
+                </div>
               </div>
-            </div>
 
-            <button
-              type="button"
-              className="add-account-more-btn hover-link d-flex align-items-center icon-hover-effect btn btn-link p-0 border-0"
-              onClick={(e) => toggleMoreMenu(account.id, e)}
-              aria-haspopup="menu"
-              aria-expanded={openMenuId === account.id}
-            >
-              <InteractiveIcon
-                defaultIcon={moreActionIcon}
-                hoverIcon={moreActionIconHover}
-                activeIcon=""
-                isActive={false}
-                alt="More"
-                className="interactive-icon hover-image"
-                renderAs="img"
-                tooltip="More"
-              />
-            </button>
-          </div>
+              <button
+                type="button"
+                className="add-account-more-btn hover-link d-flex align-items-center icon-hover-effect btn btn-link p-0 border-0"
+                onClick={(e) => toggleMoreMenu(account.id, e)}
+                aria-haspopup="menu"
+                aria-expanded={openMenuId === account.id}
+              >
+                <InteractiveIcon
+                  defaultIcon={moreActionIcon}
+                  hoverIcon={moreActionIconHover}
+                  activeIcon=""
+                  isActive={false}
+                  alt="More"
+                  className="interactive-icon hover-image"
+                  renderAs="img"
+                  tooltip="More"
+                />
+              </button>
+            </div>
           );
         })}
 
