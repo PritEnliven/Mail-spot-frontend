@@ -23,8 +23,10 @@ export interface Condition {
 
 export interface Action {
     type: string;
-    value?: string;
+    value?: string | string[] | boolean;
     folderKey?: string;
+    emails?: string[];
+    forwardEmails?: string[];
 }
 
 export interface Rule {
@@ -136,7 +138,9 @@ const formatAction = (action: Action): string => {
         case 'label':
             return `Add label: ${value || ''}`;
         case 'forwardTo':
-            return `Forward to ${value || 'email'}`;
+        case 'forwardIt':
+        case 'forward':
+            return `Forward to ${Array.isArray(value) ? value.join(', ') : (value || 'email')}`;
         default:
             return type;
     }

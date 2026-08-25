@@ -2,12 +2,33 @@ import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import { useFlatpickrMonthDropdown } from '@components/ui/useFlatpickrMonthDropdown';
 import { ATTACHMENT_SIZE_OPTIONS } from '@constants/attachmentSizeOptions';
 import dateIcon from '@images/date-icon-16.svg';
+import { formatDate, TimeFormat } from '@utils/dateUtil';
 import { lazy, Suspense, useMemo, useRef } from 'react';
 import type { Control } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 import type { EditRuleFormValues } from './editRule.schema';
 
 const Flatpickr = lazy(() => import('react-flatpickr'));
+
+const isSameCalendarDay = (a: Date, b: Date) => (
+    a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate()
+);
+
+const normalizeDateRange = (value: Date[] | undefined): Date[] => {
+    const dates = (value || []).filter((item): item is Date => item instanceof Date && !Number.isNaN(item.getTime()));
+    if (dates.length >= 2 && isSameCalendarDay(dates[0], dates[dates.length - 1])) {
+        return [dates[0]];
+    }
+    return dates;
+};
+
+const formatRangeForFlatpickr = (value: Date[] | undefined): string | undefined => {
+    const dates = normalizeDateRange(value);
+    if (!dates.length) return undefined;
+    return dates.map((date) => formatDate(date, TimeFormat.DD_MM_YYYY) as string).join(' to ');
+};
 
 interface EditRuleConditionsFieldsProps {
     control: Control<EditRuleFormValues>;
@@ -28,9 +49,11 @@ const EditRuleConditionsFields = ({ control, contacts }: EditRuleConditionsField
             mountFilterMonthDropdownRef.current(instance);
         },
         onChange: (dates: Date[], _str: string, instance: any) => {
-            if (dates.length === 2) {
-                instance.close();
+            if (dates.length !== 2) return;
+            if (isSameCalendarDay(dates[0], dates[1])) {
+                instance.setDate([dates[0]], false);
             }
+            instance.close();
         },
     }), []);
 
@@ -129,8 +152,8 @@ const EditRuleConditionsFields = ({ control, contacts }: EditRuleConditionsField
                         render={({ field }) => (
                             <Suspense fallback={<input className="form-control" placeholder="Loading date picker..." readOnly />}>
                                 <Flatpickr
-                                    value={field.value as Date[] | undefined}
-                                    onChange={(dates: Date[]) => field.onChange(dates)}
+                                    value={formatRangeForFlatpickr(field.value)}
+                                    onChange={(dates: Date[]) => field.onChange(normalizeDateRange(dates))}
                                     options={datePickerOptions}
                                     className="form-control DateRangePickerStaticTop"
                                     placeholder="Select date range"

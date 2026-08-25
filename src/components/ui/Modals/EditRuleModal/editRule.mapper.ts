@@ -7,6 +7,7 @@ import {
     type AttachmentSizeLabel,
 } from '@constants/attachmentSizeOptions';
 import { formatDate, TimeFormat } from '@utils/dateUtil';
+import { parseEmailAddress } from '@utils/emailUtil';
 import moment from 'moment';
 import type { EditRuleFormValues } from './editRule.schema';
 
@@ -15,6 +16,8 @@ const KNOWN_ACTION_TYPES = new Set([
     'moveToFolder',
     'label',
     'forwardTo',
+    'forwardIt',
+    'forward',
     'deleteIt',
     'delete',
     'neverSendToSpam',
@@ -206,30 +209,99 @@ export const conditionsFromFormValues = (
     return [...next, ...preserved];
 };
 
-export const formValuesFromActions = (actions: Action[] = []): CreateRuleFormValues => {
-    const values = emptyCreateRuleFormValues();
-    const forwardEmails: string[] = [];
+const emailsFromUnknown = (value: unknown, depth = 0): string[] => {
+    if (depth > 4 || value == null || typeof value === 'boolean' || typeof value === 'number') {
+        return [];
+    }
+    if (Array.isArray(value)) {
+        return value.flatMap((item) => emailsFromUnknown(item, depth + 1));
+    }
+    if (typeof value === 'object') {
+        const record = value as Record<string, unknown>;
+        return ['email', 'address', 'value', 'emails', 'forwardEmails', 'forwardIt', 'recipients']
+            .flatMap((key) => emailsFromUnknown(record[key], depth + 1));
+    }
 
-    for (const action of actions) {
-        switch (action.type) {
-            case 'markAsRead':
+    return String(value)
+        .split(/[,;]/)
+        .map((part) => {
+            const trimmed = part.trim();
+            if (!trimmed || trimmed === '[object Object]') return '';
+            const parsed = parseEmailAddress(trimmed);
+            const email = (parsed.email || trimmed).trim();
+            return email.includes('@') ? email : '';
+        })
+        .filter(Boolean);
+};
+
+const asActionList = (actions: Action[] | Record<string, unknown> | null | undefined): Action[] => {
+    if (!actions) return [];
+    if (Array.isArray(actions)) return actions;
+    if (typeof actions !== 'object') return [];
+
+    const bag = actions;
+    const list: Action[] = [];
+    if (bag.markAsRead) list.push({ type: 'markAsRead', value: 'true' });
+    if (bag.moveToFolder || bag.selectedFolder) {
+        list.push({
+            type: 'moveToFolder',
+            value: String(bag.selectedFolder || bag.moveToFolder || ''),
+            folderKey: bag.selectedFolder ? String(bag.selectedFolder) : undefined,
+        });
+    }
+    if (bag.forwardIt || bag.forwardEmails) {
+        list.push({
+            type: 'forwardIt',
+            value: (bag.forwardEmails || bag.forwardIt) as string[] | string | boolean,
+            forwardEmails: Array.isArray(bag.forwardEmails) ? bag.forwardEmails.map(String) : undefined,
+        });
+    }
+    if (bag.deleteIt || bag.delete) list.push({ type: 'deleteIt' });
+    if (bag.neverSendToSpam) list.push({ type: 'neverSendToSpam' });
+    return list;
+};
+
+export const forwardEmailsFromActions = (
+    actions: Action[] | Record<string, unknown> | null | undefined,
+): string[] => {
+    const emails: string[] = [];
+    for (const action of asActionList(actions)) {
+        const type = String(action.type || '').toLowerCase();
+        if (type !== 'forwardto' && type !== 'forwardit' && type !== 'forward') continue;
+        emails.push(
+            ...emailsFromUnknown(action.value),
+            ...emailsFromUnknown(action.emails),
+            ...emailsFromUnknown(action.forwardEmails),
+        );
+    }
+    return [...new Set(emails)];
+};
+
+export const formValuesFromActions = (actions: Action[] | Record<string, unknown> = []): CreateRuleFormValues => {
+    const values = emptyCreateRuleFormValues();
+    const actionList = asActionList(actions);
+
+    for (const action of actionList) {
+        const type = String(action.type || '').toLowerCase();
+        switch (type) {
+            case 'markasread':
                 values.markAsRead = action.value !== 'false' && Boolean(action.value ?? true);
                 break;
-            case 'moveToFolder':
+            case 'movetofolder':
             case 'label':
                 values.moveToFolder = true;
-                values.selectedFolder = action.folderKey || action.value || '';
+                values.selectedFolder = action.folderKey || (typeof action.value === 'string' ? action.value : '') || '';
                 break;
-            case 'forwardTo':
-                if (action.value) {
-                    forwardEmails.push(action.value);
-                }
+            case 'forwardto':
+            case 'forwardit':
+            case 'forward':
+                values.forwardIt = true;
                 break;
-            case 'deleteIt':
+            case 'deleteit':
             case 'delete':
                 values.deleteIt = true;
                 break;
-            case 'neverSendToSpam':
+            case 'neversendtospam':
                 values.neverSendToSpam = true;
                 break;
             default:
@@ -237,7 +309,8 @@ export const formValuesFromActions = (actions: Action[] = []): CreateRuleFormVal
         }
     }
 
-    if (forwardEmails.length > 0) {
+    const forwardEmails = forwardEmailsFromActions(actions);
+    if (forwardEmails.length) {
         values.forwardIt = true;
         values.forwardEmails = forwardEmails;
     }
@@ -253,16 +326,21 @@ export const formValuesFromRule = (rule: Rule): EditRuleFormValues => ({
 
 export const actionsFromFormValues = (
     form: CreateRuleFormValues,
-    originalActions: Action[] = [],
+    originalActions: Action[] | Record<string, unknown> = [],
     folderOptions: LabelOption[] = [],
 ): Action[] => {
     const next: Action[] = [];
-    const originalFolderType = originalActions.find(
+    const originalList = asActionList(originalActions);
+    const originalFolderType = originalList.find(
         (action) => action.type === 'moveToFolder' || action.type === 'label',
     )?.type ?? 'moveToFolder';
-    const originalDeleteType = originalActions.find(
+    const originalDeleteType = originalList.find(
         (action) => action.type === 'deleteIt' || action.type === 'delete',
     )?.type ?? 'deleteIt';
+    const originalForwardType = originalList.find((action) => {
+        const type = String(action.type || '').toLowerCase();
+        return type === 'forwardto' || type === 'forwardit' || type === 'forward';
+    })?.type ?? 'forwardIt';
 
     if (form.markAsRead) {
         next.push({ type: 'markAsRead', value: 'true' });
@@ -281,7 +359,7 @@ export const actionsFromFormValues = (
 
     if (form.forwardIt) {
         for (const email of form.forwardEmails) {
-            next.push({ type: 'forwardTo', value: email });
+            next.push({ type: originalForwardType, value: email });
         }
     }
 
@@ -293,7 +371,7 @@ export const actionsFromFormValues = (
         next.push({ type: 'neverSendToSpam' });
     }
 
-    const unknownActions = originalActions.filter((action) => !KNOWN_ACTION_TYPES.has(action.type));
+    const unknownActions = originalList.filter((action) => !KNOWN_ACTION_TYPES.has(action.type));
     return [...next, ...unknownActions];
 };
 

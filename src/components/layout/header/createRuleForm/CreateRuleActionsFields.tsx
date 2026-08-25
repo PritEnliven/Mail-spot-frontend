@@ -1,6 +1,6 @@
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import type { Control, UseFormSetValue } from 'react-hook-form';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 import type { CreateRuleFormValues } from './CreateRuleForm.schema';
 
 interface LabelOption {
@@ -32,6 +32,8 @@ const CreateRuleActionsFields = ({
     const check5 = `${idPrefix}-check5`;
     const check6 = `${idPrefix}-check6`;
     const check7 = `${idPrefix}-check7`;
+    const forwardEmails = useWatch({ control, name: 'forwardEmails' }) || [];
+    const hasForwardRecipients = Array.isArray(forwardEmails) && forwardEmails.length > 0;
 
     return (
         <>
@@ -41,7 +43,7 @@ const CreateRuleActionsFields = ({
                         name="markAsRead"
                         control={control}
                         render={({ field }) => (
-                            <div className="checkbox-custom table-check">
+                            <div className="blue checkbox-custom table-check">
                                 <input
                                     type="checkbox"
                                     id={check1}
@@ -65,7 +67,7 @@ const CreateRuleActionsFields = ({
                         name="moveToFolder"
                         control={control}
                         render={({ field }) => (
-                            <div className="checkbox-custom table-check">
+                            <div className="blue checkbox-custom table-check">
                                 <input
                                     type="checkbox"
                                     id={check4}
@@ -113,7 +115,7 @@ const CreateRuleActionsFields = ({
                         name="forwardIt"
                         control={control}
                         render={({ field }) => (
-                            <div className="checkbox-custom table-check">
+                            <div className="blue checkbox-custom table-check">
                                 <input
                                     type="checkbox"
                                     id={check5}
@@ -138,6 +140,7 @@ const CreateRuleActionsFields = ({
                     <button
                         type="button"
                         className="btn w-100 flex-grow-1"
+                        onMouseDown={(event) => event.stopPropagation()}
                         onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -156,7 +159,7 @@ const CreateRuleActionsFields = ({
                         name="deleteIt"
                         control={control}
                         render={({ field }) => (
-                            <div className="checkbox-custom table-check">
+                            <div className="blue checkbox-custom table-check">
                                 <input
                                     type="checkbox"
                                     id={check6}
@@ -180,7 +183,7 @@ const CreateRuleActionsFields = ({
                         name="neverSendToSpam"
                         control={control}
                         render={({ field }) => (
-                            <div className="checkbox-custom table-check">
+                            <div className="blue checkbox-custom table-check">
                                 <input
                                     type="checkbox"
                                     id={check7}

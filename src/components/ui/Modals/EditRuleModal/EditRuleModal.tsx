@@ -14,15 +14,17 @@ import arrowPointingOutIcon from '@images/arrows-pointing-out-icon.svg';
 import closeIconHover from '@images/close-icon-hover.svg';
 import closeIcon from '@images/close-icon.svg';
 import { editRule } from '@services/settings/settingsService';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Control, FieldErrors, Resolver, UseFormSetValue } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
+import SimpleBar from 'simplebar-react';
 import EditRuleConditionsFields from './EditRuleConditionsFields';
 import {
     actionsFromFormValues,
     buildRuleName,
     conditionsFromFormValues,
     formValuesFromRule,
+    forwardEmailsFromActions,
 } from './editRule.mapper';
 import { editRuleSchema, type EditRuleFormValues } from './editRule.schema';
 
@@ -78,27 +80,28 @@ function EditRuleModal({ modalId, zIndex, rule, onSuccess }: EditRuleModalProps)
 
     useEffect(() => {
         reset(formValuesFromRule(rule));
-    }, [rule, reset]);
+    }, [rule._id, reset]);
 
     const onClose = () => {
         reset();
         closeModal(modalId);
     };
 
-    const onForwardEmailSubmit = (data: any) => {
+    const onForwardEmailSubmit = useCallback((data: any) => {
         setValue('forwardEmails', data.forwardToEmailList || [], {
             shouldDirty: true,
             shouldValidate: true,
         });
-    };
+    }, [setValue]);
 
-    const openForwardItModal = () => {
-        const currentForwardItEmail = getValues('forwardEmails') || [];
+    const openForwardItModal = useCallback(() => {
+        const fromForm = (getValues('forwardEmails') || []).filter(Boolean);
+        const fromRule = forwardEmailsFromActions(rule.actions);
         openModal('forwardIt', {
-            initialForwardEmailList: currentForwardItEmail,
+            initialForwardEmailList: [...new Set(fromForm.length ? fromForm : fromRule)],
             onConfirm: onForwardEmailSubmit,
         });
-    };
+    }, [getValues, openModal, onForwardEmailSubmit, rule.actions]);
 
     const isForwardItOpen = activeModals.some((modal) => modal.type === 'forwardIt');
 
@@ -140,7 +143,8 @@ function EditRuleModal({ modalId, zIndex, rule, onSuccess }: EditRuleModalProps)
             isOpen={true}
             onClose={onClose}
             zIndex={zIndex}
-            className=""
+            className="edit-rule-modal"
+            showBackdrop={true}
             closeOnBackdrop={!isForwardItOpen}
             closeOnEsc={!isForwardItOpen}
             draggable={true}
@@ -167,7 +171,7 @@ function EditRuleModal({ modalId, zIndex, rule, onSuccess }: EditRuleModalProps)
                                 />
                             </button>
                             <h1 className="modal-title modal-title-center" id="editRuleModalLabel">
-                                Edit Filter
+                                Edit Rule
                             </h1>
                             <button
                                 type="button"
@@ -186,53 +190,55 @@ function EditRuleModal({ modalId, zIndex, rule, onSuccess }: EditRuleModalProps)
                                 />
                             </button>
                         </div>
-                        <div className="modal-body" data-simplebar="" data-simplebar-auto-hide="false">
-                            {/* <p className="fs-12-commom mb-3">
-                                <span className="me-1">Matches:</span>
-                                <strong>{matchesSummary(previewConditions, rule.logic)}</strong>
-                            </p>
+                        <div className="modal-body p-0">
+                            <SimpleBar
+                                className="edit-rule-modal-simple-scroll-bar-body"
+                                autoHide={false}
+                                forceVisible="y"
+                            >
+                                <div className="filter-body mb-3">
+                                    <EditRuleConditionsFields
+                                        control={control as unknown as Control<EditRuleFormValues>}
+                                        contacts={contacts}
+                                    />
+                                </div>
 
-                            <h2 className="box-title mb-2">If a message matches</h2> */}
-                            <div className="filter-body mb-3">
-                                <EditRuleConditionsFields
-                                    control={control as unknown as Control<EditRuleFormValues>}
-                                    contacts={contacts}
-                                />
-                            </div>
-
-                            <h2 className="box-title mb-2">Actions</h2>
-                            <div className="filter-body search-create-filter-cmt">
-                                <CreateRuleActionsFields
-                                    control={control as unknown as Control<CreateRuleFormValues>}
-                                    setValue={setValue as unknown as UseFormSetValue<CreateRuleFormValues>}
-                                    moveToFolderChecked={moveToFolderChecked}
-                                    forwardItChecked={forwardItChecked}
-                                    validLabels={validLabels}
-                                    onOpenForwardModal={openForwardItModal}
-                                    idPrefix="edit-filter"
-                                />
-                            </div>
-                            <div className="d-flex align-items-center justify-content-between mt-3">
-                                <button type="button" className="btn-new" onClick={onClose}>
-                                    Cancel
-                                </button>
-                                <SubmitButton
-                                    className="btn-new loading-spinner"
-                                    onClick={handleSubmit(onSubmit, (errors: FieldErrors<EditRuleFormValues>) => {
-                                        if (errors.forwardEmails?.message) {
-                                            showError(String(errors.forwardEmails.message));
-                                            return;
-                                        }
-                                        if (errors.from?.message) {
-                                            showError(String(errors.from.message));
-                                            return;
-                                        }
-                                        showError('Please fix the form errors before saving');
-                                    })}
-                                >
-                                    Save
-                                </SubmitButton>
-                            </div>
+                                <div className="single-header blue-line-aft">
+                                    <h2 className="box-title">Actions</h2>
+                                </div>
+                                <div className="filter-body search-create-filter-cmt">
+                                    <CreateRuleActionsFields
+                                        control={control as unknown as Control<CreateRuleFormValues>}
+                                        setValue={setValue as unknown as UseFormSetValue<CreateRuleFormValues>}
+                                        moveToFolderChecked={moveToFolderChecked}
+                                        forwardItChecked={forwardItChecked}
+                                        validLabels={validLabels}
+                                        onOpenForwardModal={openForwardItModal}
+                                        idPrefix="edit-filter"
+                                    />
+                                </div>
+                            </SimpleBar>
+                        </div>
+                        <div className="compose-btn-box d-flex align-items-center justify-content-between pt-2" style={{ bottom: 'unset' }}>
+                            <button type="button" className="btn-new" onClick={onClose}>
+                                Cancel
+                            </button>
+                            <SubmitButton
+                                className="btn-new loading-spinner"
+                                onClick={handleSubmit(onSubmit, (errors: FieldErrors<EditRuleFormValues>) => {
+                                    if (errors.forwardEmails?.message) {
+                                        showError(String(errors.forwardEmails.message));
+                                        return;
+                                    }
+                                    if (errors.from?.message) {
+                                        showError(String(errors.from.message));
+                                        return;
+                                    }
+                                    showError('Please fix the form errors before saving');
+                                })}
+                            >
+                                Save
+                            </SubmitButton>
                         </div>
                     </div>
                 </div>

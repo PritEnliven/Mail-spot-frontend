@@ -1,131 +1,138 @@
+/* ================================================================
+   SECTION:: SETTINGS PAGE — HEADER & LAYOUT
+   ================================================================ */
+
 .setting-main-section-left .box-title {
-    font-size: 16px;
-    font-weight: 500;
-    color: #212121;
+  font-size: 16px;
+  font-weight: 500;
+  color: #212121;
 }
 
 .single-header {
-    position: relative;
-    padding: 16px 16px 15px 16px;
-    border-bottom: 1px dashed #D0D9DE;    
+  position: relative;
+  padding: 16px 16px 15px 16px;
+  border-bottom: 1px dashed #d0d9de;
 }
 
-
-.single-header .box-title{
-    line-height: 20px;
+.single-header .box-title {
+  line-height: 20px;
 }
 .setting-features {
-    padding: 20px 16px;
-    border-bottom: 1px solid #D0D9DE;
+  padding: 20px 16px;
+  border-bottom: 1px solid #d0d9de;
 }
 
 .single-header.blue-line-aft::after {
-    height: calc(100% - 19px);
+  height: calc(100% - 19px);
 }
 
 .no-search .select2-search {
-    display: none;
+  display: none;
 }
 
+/* ================================================================
+   SECTION:: SIGNATURE TABLE
+   ================================================================ */
+
 .signature-table-new table th {
-    border: 0;
-    padding: 8px 10px;
+  border: 0;
+  padding: 8px 10px;
 }
 
 .setting-th-head {
-    font-size: 12px;
-    font-weight: 500;
-    color: #212121;
-    padding: 0 5px;
-    border-radius: 5px;
-    background-color: #F5F5F5;
-    display: inline-block;
-    height: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: #212121;
+  padding: 0 5px;
+  border-radius: 5px;
+  background-color: #f5f5f5;
+  display: inline-block;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .signature-table-new td {
-    font-size: 13px;
-    font-weight: 400;
-    color: #212121;
-    border: 0;
-    padding: 5px 10px;
-    background-color: transparent;
+  font-size: 13px;
+  font-weight: 400;
+  color: #212121;
+  border: 0;
+  padding: 5px 10px;
+  background-color: transparent;
 }
 
 .Default-label {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1px 6px;
-    border: 1px solid #51B848;
-    border-radius: 50px;
-    background-color: #EBFFE9;
-    font-size: 11px;
-    font-weight: 400;
-    color: #212121;
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border: 1px solid #51b848;
+  border-radius: 50px;
+  background-color: #ebffe9;
+  font-size: 11px;
+  font-weight: 400;
+  color: #212121;
+  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
 }
 
 span.Default-label-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50px;
-    background-color: #51B848;
-    margin: 0 5px 0 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50px;
+  background-color: #51b848;
+  margin: 0 5px 0 0;
 }
 
 .signature-table-new tbody tr {
-    position: relative;
-    border-radius: 5px !important;
-    overflow: hidden;
+  position: relative;
+  border-radius: 5px !important;
+  overflow: hidden;
 }
 
-.signature-table-new tbody tr td{
-    background-color: #F5F5F5;
+.signature-table-new tbody tr td {
+  background-color: #f5f5f5;
 }
 
 .signature-table-new tbody tr:nth-child(odd) td {
-    background-color: #F5F5F5;
+  background-color: #f5f5f5;
 }
 
 .signature-table-new tbody tr:nth-child(even) td {
-    background-color: transparent;
+  background-color: transparent;
 }
 
 .signature-table-new tr td:first-child {
-    border-top-left-radius: 5px;
-    border-bottom-left-radius: 5px;
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
 }
 
 .signature-table-new tr td:last-child {
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 
 .signature-table-new {
-    width: 100%;
-    height: 171px;
-    overflow: auto;
-    margin: 0 0 8px 0;
+  width: 100%;
+  height: 171px;
+  overflow: auto;
+  margin: 0 0 8px 0;
 }
 
 .signature-table-new table thead th:first-child {
-    padding-left: 0;
+  padding-left: 0;
 }
 
 .signature-table-new .name-size {
-    min-width: 279px;
+  min-width: 279px;
 }
 
 .setting-signature-box .setting-features .btn-new {
-    box-shadow: 0px 1px 3px 0px #0000001F;
-    font-size: 12px;
-    font-weight: 600;
-    color: #212121;
-    padding: 5px 12px 5px 5px;
+  box-shadow: 0px 1px 3px 0px #0000001f;
+  font-size: 12px;
+  font-weight: 600;
+  color: #212121;
+  padding: 5px 12px 5px 5px;
 }
 
 /* .setting-signature-box {
@@ -135,208 +142,281 @@ span.Default-label-dot {
     border-radius: 8px;
 } */
 
-.setting-features-sub-box{
-     display: flex;
-    flex-wrap: wrap; 
-    gap: 24px;
-    width: 100%;
-    align-items: flex-start;
+/* ================================================================
+   SECTION:: SIGNATURE EDITOR (CKEditor / Quill inside Settings)
+   ================================================================ */
+
+.setting-features-sub-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  width: 100%;
+  align-items: flex-start;
 }
 
 .signature-table-new .table {
-    margin: 0 0 8px;
+  margin: 0 0 8px;
 }
 .setting-quill {
-    flex: 1; 
-    max-width: 100%
+  flex: 1;
+  max-width: 100%;
 }
-.setting-features .ck-rounded-corners .ck.ck-editor__main>.ck-editor__editable,
-.setting-features .ck.ck-editor__main>.ck-editor__editable.ck-rounded-corners {
-    border-radius: 0;
-   border: 0;
-   box-shadow: none;
-}
-
-.setting-features .ck.ck-reset.ck-editor.ck-rounded-corners{
-     border: 1px solid #D0D9DE;
-     border-right: 0;
-     border-bottom: 0;
-     height: 446px;
+.setting-features
+  .ck-rounded-corners
+  .ck.ck-editor__main
+  > .ck-editor__editable,
+.setting-features
+  .ck.ck-editor__main
+  > .ck-editor__editable.ck-rounded-corners {
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
 }
 
-.setting-features .ck-rounded-corners .ck.ck-editor__main>.ck-editor__editable, .ck.ck-editor__main>.ck-editor__editable.ck-rounded-corners {
-    height: 320px !important;
+.setting-features .ck.ck-reset.ck-editor.ck-rounded-corners {
+  border: 1px solid #d0d9de;
+  border-right: 0;
+  border-bottom: 0;
+  height: 446px;
 }
-.setting-features .ck-rounded-corners .ck-source-editing-area{
-     height: 320px !important;
-    border-radius: 0 0 5px 5px;
-    overflow: auto;
-    border: 0;
-    box-shadow: none;
+
+.setting-features
+  .ck-rounded-corners
+  .ck.ck-editor__main
+  > .ck-editor__editable,
+.ck.ck-editor__main > .ck-editor__editable.ck-rounded-corners {
+  height: 320px !important;
+}
+.setting-features .ck-rounded-corners .ck-source-editing-area {
+  height: 320px !important;
+  border-radius: 0 0 5px 5px;
+  overflow: auto;
+  border: 0;
+  box-shadow: none;
 }
 
 .setting-features .ql-container.ql-snow {
-    border: 0 !important;
-    border-left: 1px solid #D0D9DE !important;
-    border-radius: 0;
-    box-shadow: none;
+  border: 0 !important;
+  border-left: 1px solid #d0d9de !important;
+  border-radius: 0;
+  box-shadow: none;
 }
 
+/* ================================================================
+   SECTION:: TOGGLE SWITCH
+   ================================================================ */
 
-.switch-toggale input[type=checkbox] {
-    height: 0;
-    width: 0;
-    visibility: hidden;
+.switch-toggale input[type="checkbox"] {
+  height: 0;
+  width: 0;
+  visibility: hidden;
 }
 
 .switch-toggale label {
-    cursor: pointer;
-    text-indent: -9999px;
-    width: 34px;
-    height: 20px;
-    background: #E5E8EA;
-    display: block;
-    border-radius: 25px;
-    position: relative;
-    border: 1px solid #BBC0C4;
+  cursor: pointer;
+  text-indent: -9999px;
+  width: 34px;
+  height: 20px;
+  background: #e5e8ea;
+  display: block;
+  border-radius: 25px;
+  position: relative;
+  border: 1px solid #bbc0c4;
 }
 
 .switch-toggale label:after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    transform: translate(0, -50%);
-    left: 3px;
-    width: 14px;
-    height: 14px;
-    background: #88979F;
-    border: 1px solid #717D84;
-    border-radius: 12px;
-    transition: 0.3s;
-    box-shadow: 0px 1px 3px 0px #0000001F;
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translate(0, -50%);
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: #88979f;
+  border: 1px solid #717d84;
+  border-radius: 12px;
+  transition: 0.3s;
+  box-shadow: 0px 1px 3px 0px #0000001f;
 }
 
-.switch-toggale input:checked+label:after {
-    left: calc(100% - 17px);
-    background-color: #51B848;
-    border-color: #36992E;
+.switch-toggale input:checked + label:after {
+  left: calc(100% - 17px);
+  background-color: #51b848;
+  border-color: #36992e;
 }
 
 .switch-toggale label:active:after {
-    width: 14px;
-    height: 14px;
+  width: 14px;
+  height: 14px;
 }
 
 .sub-signatur-setting {
-    margin: 28px 0 0 0;
+  margin: 28px 0 0 0;
 }
 
 .fs-12-commom {
-    color: #212121;
+  color: #212121;
 }
 
-.setting-features .table>thead {
-    top: 0;
-    position: sticky;
-    vertical-align: bottom;
-    z-index: 1;
+.setting-features .table > thead {
+  top: 0;
+  position: sticky;
+  vertical-align: bottom;
+  z-index: 1;
 }
 
 .signature-table-new.key-table-new {
-    width: 75%;
-    max-height: unset;
-    overflow: unset;
+  width: 75%;
+  max-height: unset;
+  overflow: unset;
 }
 
 .Settings-main .mail-application-box {
-    overflow: auto;
-    height: calc(100% - 53px);
-    margin-left: -1px;
-    padding-left: 1px;
+  overflow: auto;
+  height: calc(100% - 53px);
+  margin-left: -1px;
+  padding-left: 1px;
 }
 
 .setting-features:last-child {
-    border-bottom: 0;
+  border-bottom: 0;
 }
 
 .signature-table-new.key-table-new td {
-    vertical-align: middle;
-    height: 30px;
-    padding: 0 10px;
+  vertical-align: middle;
+  height: 30px;
+  padding: 0 10px;
 }
 
+/* ================================================================
+   SECTION:: SHORTCUT KEY EDITOR
+   ================================================================ */
 
 .shortcut-key-change-box {
-    position: relative;
+  position: relative;
 }
 
 .shortcut-name-input {
-    width: 150px;
-    padding: 4px;
-    border: 1px solid #BBC0C4;
-    border-radius: 5px;
-    height: 24px;
-    display: none;
+  width: 150px;
+  padding: 4px;
+  border: 1px solid #bbc0c4;
+  border-radius: 5px;
+  height: 24px;
+  display: none;
 }
 
 .edit-btn-shortcut,
 .save-btn-shortcut {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .save-btn-shortcut {
-    display: none;
+  display: none;
 }
 
 span.shortcut-name-text {
-    border: 1px solid #B0BCC3;
-    padding: 1px 6px;
-    border-radius: 5px;
+  border: 1px solid #b0bcc3;
+  padding: 1px 6px;
+  border-radius: 5px;
 }
 
 .shortcut-name-input:focus {
-    border-color: #0097EF !important;
+  border-color: #0097ef !important;
 }
 
 .shortcut-name-input:focus {
-    box-shadow: 0 0 0 3px #E3F2FB !important;
+  box-shadow: 0 0 0 3px #e3f2fb !important;
 }
 
 :focus-visible {
-    outline: 0;
+  outline: 0;
 }
 
 .Default-size {
-    min-width: 200px;
+  min-width: 200px;
 }
 
 .signature-table-new tr.blue-line-aft::after {
-    display: none;
+  display: none;
 }
 
 .signature-table-new tr.blue-line-aft.active::after {
-    display: block;
+  display: block;
 }
 
 .signature-table-new tr:hover td {
-    cursor: pointer;
-    background-color: #E5E8EA !important;
+  cursor: pointer;
+  background-color: #e5e8ea !important;
 }
 
+/* ================================================================
+   SECTION:: FILTER BLOCKED BOX (rule/filter match info card)
+   ================================================================ */
+
 .single-filter-blocked-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border: 1px solid #D0D9DE;
-    border-radius: 5px;
-    padding: 8px 15px;
-    margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #d0d9de;
+  border-radius: 5px;
+  padding: 8px 15px;
+  margin: 0 0 16px 0;
+}
+.single-filter-blocked-box > .d-flex.justify-content-between {
+  gap: 12px;
+}
+.single-filter-blocked-box > .d-flex.justify-content-between > .d-block {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.single-filter-blocked-box .hover-link {
+  flex-shrink: 0;
+}
+
+.single-filter-blocked-box .interactive-icon {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  flex-shrink: 0;
 }
 
 .single-filter-blocked-box:last-child {
-    margin: 0;
+  margin: 0;
 }
-.Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content{
-    border-radius: 0 !important;
-    margin-top: -2px;
+.Settings-main
+  .setting-quill
+  .ck.ck-editor__top
+  .ck-sticky-panel
+  .ck-sticky-panel__content {
+  border-radius: 0 !important;
+  margin-top: -2px;
+}
+.Settings-main .mobile-search-btn{
+  display: none !important;
+}
+/* Edit Rule Modal */
+
+#editRuleModal .single-header {
+  padding: 8px 0 12px;
+  margin: 4px 0 12px;
+}
+
+#editRuleModal .single-header .box-title {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  max-width: none;
+  color: #212121;
+}
+
+#editRuleModal .blue-line-aft::after{
+  left: -16px;
+  top: 44%;
+}
+
+.edit-rule-modal-simple-scroll-bar-body {
+  padding: 16px;
+  max-height: calc(100dvh - 260px);
 }

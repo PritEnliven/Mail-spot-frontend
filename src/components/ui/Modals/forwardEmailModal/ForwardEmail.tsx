@@ -13,6 +13,7 @@ import { useMailUI } from '@context/MailUIContext';
 import GuestTag from '@components/ui/calendar/GuestTag';
 import { copyEmailToClipBoard } from "@utils/generalUtil";
 import { parseEmailAddress } from "@utils/emailUtil";
+import { useEffect } from "react";
 import SimpleBar from "simplebar-react";
 
 interface ForwardEmailProps {
@@ -25,6 +26,10 @@ interface ForwardEmailProps {
 function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: ForwardEmailProps) {
 
     const { closeModal } = useMailUI();
+    const normalizedEmails = (initialForwardEmailList || [])
+        .map((item) => parseEmailAddress(String(item)).email || String(item).trim())
+        .filter((email) => email.includes('@'));
+
     const {
         control,
         handleSubmit,
@@ -33,11 +38,15 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
         resolver: zodResolver(forwardEmailSchema),
         mode: "onSubmit",
         defaultValues: {
-            forwardToEmailList: initialForwardEmailList || [],
+            forwardToEmailList: normalizedEmails,
         },
     });
 
     const formValues = useWatch({ control });
+
+    useEffect(() => {
+        reset({ forwardToEmailList: normalizedEmails });
+    }, [normalizedEmails.join(','), reset]);
 
     const onSubmit = async (data: forwardEmailFormValues) => {
         await onConfirm(data);
@@ -64,8 +73,7 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
             width="min(100vw, 498px)"
         >
             <div className="forward-it-modal modal-center-draggable">
-                <div className="modal-dialog modal-dialog-centered ">
-                    
+                <div className="modal-dialog modal-dialog-centered ">                 
                     <div className="modal-content">
                         <div className="modal-header drag-handle">
                             <button className="expand-btn btn hover-link icon-hover-effect drag-handle-btn">
@@ -113,6 +121,7 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
                                                 placeholder="Select or type to add"
                                                 isMulti={true}
                                                 isModal={true}
+                                                isEmail={true}
                                             />
                                         )}
                                     />
@@ -157,4 +166,5 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
         </BaseModal>
     )
 }
+
 export default ForwardEmail;

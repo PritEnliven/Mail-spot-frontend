@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { useMailUI } from '../../context/index';
 const ComposeEmailModal = lazy(() => import('@features/compose/ComposeEmailModal'));
 const ConfirmDelete = lazy(() => import('./Modals/ConfirmDelete'));
@@ -23,160 +23,165 @@ function ModalRoot() {
     if (activeModals.length === 0) return null;
 
     return (
-        <Suspense fallback={null}>
+        <>
             {activeModals.map((modal, index) => {
                 const zIndex = BASE_Z_INDEX + index * Z_INDEX_STEP;
+                let content: ReactNode = null;
 
                 switch (modal.type) {
                     case 'compose':
-                        return (
-                            <Suspense key={modal.id} fallback={null}>
-                                <ComposeEmailModal
-                                    key={modal.id}
-                                    modalId={modal.id}
-                                    zIndex={zIndex}
-                                    {...modal.props}
-                                />
-                            </Suspense>
+                        content = (
+                            <ComposeEmailModal
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
                         );
+                        break;
 
                     case 'confirmDelete':
-                        return (
+                        content = (
                             <ConfirmDelete
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
                         );
+                        break;
 
                     case 'schedule':
-                        return (
-                            <Suspense key={modal.id} fallback={null}>
-                                <Schedule
-                                    key={modal.id}
-                                    modalId={modal.id}
-                                    zIndex={zIndex}
-                                    {...modal.props}
-                                />
-                            </Suspense>
+                        content = (
+                            <Schedule
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
                         );
+                        break;
 
                     case 'calendarEvent':
-                        return (
+                        content = (
                             <CalendarEventModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
                         );
+                        break;
 
                     case 'eventInfo':
-                        return (
+                        content = (
                             <EventInfoModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     case 'recurrenceModal':
-                        return (
+                        content = (
                             <EditRecurringModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     case 'customRecurrence':
-                        return (
+                        content = (
                             <CustomRecurrenceModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     case 'createCustomFolder':
-                        return (
+                        content = (
                             <CreateCustomFolderModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     case 'changeImapSmtpPassword':
-                        return (
+                        content = (
                             <ChangeImapSmtpPasswordModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     case 'changePassword':
-                        return (
+                        content = (
                             <ChangePassword
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-
-                        )
+                        );
+                        break;
 
                     case 'createSignature':
-                        return (
+                        content = (
                             <SignatureModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
+
                     case 'forwardIt':
-                        return (
+                        content = (
                             <ForwardEmail
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     case 'moveToFolder':
-                        return (
+                        content = (
                             <MoveToFolderModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     case 'editRule':
-                        return (
+                        content = (
                             <EditRuleModal
-                                key={modal.id}
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}
                             />
-                        )
+                        );
+                        break;
 
                     default:
-                        return null;
+                        content = null;
                 }
+
+                if (!content) return null;
+
+                return (
+                    <Suspense key={modal.id} fallback={null}>
+                        {content}
+                    </Suspense>
+                );
             })}
-        </Suspense>
+        </>
     );
 }
 
