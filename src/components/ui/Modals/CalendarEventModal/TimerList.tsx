@@ -228,11 +228,11 @@ function CustomTimeSelector({
   };
 
   return (
-    <div ref={containerRef} className={`position-relative ${className}`}>
+    <div ref={containerRef} className="position-relative">
       <input
         ref={inputRef}
         type="text"
-        className="form-control"
+        className={`form-control ${className}`.trim()}
         max={4}
         placeholder={placeholder}
         value={inputValue}

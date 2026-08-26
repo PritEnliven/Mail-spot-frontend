@@ -26,7 +26,9 @@ export const useCalendarEventForm = () => {
             sendMailToGuest: false,
             eventTimeZone: 'Asia/Kolkata',
         },
-        mode: 'onChange',
+        mode: 'onSubmit',
+        reValidateMode: 'onChange',
+        shouldFocusError: true,
     });
 
     const getFormData = () => form.getValues();

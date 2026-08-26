@@ -623,7 +623,7 @@ export const AddAccountModal = ({
                           </div>
                         </div>
 
-                        <div className="form-group automatically-inf-details">
+                        <div className="form-group automatically-inf-details"> 
                           <label className="control-label">SMTP Security Type</label>
                           <div className="input-icon-add">
                             <Controller

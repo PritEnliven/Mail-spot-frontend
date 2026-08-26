@@ -541,15 +541,35 @@ hr {
 }
 
 
-.register .power-add {
+/* .register .power-add {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-direction: column;
-}
+} */
 
 .register .power-by-box {
     padding: 20px;
+}
+/* .login-box-main-wrapper-register{
+    height: calc(100dvh - 80px);
+} */
+
+.login-main-right-section{
+     height: calc(100dvh - 211px);
+     
+}
+
+/* .register .login-main-right-section{
+    height: calc(100dvh - 211px);
+    align-items: center;
+     overflow: auto;
+} */
+.login-box-main{
+    max-height: 500px;
+    margin: auto !important;
+    display: flex;
+    flex-direction: column;
 }
 
 @media (max-width: 575.98px) {

@@ -13,6 +13,7 @@ import ColorSingleSelect from "@components/ui/form/Select2ColorOption";
 import Select2Wrapper from "@components/ui/form/Select2Wrapper";
 import SubmitButton from "@components/ui/form/SubmitButton";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
+import { showSuccess } from "@components/ui/toast/toastNotification";
 import TimerList from "@components/ui/Modals/CalendarEventModal/TimerList";
 import { useFlatpickrMonthDropdown } from "@components/ui/useFlatpickrMonthDropdown";
 import { useCalendar } from "@context/CalendarContext";
@@ -30,9 +31,10 @@ import { formatDate, formatTime24HrFrom12HrString, parseDateForFlatpickr, TimeFo
 import { filterGuestByEmail, normalizeGuests } from "@utils/guestUtil";
 import { useEffect, useRef } from "react";
 import Flatpickr from 'react-flatpickr';
-import { Controller, useWatch } from "react-hook-form";
+import { Controller, useWatch, type FieldErrors } from "react-hook-form";
 import SimpleBar from 'simplebar-react';
 import { colorListConfi } from "../../../../config/fullCalendar.config";
+import type { CalendarEventModalFormValues } from "./calendarEventModal.schema";
 
 const timezoneOptions = [
     { value: "UTC", label: "GMT +00:00 — UTC" },
@@ -111,6 +113,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         watch,
         setValue,
         getValues,
+        clearErrors,
+        formState: { errors },
     } = useCalendarEventForm();
 
     useEffect(() => {
@@ -246,7 +250,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         return isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[0];
     };
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: CalendarEventModalFormValues) => {
         const recurrencePayloadString = buildPayload(data.recurrence);
 
         // Transform form data to match backend requirements
@@ -340,10 +344,14 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         // Handle form submission here
         const response = await createEvent(payload);
         if (response.statusCode === 200) {
-            // Refresh events from context
+            showSuccess('Event created successfully');
             getAllEventList();
             onClose();
         }
+    };
+
+    const handleInvalidSubmit = (formErrors: FieldErrors<CalendarEventModalFormValues>) => {
+        console.log('SUBMIT BLOCKED BY ERRORS:', formErrors);
     };
 
     const timeOptions15 = generateTimeOptions({ interval: 15 });
@@ -428,6 +436,11 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                 forceVisible="y"
                             >
                                 <div className="calendar-event-modal-body p-16 pb-0">
+                                    <form
+                                        id="calendarEventForm"
+                                        noValidate
+                                        onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)}
+                                    >
                                     <div className="d-block">
                                         <div className="form-group m-0 mb-2 d-flex align-items-center justify-content-between">
                                             <label className="control-label mb-0">Title</label>
@@ -441,14 +454,18 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                         render={({ field }) => (
                                                             <input
                                                                 type="text"
-                                                                className="form-control"
+                                                                className={`form-control ${errors.title ? 'is-invalid' : ''}`}
                                                                 id="title"
+                                                                placeholder="Add title"
                                                                 {...field}
                                                             />
                                                         )}
                                                     />
                                                     <img src={addTitleIcon} alt="" className="input-icon-1" />
                                                 </div>
+                                                {errors.title && (
+                                                    <div className="invalid-feedback d-block">{errors.title.message}</div>
+                                                )}
                                             </div>
                                             <div className="form-group mb-3 form-row color-pik select2-color-pick color-pik">
                                                 <div className="input-control">
@@ -509,7 +526,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                             disableMobile: true,
                                                                             onReady: (_, __, instance) => mountMonthDropdown(instance)
                                                                         }}
-                                                                        className="form-control DateRangePickerStaticTop datepickermodal"
+                                                                        className={`form-control DateRangePickerStaticTop datepickermodal ${errors.eventStartDate ? 'is-invalid' : ''}`}
                                                                         placeholder="Select date range"
                                                                     />
                                                                 )}
@@ -520,6 +537,9 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                 className="input-icon-1"
                                                             />
                                                         </div>
+                                                        {errors.eventStartDate && (
+                                                            <div className="invalid-feedback d-block">{errors.eventStartDate.message}</div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className={`col-md-6 all-day-time-show-hid event-time-field ${watch('allDayCheckbox') ? 'd-none' : ''}`} id="eventStartTimeSection">
@@ -534,11 +554,15 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                         value={field.value || ''}
                                                                         onChange={field.onChange}
                                                                         options={timeOptions15}
+                                                                        className={errors.eventStartTime ? 'is-invalid' : ''}
                                                                     />
                                                                 )}
                                                             />
                                                             <img src={timeIcon} alt="" className="input-icon-1" />
                                                         </div>
+                                                        {errors.eventStartTime && (
+                                                            <div className="invalid-feedback d-block">{errors.eventStartTime.message}</div>
+                                                        )}
                                                         <div className="custom-time-dropdown-container" id="eventStartTimeDropdown"></div>
                                                     </div>
                                                 </div>
@@ -574,7 +598,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                                 onReady: (_, __, instance) => mountMonthDropdown(instance)
 
                                                                             }}
-                                                                            className="form-control DateRangePickerStaticTop datepickermodal"
+                                                                            className={`form-control DateRangePickerStaticTop datepickermodal ${errors.eventEndDate ? 'is-invalid' : ''}`}
                                                                             placeholder="Select enddate"
                                                                         />
                                                                     );
@@ -582,6 +606,9 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                             />
                                                             <img src={dateIcon} alt="" className="input-icon-1" />
                                                         </div>
+                                                        {errors.eventEndDate && (
+                                                            <div className="invalid-feedback d-block">{errors.eventEndDate.message}</div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className={`col-md-6 all-day-time-show-hid event-time-field ${watch('allDayCheckbox') ? 'd-none' : ''}`} id="eventEndTimeSection">
@@ -597,11 +624,15 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                         onChange={field.onChange}
                                                                         options={timeOptions15}
                                                                         minSequence={endTimeMinSequence}
+                                                                        className={errors.eventEndTime ? 'is-invalid' : ''}
                                                                     />
                                                                 )}
                                                             />
                                                             <img src={timeIcon} alt="" className="input-icon-1" />
                                                         </div>
+                                                        {errors.eventEndTime && (
+                                                            <div className="invalid-feedback d-block">{errors.eventEndTime.message}</div>
+                                                        )}
                                                         <div className="custom-time-dropdown-container" id="eventEndTimeDropdown"></div>
                                                     </div>
                                                 </div>
@@ -670,7 +701,12 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                         type="checkbox"
                                                                         id="all-day-checkbox"
                                                                         checked={field.value}
-                                                                        onChange={field.onChange}
+                                                                        onChange={(e) => {
+                                                                            field.onChange(e.target.checked);
+                                                                            if (e.target.checked) {
+                                                                                clearErrors(['eventStartTime', 'eventEndTime']);
+                                                                            }
+                                                                        }}
                                                                     />
                                                                 )}
                                                             />
@@ -869,14 +905,13 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                             </div>
                                         </div>
                                     </div>
+                                    </form>
                                 </div>
                             </SimpleBar>
                             <div className="compose-btn-box d-flex align-items-center justify-content-between">
                                 <button type="button" className="btn-new" onClick={onClose}> Cancel </button>
                                 <SubmitButton className="btn-new btn-new-bg"
-                                    onClick={handleSubmit(onSubmit, (errors: any) => {
-                                        console.log('SUBMIT BLOCKED BY ERRORS:', errors);
-                                    })}
+                                    onClick={handleSubmit(onSubmit, handleInvalidSubmit)}
                                 >
                                     Save
                                 </SubmitButton>

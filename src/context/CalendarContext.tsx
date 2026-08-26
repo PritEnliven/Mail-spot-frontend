@@ -1,3 +1,4 @@
+import type { Calendar } from '@fullcalendar/core'
 import FullCalendar from '@fullcalendar/react';
 import type { CalendarEvent, EventDetail } from '@models/CalendarModels';
 import type { ApiResponse } from '@models/Response';
@@ -33,7 +34,7 @@ interface CalendarContextType {
     // Event management
     events: CalendarEvent[]
     setEvents: (events: CalendarEvent[]) => void
-    getAllEventList: () => Promise<void>,
+    getAllEventList: (calendarApi?: Calendar) => Promise<void>,
     calendarAllSearchedEvents: CalendarEvent[],
     setCalendarAllSearchedEvents: (events: CalendarEvent[]) => void,
     isCalendarAllSearchActive: boolean,
@@ -87,12 +88,12 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         setIsSearchResultDropdownOpen(false)
     }, [])
 
-    const getAllEventList = useCallback(async () => {
-        const calendarApi = mainCalendarRef.current?.getApi()
-        if (!calendarApi) return
+    const getAllEventList = useCallback(async (calendarApi?: Calendar) => {
+        const api = calendarApi ?? mainCalendarRef.current?.getApi()
+        if (!api) return
 
-        const start = calendarApi.view.activeStart?.toISOString()
-        const end = calendarApi.view.activeEnd?.toISOString()
+        const start = api.view.activeStart?.toISOString()
+        const end = api.view.activeEnd?.toISOString()
 
         if (!start || !end) return
 
@@ -102,10 +103,10 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
                 const formattedEvents = formatCalendarEvents(response.data)
                 setEvents(formattedEvents)
 
-                const existingSources = calendarApi.getEventSources()
+                const existingSources = api.getEventSources()
                 existingSources.forEach(source => source.remove())
 
-                calendarApi.addEventSource(formattedEvents)
+                api.addEventSource(formattedEvents)
             }
         } catch (error) {
             console.error('Failed to fetch events:', error)

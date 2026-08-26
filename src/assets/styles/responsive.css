@@ -1271,15 +1271,18 @@
 
   /* -------------------- Flatpickr Calendar -------------------- */
   body .flatpickr-calendar {
+     position: fixed !important;
     display: none;
     z-index: 99999;
     bottom: -100%;
-    top: unset !important;
+    top:unset !important;
+    right: 0 !important;
     left: 0 !important;
+    max-height: min(90dvh, calc(100dvh - env(safe-area-inset-bottom, 0px))) !important;
     width: 100%;
     border-radius: 18px 18px 0 0;
     border: 0;
-    transition: all 0.4s ease-in-out;
+    transition: all 0.4s ease-in-out;/
   }
 
   body .flatpickr-calendar.open {
@@ -1299,28 +1302,6 @@
   body .flatpickr-innerContainer {
     justify-content: center;
   }
-  /* body .flatpickr-months .flatpickr-prev-month,
-body .flatpickr-months .flatpickr-next-month {
-  background-size: 24px;}
-  body .flatpickr-months{
-    height: 60px;
-    position: relative;
-  }
-  body .flatpickr-current-month {
-    padding: 5px 0 0 0;
-    height:60px;
-}
-body .flatpickr-months .flatpickr-month{
-  height: 60px;
-}
-.flatpickr-months .flatpickr-prev-month.flatpickr-prev-month, .flatpickr-months .flatpickr-next-month.flatpickr-prev-month {
-    top: 44%;
-    transform: translate(0, -50%);
-}
-.flatpickr-months .flatpickr-prev-month.flatpickr-next-month, .flatpickr-months .flatpickr-next-month.flatpickr-next-month{
-   top: 44%;
-    transform: translate(0, -50%);
-} */
 
   /* -------------------- Settings -------------------- */
   .setting-features {
@@ -1330,6 +1311,17 @@ body .flatpickr-months .flatpickr-month{
   #my-tooltip {
     display: none !important;
   }
+
+
+  /* Calender Event Modal */
+  .CalendarModalSimpleBar {
+    max-height: calc(100vh - 200px);
+    min-height: 200px;
+}
+.eventInfoModalSimpleBar {
+    max-height: calc(100vh - 200px);
+    min-height: 200px;
+}
 }
 
 /* ==========================================================================

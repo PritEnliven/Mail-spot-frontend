@@ -215,7 +215,7 @@ function CalendarPage() {
         const start = info.view.activeStart?.toISOString() || ''
         const end = info.view.activeEnd?.toISOString() || ''
         setCurrentDateRange({ start, end })
-        getAllEventList()
+        getAllEventList(info.view.calendar)
         setIsCalendarReady(true)
     }, [getAllEventList, setCalendarTitle, setCalendarView])
 

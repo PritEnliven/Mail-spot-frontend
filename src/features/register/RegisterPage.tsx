@@ -243,7 +243,7 @@ const RegisterPage = () => {
         </div>
 
         <div className="col-md-6 p-0 position-relative overflow-auto power-add h-100vh">
-          <div>
+          <div className='login-box-main-wrapper-register'>
             <div className="progress-line-wrapper">
               <div className={`progress-segment ${getProgressClass(1)}`} id="step1"></div>
               <div className={`progress-segment ${getProgressClass(2)}`} id="step2"></div>
@@ -260,7 +260,7 @@ const RegisterPage = () => {
                 </ol>
               </nav>
             </div>
-
+             
             <div className="login-main-right-section">
               <div className="login-box-main">
                 <div className="d-flex align-items-center justify-content-between brand-logo-login">
@@ -366,8 +366,7 @@ const RegisterPage = () => {
                                 />
                               )}
                             />
-                            <img src={focusedField === "userPassword" ? lockIconfocuse : lockIcon} alt={focusedField === "name" ? "Hide" : "Show"} className="input-icon-1"
-                            />
+                            <img src={focusedField === "userPassword" ? lockIconfocuse : lockIcon} alt={focusedField === "name" ? "Hide" : "Show"} className="input-icon-1"/>
                             <img
                               src={showPassword ? passwordShowIcon : passwordHideIcon}
                               alt={showPassword ? "Hide password" : "Show password"}
@@ -838,6 +837,7 @@ const RegisterPage = () => {
             </span>
           </div>
         </div>
+
       </div>
     </div>
   );
