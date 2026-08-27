@@ -138,7 +138,7 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
             type="button"
             className={`btn-new toggle-recipients-btn flex-shrink-0 ${isCcBccExpanded ? 'is-expanded' : ''}`}
             onClick={toggleCcBcc}
-            aria-label={isCcBccExpanded ? "Hide Cc/Bcc" : "Show Cc/Bcc"}
+            aria-label={ isCcBccExpanded ? "Hide Cc/Bcc" : "Show Cc/Bcc" }
         >
             <InteractiveIcon
                 defaultIcon={isCcBccExpanded ? chevronUpIcon : chevronDownIcon}
@@ -179,14 +179,14 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
         }
     };
 
-    const handleDeleteClick = (e: React.MouseEvent) => {
+    const handleDeleteClick = (e: React.MouseEvent) => {            
         e.preventDefault();
         e.stopPropagation();
         setShowMoreMenu(false);
         openModal('confirmDelete', {
             messageIds: [email.messageId],
             onConfirm: () => handleDeleteConfirm(),
-        });
+        })
     };
 
     const replyActionsEl = isThreadItemOpen ? (

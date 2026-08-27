@@ -24,9 +24,12 @@ const HIGHLIGHT_STYLE = `
     border-radius: 2px;
   }
 
-  .quoted-content {
-    margin-top: 8px;
+    .quoted-content {
+      margin-top: 8px !important;
+      font-size:18px !important;
+      background-color: #F5F5F5 !important;
   }
+ 
 `;
 
 function EmailBody({ html, searchTerm }: EmailBodyProps) {

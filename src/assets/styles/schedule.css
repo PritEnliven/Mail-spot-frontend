@@ -15,3 +15,8 @@
 .schedule-message-box .mail-received-date{
     color: #0073B6;
 }
+.schedule-info-box-details{
+    display: flex;
+    align-items: center;
+    
+}

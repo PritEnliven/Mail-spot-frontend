@@ -491,7 +491,8 @@
   .calendar-body-box {
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 116px);
+    height: calc(100dvh - 115px);
+    min-height: unset !important;
     overflow: hidden;
   }
 
@@ -1315,12 +1316,19 @@
 
   /* Calender Event Modal */
   .CalendarModalSimpleBar {
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 100px);
     min-height: 200px;
 }
 .eventInfoModalSimpleBar {
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 100px);
     min-height: 200px;
+}
+
+
+/* ---------------------------Scheduled---------------------------- */
+.schedule-info-box-details{
+    display: inline-block;
+    
 }
 }
 

@@ -38,6 +38,7 @@ interface editEventPayload {
     attachments?: any;
     eventEditType?: string;
     editEventDate?: Date;
+    sendMailToGuest: boolean;
     type: string;
 }
 

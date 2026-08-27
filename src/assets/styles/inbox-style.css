@@ -1105,6 +1105,7 @@ div.accordion-button.custom-toggle-btn
   border-radius: 4px;
   opacity: 0.6;
 }
+
 /* ---------- Footer buttons ---------- */
 .email-detail-skeleton__footer {
   display: flex;
@@ -1112,29 +1113,17 @@ div.accordion-button.custom-toggle-btn
   padding: 16px 16px 16px 0;
   border-top: 1px solid #e7e8ea;
 }
+
 .email-detail-skeleton__footer-btn {
   height: 32px;
   width: 100px;
   border-radius: 4px;
 }
 
-/* ============================================================
-   9. LEGACY / UNUSED (kept commented out from original file)
-   ============================================================ */
-/*
-.thread { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); }
-.thread-header { display: flex; padding: 10px; align-items: center; }
-.avatar { width: 32px; height: 32px; border-radius: 50%; background-color: #cce5ff; color: #007bff; font-weight: bold; display: flex; align-items: center; justify-content: center; margin-right: 10px; }
-.header-content { flex-grow: 1; }
-.sender-name { font-weight: bold; font-size: 14px; }
-.sender-email { font-size: 12px; color: gray; }
-.preview-text { font-size: 13px; color: #333; margin-top: 4px; }
-.thread-body { display: none; border-top: 1px solid #eee; padding: 10px 15px; font-size: 14px; }
-.thread.active .thread-body { display: block; }
-.thread .meta { font-size: 12px; color: #666; margin-bottom: 10px; }
-.to-line { margin-bottom: 8px; }
+/* --------- Quoted Content-------- */
+  .quoted-content {
+    margin-top: 0 !important;
+    padding: 0 !important;
 
-.reply-button { margin-top: 10px; padding: 5px 10px; background-color: #e9ecef; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
-.time { margin-left: auto; font-size: 12px; color: #666; }
-.top-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #eee; }
-*/
+    background-color: red !important;
+  }

@@ -5743,6 +5743,7 @@ nav#navbarList.nav-collepse::after {
   height: 30px;
   width: 183px !important;
   min-width: 183px;
+  z-index: 24;
 }
 
 .nav-collepse #dropdown-portal .dropdown-menu.show {

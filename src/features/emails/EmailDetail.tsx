@@ -35,6 +35,7 @@ import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
 import { useSocketEvent } from "@hooks/useSocket";
 import { useSettings } from "@context/SettingsContext";
+import scheduledIcon from "@images/scheduled-icon.svg"
 
 // Lazy loaded components
 const ThreadEmailItem = lazy(() => import("@components/ui/threadEmail/ThreadEmailItem"));
@@ -623,10 +624,12 @@ const EmailDetail = ({ email }: Props) => {
 
             {isScheduleBox && isRootExpanded && (
                 <div className="schedule-info-box">
-                    <div className="d-flex align-items-center">
-                        <img src="images/scheduled-icon.svg" alt="" className="me-3" />
-                        <p className="m-0 me-1">Send scheduled for</p>
-                        <span>{formatDate(email.date, TimeFormat.SCHEDULE_DATE)}</span>
+                    <div className="d-flex align-items-center ">
+                        <img src={scheduledIcon} alt="" className="me-2" />
+                        <div className="schedule-info-box-details">
+                            <p className="m-0 me-1">Send scheduled for</p>
+                            <span>{formatDate(email.date, TimeFormat.SCHEDULE_DATE)}</span>
+                        </div>
                     </div>
                     <div className="d-flex align-items-center">
                         <a href="#" className="hover-link d-flex align-items-center me-2" onClick={() => handleEditScheduleEmail(email.id)}>

@@ -190,7 +190,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                     : (props.recurrence?.type ?? "doesNotRepeat"),
                 sendMailToGuest: props.sendMailToGuest ?? false
             });
-        } else if (props?.date) {
+        } 
+        else if (props?.date) {
             reset({
                 title: '',
                 eventColor: '#FF8A00',
@@ -300,6 +301,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                 attachments: data.attachments || [],
                 editEventDate,
                 eventEditType: '',
+                sendMailToGuest: data.sendMailToGuest,
                 type: "update"
             };
 

@@ -177,8 +177,6 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                 <div id="email-signature">
                 ${defaultSignature}
                 </div>
-                <p><br></p>
-                <p><br></p>
                 `;
 
         const quotedIndex = currentBody.indexOf('id="quoted-message"');

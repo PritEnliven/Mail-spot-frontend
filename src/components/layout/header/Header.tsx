@@ -39,6 +39,7 @@ import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { verifyBoxName } from "@utils/emailUtil";
 import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
 import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
+import AccountSwitcher from "@components/ui/AccountSwitcher/AccountSwitcher";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dropdown } from 'react-bootstrap';
 import { Controller } from 'react-hook-form';
@@ -51,7 +52,6 @@ const Flatpickr = lazy(() => import('react-flatpickr'));
 const SearchEmailRow = lazy(() => import("./SearchEmailRow"));
 const CalendarHeader = lazy(() => import("@components/ui/calendar/calendarHeader/CalendarHeader"));
 const CreateRuleForm = lazy(() => import("@components/layout/header/createRuleForm/CreateRuleForm"));
-const AccountSwitcher = lazy(() => import("@components/ui/AccountSwitcher/AccountSwitcher"));
 
 const CalendarHeaderFallback = ({ isDesktop, title }: { isDesktop: boolean; title: string }) => {
     if (!isDesktop) {
@@ -286,7 +286,8 @@ const Header = () => {
                         setSearchResults(response.data.emailList || []);
                     }
                 }
-            } catch (err: any) {
+            } 
+            catch (err: any) {
                 if (err.name !== "AbortError") {
                     console.error("Search failed:", err);
                 }
@@ -298,7 +299,6 @@ const Header = () => {
         return () => controller.abort();
         // }, [debouncedSearchText, searchText, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
     }, [debouncedSearchText]);
-
 
     const toggleSidebarHandler = () => {
         if (isMobile) {
@@ -384,6 +384,7 @@ const Header = () => {
         }
 
         let dateRangeStr: string | undefined = undefined;
+
         if (payload.dateRange && Array.isArray(payload.dateRange)) {
             // Local calendar dates only — toISOString() shifts back one day in IST
             const dates = (payload.dateRange as unknown[])
@@ -452,8 +453,8 @@ const Header = () => {
     };
 
     const handleCreateRuleModalReset = () => {
-        setIsCreateRuleModalOpen(false);
-        setIsFilterDropdownOpen(true);
+        setIsCreateRuleModalOpen(false);                                                 
+        setIsFilterDropdownOpen(true); 
     };
 
     const executeSearchFromQuery = async () => {
@@ -471,7 +472,6 @@ const Header = () => {
         setSearchText(trimmed);
         prevDebouncedSearchRef.current = trimmed;
         allowSearchDropdownRef.current = false;
-
         setIsSearchResultDropdownOpen(false);
         setIsFilterDropdownOpen(false);
 
@@ -540,6 +540,7 @@ const Header = () => {
             if (data.isScheduled) {
                 data.emailList.isSchedule = true;
             }
+
             if (isSearch) {
                 data.emailList.isSearchEmail = true;
                 setSearchTerm(searchText);
@@ -1201,9 +1202,7 @@ const Header = () => {
                                         id="profileEmail1"> {profileEmail}</span>
                                 </div>
                             </div>
-                            <Suspense fallback={null}>
-                                <AccountSwitcher onAccountSwitch={() => setIsProfileOpen(false)} />
-                            </Suspense>
+                            <AccountSwitcher onAccountSwitch={() => setIsProfileOpen(false)} />
                             <ul className="profile-link-list">
                                 <li className="profile-link-items">
                                     <a href="#" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>
