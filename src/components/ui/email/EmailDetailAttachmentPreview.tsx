@@ -11,6 +11,7 @@ import codeIcon from "@images/code-image.png";
 import emlIcon from "@images/eml-image.png";
 import defaultIcon from "@images/no-image.png";
 import AttachmentLoadingPlaceholder from "./AttachmentLoadingPlaceholder";
+import { isIcsFilename } from "@utils/calendarInviteUtil";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -26,6 +27,7 @@ interface Props {
     attachments: Attachment[];
     messageId: string;
     remainingAttachments?: number;
+    hideIcsAttachments?: boolean;
     onDownloadAttachment: (downloadType: string, customFileName: string, fileName: string, messageid: string) => void;
     onOpenAttachment: (customFileName: string, filename: string, isEml: boolean) => void;
 }
@@ -36,15 +38,19 @@ const EmailDetailAttachmentPreview = ({
     attachments,
     messageId,
     remainingAttachments = 0,
+    hideIcsAttachments = false,
     onDownloadAttachment,
     onOpenAttachment
 }: Props) => {
     const extraPendingCount = Math.max(0, remainingAttachments - attachments.length);
-    const allAttachmentsReady = attachments.every(isAttachmentReady) && extraPendingCount === 0;
+    const displayAttachments = hideIcsAttachments
+        ? attachments.filter((attachment) => !isIcsFilename(attachment.filename))
+        : attachments;
+    const allAttachmentsReady = displayAttachments.every(isAttachmentReady) && extraPendingCount === 0;
 
     // Cache preview URLs to prevent continuous requests
     const attachmentPreviews = useMemo(() => {
-        return attachments
+        return displayAttachments
             .filter(isAttachmentReady)
             .map((attachment) => {
                 const extension = attachment.filename.split('.').pop()?.toLowerCase();
@@ -61,9 +67,9 @@ const EmailDetailAttachmentPreview = ({
                         : getAttachmentIcon(attachment.filename)
                 };
             });
-    }, [attachments]);
+    }, [displayAttachments]);
 
-    const hasAttachments = attachments.length > 0 || remainingAttachments > 0;
+    const hasAttachments = displayAttachments.length > 0 || extraPendingCount > 0;
     if (!hasAttachments) return null;
 
     function getAttachmentIcon(filename: string) {
@@ -96,8 +102,8 @@ const EmailDetailAttachmentPreview = ({
         return iconMap[extension] || defaultIcon;
     }
 
-    const totalAttachmentSize = attachments.reduce((total, attachment) => total + attachment.size, 0);
-    const totalCount = attachments.length + extraPendingCount;
+    const totalAttachmentSize = displayAttachments.reduce((total, attachment) => total + attachment.size, 0);
+    const totalCount = displayAttachments.length + extraPendingCount;
 
     return (
         <div className="application-attachments-box no-border">
@@ -132,7 +138,7 @@ const EmailDetailAttachmentPreview = ({
             </div>
 
             <div className="attachments-pdf-box-main d-flex align-items-start flex-wrap">
-                {attachments.map((attachment, index) => {
+                {displayAttachments.map((attachment, index) => {
                     if (!isAttachmentReady(attachment)) {
                         return (
                             <AttachmentLoadingPlaceholder
@@ -187,7 +193,9 @@ const EmailDetailAttachmentPreview = ({
                             </div>
                         </div>
                         <div>
-                            <p className="pdf-name m-0">{attachment.filename}</p>
+                            <p className="pdf-name m-0">
+                                {isIcsFilename(attachment.filename) ? 'Calendar invite' : attachment.filename}
+                            </p>
                             <span className="space-size">{attachment.size < 1024 * 1024
                                 ? `${(attachment.size / 1024).toFixed(2)} KB`
                                 : `${(attachment.size / (1024 * 1024)).toFixed(2)} MB`}</span>

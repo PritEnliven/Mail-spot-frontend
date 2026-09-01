@@ -6,7 +6,7 @@ import { useContacts, useMailUI } from '@context/index';
 
 const MobileComposeFab = () => {
     const location = useLocation();
-    const { isDesktop, isMobile } = useScreen();
+    const { isMobile } = useScreen();
     const { openModal, isSidebarExpandedMobile, isFilterPanelOpen, activeEmailMessageId } = useMailUI();
     const { fetchContacts } = useContacts();
 
@@ -17,13 +17,9 @@ const MobileComposeFab = () => {
 
     if (isSettings || isSidebarExpandedMobile || isFilterPanelOpen) return null;
 
-    // Mail: bottom FAB only below 575px; sidebar compose covers ≥575px
-    if (!isCalendar) {
-        if (!isMobile || isEmailDetailOpen) return null;
-    } else if (isDesktop) {
-        // Calendar: keep previous non-desktop FAB behavior
-        return null;
-    }
+    // Mail + Calendar: bottom FAB only at ≤575px; sidebar covers ≥575px
+    if (!isMobile) return null;
+    if (!isCalendar && isEmailDetailOpen) return null;
 
     const handleClick = () => {
         if (isCalendar) {

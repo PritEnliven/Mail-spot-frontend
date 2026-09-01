@@ -13,6 +13,7 @@ import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { getParticipantsLabel, getSenderLabel, verifyBoxName } from "@utils/emailUtil";
 import { useSettings } from "@context/SettingsContext";
 import { useMailData, useMailSelection } from "../../context/index";
+import type { CalendarInvite } from "@models/Email";
 
 interface EmailRowProps {
     email: EmailDetail;
@@ -51,6 +52,7 @@ export interface EmailDetail {
         value: string;
         isOld: boolean;
     };
+    calendarInvite?: CalendarInvite | null;
 }
 
 const EmailRow = memo(({
@@ -158,9 +160,11 @@ const EmailRow = memo(({
 
                                     { /* Date */}
                                     <div className="d-flex align-items-center justify-content-end" style={{ minWidth: "93px" }}>
-                                        <a href="#" className="d-flex align-items-center justify-content-center me-2 event-icon-mail-box">
-                                            <img className="d-none" style={{ minWidth: "20px" }} src={eventIcon} alt="" />
-                                        </a>
+                                        {email.calendarInvite && (
+                                            <a href="#" className="d-flex align-items-center justify-content-center me-2 event-icon-mail-box" onClick={(e) => e.preventDefault()}>
+                                                <img style={{ minWidth: "20px" }} src={eventIcon} alt="Calendar invite" />
+                                            </a>
+                                        )}
                                         <div className="mail-received-date d-flex align-items-center justify-content-end"> {emailDate} </div>
                                     </div>
                                 </div>

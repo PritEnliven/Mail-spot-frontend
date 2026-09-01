@@ -77,7 +77,9 @@ function EditRecurringModal({ modalId, zIndex, onConfirm }: EditRecurringModalPr
                                     tooltip="Move"
                                 />
                             </button>
+
                             <h1 className="modal-title modal-title-center" id="editRecurringModalLabel">Edit recurring event</h1>
+                            
                             <button type="button" className="btn-close hover-link btn icon-hover-effect" onClick={onClose}>
                                 <InteractiveIcon
                                     defaultIcon={closeIcon}

@@ -375,21 +375,23 @@ const LeftPanel = () => {
                 {/* START:: Brand-box */}
                 <div className="Brand-box d-flex align-items-center justify-content-center">
                     <a href="#" className="Brand-logo">
-                        {isSidebarOpen ?
+                        {isSidebarOpen ? (
                             <img
                                 src={mailBoxLogoImage}
                                 alt="Mailspot Logo"
                                 className="Brand-logo-full"
                                 width={130}
+                                height={32}
                             />
-                            :
+                        ) : (
                             <img
                                 src={mailBoxLogo40}
                                 alt="Mailspot Logo Small"
                                 className="Brand-logo-collepse"
-                                  width={40}
+                                width={40}
+                                height={40}
                             />
-                        }
+                        )}
                     </a>
                 </div>
                 {/* END:: Brand-box */}
@@ -449,8 +451,8 @@ const LeftPanel = () => {
                 {/* END:: Compose box */}
             </div>
 
-           <nav id="navbarList"    className={`nav-custom-scroll-wrapper ${isMobile ? (isSidebarExpandedMobile ? '' : 'nav-collepse expanded-nav')
-            : (isSidebarOpen ? '' : 'nav-collepse expanded-nav')}`}>
+            <nav id="navbarList" className={`nav-custom-scroll-wrapper ${isMobile ? (isSidebarExpandedMobile ? '' : 'nav-collepse expanded-nav')
+                : (isSidebarOpen ? '' : 'nav-collepse expanded-nav')}`}>
                 <div className="nav-custom-scroll-content" ref={scrollRef}>
                     <div ref={fadeTopRef} className="nav-custom-scroll-fade-top" style={{ opacity: 0 }} />
                     <ul id="sidebarMainMenu" className="left-side-manu-link-list">

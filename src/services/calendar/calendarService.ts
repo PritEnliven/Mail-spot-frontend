@@ -118,7 +118,8 @@ async function searchEvent(payload: calendarSearchEvent): Promise<ApiResponse<Se
     try {
         const response = await postData('event/searchEvent', payload);
         return response;
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         console.error('Error searching event:', error);
         return error;
     }
@@ -145,6 +146,21 @@ async function getAllSearchEventList(payload: FilterEventPayload): Promise<ApiRe
     }
 }
 
+interface rsvpEventPayload {
+    _id: string;
+    partstat: 'ACCEPTED' | 'TENTATIVE' | 'DECLINED';
+}
+
+async function rsvpEvent(payload: rsvpEventPayload): Promise<ApiResponse<any>> {
+    try {
+        const response = await postData('event/rsvp', payload);
+        return response;
+    } catch (error: any) {
+        console.error('Error sending RSVP:', error);
+        return error;
+    }
+}
+
 export {
-    createEvent, deleteEvent, editEvent, filterEvents, getAllEvents, getAllSearchEventList, getEventById, searchEvent
+    createEvent, deleteEvent, editEvent, filterEvents, getAllEvents, getAllSearchEventList, getEventById, rsvpEvent, searchEvent
 };

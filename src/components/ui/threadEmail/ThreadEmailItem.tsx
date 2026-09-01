@@ -32,6 +32,7 @@ import moment from 'moment';
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import { useMailData, useMailUI } from '../../../context/index';
+import CalendarInviteCard from "@components/ui/calendar/CalendarInviteCard";
 
 // Lazy loaded components
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
@@ -353,6 +354,11 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                         }}
                     >
                         <div className="d-block mb-3">
+                            {isThreadItemOpen && email.calendarInvite && (
+                                <div className="calendar-invite-card-wrap" onClick={(e) => e.stopPropagation()}>
+                                    <CalendarInviteCard email={email} />
+                                </div>
+                            )}
                             <div className="mail-details-information-details-box d-flex align-items-start justify-content-between gap-2">
                                 <div className="d-flex align-items-center justify-content-between position-relative profile-main-box" style={{ minWidth: 0, flex: 1 }}>
                                     {isThreadItemOpen &&
@@ -466,6 +472,7 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                             attachments={email.attachments}
                             messageId={email.messageId}
                             remainingAttachments={email.remainingAttachments}
+                            hideIcsAttachments={!!email.calendarInvite}
                             onDownloadAttachment={downloadAttachments}
                             onOpenAttachment={openAttachment}
                         />

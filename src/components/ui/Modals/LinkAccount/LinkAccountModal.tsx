@@ -160,7 +160,7 @@ export const AddAccountModal = ({
     }
   };
 
-  const handleLinkPassword = async () => {
+  const handleLinkPassword = async () => {    
     const ok = await passwordForm.trigger('password');
     if (!ok) return;
     const success = await linkMailspot(linkedEmail, passwordForm.getValues('password'));
@@ -323,11 +323,13 @@ export const AddAccountModal = ({
                               />
                             </div>
                           </div>
+
                           {emailForm.formState.errors.email && (
                             <div className="invalid-feedback d-block">
                               {emailForm.formState.errors.email.message}
                             </div>
                           )}
+
                           {checkError && !emailForm.formState.errors.email && (
                             <div className="invalid-feedback d-block">{checkError}</div>
                           )}
@@ -462,7 +464,7 @@ export const AddAccountModal = ({
                           )}
                         </div>
 
-                        <div className="d-flex align-items-center">
+                        <div className="d-flex align-items-center"> 
                           <div className="form-group me-3 w-100">
                             <label className="control-label">IMAP Server</label>
                             <div className="input-group2 input-group-re-size">

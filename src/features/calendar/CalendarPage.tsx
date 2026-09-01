@@ -5,6 +5,7 @@ import { useMailUI } from '@context/MailUIContext'
 import type { DatesSetArg } from '@fullcalendar/core'
 import FullCalendar from '@fullcalendar/react'
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet'
+import { useSocketEvent } from '@hooks/useSocket'
 import { getEventById } from '@services/calendar/calendarService'
 import { focusDate, focusEvent, normalizeEventForModal } from '@utils/calendarUtil'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -240,6 +241,10 @@ function CalendarPage() {
             openModal('eventInfo', { event })
         }
     }, [openModal, setSelectedEvent])
+
+    useSocketEvent('event:rsvp', () => {
+        void getAllEventList()
+    })
 
     const handleDateClick = useCallback((info: any) => {
         focusDate(info)

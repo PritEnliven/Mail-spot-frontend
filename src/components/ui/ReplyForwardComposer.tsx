@@ -149,6 +149,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
         if (!email || isInitialized) return;
 
         const recipients = getRecipients(type, email);
+        
         const subject = getSubject(type, email);
 
         const quotedBody = getBody(type, email);
@@ -160,13 +161,10 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
             subject,
             body: quotedBody
         });
-
         setIsInitialized(true);
-
     }, [email, type]);
 
     useEffect(() => {
-
         if (!defaultSignature) return;
         if (!isInitialized) return;
         if (signatureInserted) return;
@@ -184,10 +182,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
         let updatedBody = "";
 
         if (quotedIndex !== -1) {
-            updatedBody =
-                signatureHtml +
+            updatedBody =  
+                signatureHtml +  
                 currentBody;
-        } else {
+        } 
+        else {
             updatedBody =
                 signatureHtml +
                 currentBody;
@@ -214,6 +213,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
             if (data.cc && data.cc.length > 0) {
                 scheduleFormData.append('cc', data.cc.join(','));
             }
+
             if (data.bcc && data.bcc.length > 0) {
                 scheduleFormData.append('bcc', data.bcc.join(','));
             }
@@ -222,7 +222,6 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
             scheduleFormData.append('messageId', email.messageId);
             scheduleFormData.append('threadId', email.threadId);
             scheduleFormData.append('type', type);
-
             // Add schedule date
             scheduleFormData.append('scheduleAt', scheduleAt);
             scheduleFormData.append('isSchedule', 'true');
@@ -246,7 +245,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
             } catch (error) {
                 console.error('Failed to schedule reply/forward:', error);
             }
-        } else {
+        } 
+        else {
             // Regular reply/forward sending
             // Create FormData object
             const formData = new FormData();
@@ -257,9 +257,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
 
             // Add array fields as comma-separated strings
             formData.append('to', data.to.join(','));
+
             if (data.cc && data.cc.length > 0) {
                 formData.append('cc', data.cc.join(','));
             }
+
             if (data.bcc && data.bcc.length > 0) {
                 formData.append('bcc', data.bcc.join(','));
             }
@@ -268,7 +270,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
             attachments.forEach((file) => {
                 if (file instanceof File) {
                     formData.append('attachments', file, file.name);
-                } else {
+                } 
+                else {
                     // For existing attachments, send as JSON string
                     formData.append('existingAttachments', JSON.stringify(file));
                 }

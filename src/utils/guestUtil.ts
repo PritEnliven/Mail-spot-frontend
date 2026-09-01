@@ -19,13 +19,15 @@ export const normalizeGuests = (guestList: any): Guest[] => {
             if (typeof guest === 'object') {
                 const email = guest.email || '';
                 const name = guest.name || '';
-                
+                const partstat = guest.partstat || guest.status || guest.responseStatus || guest.rsvp;
+
                 const parsed = parseEmailAddress(email);
                 if (!parsed.email) return null;
-                
-                return { 
-                    name: name || parsed.name, 
-                    email: parsed.email 
+
+                return {
+                    name: name || parsed.name,
+                    email: parsed.email,
+                    partstat,
                 };
             }
 

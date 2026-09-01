@@ -36,6 +36,7 @@ import { HighlightText } from "@components/ui/HighlightText";
 import { useSocketEvent } from "@hooks/useSocket";
 import { useSettings } from "@context/SettingsContext";
 import scheduledIcon from "@images/scheduled-icon.svg"
+import CalendarInviteCard from "@components/ui/calendar/CalendarInviteCard";
 
 // Lazy loaded components
 const ThreadEmailItem = lazy(() => import("@components/ui/threadEmail/ThreadEmailItem"));
@@ -450,6 +451,12 @@ const EmailDetail = ({ email }: Props) => {
                 </div>
             </div>
 
+            {email.calendarInvite && (
+                <div className="calendar-invite-card-wrap" onClick={(e) => e.stopPropagation()}>
+                    <CalendarInviteCard email={email} />
+                </div>
+            )}
+
             {/* mail-details-information-details-box */}
             {isDesktop ? (
                 <div
@@ -684,6 +691,7 @@ const EmailDetail = ({ email }: Props) => {
                     attachments={email.attachments}
                     messageId={email.messageId}
                     remainingAttachments={email.remainingAttachments}
+                    hideIcsAttachments={!!email.calendarInvite}
                     onDownloadAttachment={downloadAttachments}
                     onOpenAttachment={openAttachment}
                 />

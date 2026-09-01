@@ -5,6 +5,7 @@ import { useState } from "react";
 interface Guest {
     name: string;
     email: string;
+    partstat?: string;
 }
 
 interface GuestTagProps {

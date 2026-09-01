@@ -1,5 +1,6 @@
 import React from 'react';
 import fileIcon from '@images/file-icon.svg';
+import { isIcsFilename } from '@utils/calendarInviteUtil';
 
 interface Attachment {
     filename: string;
@@ -37,7 +38,9 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
                         alt="File icon"
                     />
                     
-                    <span className="mail-attachment-text">{attachment.filename}</span>
+                    <span className="mail-attachment-text">
+                        {isIcsFilename(attachment.filename) ? 'Calendar invite' : attachment.filename}
+                    </span>
                 </a>
             ))}
 

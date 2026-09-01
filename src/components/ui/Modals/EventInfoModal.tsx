@@ -15,13 +15,16 @@ import BaseModal from "@components/ui/BaseModal";
 import GuestTag, { type Guest } from "@components/ui/calendar/GuestTag";
 import { useMailUI } from "@context/MailUIContext";
 import { normalizeGuests } from "@utils/guestUtil";
-import { removeFocusEvent } from "@utils/calendarUtil";
+import { normalizeEventForModal, removeFocusEvent } from "@utils/calendarUtil";
 import type { EventDetail } from "@models/CalendarModels";
 import { useCalendar } from "@context/CalendarContext";
-import { deleteEvent } from "@services/calendar/calendarService";
+import { deleteEvent, getEventById } from "@services/calendar/calendarService";
 import { showError, showSuccess } from "../toast/toastNotification";
 import { copyEmailToClipBoard } from "@utils/generalUtil";
 import SimpleBar from 'simplebar-react';
+import { useSocketEvent } from "@hooks/useSocket";
+import { GUEST_PARTSTAT_GROUPS, groupGuestsByPartstat } from "@utils/calendarInviteUtil";
+import { useEffect, useMemo, useState } from "react";
 
 interface EventInfoModalProps {
     modalId: string;
@@ -31,14 +34,55 @@ interface EventInfoModalProps {
 
 function EventInfoModal({ modalId, zIndex, event }: EventInfoModalProps) {
     const { closeModal, openModal } = useMailUI();
-    const { selectedEvent, getAllEventList } = useCalendar();
+    const { selectedEvent, getAllEventList, setSelectedEvent } = useCalendar();
+    const [guestList, setGuestList] = useState(event.guestList);
+
+    useEffect(() => {
+        setGuestList(event.guestList);
+    }, [event.guestList]);
 
     const onClose = () => {
         removeFocusEvent();
         closeModal(modalId);
     };
 
-    const guests: Guest[] = normalizeGuests(event.guestList);
+    const guests: Guest[] = normalizeGuests(guestList);
+    const guestsByPartstat = useMemo(() => groupGuestsByPartstat(guests), [guests]);
+
+    useSocketEvent('event:rsvp', async (payload: any) => {
+        const eventId = payload?.eventId || payload?.id || payload?._id;
+        const currentId = event.id || selectedEvent?.id;
+        if (eventId && currentId && String(eventId) !== String(currentId)) {
+            void getAllEventList();
+            return;
+        }
+
+        const nextGuests = payload?.guest || payload?.guestList;
+        if (nextGuests) {
+            setGuestList(nextGuests);
+            if (selectedEvent) {
+                setSelectedEvent({ ...selectedEvent, guestList: nextGuests });
+            }
+            void getAllEventList();
+            return;
+        }
+
+        if (!currentId) {
+            void getAllEventList();
+            return;
+        }
+
+        const response = await getEventById(currentId);
+        if (response.statusCode === 200 && response.data?.event) {
+            const next = normalizeEventForModal({ ...response.data.event, id: currentId });
+            setGuestList(next.guestList);
+            setSelectedEvent({
+                ...next,
+                selectedEventDate: selectedEvent?.selectedEventDate,
+            });
+        }
+        void getAllEventList();
+    });
 
     const editEventHandler = () => {
         event.isEdit = true;
@@ -218,14 +262,25 @@ function EventInfoModal({ modalId, zIndex, event }: EventInfoModalProps) {
                                                     forceVisible="y"
                                                 >
                                             {guests.length > 0
-                                                ? guests.map((guest, index) => (
-                                                    <GuestTag
-                                                        key={`${guest.email}-${index}`}
-                                                        guest={guest}
-                                                        mode="view"
-                                                        onCopy={copyEmailToClipBoard}
-                                                    />
-                                                ))
+                                                ? GUEST_PARTSTAT_GROUPS.map(({ key, label }) => {
+                                                    const groupGuests = guestsByPartstat[key];
+                                                    if (!groupGuests.length) return null;
+                                                    return (
+                                                        <div key={key} className="event-guest-partstat-group">
+                                                            <p className="event-guest-partstat-heading mb-1">
+                                                                {label} ({groupGuests.length})
+                                                            </p>
+                                                            {groupGuests.map((guest, index) => (
+                                                                <GuestTag
+                                                                    key={`${guest.email}-${index}`}
+                                                                    guest={guest}
+                                                                    mode="view"
+                                                                    onCopy={copyEmailToClipBoard}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })
                                                 : <p className="m-0">No Guests</p>
                                             }
                                             </SimpleBar>
