@@ -1130,29 +1130,29 @@ div.accordion-button.custom-toggle-btn
 
 /* ---------- Calendar invite card ---------- */
 .calendar-invite-card {
-  border: 1px solid #d0d9de;
-  border-radius: 10px;
+  /* border:1px solid #d0d9de; */
+  border-radius:5px;
   padding: 0;
   margin: 0;
-  background: #fff;
+  background: #F5F5F5;
   max-width: 100%;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */
 }
 .calendar-invite-card-wrap {
-  padding: 12px 0 16px;
+  padding: 0 0 16px;
   margin: 0 0 16px;
   border-bottom: 1px solid #d0d9de;
 }
 .calendar-invite-card.is-accepted {
   border-color: #c8e0bb;
 }
-.calendar-invite-card.is-tentative {
+/* .calendar-invite-card.is-tentative {
   border-color: #ffd59a;
-}
-.calendar-invite-card.is-declined {
+} */
+/* .calendar-invite-card.is-declined {
   border-color: #f4c7ca;
-}
+} */
 .calendar-invite-card.is-cancelled {
   opacity: 0.85;
 }
@@ -1161,11 +1161,11 @@ div.accordion-button.custom-toggle-btn
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px 12px;
-  background: #f8fafb;
-  border-bottom: 1px solid #e7ebee;
+  padding:14px;
+  background: transparent;
+  border-bottom: 1px solid #d0d9de85;
 }
-.calendar-invite-card.is-accepted .calendar-invite-card__header {
+/* .calendar-invite-card.is-accepted .calendar-invite-card__header {
   background: #f4faf0;
 }
 .calendar-invite-card.is-tentative .calendar-invite-card__header {
@@ -1173,16 +1173,16 @@ div.accordion-button.custom-toggle-btn
 }
 .calendar-invite-card.is-declined .calendar-invite-card__header {
   background: #fdf4f5;
-}
+} */
 .calendar-invite-card__heading {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items:center;
+  gap: 12px;
   min-width: 0;
 }
 .calendar-invite-card__heading-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   margin-top: 1px;
   flex-shrink: 0;
 }
@@ -1190,30 +1190,26 @@ div.accordion-button.custom-toggle-btn
   font-size: 16px;
   font-weight: 500;
   color: #212121;
-  line-height: 22px;
   word-break: break-word;
 }
 .calendar-invite-card__status {
   flex-shrink: 0;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 16px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: #eef1f3;
+  background: #e5e8ea;
   color: #212121;
 }
 .calendar-invite-card__status.is-accepted {
-  background: #e5f3dc;
-  color: #2f6f12;
+  background-color: #49ba1470;
 }
 .calendar-invite-card__status.is-tentative {
-  background: #fff1d6;
-  color: #b86a00;
+  background: #fee8bf;
 }
 .calendar-invite-card__status.is-declined {
-  background: #fde7e9;
-  color: #c62828;
+  background-color: #ffcdcd;
 }
 .calendar-invite-card__cancelled {
   font-size: 13px;
@@ -1225,7 +1221,7 @@ div.accordion-button.custom-toggle-btn
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 14px 16px 4px;
+  padding:14px;
 }
 .calendar-invite-card__row {
   display: grid;
@@ -1239,13 +1235,13 @@ div.accordion-button.custom-toggle-btn
 .calendar-invite-card__label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   font-weight: 500;
   color: #717d84;
 }
 .calendar-invite-card__label img {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 .calendar-invite-card__value {
   color: #212121;
@@ -1256,6 +1252,11 @@ div.accordion-button.custom-toggle-btn
   flex-wrap: wrap;
   gap: 8px;
   padding: 12px 16px 16px;
+}
+.calendar-invite-card__actions .calendar-invite-card__btn:first-child{
+    background-color: #0097ef;
+    color: #fff;
+    border-color: #0097ef;
 }
 .calendar-invite-card__btn {
   min-width: 72px;
@@ -1269,11 +1270,11 @@ div.accordion-button.custom-toggle-btn
   line-height: 18px;
   cursor: pointer;
 }
-.calendar-invite-card__btn:hover:not(:disabled) {
+/* .calendar-invite-card__btn:hover:not(:disabled) {
   background: #f5f7f8;
   border-color: #8f9aa1;
-}
-.calendar-invite-card__btn.is-accepted:hover:not(:disabled) {
+} */
+/* .calendar-invite-card__btn.is-accepted:hover:not(:disabled) {
   background: #f4faf0;
   border-color: #398415;
   color: #2f6f12;
@@ -1287,7 +1288,7 @@ div.accordion-button.custom-toggle-btn
   background: #fdf4f5;
   border-color: #ea3843;
   color: #c62828;
-}
+} */
 .calendar-invite-card__btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;

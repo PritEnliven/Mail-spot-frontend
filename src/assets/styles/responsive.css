@@ -93,9 +93,11 @@
   .Tool-bar-box .pagination-cus { display: none; }
   /* -------------------- Right Sidebar -------------------- */
   main { justify-content: end; }
-  .mail-message-box { width: 100%; height: calc(100vh - 106px); }
+  
+  .mail-message-box { width: 100%; height: calc(100vh - 106px);border-right: 0; }
   .mail-details-box { height: calc(100vh - 55px) !important; }
   .mail-details-box .box-title { font-size: 16px; }
+  .mail-message-box::after{content: none;}
   .mail-message-send--information-details-box-mobile .application-btn-multi { min-width: 68px; }
   .mail-message-send--information-details-box-mobile .react-dropdown .dropdown-menu { margin-top: 4px; margin-right: -5px; }
   /* From name/email: ellipsis so long text doesn't collide with reply/forward */
@@ -337,15 +339,17 @@
   .thread-email .accordion-item .mail-profile-name, .thread-email .accordion-item .mail-profile-id { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 /* ==========================================================================
-   Move to folder — mobile/tablet bottom sheet
+   Move to folder — full-width bottom sheet (opened only at ≤575px)
   ========================================================================== */
-.move-to-folder-modal .modal-content-shadow { top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; min-width: 100% !important; height: auto !important; max-height: min(88dvh, 720px); }
-.move-to-folder-modal .modal-content-shadow.modal-show-open>div { animation: moveToSheetFadeUp 0.28s ease-out forwards; }
+@media screen and (max-width: 575px) {
+  .move-to-folder-modal .modal-content-shadow { top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; min-width: 100% !important; height: auto !important; max-height: min(88dvh, 720px); }
+  .move-to-folder-modal .modal-content-shadow.modal-show-open>div { animation: moveToSheetFadeUp 0.28s ease-out forwards; }
+}
 @keyframes moveToSheetFadeUp {
   from { opacity: 0; transform: translateY(100%); }
   to { opacity: 1; transform: translateY(0); }
 }
-.move-to-folder-sheet { background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0px -6px 20px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column; max-height: min(88dvh, 720px); overflow: hidden; /* padding: 8px 0 12px; */ }
+.move-to-folder-sheet { background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0px -6px 20px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column; max-height: min(88dvh, 720px); overflow: hidden; }
 .move-to-folder-sheet__handle { width: 36px; height: 4px; border-radius: 100px; background: #d0d9de; margin: 4px auto 8px; flex-shrink: 0; }
 .move-to-folder-sheet__header { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 12px; flex-shrink: 0; }
 .move-to-folder-sheet__title { margin: 0; font-size: 22px; font-weight: 600; color: #212121; line-height: 1.2; }

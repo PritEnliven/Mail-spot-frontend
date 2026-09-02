@@ -75,8 +75,9 @@
 .Calendar-main #sidebar-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { outline: 1px solid #fff; outline-offset: -1px; width: 23px; height: 23px; }
 .Calendar-main #sidebar-calendar .fc-scrollgrid, .Calendar-main #sidebar-calendar .fc-scrollgrid td, .Calendar-main #sidebar-calendar .fc-scrollgrid th { border: none !important; }
 .Calendar-main #sidebar-calendar .fc-scrollgrid-sync-table { border-left: none !important; }
-.Calendar-main #sidebar-calendar .fc-daygrid-body::after { content: ""; position: absolute; top: 2px; left: 49px; height: calc(100% - 2px); border-left: 1px dashed #d0d9de30; z-index: 1; }
-
+/* .Calendar-main #sidebar-calendar .fc-daygrid-body::after { content: ""; position: absolute; top: 2px; left: 49px; height: calc(100% - 2px); border-left: 1px dashed #d0d9de30; z-index: 1; } */
+.Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header thead tr, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scrollgrid-sync-table tbody tr { border-left: 1px dashed #d0d9de30 !important;  }
+.Calendar-main #sidebar-calendar .fc-col-header thead tr{margin-left: 49px;}
 /* Desktop sidebar month grid keeps fixed column sizes */
 @media screen and (min-width: 993px) {
     .Calendar-main #sidebar-calendar .fc-col-header thead tr { display: flex; justify-content: end; }
@@ -87,7 +88,7 @@
     .Calendar-main #sidebar-calendar .fc-scrollgrid-sync-table { width: 253px !important; }
 }
 .Calendar-main #sidebar-calendar .fc-daygrid-day-frame { display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 2px; border-radius: 5px; }
-.Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type { border-left: 1px dashed #d0d9de30 !important; }
+/* .Calendar-main #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type { border-left: 1px dashed #d0d9de30 !important; } */
 .Calendar-main #sidebar-calendar .fc-col-header-cell-cushion { padding: 0 0 3px 0 !important; font-size: 15px; font-weight: 500; color: #fff; }
 .Calendar-main #sidebar-title { font-size: 15px; font-weight: 500; color: #fff; }
 .Calendar-main #sidebar-calendar .fc-daygrid-day-number { font-size: 15px; font-weight: 500; color: #fff; }

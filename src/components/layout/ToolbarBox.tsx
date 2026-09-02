@@ -34,7 +34,7 @@ const ToolbarBox = () => {
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
     const [moveToFolderOptions, setMoveToFolderOptions] = useState<any>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const { isDesktop } = useScreen();
+    const { isDesktop, isMobile } = useScreen();
 
     // Hide pagination when mailbox is empty (all counts are 0)
     // const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
@@ -87,16 +87,18 @@ const ToolbarBox = () => {
         try {
             if (allSearchResult) {
                 await fetchSearchEmails(isPrevious);
-            } else {
+            } 
+            else {
                 const newPage = isPrevious ? mailListPage - 1 : mailListPage + 1;
                 await fetchEmails(newPage, boxName, isPrevious, readUnreadFilter);
             }
-        } finally {
+        } 
+        finally {
             setIsLoading(false);
             // Scroll to the top of the email list
             const emailListRef = document.getElementById('email-list') as HTMLDivElement | null;
-            if (emailListRef) {
-                emailListRef.scrollTop = 0;
+            if (emailListRef) {                                                
+                emailListRef.scrollTop = 0;                                                
             }
         }
     };
@@ -416,8 +418,8 @@ const ToolbarBox = () => {
                                     </Dropdown.Toggle>
 
                                     <Dropdown.Menu>
-                                        {/* Mobile/tablet: open bottom sheet. Desktop: nested submenu. */}
-                                        {!isDesktop ? (
+                                        {/* ≤575px: bottom sheet. Wider screens: nested submenu. */}
+                                        {isMobile ? (
                                             <Dropdown.Item
                                                 className="d-flex justify-content-between align-items-center"
                                                 onClick={openMoveToFolderSheet}

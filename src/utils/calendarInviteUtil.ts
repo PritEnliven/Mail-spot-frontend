@@ -14,6 +14,14 @@ export const GUEST_PARTSTAT_GROUPS: { key: GuestPartstatGroup; label: string }[]
 export const isIcsFilename = (filename?: string): boolean =>
     !!filename && /\.ics$/i.test(filename);
 
+export const getCalendarInviteMethod = (invite?: CalendarInvite | null): string =>
+    (invite?.method || '').toUpperCase();
+
+export const canRenderCalendarInviteCard = (invite?: CalendarInvite | null): boolean => {
+    const method = getCalendarInviteMethod(invite);
+    return method === 'REQUEST' || method === 'REPLY' || method === 'CANCEL';
+};
+
 export const normalizePartstat = (value?: string | null): CalendarPartstat => {
     const raw = (value || '').toUpperCase().replace(/[_\s-]/g, '');
     if (raw === 'ACCEPTED' || raw === 'YES' || raw === 'GOING') return 'ACCEPTED';

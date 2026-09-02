@@ -143,6 +143,7 @@ export const AddAccountModal = ({
     }
 
     const result = await checkEmail(email);
+
     if (!result) return;
 
     setLinkedEmail(email);
@@ -154,7 +155,8 @@ export const AddAccountModal = ({
 
     if (result.accountType === 'mailspot') {
       setStep('password');
-    } else {
+    } 
+    else {
       externalForm.setValue('smtpUsername', email);
       setStep('external');
     }
@@ -668,5 +670,5 @@ export const AddAccountModal = ({
           </div>
         </div>
       </BaseModal>
-  );
+  ); 
 };

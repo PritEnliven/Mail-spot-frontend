@@ -37,6 +37,7 @@ import { useSocketEvent } from "@hooks/useSocket";
 import { useSettings } from "@context/SettingsContext";
 import scheduledIcon from "@images/scheduled-icon.svg"
 import CalendarInviteCard from "@components/ui/calendar/CalendarInviteCard";
+import { canRenderCalendarInviteCard } from "@utils/calendarInviteUtil";
 
 // Lazy loaded components
 const ThreadEmailItem = lazy(() => import("@components/ui/threadEmail/ThreadEmailItem"));
@@ -451,10 +452,8 @@ const EmailDetail = ({ email }: Props) => {
                 </div>
             </div>
 
-            {email.calendarInvite && (
-                <div className="calendar-invite-card-wrap" onClick={(e) => e.stopPropagation()}>
-                    <CalendarInviteCard email={email} />
-                </div>
+            {canRenderCalendarInviteCard(email.calendarInvite) && (
+                <CalendarInviteCard email={email} />
             )}
 
             {/* mail-details-information-details-box */}

@@ -4,8 +4,12 @@ import eventIcon from '@images/event-icon.svg';
 import locationIcon from '@images/location-icon-16.svg';
 import type { CalendarPartstat, Email } from '@models/Email';
 import { rsvpEvent } from '@services/calendar/calendarService';
+import clockIcon from '@images/clock-icon.svg';
+import nameIcon from "@images/name-icon-16.svg";
 import {
+    canRenderCalendarInviteCard,
     formatInviteWhen,
+    getCalendarInviteMethod,
     normalizePartstat,
     personLabel,
     replyPartstatVerb,
@@ -42,7 +46,7 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
         }
     }, [invite?.myPartstat]);
 
-    const method = (invite?.method || '').toUpperCase();
+    const method = getCalendarInviteMethod(invite);
     const title = invite?.title || invite?.summary || 'Calendar event';
     const when = invite ? formatInviteWhen(invite) : '';
     const where = invite?.location || '';
@@ -52,7 +56,7 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
         [invite?.attendees],
     );
 
-    if (!invite || !method) return null;
+    if (!invite || !canRenderCalendarInviteCard(invite)) return null;
 
     if (method === 'REPLY') {
         const responder =
@@ -62,13 +66,13 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
             'Someone';
         const verb = replyPartstatVerb(invite.attendeePartstat || invite.partstat || invite.myPartstat);
         return (
-            <div className="calendar-invite-reply-banner" role="status">
-                {responder} {verb} {title}
+            <div className="calendar-invite-card-wrap" onClick={(e) => e.stopPropagation()}>
+                <div className="calendar-invite-reply-banner" role="status">
+                    {responder} {verb} {title}
+                </div>
             </div>
         );
     }
-
-    if (method !== 'REQUEST' && method !== 'CANCEL') return null;
 
     const isCancelled = method === 'CANCEL';
     const hasResponded = myPartstat !== 'NEEDS-ACTION';
@@ -97,9 +101,9 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
     };
 
     return (
+        <div className="calendar-invite-card-wrap" onClick={(e) => e.stopPropagation()}>
         <div
             className={`calendar-invite-card ${isCancelled ? 'is-cancelled' : ''} ${hasResponded ? `is-${myPartstat.toLowerCase()}` : ''}`}
-            onClick={(e) => e.stopPropagation()}
         >
             <div className="calendar-invite-card__header">
                 <div className="calendar-invite-card__heading">
@@ -115,10 +119,14 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
             {isCancelled && (
                 <p className="calendar-invite-card__cancelled mb-0">This event was cancelled</p>
             )}
+
             <div className="calendar-invite-card__body">
                 {when && (
                     <div className="calendar-invite-card__row">
-                        <span className="calendar-invite-card__label">When</span>
+                        <span className="calendar-invite-card__label">
+                            <img src={clockIcon} alt="clock"  />
+                            When
+                        </span>
                         <span className="calendar-invite-card__value">{when}</span>
                     </div>
                 )}
@@ -133,7 +141,10 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
                 )}
                 {organizer && (
                     <div className="calendar-invite-card__row">
-                        <span className="calendar-invite-card__label">Organizer</span>
+                        <span className="calendar-invite-card__label">
+                             <img src={nameIcon} alt="" />
+                            Organizer
+                        </span>
                         <span className="calendar-invite-card__value">{organizer}</span>
                     </div>
                 )}
@@ -147,6 +158,7 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
                     </div>
                 )}
             </div>
+
             {!isCancelled && (
                 <div className="calendar-invite-card__actions">
                     {RSVP_ACTIONS.filter((action) => action.partstat !== myPartstat).map((action) => (
@@ -162,6 +174,7 @@ function CalendarInviteCard({ email }: CalendarInviteCardProps) {
                     ))}
                 </div>
             )}
+        </div>
         </div>
     );
 }
