@@ -58,7 +58,7 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
         closeModal(modalId);
     }
 
-    const { contacts } = useContacts();
+    const { contacts, searchContacts } = useContacts();
 
     return (
         <BaseModal
@@ -118,6 +118,8 @@ function ForwardEmail({ modalId, zIndex, initialForwardEmailList, onConfirm }: F
                                                 value={field.value || []}
                                                 onChange={field.onChange}
                                                 options={contacts}
+                                                onInputChange={searchContacts}
+                                                showSuggestionBadge={true}
                                                 placeholder="Select or type to add"
                                                 isMulti={true}
                                                 isModal={true}

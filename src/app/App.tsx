@@ -15,6 +15,7 @@ function App() {
     // Check if current route is calendar
     const isCalendarRoute = location.pathname.includes('/calendar') || location.pathname.includes('mail/calendar');
     const isSettingRoute = location.pathname.includes('/settings') || location.pathname.includes('mail/settings');
+    const isContactRoute = location.pathname.includes('/contact') || location.pathname.includes('mail/contact');
 
     let rootClass = 'INBOX-main';
     switch (true) {
@@ -22,6 +23,9 @@ function App() {
         rootClass = 'Calendar-main';
         break;
       case isSettingRoute:
+        rootClass = 'Settings-main';
+        break;
+      case isContactRoute:
         rootClass = 'Settings-main';
         break;
       default:

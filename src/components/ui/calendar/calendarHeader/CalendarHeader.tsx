@@ -507,7 +507,7 @@ function CalendarHeader() {
     const { control, handleSubmit, reset, getValues } = useCalendarFilterForm();
     const { isDesktop, isMobile } = useScreen();
     const { isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
-    const { contacts } = useContacts();
+    const { contacts, searchContacts } = useContacts();
     const [isCalendarFilterDropdownOpen, setIsCalendarFilterDropdownOpen] = useState(false);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
     const { setCalendarAllSearchedEvents, setIsCalendarAllSearchActive, isSidebarCalendarOpen, setIsSidebarCalendarOpen } = useCalendar();
@@ -885,6 +885,8 @@ function CalendarHeader() {
                                                     value={field.value || []}
                                                     onChange={field.onChange}
                                                     options={contacts}
+                                                    onInputChange={searchContacts}
+                                                    showSuggestionBadge={true}
                                                     placeholder="Select or type to add"
                                                     isMulti={true}
                                                 />

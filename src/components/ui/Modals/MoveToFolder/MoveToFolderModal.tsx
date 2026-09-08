@@ -128,7 +128,6 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
         >
             <div className="move-to-folder-sheet">
                 {/* <div className="move-to-folder-sheet__handle" aria-hidden="true" /> */}
-
                 <div className="modal-header justify-content-end">
                     <h5 className="modal-title modal-title-center">Move to</h5>
                     <button
@@ -141,7 +140,7 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
                             defaultIcon={closeIcon}
                             hoverIcon={closeIconHover}
                             activeIcon=""
-                            isActive={false}
+                            isActive={false}                                            
                             alt="Close"
                             className="interactive-icon hover-image"
                             renderAs="img"

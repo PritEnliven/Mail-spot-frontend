@@ -14,6 +14,7 @@ const ChangePassword = lazy(() => import('@components/ui/Modals/ChangePassword/C
 const ForwardEmail = lazy(() => import('./Modals/forwardEmailModal/ForwardEmail'));
 const MoveToFolderModal = lazy(() => import('./Modals/MoveToFolder/MoveToFolderModal'));
 const EditRuleModal = lazy(() => import('./Modals/EditRuleModal/EditRuleModal'));
+const ContactFormModal = lazy(() => import('@features/contacts/ContactFormModal'));
 
 const BASE_Z_INDEX = 1050;
 const Z_INDEX_STEP = 20;
@@ -162,6 +163,16 @@ function ModalRoot() {
                     case 'editRule':
                         content = (
                             <EditRuleModal
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+                        break;
+
+                    case 'contactForm':
+                        content = (
+                            <ContactFormModal
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}

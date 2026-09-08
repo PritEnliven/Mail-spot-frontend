@@ -152,6 +152,7 @@ const ToolbarBox = () => {
 
         // Visually uncheck the master checkbox without firing its click handler
         const checkboxAll = document.getElementById('checkboxAll') as HTMLInputElement | null;
+
         if (checkboxAll) {
             checkboxAll.checked = false;
         }

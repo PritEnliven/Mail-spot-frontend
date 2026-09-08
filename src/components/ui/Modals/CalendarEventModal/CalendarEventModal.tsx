@@ -100,7 +100,7 @@ export function getISTRoundedStartEndTime(
 }
 
 function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalProps) {
-    const { contacts } = useContacts();
+    const { contacts, searchContacts } = useContacts();
     const { closeModal, openModal } = useMailUI();
     const { getAllEventList, selectedEvent } = useCalendar();
     const pendingEditDataRef = useRef<any>(null);
@@ -782,6 +782,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                     value={field.value || []}
                                                                     onChange={field.onChange}
                                                                     options={contacts}
+                                                                    onInputChange={searchContacts}
+                                                                    showSuggestionBadge={true}
                                                                     placeholder="Select or type to add"
                                                                     isMulti={true}
                                                                     isModal={true}

@@ -68,7 +68,7 @@ interface ComposeEmailModalProps {
 
 export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailModalProps) => {
     const navigate = useNavigate();
-    const { contacts } = useContacts();
+    const { contacts, searchContacts } = useContacts();
     const { openModal, closeModal, isComposeExpanded, setIsComposeExpanded } = useMailUI();
     const { settings } = useSettings();
     const { updateBoxCount, sidebarState, boxName, setMailListPage, fetchEmails, refreshUserPermissions, userPermissions } = useMailData();
@@ -601,6 +601,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                             value={field.value || []}
                                                             onChange={field.onChange}
                                                             options={contacts}
+                                                            onInputChange={searchContacts}
+                                                            showSuggestionBadge={true}
                                                             placeholder="Select or type to add"
                                                             isMulti={true}
                                                             moduleName="compose"
@@ -633,6 +635,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                                     value={field.value || []}
                                                                     onChange={field.onChange}
                                                                     options={contacts}
+                                                                    onInputChange={searchContacts}
+                                                                    showSuggestionBadge={true}
                                                                     placeholder="Select or type to add"
                                                                     isMulti={true}
                                                                     moduleName="compose"
@@ -662,6 +666,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                                         value={field.value || []}
                                                                         onChange={field.onChange}
                                                                         options={contacts}
+                                                                        onInputChange={searchContacts}
+                                                                        showSuggestionBadge={true}
                                                                         placeholder="Select or type to add"
                                                                         isMulti={true}
                                                                         moduleName="compose"

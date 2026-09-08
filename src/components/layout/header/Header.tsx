@@ -712,6 +712,7 @@ const Header = () => {
 
     const isCalendar = verifyBoxName(boxName, "calendar");
     const isSettings = verifyBoxName(boxName, "settings");
+    const isContact = verifyBoxName(boxName, "contact");
 
     const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
     const mountFilterMonthDropdownRef = useRef(mountFilterMonthDropdown);
@@ -779,7 +780,7 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {!isSettings && !isCalendar && (
+                    {!isSettings && !isCalendar && !isContact && (
                         <>
                             {/* CENTER: Search Bar */}
                             <div className="two-sc-in d-flex align-items-center justify-content-center flex-grow-1">
@@ -1066,7 +1067,7 @@ const Header = () => {
             {/* RIGHT: Profile & Calendar */}
             <div className="d-flex align-items-center two-sc-in justify-content-end">
                 {/* Mobile-serch-btn */}
-                {!isCalendar && (
+                {!isCalendar && !isSettings && !isContact && (
                     <button type="button" className="btn hover-link input-icon-1 mobile-search-btn icon-hover-effect ms-3 me-2" onClick={() => setIsResponsiveSearch(!isResponsiveSearch)} >
                         <InteractiveIcon
                             defaultIcon={searchIcon}

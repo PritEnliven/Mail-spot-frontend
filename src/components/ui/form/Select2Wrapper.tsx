@@ -1453,6 +1453,7 @@ export interface MultiOption {
   label?: string;
   name?: string;
   email?: string;
+  isSuggestion?: boolean;
   __isNew__?: boolean;
 }
 
@@ -1473,6 +1474,8 @@ type MultiSelectProps = {
   isModal?: boolean | false;
   isEmail?: boolean | false;
   typeable?: boolean | true;
+  onInputChange?: (inputValue: string) => void;
+  showSuggestionBadge?: boolean;
 };
 
 type SingleSelectProps = {
@@ -1589,6 +1592,8 @@ const renderMultiSelect = ({
   moduleName,
   isModal = false,
   isEmail,
+  onInputChange,
+  showSuggestionBadge = false,
 }: MultiSelectProps, _isMobile: boolean) => {
   const { selectRef, menuPlacement, handleMenuOpen } = useMenuPlacement();
 
@@ -1651,6 +1656,11 @@ const renderMultiSelect = ({
         ClearIndicator: () => null,
       }}
       onChange={handleChange}
+      onInputChange={(inputValue, meta) => {
+        if (meta.action === 'input-change') {
+          onInputChange?.(inputValue);
+        }
+      }}
       createOptionPosition="first"
       formatOptionLabel={(option, { context }) => {
         const email = option.email || option.value || '';
@@ -1664,6 +1674,11 @@ const renderMultiSelect = ({
               <span className="name me-1">{displayName}</span>
               {context === 'menu' && email && email !== displayName && (
                 <span className="email">{email}</span>
+              )}
+              {context === 'menu' && showSuggestionBadge && option.isSuggestion && (
+                <span className="badge bg-light text-muted ms-1" style={{ fontSize: '10px' }}>
+                  Suggested
+                </span>
               )}
             </div>
           </div>

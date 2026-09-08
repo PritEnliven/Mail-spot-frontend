@@ -57,7 +57,7 @@ interface ReplyForwardComposerProps {
 
 const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingReply }: ReplyForwardComposerProps) => {
     const navigate = useNavigate();
-    const { contacts } = useContacts();
+    const { contacts, searchContacts } = useContacts();
     const { openModal } = useMailUI();
     const { settings } = useSettings();
     const { userPermissions } = useMailData();
@@ -362,6 +362,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                             value={field.value || []}
                                             onChange={field.onChange}
                                             options={contacts}
+                                            onInputChange={searchContacts}
+                                            showSuggestionBadge={true}
                                             placeholder="Select or type to add"
                                             isMulti={true}
                                             moduleName="compose"
@@ -392,6 +394,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                                     value={field.value || []}
                                                     onChange={field.onChange}
                                                     options={contacts}
+                                                    onInputChange={searchContacts}
+                                                    showSuggestionBadge={true}
                                                     placeholder="Select or type to add"
                                                     isMulti={true}
                                                     moduleName="compose"
@@ -421,6 +425,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                                         value={field.value || []}
                                                         onChange={field.onChange}
                                                         options={contacts}
+                                                        onInputChange={searchContacts}
+                                                        showSuggestionBadge={true}
                                                         placeholder="Select or type to add"
                                                         isMulti={true}
                                                         moduleName="compose"

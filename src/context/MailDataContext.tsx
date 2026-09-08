@@ -5,7 +5,7 @@ import type { Pagination } from '@models/Pagination';
 import { getCounts, getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { getUserPermissions } from '@services/settings/settingsService';
-import { buildParentFolderOptions, resolveAllSidebarItems, verifyBoxName } from '@utils/emailUtil';
+import { buildParentFolderOptions, ensureContactInOtherMenu, resolveAllSidebarItems, verifyBoxName } from '@utils/emailUtil';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface BoxCount {
@@ -243,7 +243,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchEmails = useCallback(
         async (page = mailListPage, boxNameParam?: string, isPrevious?: boolean, mailAction: string = 'all', _forceRefresh = false) => {
             let emailList, paginationData;
-            if (boxNameParam === 'settings' || boxNameParam === 'calendar' || !boxNameParam) {
+            if (boxNameParam === 'settings' || boxNameParam === 'calendar' || boxNameParam === 'contact' || !boxNameParam) {
                 return;
             }
 
@@ -728,6 +728,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setIsSidebarLoading(true);
         try {
             const response = await getBoxes()
+            response.otherMenu = ensureContactInOtherMenu(response.otherMenu ?? []);
             const boxCounts: Record<string, BoxCount> = {};
 
             [...response.boxes, ...response.customBoxes, ...response.otherMenu].forEach(
@@ -874,7 +875,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             wasShowingSearchResults &&
             boxName &&
             !verifyBoxName(boxName, 'calendar') &&
-            !verifyBoxName(boxName, 'settings')
+            !verifyBoxName(boxName, 'settings') &&
+            !verifyBoxName(boxName, 'contact')
         ) {
             const activeItem = sidebarItems.find(item => item.boxName === boxName);
             setBoxTitle(activeItem?.label ?? boxName);

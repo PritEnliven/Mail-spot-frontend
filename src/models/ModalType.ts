@@ -14,4 +14,5 @@ export type ModalType =
     'forwardIt' |
     'moveToFolder' |
     'editRule' |
+    'contactForm' |
 null;

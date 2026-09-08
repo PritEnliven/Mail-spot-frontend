@@ -8,7 +8,10 @@ const RightPanel = () => {
     const location = useLocation();
 
     // Check if current path is settings or calendar
-const isSettingsOrCalendar = location.pathname.includes('/settings') || location.pathname.includes('/calendar');
+const isSettingsOrCalendarOrContact =
+    location.pathname.includes('/settings') ||
+    location.pathname.includes('/calendar') ||
+    location.pathname.includes('/contact');
     const { activeEmailMessageId } = useMailData();
     const { isDesktop } = useScreen();
 
@@ -18,9 +21,9 @@ const isSettingsOrCalendar = location.pathname.includes('/settings') || location
             {/* On mobile/tablet, hide list header whenever a mail is open (including load gaps between swipes) */}
             {(isDesktop || !activeEmailMessageId) && <Header />}
 
-            {!isSettingsOrCalendar && <ToolbarBox />}
+            {!isSettingsOrCalendarOrContact && <ToolbarBox />}
 
-            <div className={`mail-application-box ${isSettingsOrCalendar ? '' : 'd-flex'}`} id="mailApplicationBox">
+            <div className={`mail-application-box ${isSettingsOrCalendarOrContact ? '' : 'd-flex'}`} id="mailApplicationBox">
                 <Outlet />
             </div>
         </>

@@ -12,6 +12,7 @@ const MailboxPage = lazy(() => import('@features/emails/MailBoxPage'));
 const EmailDetailPage = lazy(() => import('@features/emails/EmailDetailPage'));
 const SettingsPage = lazy(() => import('@features/settings/SettingsPage'));
 const CalendarPage = lazy(() => import('@features/calendar/CalendarPage'));
+const ContactsPage = lazy(() => import('@features/contacts/ContactsPage'));
 const RegisterPage = lazy(() => import('@features/register/RegisterPage'));
 const ForgotPage = lazy(() => import('@features/forgot/ForgotPage'));
 const AppLayout = lazy(() => import('@components/layout/AppLayout'));
@@ -80,6 +81,7 @@ const AppRoutes = () => {
           {/* Settings route */}
           <Route path="mail/settings" element={<SettingsPage />} />
           <Route path="mail/calendar" element={<CalendarPage />} />
+          <Route path="mail/contact" element={<ContactsPage />} />
 
           {/* Optional: calendar can reuse MailboxPage */}
           <Route path="calendar/:boxName" element={<MailboxPage />} />

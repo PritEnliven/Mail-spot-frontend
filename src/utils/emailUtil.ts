@@ -408,6 +408,39 @@ function resolveSidebarItem(box: any, category: 'boxes' | 'customBoxes' | 'other
     return finalBoxObject
 }
 
+const CONTACT_OTHER_MENU_ITEM = {
+    key: 'Contact',
+    value: 'contact',
+    count: 0,
+    isTotal: false,
+    totalCount: 0,
+};
+
+/** Backend get-boxes may omit Contact; inject it so the sidebar nav matches sidebar.config. */
+function ensureContactInOtherMenu(otherMenu: any[]): any[] {
+    const hasContact = otherMenu.some((box) => {
+        const key = String(box?.key ?? '').toLowerCase();
+        const value = String(box?.value ?? '').toLowerCase();
+        return key.includes('contact') || value === 'contact';
+    });
+
+    if (hasContact) return otherMenu;
+
+    const calendarIndex = otherMenu.findIndex((box) => {
+        const key = String(box?.key ?? '').toLowerCase();
+        const value = String(box?.value ?? '').toLowerCase();
+        return key.includes('calendar') || value === 'calendar';
+    });
+
+    const next = [...otherMenu];
+    if (calendarIndex >= 0) {
+        next.splice(calendarIndex, 0, CONTACT_OTHER_MENU_ITEM);
+    } else {
+        next.unshift(CONTACT_OTHER_MENU_ITEM);
+    }
+    return next;
+}
+
 // Add this function in emailUtil.ts, after the existing resolveSidebarItem function
 const resolveAllSidebarItems = (
     boxes: any[],
@@ -565,4 +598,4 @@ const getEmailPreviewText = (email: {
     return withoutQuote || email.subject || "";
 };
 
-export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText, isCustomFolderDepthAllowed, getParentFolderDepth, wouldExceedCustomFolderDepth };
+export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, ensureContactInOtherMenu, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText, isCustomFolderDepthAllowed, getParentFolderDepth, wouldExceedCustomFolderDepth };

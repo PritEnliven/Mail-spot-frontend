@@ -36,6 +36,10 @@ const getActiveSidebarItem = (pathname: string, items: SidebarNavItem[]) => {
         return items.find(item => item.id.includes('calendar') || item.boxName === 'calendar') ?? null;
     }
 
+    if (urlBoxName === 'contact') {
+        return items.find(item => item.id.includes('contact') || item.boxName === 'contact') ?? null;
+    }
+
     return items.find(item => item.boxName === urlBoxName) ?? null;
 };
 
@@ -92,6 +96,15 @@ const LeftPanel = () => {
                     setActiveBoxId(settingsItem.id);
                     setBoxTitle(settingsItem.label);
                     setBoxName(settingsItem.boxName);
+                }
+            } else if (urlBoxName === 'contact') {
+                const contactItem = sidebarItems.find(item =>
+                    item.id.includes('contact') || item.boxName === 'contact'
+                );
+                if (contactItem) {
+                    setActiveBoxId(contactItem.id);
+                    setBoxTitle(contactItem.label);
+                    setBoxName(contactItem.boxName);
                 }
             } else {
                 const matchedItem = sidebarItems.find(item => item.boxName === urlBoxName);
@@ -202,7 +215,7 @@ const LeftPanel = () => {
             if (boxName === 'calendar') {
                 setIsCalendarAllSearchActive(false);
             }
-            else if (boxName === 'settings') {
+            else if (boxName === 'settings' || boxName === 'contact') {
 
             }
             else {

@@ -1,13 +1,25 @@
-import { getAllContacts } from '@services/contact/contactService';
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import type { ContactAutocompleteOption } from '@models/Contact';
+import { searchContacts as searchContactsApi } from '@services/contact/contactService';
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 
 interface ContactsType {
-    contacts: any[];
-    setContacts: (contacts: any[]) => void;
+    contacts: ContactAutocompleteOption[];
+    setContacts: (contacts: ContactAutocompleteOption[]) => void;
     fetchContacts: () => Promise<void>;
+    searchContacts: (query: string) => void;
 }
 
 const ContactsContext = createContext<ContactsType | undefined>(undefined);
+
+function mapToAutocompleteOptions(items: any[]): ContactAutocompleteOption[] {
+    return (items ?? []).map((item) => ({
+        value: item.email || item._id,
+        name: item.name || item.email,
+        email: item.email,
+        label: item.name || item.email,
+        isSuggestion: Boolean(item.isSuggestion),
+    }));
+}
 
 export const useContacts = () => {
     const ctx = useContext(ContactsContext);
@@ -16,28 +28,39 @@ export const useContacts = () => {
 };
 
 export const ContactsProvider = ({ children }: { children: ReactNode }) => {
-    const [contacts, setContacts] = useState<any[]>([
-        // Mock contacts for testing
-        { value: '1', name: 'John Doe', email: 'john@example.com' },
-        { value: '2', name: 'Jane Smith', email: 'jane@example.com' },
-        { value: '3', name: 'Bob Johnson', email: 'bob@example.com' }
-    ]);
+    const [contacts, setContacts] = useState<ContactAutocompleteOption[]>([]);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const fetchContacts = useCallback(async () => {
+    const runSearch = useCallback(async (query: string) => {
         try {
-            const response = await getAllContacts();
-            if (response.statusCode === 200) {
-                setContacts(response.data.contacts || []);
+            const response = await searchContactsApi(query, 20);
+            if (response?.statusCode === 200) {
+                const list = Array.isArray(response.data) ? response.data : response.data?.contacts ?? [];
+                setContacts(mapToAutocompleteOptions(list));
             }
         } catch (error) {
-            console.error('Failed to fetch contacts:', error);
+            console.error('Failed to search contacts:', error);
         }
     }, []);
+
+    const searchContacts = useCallback((query: string) => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+        debounceRef.current = setTimeout(() => {
+            void runSearch(query);
+        }, 300);
+    }, [runSearch]);
+
+    const fetchContacts = useCallback(async () => {
+        await runSearch('');
+    }, [runSearch]);
 
     const value = {
         contacts,
         setContacts,
         fetchContacts,
+        searchContacts,
     };
 
     return (
