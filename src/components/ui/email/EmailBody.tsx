@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { highlightTextInHtml } from "@utils/highlightUtil";
+import { resolveExternalLinkUrl } from "@utils/emailHtmlUtil";
 import threeDotIcon from "@images/three-dot-icon.svg";
 
 interface EmailBodyProps {
@@ -57,6 +58,13 @@ function EmailBody({ html, searchTerm }: EmailBodyProps) {
 
     const container = document.createElement("div");
     container.innerHTML = contentHtml;
+
+    container.querySelectorAll("a[href]").forEach((anchor) => {
+      const resolvedHref = resolveExternalLinkUrl(anchor.getAttribute("href"));
+      if (resolvedHref) {
+        anchor.setAttribute("href", resolvedHref);
+      }
+    });
 
     // Gmail-style collapsed quoted content
     container.querySelectorAll(".quoted-content").forEach((quotedContent) => {
@@ -128,8 +136,10 @@ function EmailBody({ html, searchTerm }: EmailBodyProps) {
       const target = e.composedPath()[0] as HTMLElement;
       if (target?.tagName === "A") {
         e.preventDefault();
-        const href = (target as HTMLAnchorElement).href;
-        window.open(href, "_blank");
+        const rawHref = (target as HTMLAnchorElement).getAttribute("href");
+        const href = resolveExternalLinkUrl(rawHref);
+        if (!href) return;
+        window.open(href, "_blank", "noopener,noreferrer");
       }
     };
 

@@ -236,6 +236,19 @@ p {
   padding: 0;
 }
 
+/* Keep admin profile toggle sized to name + avatar (header grid otherwise stretches it). */
+.mail-details-header > .admin-header-profile {
+  justify-self: end;
+  width: max-content;
+  max-width: 100%;
+  position: relative;
+}
+
+.mail-details-header > .admin-header-profile > .btn {
+  width: auto;
+  flex: 0 0 auto;
+}
+
 .mail-profile-name {
   color: #212121;
   font-size: 13px;

@@ -135,6 +135,29 @@ function CalendarPage() {
 
                             lastClickedDateRef.current = dateStr;
                             calendar.gotoDate(dateStr);
+
+                            const sidebarApi = sidebarCalendarRef.current?.getApi();
+                            const viewStart = sidebarApi?.view.currentStart;
+                            const [yearStr, monthStr] = dateStr.split('-');
+                            const clickedYear = Number(yearStr);
+                            const clickedMonthIndex = Number(monthStr) - 1;
+                            const isOtherMonth =
+                                target.classList.contains('fc-day-other') ||
+                                (viewStart != null &&
+                                    (clickedYear !== viewStart.getFullYear() ||
+                                        clickedMonthIndex !== viewStart.getMonth()));
+
+                            // Advance mini-calendar when an adjacent-month date is clicked
+                            if (isOtherMonth && sidebarApi) {
+                                sidebarApi.gotoDate(dateStr);
+                                requestAnimationFrame(() => {
+                                    const newDay = document.querySelector(
+                                        `#sidebar-calendar .fc-daygrid-day[data-date="${dateStr}"]`
+                                    );
+                                    const dayTopLink = newDay?.querySelector('.fc-daygrid-day-top a');
+                                    dayTopLink?.classList.add('subcalendar-day-box');
+                                });
+                            }
                         }
                     }
                 }
@@ -247,9 +270,39 @@ function CalendarPage() {
     })
 
     const handleDateClick = useCallback((info: any) => {
-        focusDate(info)
+        const date = info.date ?? info.dateStr
+        const viewStart: Date | undefined = info.view?.currentStart
+        const clickedDate: Date | undefined =
+            info.date instanceof Date
+                ? info.date
+                : info.dateStr
+                    ? new Date(info.dateStr)
+                    : undefined
+
+        const isOtherMonth =
+            info.dayEl?.classList.contains('fc-day-other') ||
+            (clickedDate != null &&
+                viewStart != null &&
+                (clickedDate.getFullYear() !== viewStart.getFullYear() ||
+                    clickedDate.getMonth() !== viewStart.getMonth()))
+
+        if (isOtherMonth && date != null) {
+            info.view.calendar.gotoDate(date)
+            sidebarCalendarRef.current?.getApi().gotoDate(date)
+
+            // gotoDate re-renders day cells, so re-apply selection on the new cell
+            requestAnimationFrame(() => {
+                const newDayEl = document.querySelector(
+                    `#calendar .fc-daygrid-day[data-date="${info.dateStr}"]`
+                ) as HTMLElement | null
+                focusDate({ dayEl: newDayEl })
+            })
+        } else {
+            focusDate(info)
+        }
+
         openModal('calendarEvent', info)
-    }, [openModal])
+    }, [openModal, sidebarCalendarRef])
 
     const mainCalendarConfig = useMemo(() => createMainCalendarConfig({
         onDatesSet: handleDatesSet,

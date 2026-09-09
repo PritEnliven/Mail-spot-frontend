@@ -12,16 +12,30 @@ interface GuestTagProps {
     guest: Guest;
     mode: 'view' | 'edit';
     onRemove?: (email: string) => void;
-    onCopy?: (email: string) => void;
+    onCopy?: (email: string) => void | Promise<void>;
 }
 
 function GuestTag({ guest, mode, onRemove, onCopy }: GuestTagProps) {
     const [copied, setCopied] = useState(false);
 
-    const handleCopyLogic = () => {
-        onCopy?.(guest.email);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1000);
+    const handleCopyLogic = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const email = typeof guest.email === 'string' ? guest.email.trim() : '';
+        if (!email) return;
+
+        try {
+            if (onCopy) {
+                await onCopy(email);
+            } else if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(email);
+            }
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1000);
+        } catch {
+            // Keep UI unchanged if copy fails
+        }
     };
 
     return (
@@ -41,6 +55,8 @@ function GuestTag({ guest, mode, onRemove, onCopy }: GuestTagProps) {
                     type="button"
                     className="btn copy-text-btn copy-btn-common"
                     onClick={handleCopyLogic}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label={`Copy ${guest.email}`}
                 >
                     {copied ? (
                         <>

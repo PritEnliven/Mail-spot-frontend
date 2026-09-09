@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { getSocket, disconnectSocket } from '@services/socket/socket';
 import { useMailData } from '@context/MailDataContext';
-import { useAccount } from '@context/AccountContext';
+import { useAccount, consumeLocalUnlink } from '@context/AccountContext';
 import { useContacts } from '@context/ContactsContext';
 import { useProfile } from '@context/userContext';
 import { useMailUI } from '@context/MailUIContext';
@@ -383,15 +383,21 @@ export const useLinkedAccountRevoked = () => {
         const { accountId, email, switchedToPrimary } = payload ?? {};
         if (!accountId) return;
 
+        // Initiating tab already showed "Account unlinked successfully" — only warn other sessions.
+        const isLocalUnlink = consumeLocalUnlink(accountId);
+
         removeRevokedAccount(accountId, !!switchedToPrimary);
         void fetchLinkedAccounts();
 
-        showWarning(
-            `${email || 'Linked account'} is no longer linked. Re-link with the new password to use it again.`
-        );
+        if (!isLocalUnlink) {
+            showWarning(
+                `${email || 'Linked account'} is no longer linked. Re-link the account to use it again.`
+            );
+        }
 
         const shouldReloadPrimary = switchedToPrimary || accountId === activeAccountId;
-        if (!shouldReloadPrimary || !primaryAccount) return;
+        // Local unlink of the active mailbox already reloads in AccountSwitcher.
+        if (isLocalUnlink || !shouldReloadPrimary || !primaryAccount) return;
 
         try {
             prepareMailboxForAccount(primaryAccount.id);
@@ -406,7 +412,8 @@ export const useLinkedAccountRevoked = () => {
             const name = primaryAccount.username || primaryAccount.email.split('@')[0];
             updateProfile(name, primaryAccount.email);
             setProfileInitial(profileInitials(primaryAccount.email, primaryAccount.username));
-        } catch (err) {
+        } 
+        catch (err) {
             console.error('Failed to reload mailbox after linked account revoked', err);
             prepareMailboxForAccount(activeAccountId);
         }
@@ -442,11 +449,12 @@ export const useLinkedAccountSignedOut = () => {
         const needsMailboxReload = markAccountSignedOut(accountId, !!switchedToPrimary);
 
         const now = Date.now();
+
         const lastToast = lastToastAtRef.current;
         if (!lastToast || lastToast.accountId !== accountId || now - lastToast.at > 2000) {
             lastToastAtRef.current = { accountId, at: now };
             showWarning(
-                `${email || 'Linked account'} was signed out. Sign in again to use it.`
+                `${email || 'Linked account'} was signed out. Sign in again with the new password to use it.`
             );
         }
 
@@ -466,7 +474,8 @@ export const useLinkedAccountSignedOut = () => {
             const name = primaryAccount.username || primaryAccount.email.split('@')[0];
             updateProfile(name, primaryAccount.email);
             setProfileInitial(profileInitials(primaryAccount.email, primaryAccount.username));
-        } catch (err) {
+        } 
+        catch (err) {
             console.error('Failed to reload mailbox after linked account signed out', err);
             prepareMailboxForAccount(primaryAccount.id);
         }

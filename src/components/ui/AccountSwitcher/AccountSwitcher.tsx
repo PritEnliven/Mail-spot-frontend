@@ -19,9 +19,11 @@ import trashIconHover from '@images/trash-icon-hover.svg';
 
 interface AccountSwitcherProps {
   onAccountSwitch?: () => void;
+  /** True while Add Account modal or account "more" menu is open (keeps profile dropdown open). */
+  onNestedOverlayChange?: (open: boolean) => void;
 }
 
-const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
+const AccountSwitcher = ({ onAccountSwitch, onNestedOverlayChange }: AccountSwitcherProps) => {
   const {
     primaryAccount,
     linkedAccounts,
@@ -103,6 +105,13 @@ const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
 
   const closeMoreMenu = useCallback(() => setOpenMenuId(null), []);
 
+  const nestedOverlayOpen = addModalOpen || openMenuId !== null;
+
+  useEffect(() => {
+    onNestedOverlayChange?.(nestedOverlayOpen);
+    return () => onNestedOverlayChange?.(false);
+  }, [nestedOverlayOpen, onNestedOverlayChange]);
+
   const toggleMoreMenu = (accountId: string, event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -123,19 +132,27 @@ const AccountSwitcher = ({ onAccountSwitch }: AccountSwitcherProps) => {
   useEffect(() => {
     if (!openMenuId) return;
 
-    const onPointerDown = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('.add-account-more-menu') || target?.closest('.add-account-more-btn')) {
-        return;
-      }
+    const isInsideMoreMenu = (eventTarget: EventTarget | null) => {
+      const target = eventTarget as HTMLElement | null;
+      return !!(
+        target?.closest('.add-account-more-menu') ||
+        target?.closest('.add-account-more-btn')
+      );
+    };
+
+    // Close on click (not mousedown) so this listener is still mounted and can
+    // stopPropagation before Bootstrap's document root-close runs.
+    const onClick = (event: Event) => {
+      if (isInsideMoreMenu(event.target)) return;
+      event.stopPropagation();
       setOpenMenuId(null);
     };
 
-    document.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('click', onClick, true);
     window.addEventListener('resize', closeMoreMenu);
     window.addEventListener('scroll', closeMoreMenu, true);
     return () => {
-      document.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('click', onClick, true);
       window.removeEventListener('resize', closeMoreMenu);
       window.removeEventListener('scroll', closeMoreMenu, true);
     };

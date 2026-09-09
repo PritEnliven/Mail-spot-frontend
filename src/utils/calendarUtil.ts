@@ -40,6 +40,16 @@ function focusDate(info: any) {
     }
 }
 
+function clearFocusDate() {
+    document.querySelectorAll('.selected-day, .focused-day')
+        .forEach(el => {
+            el.classList.remove('selected-day');
+            el.classList.remove('focused-day');
+        });
+    document.querySelectorAll('.subcalendar-day-box')
+        .forEach(el => el.classList.remove('subcalendar-day-box'));
+}
+
 function removeFocusEvent() {
     document.querySelectorAll('.fc-event-focus')
         .forEach(el => el.classList.remove('fc-event-focus'));
@@ -316,4 +326,4 @@ const generateTimeOptions = ({
 };
 
 
-export { buildRecurrencePayload, filterGuestByEmail, focusDate, focusEvent, formatCalendarEvents, generateTimeOptions, normalizeEventForModal, normalizeGuests, removeFocusEvent };
+export { buildRecurrencePayload, clearFocusDate, filterGuestByEmail, focusDate, focusEvent, formatCalendarEvents, generateTimeOptions, normalizeEventForModal, normalizeGuests, removeFocusEvent };

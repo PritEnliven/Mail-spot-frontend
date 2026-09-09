@@ -139,11 +139,11 @@ function normalizeBoxName(boxName: string): string {
 function parseEmailAddress(email?: any): ParsedEmailAddress {
 
     if (email && typeof email === 'object') {
-        const trimEmail = email.email?.trim() || '';
+        const trimEmail = email.email?.trim() || email.address?.trim() || '';
         const name = email.name?.trim() || trimEmail.split('@')[0] || 'Unknown';
         return {
             name,
-            email,
+            email: trimEmail,
             initial: name.charAt(0).toUpperCase(),
         };
     }

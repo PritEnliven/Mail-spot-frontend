@@ -3,7 +3,7 @@ import FullCalendar from '@fullcalendar/react';
 import type { CalendarEvent, EventDetail } from '@models/CalendarModels';
 import type { ApiResponse } from '@models/Response';
 import { getAllEvents } from '@services/calendar/calendarService';
-import { formatCalendarEvents } from '@utils/calendarUtil';
+import { clearFocusDate, formatCalendarEvents } from '@utils/calendarUtil';
 import {
     createContext,
     useCallback,
@@ -126,14 +126,52 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     }, [])
 
     const goPrev = useCallback(() => {
-        mainCalendarRef.current?.getApi().prev()
-        sidebarCalendarRef.current?.getApi().prev()
-    }, [])
+        const mainApi = mainCalendarRef.current?.getApi()
+        const sidebarApi = sidebarCalendarRef.current?.getApi()
+        if (!mainApi) return
+
+        clearFocusDate()
+
+        // Day view title shows month only, so navigate by month (same day-of-month)
+        if (calendarView === 'timeGridDay') {
+            const current = mainApi.getDate()
+            const year = current.getFullYear()
+            const month = current.getMonth() - 1
+            const day = current.getDate()
+            const lastDayOfTargetMonth = new Date(year, month + 1, 0).getDate()
+            const target = new Date(year, month, Math.min(day, lastDayOfTargetMonth))
+            mainApi.gotoDate(target)
+            sidebarApi?.gotoDate(target)
+            return
+        }
+
+        mainApi.prev()
+        // Sync sidebar to main's date instead of independent prev() (day vs month mismatch)
+        sidebarApi?.gotoDate(mainApi.getDate())
+    }, [calendarView])
 
     const goNext = useCallback(() => {
-        mainCalendarRef.current?.getApi().next()
-        sidebarCalendarRef.current?.getApi().next()
-    }, [])
+        const mainApi = mainCalendarRef.current?.getApi()
+        const sidebarApi = sidebarCalendarRef.current?.getApi()
+        if (!mainApi) return
+
+        clearFocusDate()
+
+        if (calendarView === 'timeGridDay') {
+            const current = mainApi.getDate()
+            const year = current.getFullYear()
+            const month = current.getMonth() + 1
+            const day = current.getDate()
+            const lastDayOfTargetMonth = new Date(year, month + 1, 0).getDate()
+            const target = new Date(year, month, Math.min(day, lastDayOfTargetMonth))
+            mainApi.gotoDate(target)
+            sidebarApi?.gotoDate(target)
+            return
+        }
+
+        mainApi.next()
+        sidebarApi?.gotoDate(mainApi.getDate())
+    }, [calendarView])
 
     const goToday = useCallback(() => {
         mainCalendarRef.current?.getApi().today()

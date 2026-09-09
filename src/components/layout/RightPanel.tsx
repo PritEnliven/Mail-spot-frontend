@@ -18,8 +18,8 @@ const isSettingsOrCalendarOrContact =
     return (
         <>
 
-            {/* On mobile/tablet, hide list header whenever a mail is open (including load gaps between swipes) */}
-            {(isDesktop || !activeEmailMessageId) && <Header />}
+            {/* On mobile/tablet, hide list header when a mail is open — but keep it on settings/calendar/contact */}
+            {(isDesktop || !activeEmailMessageId || isSettingsOrCalendarOrContact) && <Header />}
 
             {!isSettingsOrCalendarOrContact && <ToolbarBox />}
 

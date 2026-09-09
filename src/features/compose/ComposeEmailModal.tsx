@@ -45,6 +45,7 @@ import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
 // import AttachmentPreview from '@components/ui/AttachmentPreview';
 import SubmitButton from '@components/ui/form/SubmitButton';
 import { useShortcutAction } from '@hooks/useShortcutAction';
+import { useScreen } from '@context/ScreenContext';
 
 interface ComposeEmailModalProps {
     modalId: string;
@@ -68,6 +69,7 @@ interface ComposeEmailModalProps {
 
 export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailModalProps) => {
     const navigate = useNavigate();
+    const { isMobile } = useScreen();
     const { contacts, searchContacts } = useContacts();
     const { openModal, closeModal, isComposeExpanded, setIsComposeExpanded } = useMailUI();
     const { settings } = useSettings();
@@ -240,10 +242,6 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             return currentFormData;
         });
     }, [trigger, getValues, setFormData, setTriggerValidation]);
-
-    const handleManageSignatures = () => {
-        navigate('/mail/settings');
-    };
 
     const openScheduleModal = () => {
         openModal('schedule');
@@ -502,6 +500,38 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             setIsSubmitting(false);
         }
     }
+
+    const handleManageSignatures = () => {
+        const goToSettings = () => navigate('/mail/settings');
+
+        if (!isMobile) {
+            goToSettings();
+            return;
+        }
+
+        const data = getValues();
+        if (!hasDraftContent(data)) {
+            onClose();
+            goToSettings();
+            return;
+        }
+
+        openModal('confirmDelete', {
+            title: 'Leave compose?',
+            message: 'Do you want to save this email as a draft or discard it before managing signatures?',
+            confirmLabel: 'Save as Draft',
+            cancelLabel: 'Discard',
+            showIcon: false,
+            onConfirm: async () => {
+                await onCloseSaveAsDraft();
+                goToSettings();
+            },
+            onCancel: () => {
+                onClose();
+                goToSettings();
+            },
+        });
+    };
 
     return (
         <BaseModal

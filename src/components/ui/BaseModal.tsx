@@ -203,7 +203,15 @@ export default function BaseModal({
             backgroundColor: "rgba(0,0,0,0.5)",
             transition: `opacity ${ANIMATION_DURATION}ms ease`,
           }}
-          onClick={closeOnBackdrop ? onClose : undefined}
+          onMouseDown={(event) => {
+            // Prevent Bootstrap dropdown root-close from seeing this as an outside click
+            // while a nested modal (e.g. Add Account) is open above the profile menu.
+            event.stopPropagation();
+          }}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (closeOnBackdrop) onClose();
+          }}
         />
       )}
 

@@ -165,15 +165,17 @@ export const AddAccountModal = ({
   const handleLinkPassword = async () => {    
     const ok = await passwordForm.trigger('password');
     if (!ok) return;
-    const success = await linkMailspot(linkedEmail, passwordForm.getValues('password'));
-    if (success) {
-      onSuccess?.();
-      if (reauthEmail) {
-        handleClose();
-        return;
-      }
-      setStep('linkSuccess');
+    const result = await linkMailspot(linkedEmail, passwordForm.getValues('password'));
+    if (!result.success) {
+      passwordForm.setError('password', { message: result.error });
+      return;
     }
+    onSuccess?.();
+    if (reauthEmail) {
+      handleClose();
+      return;
+    }
+    setStep('linkSuccess');
   };
 
   const handleLinkExternal = async () => {
@@ -223,7 +225,7 @@ export const AddAccountModal = ({
         isOpen={isOpen}
         onClose={handleClose}
         zIndex={1060}
-        closeOnBackdrop={false}
+        closeOnBackdrop={true}
         closeOnEsc={true}
         showBackdrop={true}
         draggable={true}
@@ -387,6 +389,12 @@ export const AddAccountModal = ({
                                       autoFocus
                                       onFocus={() => setFocused('password')}
                                       onBlur={() => setFocused(null)}
+                                      onChange={(e) => {
+                                        field.onChange(e);
+                                        if (passwordForm.formState.errors.password) {
+                                          passwordForm.clearErrors('password');
+                                        }
+                                      }}
                                     />
                                   )}
                                 />

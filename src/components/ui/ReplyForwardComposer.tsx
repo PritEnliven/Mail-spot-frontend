@@ -87,7 +87,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     const [signatureInserted, setSignatureInserted] = useState(false);
     const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => { });
     const instanceId = useId();
-    const { isComposeActionsCompact } = useScreen();
+    const { isComposeActionsCompact, isMobile } = useScreen();
 
     const normalizeRecipients = (recipients: any[]): string[] => {
         if (!recipients?.length) return [];
@@ -142,7 +142,24 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
 
     // Handle manage signatures
     const handleManageSignatures = () => {
-        navigate('/mail/settings');
+        const goToSettings = () => navigate('/mail/settings');
+
+        if (!isMobile) {
+            goToSettings();
+            return;
+        }
+
+        openModal('confirmDelete', {
+            title: 'Leave message?',
+            message: 'Do you want to discard this message before managing signatures?',
+            confirmLabel: 'Discard',
+            cancelLabel: 'Keep editing',
+            showIcon: false,
+            onConfirm: () => {
+                onClose?.();
+                goToSettings();
+            },
+        });
     };
 
     useEffect(() => {

@@ -12,9 +12,26 @@ interface ConfirmDeleteProps {
     modalId: string;
     zIndex: number;
     onConfirm: () => Promise<void> | void;
+    /** Called when the secondary/cancel button is clicked (e.g. Discard). If omitted, cancel only closes the dialog. */
+    onCancel?: () => Promise<void> | void;
+    title?: string;
+    message?: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    showIcon?: boolean;
 }
 
-function ConfirmDelete({ modalId, zIndex, onConfirm }: ConfirmDeleteProps) {
+function ConfirmDelete({
+    modalId,
+    zIndex,
+    onConfirm,
+    onCancel,
+    title = "Confirm to Delete",
+    message = "Are you sure to do this?",
+    confirmLabel = "Yes",
+    cancelLabel = "No",
+    showIcon = true,
+}: ConfirmDeleteProps) {
     const { closeModal } = useMailUI();
 
     const handleConfirm = async () => {
@@ -24,6 +41,17 @@ function ConfirmDelete({ modalId, zIndex, onConfirm }: ConfirmDeleteProps) {
         } catch (error) {
             console.error('Error in confirmation:', error);
             throw error; // Let SubmitButton handle the error state
+        }
+    };
+
+    const handleCancel = async () => {
+        try {
+            if (onCancel) {
+                await onCancel();
+            }
+            closeModal(modalId);
+        } catch (error) {
+            console.error('Error in cancel action:', error);
         }
     };
 
@@ -59,7 +87,7 @@ function ConfirmDelete({ modalId, zIndex, onConfirm }: ConfirmDeleteProps) {
                                     tooltip="Move"
                                 />
                             </button>
-                            <h5 className="modal-title modal-title-center" id="bottomRightModalLabel">Confirm to Delete</h5>
+                            <h5 className="modal-title modal-title-center" id="bottomRightModalLabel">{title}</h5>
                             <button type="button"
                                 className="btn-close hover-link btn icon-hover-effect"
                                 data-bs-dismiss="modal"
@@ -79,14 +107,16 @@ function ConfirmDelete({ modalId, zIndex, onConfirm }: ConfirmDeleteProps) {
                         </div>
                         <div className="modal-body" data-simplebar data-simplebar-auto-hide="false">
                             <p className="text-center mb-4 d-flex align-items-center">
-                                <img src={trashIconDeleteBox} alt="" className="me-2" />Are you sure to do this?</p>
+                                {showIcon && <img src={trashIconDeleteBox} alt="" className="me-2" />}
+                                {message}
+                            </p>
                             <div className="d-flex align-items-center justify-content-between">
-                                <button className="btn-new me-3" type="button" onClick={onClose}>No</button>
+                                <button className="btn-new me-3" type="button" onClick={handleCancel}>{cancelLabel}</button>
                                 <SubmitButton
                                     className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
                                     onClick={handleConfirm}
                                 >
-                                    Yes
+                                    {confirmLabel}
                                 </SubmitButton>
                             </div>
                         </div>

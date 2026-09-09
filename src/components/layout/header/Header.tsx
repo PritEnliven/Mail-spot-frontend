@@ -127,6 +127,30 @@ const Header = () => {
     const [noResult, setNoResult] = useState(false);
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [profileNestedOverlayOpen, setProfileNestedOverlayOpen] = useState(false);
+    const profileNestedOverlayOpenRef = useRef(false);
+    const nestedOverlayCloseTimerRef = useRef<number | null>(null);
+
+    const handleProfileNestedOverlayChange = useCallback((open: boolean) => {
+        if (nestedOverlayCloseTimerRef.current != null) {
+            window.clearTimeout(nestedOverlayCloseTimerRef.current);
+            nestedOverlayCloseTimerRef.current = null;
+        }
+
+        if (open) {
+            profileNestedOverlayOpenRef.current = true;
+            setProfileNestedOverlayOpen(true);
+            return;
+        }
+
+        // Keep root-close blocked through the same outside-click that dismissed the
+        // nested Add Account modal / more-menu (mousedown close → click root-close).
+        nestedOverlayCloseTimerRef.current = window.setTimeout(() => {
+            profileNestedOverlayOpenRef.current = false;
+            setProfileNestedOverlayOpen(false);
+            nestedOverlayCloseTimerRef.current = null;
+        }, 0);
+    }, []);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
     const { isDesktop, isMobile } = useScreen();
     const {
@@ -1109,13 +1133,12 @@ const Header = () => {
                 <Dropdown
                     className="mail-profile-dropdown"
                     show={isProfileOpen}
+                    // Nested Add Account modal / account more-menu are portaled outside the
+                    // dropdown; disable root-close so those outside clicks don't dismiss profile.
+                    autoClose={profileNestedOverlayOpen ? false : true}
                     onToggle={(nextShow, meta) => {
-                        const target = (meta as { originalEvent?: { target?: EventTarget } } | undefined)
-                            ?.originalEvent?.target as HTMLElement | undefined;
-                        if (
-                            !nextShow &&
-                            target?.closest?.('.add-account-more-menu, .add-account-more-btn')
-                        ) {
+                        const source = (meta as { source?: string } | undefined)?.source;
+                        if (!nextShow && profileNestedOverlayOpenRef.current && source !== 'click') {
                             return;
                         }
                         if (wasSwipeGesture() || isSwipeSwitchingAccount) return;
@@ -1203,7 +1226,10 @@ const Header = () => {
                                         id="profileEmail1"> {profileEmail}</span>
                                 </div>
                             </div>
-                            <AccountSwitcher onAccountSwitch={() => setIsProfileOpen(false)} />
+                            <AccountSwitcher
+                                onAccountSwitch={() => setIsProfileOpen(false)}
+                                onNestedOverlayChange={handleProfileNestedOverlayChange}
+                            />
                             <ul className="profile-link-list">
                                 <li className="profile-link-items">
                                     <a href="#" className="profile-link hover-link" onClick={openChangeImapSmtpPasswordModal}>

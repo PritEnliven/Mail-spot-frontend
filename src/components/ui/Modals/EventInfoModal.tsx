@@ -21,6 +21,7 @@ import { useCalendar } from "@context/CalendarContext";
 import { deleteEvent, getEventById } from "@services/calendar/calendarService";
 import { showError, showSuccess } from "../toast/toastNotification";
 import { copyEmailToClipBoard } from "@utils/generalUtil";
+import { resolveExternalLinkUrl } from "@utils/emailHtmlUtil";
 import SimpleBar from 'simplebar-react';
 import { useSocketEvent } from "@hooks/useSocket";
 import { GUEST_PARTSTAT_GROUPS, groupGuestsByPartstat } from "@utils/calendarInviteUtil";
@@ -48,6 +49,7 @@ function EventInfoModal({ modalId, zIndex, event }: EventInfoModalProps) {
 
     const guests: Guest[] = normalizeGuests(guestList);
     const guestsByPartstat = useMemo(() => groupGuestsByPartstat(guests), [guests]);
+    const meetingHref = resolveExternalLinkUrl(event.meetingLink);
 
     useSocketEvent('event:rsvp', async (payload: any) => {
         const eventId = payload?.eventId || payload?.id || payload?._id;
@@ -246,7 +248,19 @@ function EventInfoModal({ modalId, zIndex, event }: EventInfoModalProps) {
                                             Meeting link
                                         </span>
                                         <div>
-                                            <a href={event.meetingLink} id="eventInfoMeeting" className="link-ap" target="_blank" rel="noopener noreferrer">{event.meetingLink || 'No Meeting Link'}</a>
+                                            {meetingHref ? (
+                                                <a
+                                                    href={meetingHref}
+                                                    id="eventInfoMeeting"
+                                                    className="link-ap"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    {event.meetingLink}
+                                                </a>
+                                            ) : (
+                                                <p id="eventInfoMeeting" className="m-0">No Meeting Link</p>
+                                            )}
                                         </div>
                                     </div>
 

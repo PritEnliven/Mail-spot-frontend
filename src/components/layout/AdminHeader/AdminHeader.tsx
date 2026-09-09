@@ -54,11 +54,12 @@ const AdminHeader = ({ title }: adminHeaderProps) => {
                 )}
                 <h2 className="box-title">{title}</h2>
             </div>
-            <div className="btn-group mail-profile-dropdown">
+            <div className="dropdown mail-profile-dropdown admin-header-profile">
                 <button
-                    className="btn btn-secondary dropdown-toggle d-flex align-items-center justify-content-end"
+                    className="btn btn-secondary dropdown-toggle d-flex align-items-center"
                     type="button"
                     data-bs-toggle="dropdown"
+                    aria-expanded="false"
                 >
                     <div className="d-block">
                         <span className="mail-profile-name d-block text-end m-0">
@@ -70,7 +71,6 @@ const AdminHeader = ({ title }: adminHeaderProps) => {
                 </button>
                 <ul
                     className="dropdown-menu dropdown-menu-lg-end mail-profile-box p-0"
-                    style={{}}
                 >
                     <div className="profile-sec-new-box">
                         <div className="profile-sec-people">

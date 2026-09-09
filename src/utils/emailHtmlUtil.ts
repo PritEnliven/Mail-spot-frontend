@@ -1,6 +1,34 @@
 const EMAIL_TABLE_BORDER = '1px solid #BBC0C4';
 const EMAIL_CELL_PADDING = '4px';
 
+const ABSOLUTE_URL_PATTERN = /^(https?:|mailto:|tel:|ftp:)/i;
+const DOMAIN_LIKE_URL_PATTERN = /^[a-z0-9][-a-z0-9.+]*\.[a-z]{2,}/i;
+
+/**
+ * Resolves email/calendar links without prepending the frontend origin.
+ * Meeting links often omit the protocol (e.g. teams.microsoft.com/...).
+ */
+export function resolveExternalLinkUrl(rawHref: string | null | undefined): string | null {
+  if (!rawHref) return null;
+
+  const href = rawHref.trim();
+  if (!href || href === '#') return null;
+
+  if (ABSOLUTE_URL_PATTERN.test(href)) {
+    return href;
+  }
+
+  if (href.startsWith('//')) {
+    return `https:${href}`;
+  }
+
+  if (!href.startsWith('/') && DOMAIN_LIKE_URL_PATTERN.test(href)) {
+    return `https://${href}`;
+  }
+
+  return href;
+}
+
 function mergeInlineStyles(existing: string, additions: string): string {
   const normalized = existing.trim().replace(/;\s*$/, '');
   return normalized ? `${normalized}; ${additions}` : additions;

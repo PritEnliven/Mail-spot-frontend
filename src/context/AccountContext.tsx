@@ -27,6 +27,26 @@ import { setActiveAccountId as setApiActiveAccountId, getActiveAccountId as getA
 const ACTIVE_ACCOUNT_ID_KEY = 'activeAccountId';
 const ACTIVE_ACCOUNT_EMAIL_KEY = 'activeAccountEmail';
 
+/** Suppress "no longer linked" toast in the tab that initiated the unlink. */
+const LOCAL_UNLINK_SUPPRESS_MS = 8000;
+const localUnlinkUntilByAccountId = new Map<string, number>();
+
+const markLocalUnlink = (accountId: string) => {
+  localUnlinkUntilByAccountId.set(accountId, Date.now() + LOCAL_UNLINK_SUPPRESS_MS);
+};
+
+const clearLocalUnlink = (accountId: string) => {
+  localUnlinkUntilByAccountId.delete(accountId);
+};
+
+/** True once if this tab just unlinked the account (for socket revoke handling). */
+export const consumeLocalUnlink = (accountId: string): boolean => {
+  const until = localUnlinkUntilByAccountId.get(accountId);
+  if (until == null) return false;
+  localUnlinkUntilByAccountId.delete(accountId);
+  return Date.now() <= until;
+};
+
 interface AccountContextType {
   primaryAccount: PrimaryAccount | null;
   linkedAccounts: LinkedAccount[];
@@ -48,7 +68,8 @@ interface AccountContextType {
   /** Mark a linked account signed out (password change). Does not remove the row. Returns true if mailbox should snap to primary. */
   markAccountSignedOut: (accountId: string, switchedToPrimary?: boolean) => boolean;
   checkEmail: (email: string) => Promise<CheckEmailResponse | null>;
-  linkMailspot: (email: string, password: string) => Promise<boolean>;
+  /** Resolves true on success; on failure returns false and leaves error handling to the caller (no toast). */
+  linkMailspot: (email: string, password: string) => Promise<{ success: true } | { success: false; error: string }>;
   linkExternal: (email: string, imap: ImapConfig, smtp: SmtpConfig) => Promise<boolean>;
 }
 
@@ -77,14 +98,17 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     setActiveAccountIdState(id);
     setActiveAccountEmailState(email);
     setApiActiveAccountId(id);
-    if (id) {
+    if (id) {     
       sessionStorage.setItem(ACTIVE_ACCOUNT_ID_KEY, id);
-    } else {
+    } 
+    else {
       sessionStorage.removeItem(ACTIVE_ACCOUNT_ID_KEY);
     }
+    
     if (email) {
       sessionStorage.setItem(ACTIVE_ACCOUNT_EMAIL_KEY, email);
-    } else {
+    } 
+    else {
       sessionStorage.removeItem(ACTIVE_ACCOUNT_EMAIL_KEY);
     }
   }, []);
@@ -197,6 +221,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
 
   const unlinkAccount = useCallback(
     async (accountId: string) => {
+      markLocalUnlink(accountId);
       try {
         await unlinkAccountApi(accountId);
 
@@ -207,6 +232,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         await fetchLinkedAccounts();
         showSuccess('Account unlinked successfully');
       } catch (err: any) {
+        clearLocalUnlink(accountId);
         showError(err?.message || 'Failed to unlink account');
         throw err;
       }
@@ -278,7 +304,10 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const linkMailspot = useCallback(
-    async (email: string, password: string): Promise<boolean> => {
+    async (
+      email: string,
+      password: string
+    ): Promise<{ success: true } | { success: false; error: string }> => {
       try {
         const res = await linkMailspotAccount(email, password);
         const existing = linkedAccounts.find(
@@ -304,15 +333,17 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
             )
           );
           showSuccess(res?.message || 'Account signed in successfully');
-          return true;
+          return { success: true };
         }
 
         showSuccess(res?.message || 'Account linked successfully');
         await fetchLinkedAccounts();
-        return true;
+        return { success: true };
       } catch (err: any) {
-        showError(err?.error || err?.message || 'Failed to link account');
-        return false;
+        return {
+          success: false,
+          error: err?.error || err?.message || 'Failed to link account',
+        };
       }
     },
     [fetchLinkedAccounts, linkedAccounts]

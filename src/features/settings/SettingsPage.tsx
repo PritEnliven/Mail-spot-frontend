@@ -30,8 +30,8 @@ declare global {
 
 function SettingsPage() {
     usePageStylesheet([pageStyles.settingsCss]);
-    const { setBoxName } = useMailData();
-    const { openModal } = useMailUI();
+    const { setBoxName, setActiveEmailMessageId, setEmailDetailSelected } = useMailData();
+    const { openModal, setIsMailListOpen } = useMailUI();
     const { updateSettings } = useSettings();
     const [signatures, setSignatures] = useState<Signature[]>([]);
     const [selectedSignature, setSelectedSignature] = useState<Signature | null>(null);
@@ -116,9 +116,13 @@ function SettingsPage() {
 
     useEffect(() => {
         setBoxName('settings');
+        // Clear open-mail mobile state so the header/sidebar toggle stays visible
+        setActiveEmailMessageId(null);
+        setEmailDetailSelected(null);
+        setIsMailListOpen(true);
         loadSettings();
         loadRules();
-    }, [setBoxName, reset])
+    }, [setBoxName, setActiveEmailMessageId, setEmailDetailSelected, setIsMailListOpen, reset])
 
     async function resetSignatureSettings() {
         const response = await getSettings();
