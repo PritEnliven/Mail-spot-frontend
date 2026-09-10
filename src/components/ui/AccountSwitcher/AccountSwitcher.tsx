@@ -174,32 +174,35 @@ const AccountSwitcher = ({ onAccountSwitch, onNestedOverlayChange }: AccountSwit
         )}
 
         {/* Primary row — shown only when primary is not the active account */}
+        <div className="add-account-item-wrapper">
         {showPrimary && (
-          <div
-            className="add-account-item"
-            style={{
-              cursor: isSwitchingAccount ? 'not-allowed' : 'pointer',
-              opacity: isSwitchingAccount ? 0.6 : 1,
-            }}
-            onClick={() => handleSwitch(primaryAccount!.id)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && handleSwitch(primaryAccount!.id)}
-          >
-            <span className="mail-profile-label">
-              {getAccountInitials(primaryAccount!.email, primaryAccount!.username)}
-            </span>
-            <div className="add-account-info">
-              <p className="add-account-name">
-                {primaryAccount!.username || primaryAccount!.email.split('@')[0]}
-                <span
-                  className="ms-1 add-account-primary">
-                  Primary
-                </span>
-              </p>
-              <p className="add-account-email">{primaryAccount!.email}</p>
+          
+            <div
+              className="add-account-item"
+              style={{
+                cursor: isSwitchingAccount ? 'not-allowed' : 'pointer',
+                opacity: isSwitchingAccount ? 0.6 : 1,
+              }}
+              onClick={() => handleSwitch(primaryAccount!.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleSwitch(primaryAccount!.id)}
+            >
+              <span className="mail-profile-label">
+                {getAccountInitials(primaryAccount!.email, primaryAccount!.username)}
+              </span>
+              <div className="add-account-info">
+                <p className="add-account-name">
+                  {primaryAccount!.username || primaryAccount!.email.split('@')[0]}
+                  <span
+                    className="ms-1 add-account-primary">
+                    Primary
+                  </span>
+                </p>
+                <p className="add-account-email">{primaryAccount!.email}</p>
+              </div>
             </div>
-          </div>
+         
         )}
 
         {/* Linked accounts (excluding active) */}
@@ -256,6 +259,8 @@ const AccountSwitcher = ({ onAccountSwitch, onNestedOverlayChange }: AccountSwit
             </div>
           );
         })}
+
+         </div>
 
         <button
           className="add-account-btn"

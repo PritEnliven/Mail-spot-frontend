@@ -487,6 +487,7 @@ import sidebaropenHoverIcon from "@images/side-bar-open-hover-icon.svg";
 import type { Response } from "@models/Response";
 import { filterEvents, getAllSearchEventList, searchEvent } from "@services/calendar/calendarService";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
+import { flattenSearchEventGroups, groupSearchEventsByDate } from "@utils/calendarUtil";
 import { useEffect, useRef, useState } from "react";
 import Flatpickr from 'react-flatpickr';
 import { Controller } from 'react-hook-form';
@@ -590,9 +591,9 @@ function CalendarHeader() {
                         setSearchResults([]);
                     } else {
                         setNoResult(false);
-                        setSearchResults(response.data.allEvents.slice(0, 5) || []);
+                        setSearchResults(flattenSearchEventGroups(response.data.allEvents).slice(0, 5));
                     }
-                    setCalendarAllSearchedEvents(response.data.allEvents || []);
+                    setCalendarAllSearchedEvents(groupSearchEventsByDate(response.data.allEvents || []));
                 }
             } catch (err: any) {
                 if (err.name !== "AbortError") {
@@ -632,7 +633,7 @@ function CalendarHeader() {
                 }
                 else {
                     setNoResult(false);
-                    setSearchResults(response.data.allEvents.slice(0, 5) || []);
+                    setSearchResults(flattenSearchEventGroups(response.data.allEvents).slice(0, 5));
                 }
                 setIsCalendarFilterDropdownOpen(false);
                 setIsSearchResultDropdownOpen(true);
@@ -644,6 +645,14 @@ function CalendarHeader() {
 
     const allEventSearchHandler = async () => {
         try {
+            // Text-search path: full result set is already stored from the live search
+            if (searchText.trim()) {
+                setIsCalendarAllSearchActive(true);
+                setIsSearchResultDropdownOpen(false);
+                setIsResponsiveSearch(false);
+                return;
+            }
+
             const data = getValues();
             let payload: any = {
                 eventName: data.eventName || undefined,
@@ -682,7 +691,12 @@ function CalendarHeader() {
                 }
                 else {
                     setNoResult(false);
-                    setCalendarAllSearchedEvents(response.data || []);
+                    const allEvents = response.data.allEvents || response.data || [];
+                    setCalendarAllSearchedEvents(
+                        Array.isArray(allEvents) && allEvents[0]?.events
+                            ? groupSearchEventsByDate(allEvents)
+                            : allEvents
+                    );
                 }
                 setIsCalendarFilterDropdownOpen(false);
                 setIsSearchResultDropdownOpen(false);
@@ -749,7 +763,7 @@ function CalendarHeader() {
                             {searchResults.length > 0 ? (
                                 searchResults.map((event) => (
                                     <CalendarEventRow
-                                        key={`${event._id}-${event.startDate}`}
+                                        key={`${(event as any)._id || (event as any).id}-${(event as any).date || (event as any).startDate}`}
                                         data={event}
                                     />
                                 ))

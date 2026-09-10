@@ -760,6 +760,10 @@ span.mailspot-version-number {
   background-color: rgba(229, 232, 234, 1);
 }
 
+.profile-and-accont-wrapper{
+    max-height: calc(100dvh - 271px);
+    overflow: auto;
+}
 /* ================================================================
    SECTION:: FORM CONTROLS (CHECKBOX & RADIO)
    ================================================================ */
@@ -1605,6 +1609,7 @@ input::-webkit-search-cancel-button {
   padding: 15px 15px 0 15px;
   overflow: auto;
   min-height: 200px;
+  max-height: 360px;
 }
 
 .create-filter-check .label-span {
@@ -5968,7 +5973,7 @@ nav#navbarList.nav-collepse::after {
   height: 25px;
   width: 195px;
   pointer-events: none;
-  z-index: 10;
+  z-index: 1;
   transition: opacity 0.25s ease;
 }
 
@@ -6215,4 +6220,8 @@ nav#navbarList.nav-collepse::after {
   padding: 4px 0;
   margin: 0;
   display: block;
+}
+.add-account-item-wrapper{
+      max-height: 156px;
+    overflow: auto;
 }

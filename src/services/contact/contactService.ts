@@ -8,6 +8,37 @@ export interface GetContactsParams {
     sort?: ContactSortField;
 }
 
+function buildContactPayload(payload: ContactFormValues) {
+    const emails = (payload.emails?.length
+        ? payload.emails
+        : payload.email
+            ? [payload.email]
+            : []
+    )
+        .map((e) => e.trim())
+        .filter(Boolean);
+
+    const phones = (payload.phones?.length
+        ? payload.phones
+        : payload.phone
+            ? [payload.phone]
+            : []
+    )
+        .map((p) => p.trim())
+        .filter(Boolean);
+
+    return {
+        name: payload.name.trim(),
+        email: emails[0] || payload.email,
+        emails,
+        phone: phones[0] || undefined,
+        phones,
+        notes: payload.notes?.trim() || undefined,
+        address: payload.address?.trim() || undefined,
+        birthdate: payload.birthdate?.trim() || undefined,
+    };
+}
+
 async function getContactsList(params: GetContactsParams = {}) {
     try {
         const response = await getData('contact/get', {
@@ -47,11 +78,7 @@ async function getContactById(contactId: string) {
 
 async function addContact(payload: ContactFormValues) {
     try {
-        const response = await postData('contact/add', {
-            name: payload.name,
-            email: payload.email,
-            phone: payload.phone || undefined,
-        });
+        const response = await postData('contact/add', buildContactPayload(payload));
         return response;
     } catch (error: any) {
         return error;
@@ -60,11 +87,7 @@ async function addContact(payload: ContactFormValues) {
 
 async function editContact(contactId: string, payload: ContactFormValues) {
     try {
-        const response = await putData(`contact/edit/${contactId}`, {
-            name: payload.name,
-            email: payload.email,
-            phone: payload.phone || undefined,
-        });
+        const response = await putData(`contact/edit/${contactId}`, buildContactPayload(payload));
         return response;
     } catch (error: any) {
         return error;

@@ -2363,6 +2363,7 @@ input::-webkit-search-cancel-button {
   padding: 15px 15px 0 15px;
   overflow: auto;
   min-height: 150px;
+  max-height: 360px;
 }
 
 .create-filter-check .label-span {

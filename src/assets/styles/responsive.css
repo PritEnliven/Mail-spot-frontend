@@ -54,7 +54,7 @@
   .Calendar-main .search-icon { display: none; }
   .Calendar-main .top-filter .filter-footer { position: absolute; bottom: 0px; width: 100%; background-color: #ffff; }
   .Calendar-main .t-search-dropdown-menu-home-action { max-height: unset !important; height: calc(100dvh - 42px); }
-  .Calendar-main .top-filter .filter-body { height: calc(100dvh - 100px) !important; }
+  .Calendar-main .top-filter .filter-body { height: calc(100dvh - 100px) !important; max-height: none !important; }
   .Calendar-main .all-search-result-show { position: absolute; width: 100%; bottom: 0; }
   .Calendar-main .two-sc-in { max-width: 100%; }
   .Calendar-main .mobile-search-btn { display: flex !important; }
@@ -157,7 +157,7 @@
   .search-icon { display: none; }
   .top-filter .filter-footer { position: absolute; bottom: 0px; width: 100%; background-color: #ffff; }
   .t-search-dropdown-menu-home-action { max-height: unset !important; height: calc(100dvh - 42px); }
-  .top-filter .filter-body { height: calc(100dvh - 100px) !important; }
+  .top-filter .filter-body { height: calc(100dvh - 100px) !important; max-height: none !important; }
   /* Email detail + thread: date/time below From/To */
   .mail-message-send--information-details-box-mobile .cc-bcc-to-info { flex-direction: column; align-items: flex-start !important; gap: 12px; }
   .mail-message-send--information-details-box-mobile .cc-bcc-to-info>.info-received-details { width: 100%; text-align: left; order: 2; }
@@ -211,6 +211,53 @@
   .single-navbar-collapse-sec-mobile { width: 45px; right: -45px; background: transparent; box-shadow: none; top: 27px; }
   .sidebar-mobile-backdrop { display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1050; }
   .single-navbar-collapse-sec button { display: none; }
+  /* Keep mailbox + Contact/Calendar/Settings fixed; only Folder list scrolls */
+  .left-side-bar-main nav#navbarList > .nav-custom-scroll-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+  }
+  .left-side-bar-main #sidebarMainMenu,
+  .left-side-bar-main #sidebarOtherMenu {
+    flex: 0 0 auto;
+  }
+  .left-side-bar-main .create-folder-sec:has(.add-floder-single-box.show) {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .left-side-bar-main .create-folder-sec .sidebar-create-folder-box-main {
+    flex: 0 0 auto;
+  }
+  .left-side-bar-main .create-folder-sec .add-floder-single-box.show {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .left-side-bar-main .create-folder-sec .add-floder-single-box > div {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .left-side-bar-main .create-folder-sec .nav-custom-scroll-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+  }
+  .left-side-bar-main .create-new-folder-sec {
+    max-height: none !important;
+    height: 100% !important;
+  }
+  .left-side-bar-main nav#navbarList > .nav-custom-scroll-scrollbar {
+    display: none;
+  }
   /* -------------------- Right Sidebar -------------------- */
   .right-side-bar-main { width: calc(100% - 0px); border-radius: 0 !important; box-shadow: none !important; border: 0; }
   .mail-message-box { border-radius: 0; /* height: calc(100vh - 97px); */ }
@@ -267,6 +314,18 @@
   /* -------------------- Settings -------------------- */
   .setting-features { padding: 12px !important; }
   #my-tooltip { display: none !important; }
+  /* -------------------- Contacts -------------------- */
+  .signature-table-new.contacts-table-new { max-height: none; min-height: 140px; }
+  .contacts-page-pagination { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .contacts-toolbar-row { flex-wrap: wrap; }
+  .contacts-filters-row { width: 100%; }
+  .contacts-toolbar-actions { width: 100%; justify-content: flex-end; }
+  .contact-hover-popup { max-width: min(280px, calc(100vw - 24px)); }
+  .contact-field-row { gap: 6px; }
+  .contact-field-action-btn { width: 36px; height: 36px; min-width: 36px; }
+  .contact-form-modal-content { max-height: calc(100dvh - 24px); }
+  .contact-form-modal-scroll { max-height: calc(100dvh - 180px); }
+  .contact-form-modal-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   /* Calender Event Modal */
   .CalendarModalSimpleBar { max-height: calc(100dvh - 100px); min-height: 200px; }
   .eventInfoModalSimpleBar { max-height: calc(100dvh - 100px); min-height: 200px; }

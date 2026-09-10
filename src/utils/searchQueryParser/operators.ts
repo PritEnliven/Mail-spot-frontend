@@ -12,6 +12,9 @@ export const FILTER_OPERATORS: FilterOperatorDef[] = [
     { key: 'subject', aliases: ['subject'] },
     { key: 'size', aliases: ['size'] },
     { key: 'date', aliases: ['date'] },
+    { key: 'hasWord', aliases: ['hasword'] },
+    { key: 'doesNotHave', aliases: ['doesnothave'] },
+    { key: 'in', aliases: ['in', 'box'] },
 ];
 
 const ALIAS_TO_KEY = new Map<string, FilterOperatorKey>(

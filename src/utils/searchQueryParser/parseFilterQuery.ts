@@ -91,6 +91,15 @@ export function parseFilterQuery(query: string): ParsedFilterQuery {
             case 'subject':
                 if (!result.subject) result.subject = value;
                 break;
+            case 'hasWord':
+                if (!result.hasWord) result.hasWord = value;
+                break;
+            case 'doesNotHave':
+                if (!result.doesNotHave) result.doesNotHave = value;
+                break;
+            case 'in':
+                if (!result.boxName) result.boxName = value;
+                break;
             case 'size':
                 if (isValidAttachmentSizeLabel(value)) {
                     result.attachmentSize = value;
@@ -152,6 +161,9 @@ export function parseFilterQueryToFormValues(query: string): Partial<FilterEmail
     if (parsed.from?.length) formValues.from = parsed.from;
     if (parsed.to?.length) formValues.to = parsed.to;
     if (parsed.subject) formValues.subject = parsed.subject;
+    if (parsed.hasWord) formValues.hasWord = parsed.hasWord;
+    if (parsed.doesNotHave) formValues.doesNotHave = parsed.doesNotHave;
+    if (parsed.boxName) formValues.boxName = parsed.boxName;
     if (parsed.attachmentSize) {
         formValues.attachmentSize = parsed.attachmentSize as AttachmentSizeLabel;
     }

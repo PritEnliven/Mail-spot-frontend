@@ -28,6 +28,9 @@ interface downloadAttachmentPayload {
 interface FilterEmailPayload {
     limit?: number;
     searchTerm?: string;
+    hasWord?: string;
+    doesNotHave?: string;
+    boxName?: string;
     from?: string[];
     to?: string[];
     subject?: string;

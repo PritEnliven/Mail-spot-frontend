@@ -27,6 +27,7 @@ function CalendarPage() {
         isCalendarAllSearchActive,
         setSelectedEvent,
         isSidebarCalendarOpen,
+        exitCalendarAllSearch,
     } = useCalendar()
     const { openModal } = useMailUI()
     const titleRef = useRef<HTMLDivElement | null>(null);
@@ -111,6 +112,9 @@ function CalendarPage() {
                 if (target) {
                     const dateStr = target.getAttribute('data-date');
                     if (dateStr && mainCalendarRef.current) {
+                        // Leave all-results view so main calendar can respond
+                        exitCalendarAllSearch()
+
                         const calendar = mainCalendarRef.current.getApi();
 
                         if (lastClickedDateRef.current === dateStr) {
@@ -177,7 +181,7 @@ function CalendarPage() {
             popoverObserverRef.current = null
             clearTimeout(timeoutId)
         }
-    }, [cssLoaded, isCalendarReady, mainCalendarRef, sidebarCalendarRef, setCalendarView])
+    }, [cssLoaded, isCalendarReady, mainCalendarRef, sidebarCalendarRef, setCalendarView, exitCalendarAllSearch])
 
     useEffect(() => {
         if (!cssLoaded || !isCalendarAllSearchActive) return
@@ -373,12 +377,25 @@ function CalendarPage() {
                     </div>
 
                     <div className="right-side-calendar-box" id="calendar">
-                        {isCalendarAllSearchActive ?
-                            <CalendarAllEventList startDate={currentDateRange.start} endDate={currentDateRange.end} />
-                            : <FullCalendar
+                        <div
+                            className="calendar-main-view"
+                            style={{
+                                display: isCalendarAllSearchActive ? 'none' : 'block',
+                                height: '100%',
+                                width: '100%',
+                            }}
+                        >
+                            <FullCalendar
                                 ref={mainCalendarRef}
                                 {...mainCalendarConfig}
-                            />}
+                            />
+                        </div>
+                        {isCalendarAllSearchActive && (
+                            <CalendarAllEventList
+                                startDate={currentDateRange.start}
+                                endDate={currentDateRange.end}
+                            />
+                        )}
                     </div>
                 </div>
             )}

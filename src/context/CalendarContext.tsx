@@ -39,6 +39,7 @@ interface CalendarContextType {
     setCalendarAllSearchedEvents: (events: CalendarEvent[]) => void,
     isCalendarAllSearchActive: boolean,
     setIsCalendarAllSearchActive: (active: boolean) => void,
+    exitCalendarAllSearch: () => void,
     resetSearchState: () => void,
 
     // Search state
@@ -88,6 +89,16 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         setIsSearchResultDropdownOpen(false)
     }, [])
 
+    const exitCalendarAllSearch = useCallback(() => {
+        setIsCalendarAllSearchActive(false)
+        setCalendarAllSearchedEvents([])
+        resetSearchState()
+        // Restore calendar layout after it becomes visible again
+        requestAnimationFrame(() => {
+            mainCalendarRef.current?.getApi()?.updateSize()
+        })
+    }, [resetSearchState])
+
     const getAllEventList = useCallback(async (calendarApi?: Calendar) => {
         const api = calendarApi ?? mainCalendarRef.current?.getApi()
         if (!api) return
@@ -126,6 +137,10 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     }, [])
 
     const goPrev = useCallback(() => {
+        if (isCalendarAllSearchActive) {
+            exitCalendarAllSearch()
+        }
+
         const mainApi = mainCalendarRef.current?.getApi()
         const sidebarApi = sidebarCalendarRef.current?.getApi()
         if (!mainApi) return
@@ -148,9 +163,13 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         mainApi.prev()
         // Sync sidebar to main's date instead of independent prev() (day vs month mismatch)
         sidebarApi?.gotoDate(mainApi.getDate())
-    }, [calendarView])
+    }, [calendarView, isCalendarAllSearchActive, exitCalendarAllSearch])
 
     const goNext = useCallback(() => {
+        if (isCalendarAllSearchActive) {
+            exitCalendarAllSearch()
+        }
+
         const mainApi = mainCalendarRef.current?.getApi()
         const sidebarApi = sidebarCalendarRef.current?.getApi()
         if (!mainApi) return
@@ -171,9 +190,13 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
         mainApi.next()
         sidebarApi?.gotoDate(mainApi.getDate())
-    }, [calendarView])
+    }, [calendarView, isCalendarAllSearchActive, exitCalendarAllSearch])
 
     const goToday = useCallback(() => {
+        if (isCalendarAllSearchActive) {
+            exitCalendarAllSearch()
+        }
+
         mainCalendarRef.current?.getApi().today()
         sidebarCalendarRef.current?.getApi().today()
         mainCalendarRef.current?.getApi().changeView('dayGridMonth')
@@ -182,9 +205,13 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
         // Reset the last clicked date ref to avoid false double-click detection
         resetLastClickedDate()
-    }, [resetLastClickedDate])
+    }, [resetLastClickedDate, isCalendarAllSearchActive, exitCalendarAllSearch])
 
     const changeView = useCallback((view: CalendarView) => {
+        if (isCalendarAllSearchActive) {
+            exitCalendarAllSearch()
+        }
+
         mainCalendarRef.current?.getApi().changeView(view)
         setCalendarView(view)
 
@@ -194,7 +221,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
                 element.classList.remove('subcalendar-day-box');
             });
         }
-    }, [])
+    }, [isCalendarAllSearchActive, exitCalendarAllSearch])
 
     const value: CalendarContextType = {
         mainCalendarRef,
@@ -216,6 +243,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         setSelectedEvent,
         isCalendarAllSearchActive,
         setIsCalendarAllSearchActive,
+        exitCalendarAllSearch,
         calendarAllSearchedEvents,
         setCalendarAllSearchedEvents,
         resetSearchState,

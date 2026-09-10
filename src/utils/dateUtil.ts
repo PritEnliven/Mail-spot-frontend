@@ -36,6 +36,7 @@ export const TimeFormat = {
     CALENDAR_EVENT_LISTDATE: 'calendarEventListDate',
     CALENDAR_EVENT_LISTDATE_ONLY_DATE: 'calendarEventListDateOnlyDate',
     CALENDAR_SEARCH: 'calendarSearch',
+    CALENDAR_SEARCH_DAY: 'calendarSearchDay',
     SCHEDULE_DATE: 'scheduleDate',
     EVENT_MAIL_FORMAT: 'eventMailFormat',
     SCHEDULE_MODAL: 'scheduleModal',
@@ -202,6 +203,9 @@ function formatDate(
 
         case TimeFormat.CALENDAR_SEARCH:
             return m.format('ddd, hh:mm A');
+
+        case TimeFormat.CALENDAR_SEARCH_DAY:
+            return m.format('ddd, MMM D');
 
         case TimeFormat.SCHEDULE_DATE:
             return m.format('DD MMM, YYYY, hh:mm A');

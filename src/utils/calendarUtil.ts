@@ -326,4 +326,56 @@ const generateTimeOptions = ({
 };
 
 
-export { buildRecurrencePayload, clearFocusDate, filterGuestByEmail, focusDate, focusEvent, formatCalendarEvents, generateTimeOptions, normalizeEventForModal, normalizeGuests, removeFocusEvent };
+function formatSearchEventDateTime(event: {
+    date?: string;
+    startDate?: string;
+    fullDay?: boolean;
+    allDay?: boolean;
+    startTime?: string | null;
+}): string {
+    const dateSource = event.date || event.startDate;
+    if (!dateSource) return '';
+
+    const dayLabel = formatDate(dateSource, TimeFormat.CALENDAR_SEARCH_DAY);
+    const startTime = typeof event.startTime === 'string' ? event.startTime.trim() : '';
+    // const isAllDay = !!(event.fullDay || event.allDay) || !startTime;
+
+    // if (isAllDay) {
+    //     return `${dayLabel} · All day`;
+    // }
+
+    const timeLabel = formatTime12HrFrom24HrString(startTime);
+    return timeLabel ? `${dayLabel} · ${timeLabel}` : `${dayLabel}`;
+}
+
+/** Flatten `{ date, events[] }` search API groups into individual event rows. */
+function flattenSearchEventGroups(allEvents: any[] = []) {
+    if (!Array.isArray(allEvents)) return [];
+
+    return allEvents.flatMap((group) => {
+        if (!group || !Array.isArray(group.events)) return [];
+        return group.events.map((event: any) => ({
+            ...event,
+            date: group.date,
+        }));
+    });
+}
+
+/** Convert `{ date, events[] }[]` search API groups into a date-keyed map for All Events list. */
+function groupSearchEventsByDate(allEvents: any[] = []): Record<string, any[]> {
+    if (!Array.isArray(allEvents)) {
+        if (allEvents && typeof allEvents === 'object') {
+            return allEvents as Record<string, any[]>;
+        }
+        return {};
+    }
+
+    return allEvents.reduce((acc: Record<string, any[]>, group) => {
+        if (group?.date && Array.isArray(group.events)) {
+            acc[group.date] = group.events;
+        }
+        return acc;
+    }, {});
+}
+
+export { buildRecurrencePayload, clearFocusDate, filterGuestByEmail, flattenSearchEventGroups, focusDate, focusEvent, formatCalendarEvents, formatSearchEventDateTime, generateTimeOptions, groupSearchEventsByDate, normalizeEventForModal, normalizeGuests, removeFocusEvent };

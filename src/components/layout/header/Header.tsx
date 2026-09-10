@@ -121,7 +121,7 @@ const Header = () => {
         setBoxTitle, filterForm, boxName, boxTitle, searchTerm, allSearchResult,
         setEmailDetailSelected, setActiveEmailMessageId,
         headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
-        clearMailSearch, mailSearchResetKey } = useMailData();
+        clearMailSearch, mailSearchResetKey, sidebarState } = useMailData();
     const { contacts, fetchContacts } = useContacts();
     const { calendarView, setCalendarView, changeView, calendarTitle } = useCalendar();
     const [noResult, setNoResult] = useState(false);
@@ -214,8 +214,11 @@ const Header = () => {
                 from: [],
                 to: [],
                 subject: '',
+                hasWord: '',
+                doesNotHave: '',
                 attachmentSize: undefined,
                 dateRange: [],
+                boxName: '',
             });
             return;
         }
@@ -235,8 +238,11 @@ const Header = () => {
                 from: resolvedFilter?.from ?? [],
                 to: resolvedFilter?.to ?? [],
                 subject: resolvedFilter?.subject ?? '',
+                hasWord: resolvedFilter?.hasWord ?? '',
+                doesNotHave: resolvedFilter?.doesNotHave ?? '',
                 attachmentSize: resolvedFilter?.attachmentSize,
                 dateRange: resolvedFilter?.dateRange ?? [],
+                boxName: resolvedFilter?.boxName ?? '',
             });
         }
     }, [filterForm, reset, searchTerm, setFilterForm, setSearchTerm]);
@@ -431,6 +437,9 @@ const Header = () => {
             delete payload.attachmentSize;
         }
 
+        // Search-in is a search scope only — not a create-rule condition
+        delete payload.boxName;
+
         const response = await filterEmailAndCreateRuleService(payload);
 
         // Close on success even when no emails matched the filter (emailList can be [])
@@ -599,13 +608,42 @@ const Header = () => {
             from: [],
             to: [],
             subject: '',
+            hasWord: '',
+            doesNotHave: '',
             attachmentSize: undefined,
             dateRange: [],
+            boxName: '',
         });
         setIsFilterDropdownOpen(false);
         setIsSearchResultDropdownOpen(false);
         void clearMailSearch();
     };
+
+    const searchInFolderOptions = useMemo(() => {
+        const defaultFolders = (sidebarState.boxes || [])
+            .filter((box: any) =>
+                !verifyBoxName(box.value, 'draft') &&
+                !verifyBoxName(box.value, 'scheduled') &&
+                !verifyBoxName(box.value, 'calendar') &&
+                !verifyBoxName(box.value, 'settings') &&
+                !verifyBoxName(box.value, 'contact')
+            )
+            .map((box: any) => ({
+                label: box.key || box.value,
+                value: typeof box.value === 'object' ? box.value?.value : box.value,
+            }));
+
+        const customFolders = (sidebarState.customBoxes || []).map((box: any) => ({
+            label: box.key ?? box.value?.name ?? box.value,
+            value: typeof box.value === 'object' ? (box.value?.value ?? box.value) : box.value,
+        }));
+
+        return [
+            { label: 'All mailboxes', value: '' },
+            ...defaultFolders,
+            ...customFolders,
+        ];
+    }, [sidebarState.boxes, sidebarState.customBoxes]);
 
     const openChangeImapSmtpPasswordModal = async () => {
         const response = await getUserDetail(profileEmail);
@@ -709,8 +747,11 @@ const Header = () => {
                 from: [],
                 to: [],
                 subject: '',
+                hasWord: '',
+                doesNotHave: '',
                 attachmentSize: undefined,
                 dateRange: [],
+                boxName: '',
             });
         }
     }, [mailSearchResetKey]);
@@ -722,8 +763,11 @@ const Header = () => {
             from: [],
             to: [],
             subject: '',
+            hasWord: '',
+            doesNotHave: '',
             attachmentSize: undefined,
             dateRange: [],
+            boxName: '',
         });
         void clearMailSearch();
     }
@@ -1004,6 +1048,38 @@ const Header = () => {
                                                         </div>
 
                                                         <div className="form-group form-row">
+                                                            <label className="control-label">Has the words</label>
+                                                            <Controller
+                                                                name="hasWord"
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <input
+                                                                        type="text"
+                                                                        id="filterHasWord"
+                                                                        className="form-control"
+                                                                        {...field}
+                                                                    />
+                                                                )}
+                                                            />
+                                                        </div>
+
+                                                        <div className="form-group form-row">
+                                                            <label className="control-label">Doesn't have</label>
+                                                            <Controller
+                                                                name="doesNotHave"
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <input
+                                                                        type="text"
+                                                                        id="filterDoesNotHave"
+                                                                        className="form-control"
+                                                                        {...field}
+                                                                    />
+                                                                )}
+                                                            />
+                                                        </div>
+
+                                                        <div className="form-group form-row">
                                                             <label className="control-label">Attachment Size</label>
                                                             <div className="input-control">
                                                                 <Controller
@@ -1052,6 +1128,25 @@ const Header = () => {
                                                                                 placeholder="Select date range"
                                                                             />
                                                                         </Suspense>
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="form-group form-row">
+                                                            <label className="control-label">Search in</label>
+                                                            <div className="input-control">
+                                                                <Controller
+                                                                    name="boxName"
+                                                                    control={control}
+                                                                    render={({ field }) => (
+                                                                        <Select2Wrapper
+                                                                            value={field.value || null}
+                                                                            onChange={(value) => field.onChange(value ?? '')}
+                                                                            options={searchInFolderOptions}
+                                                                            placeholder="All mailboxes"
+                                                                            isMulti={false}
+                                                                        />
                                                                     )}
                                                                 />
                                                             </div>
@@ -1226,7 +1321,8 @@ const Header = () => {
                                         id="profileEmail1"> {profileEmail}</span>
                                 </div>
                             </div>
-                            <AccountSwitcher
+                            <div className="profile-and-accont-wrapper">
+                                <AccountSwitcher
                                 onAccountSwitch={() => setIsProfileOpen(false)}
                                 onNestedOverlayChange={handleProfileNestedOverlayChange}
                             />
@@ -1271,6 +1367,7 @@ const Header = () => {
                                         />Logout</a>
                                 </li>
                             </ul>
+                            </div>
                             <div className="profile-footer d-flex align-items-center justify-content-between">
                                 <span className="mailspot-version-number">V 1.0</span>
                                 <span className="powered-sec">

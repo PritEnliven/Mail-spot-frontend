@@ -12,13 +12,19 @@ interface ContactsType {
 const ContactsContext = createContext<ContactsType | undefined>(undefined);
 
 function mapToAutocompleteOptions(items: any[]): ContactAutocompleteOption[] {
-    return (items ?? []).map((item) => ({
-        value: item.email || item._id,
-        name: item.name || item.email,
-        email: item.email,
-        label: item.name || item.email,
-        isSuggestion: Boolean(item.isSuggestion),
-    }));
+    return (items ?? []).map((item) => {
+        const emails = Array.isArray(item.emails)
+            ? item.emails.map((e: string) => String(e).trim()).filter(Boolean)
+            : [];
+        const email = (item.email || emails[0] || '').trim();
+        return {
+            value: email || item._id,
+            name: item.name || email,
+            email,
+            label: item.name || email,
+            isSuggestion: Boolean(item.isSuggestion),
+        };
+    });
 }
 
 export const useContacts = () => {

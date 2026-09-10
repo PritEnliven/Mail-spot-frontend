@@ -30,6 +30,14 @@ export function buildSearchQueryFromFilters(filter: FilterEmailFormValues): stri
         parts.push(`subject:${filter.subject.trim()}`);
     }
 
+    if (filter.hasWord?.trim()) {
+        parts.push(`hasWord:(${filter.hasWord.trim()})`);
+    }
+
+    if (filter.doesNotHave?.trim()) {
+        parts.push(`doesNotHave:(${filter.doesNotHave.trim()})`);
+    }
+
     if (filter.attachmentSize) {
         parts.push(`size:${filter.attachmentSize}`);
     }
@@ -42,6 +50,10 @@ export function buildSearchQueryFromFilters(filter: FilterEmailFormValues): stri
         const from = formatDate(filter.dateRange[0], TimeFormat.DDMMYYYY);
         const to = formatDate(filter.dateRange[1], TimeFormat.DDMMYYYY);
         if (from && to) parts.push(`date:${from}to${to}`);
+    }
+
+    if (filter.boxName?.trim()) {
+        parts.push(`in:(${filter.boxName.trim()})`);
     }
 
     return parts.join(' ');
@@ -83,8 +95,11 @@ export function resolveSearchFromQuery(
             from: parsed.from ?? [],
             to: parsed.to ?? [],
             subject: parsed.subject ?? '',
+            hasWord: parsed.hasWord ?? '',
+            doesNotHave: parsed.doesNotHave ?? '',
             attachmentSize: parsed.attachmentSize,
             dateRange: parsed.dateRange,
+            boxName: parsed.boxName ?? '',
         };
 
         if (getAppliedFilterCount(filterForm) > 0) {

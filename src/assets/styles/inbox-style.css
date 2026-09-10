@@ -1203,13 +1203,22 @@ div.accordion-button.custom-toggle-btn
   color: #212121;
 }
 .calendar-invite-card__status.is-accepted {
-  background-color: #49ba1470;
+  background-color: #E4F6DB;
+  border:1px solid #55CB1E;
+  color:#55CB1E;
+  box-shadow:0 1px 3px 0 #55CB1E4D;
 }
 .calendar-invite-card__status.is-tentative {
-  background: #fee8bf;
+  background: #FFEED6;
+  border:1px solid #FF9900;
+  color: #FF9900;
+  box-shadow:0 1px 3px 0 #FF99004D;
 }
 .calendar-invite-card__status.is-declined {
-  background-color: #ffcdcd;
+  background-color: #FBDFE1;
+  border:1px solid #EA3843;
+  color:#EA3843;
+  box-shadow:0 1px 3px 0 #EA38434D;
 }
 .calendar-invite-card__cancelled {
   font-size: 13px;

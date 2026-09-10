@@ -6,6 +6,7 @@ import { useMailUI } from "@context/MailUIContext";
 import { getEventById } from "@services/calendar/calendarService";
 import { normalizeEventForModal } from "@utils/calendarUtil";
 import { formatDate, TimeFormat, formatTime12HrFrom24HrString } from "@utils/dateUtil";
+import { groupSearchEventsByDate } from "@utils/calendarUtil";
 
 interface CalendarEvent {
     _id: string;
@@ -32,7 +33,7 @@ interface CalendarAllEventListProps {
 const CalendarAllEventList = (_props: CalendarAllEventListProps) => {
 
     // TODO: Use startDate and endDate for filtering or displaying date range information
-    const { calendarAllSearchedEvents, setIsCalendarAllSearchActive, setCalendarAllSearchedEvents, setSelectedEvent, getAllEventList, resetSearchState } = useCalendar();
+    const { calendarAllSearchedEvents, setSelectedEvent, getAllEventList, exitCalendarAllSearch, mainCalendarRef } = useCalendar();
     const { openModal } = useMailUI();
 
     const formatDateInfo = (dateStr: string) => {
@@ -59,13 +60,14 @@ const CalendarAllEventList = (_props: CalendarAllEventListProps) => {
         return today.toDateString() === date.toDateString();
     };
 
-    const groupedData: GroupedEvents = (calendarAllSearchedEvents as unknown as GroupedEvents) || {};
+    const groupedData: GroupedEvents = groupSearchEventsByDate(
+        calendarAllSearchedEvents as unknown as any[]
+    );
     const sortedDates = Object.keys(groupedData).sort();
 
     const openEventInfoModal = async (id: string) => {
         const response = await getEventById(id)
         if (response.statusCode === 200) {
-            console.log(response);
             response.data.event.id = id;
             const event = normalizeEventForModal(response.data.event)
             event.selectedEventDate = event.startDate;
@@ -75,11 +77,10 @@ const CalendarAllEventList = (_props: CalendarAllEventListProps) => {
     }
 
     const handleBack = async () => {
-        setCalendarAllSearchedEvents([]);
-        setIsCalendarAllSearchActive(false);
-        resetSearchState();
-        // Wait a tick for the calendar to render before calling getAllEventList
+        exitCalendarAllSearch();
+        // Calendar stays mounted (hidden), so refresh events after showing it again
         setTimeout(async () => {
+            mainCalendarRef.current?.getApi()?.updateSize();
             await getAllEventList();
         }, 0);
     };

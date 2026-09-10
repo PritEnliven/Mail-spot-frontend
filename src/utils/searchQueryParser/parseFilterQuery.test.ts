@@ -120,6 +120,16 @@ describe('parseFilterQuery', () => {
         expect(parseFilterQuery('')).toEqual({});
         expect(parseFilterQuery('   ')).toEqual({});
     });
+
+    it('parses hasWord, doesNotHave, and in (boxName)', () => {
+        expect(
+            parseFilterQuery('hasWord:(invoice) doesNotHave:(unsubscribe) in:(INBOX)'),
+        ).toEqual({
+            hasWord: 'invoice',
+            doesNotHave: 'unsubscribe',
+            boxName: 'INBOX',
+        });
+    });
 });
 
 describe('parseFilterQueryToFormValues', () => {
@@ -131,6 +141,18 @@ describe('parseFilterQueryToFormValues', () => {
         ).toEqual({
             from: ['user1@mail.com', 'user2@mail.com'],
             to: ['dest1@mail.com', 'dest2@mail.com'],
+        });
+    });
+
+    it('maps hasWord, doesNotHave, and in into form values', () => {
+        expect(
+            parseFilterQueryToFormValues(
+                'hasWord:(invoice) doesNotHave:(unsubscribe) in:(Sent)',
+            ),
+        ).toEqual({
+            hasWord: 'invoice',
+            doesNotHave: 'unsubscribe',
+            boxName: 'Sent',
         });
     });
 });

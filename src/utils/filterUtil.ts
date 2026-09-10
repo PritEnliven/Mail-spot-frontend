@@ -22,6 +22,9 @@ export function areFilterFormsEqual(
     }
 
     if ((a.subject ?? '') !== (b.subject ?? '')) return false;
+    if ((a.hasWord ?? '') !== (b.hasWord ?? '')) return false;
+    if ((a.doesNotHave ?? '') !== (b.doesNotHave ?? '')) return false;
+    if ((a.boxName ?? '') !== (b.boxName ?? '')) return false;
     if (a.attachmentSize !== b.attachmentSize) return false;
 
     const aDates = a.dateRange ?? [];
@@ -40,6 +43,9 @@ export function getAppliedFilterCount(filter: FilterEmailFormValues | null): num
     if (filter.from?.length) count++;
     if (filter.to?.length) count++;
     if (filter.subject?.trim()) count++;
+    if (filter.hasWord?.trim()) count++;
+    if (filter.doesNotHave?.trim()) count++;
+    if (filter.boxName?.trim()) count++;
     if (filter.attachmentSize) count++;
     if (filter.dateRange?.length) count++;
 
@@ -86,6 +92,9 @@ export function buildSearchFilterPayload({
         if (filterForm.from?.length) payload.from = filterForm.from;
         if (filterForm.to?.length) payload.to = filterForm.to;
         if (filterForm.subject?.trim()) payload.subject = filterForm.subject.trim();
+        if (filterForm.hasWord?.trim()) payload.hasWord = filterForm.hasWord.trim();
+        if (filterForm.doesNotHave?.trim()) payload.doesNotHave = filterForm.doesNotHave.trim();
+        if (filterForm.boxName?.trim()) payload.boxName = filterForm.boxName.trim();
 
         const attachmentSizeType = attachmentSizeLabelToApiType(filterForm.attachmentSize);
         if (attachmentSizeType) payload.attachmentSizeType = attachmentSizeType;

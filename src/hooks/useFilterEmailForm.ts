@@ -11,8 +11,11 @@ export function useFilterEmailForm() {
       from: [],
       to: [],
       subject: '',
+      hasWord: '',
+      doesNotHave: '',
       attachmentSize: undefined,
       dateRange: undefined,
+      boxName: '',
     },
   });
 }
