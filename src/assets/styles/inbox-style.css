@@ -934,12 +934,14 @@ div.accordion-button.custom-toggle-btn
   gap: 16px;
   padding: 12px 12px 12px 0;
 }
+
 .email-detail-skeleton__row-label {
   height: 12px;
   width: 32px;
   border-radius: 4px;
   flex-shrink: 0;
 }
+
 .email-detail-skeleton__avatar {
   width: 40px;
   height: 40px;
@@ -1122,10 +1124,9 @@ div.accordion-button.custom-toggle-btn
 
 /* --------- Quoted Content-------- */
   .quoted-content {
-    margin-top: 0 !important;
+    margin-top: 10px !important;
     padding: 0 !important;
-
-    background-color: red !important;
+    background-color: #f9f9f9 !important;
   }
 
 /* ---------- Calendar invite card ---------- */
@@ -1139,6 +1140,7 @@ div.accordion-button.custom-toggle-btn
   overflow: hidden;
   /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */
 }
+
 .calendar-invite-card-wrap {
   padding: 0 0 16px;
   margin: 0 0 16px;
@@ -1156,11 +1158,12 @@ div.accordion-button.custom-toggle-btn
 .calendar-invite-card.is-cancelled {
   opacity: 0.85;
 }
+
 .calendar-invite-card__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 12px;   
   padding:14px;
   background: transparent;
   border-bottom: 1px solid #d0d9de85;

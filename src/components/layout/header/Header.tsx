@@ -97,7 +97,7 @@ const CalendarHeaderFallback = ({ isDesktop, title }: { isDesktop: boolean; titl
 
 const Header = () => {
     const navigate = useNavigate();
-    const { profileName, setProfileName, profileEmail, setProfileEmail, profileInitial, setProfileInitial } = useProfile();
+    const { profileName, profileEmail, profileInitial } = useProfile();
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [isCreateRuleModalOpen, setIsCreateRuleModalOpen] = useState(false);
     const [searchText, setSearchText] = useState("");
@@ -712,22 +712,6 @@ const Header = () => {
         };
     }, [isFilterDropdownOpen, isSearchResultDropdownOpen]);
 
-    useEffect(() => {
-        // Load profile data from localStorage on component mount
-        const storedName = localStorage.getItem('username');
-        const storedEmail = localStorage.getItem('email');
-
-        if (storedName) {
-            setProfileName(storedName);
-            const initial = storedName.charAt(0).toUpperCase();
-            setProfileInitial(initial);
-        }
-        if (storedEmail) {
-            setProfileEmail(storedEmail);
-        }
-
-    }, []);
-
     // Clear header search UI when search is reset (e.g. switching mailbox tabs).
     useEffect(() => {
         if (mailSearchResetKey === 0) return;
@@ -842,7 +826,7 @@ const Header = () => {
                         {/* LEFT: Dynamic header section */}
                         <div className="d-flex align-items-center two-sc-in" id="dynamicHeaderSection">
                             <h2 className="box-title" id="boxTitle" title={boxTitle}>{boxTitle}</h2>
-                            {!isSettings && totalEmailBadge > 0 && readUnreadFilter !== 'read' && (
+                            {!isSettings && !isContact && totalEmailBadge > 0 && readUnreadFilter !== 'read' && (
                                 <span className="badge" id="boxBadge">{totalEmailBadge}</span>
                             )}
                         </div>

@@ -1,5 +1,7 @@
 import { getAllSignatures } from "@services/settings/settingsService";
-import { useEffect, useState } from "react";
+import { getActiveAccountId } from "@services/apiService";
+import { useAccount } from "@context/AccountContext";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface Signature {
     _id: string;
@@ -9,31 +11,44 @@ export interface Signature {
 }
 
 export const useSignatureManager = () => {
-
+    const { activeAccountId } = useAccount();
     const [signatures, setSignatures] = useState<Signature[]>([]);
     const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const requestIdRef = useRef(0);
 
-    useEffect(() => {
-        const loadSignatures = async () => {
-            try {
-                setLoading(true);
+    const loadSignatures = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
+        const accountIdAtStart = getActiveAccountId();
 
-                const response = await getAllSignatures();
+        try {
+            setLoading(true);
+            const response = await getAllSignatures();
+            if (requestId !== requestIdRef.current) return;
+            if (accountIdAtStart !== getActiveAccountId()) return;
 
-                if (response.statusCode === 200) {
-                    setSignatures(response.data?.signatures || []);
-                }
-
-            } catch (error) {
-                console.error("Failed to load signatures:", error);
-            } finally {
+            if (response.statusCode === 200) {
+                setSignatures(response.data?.signatures || []);
+            } else {
+                setSignatures([]);
+            }
+        } catch (error) {
+            if (requestId !== requestIdRef.current) return;
+            console.error("Failed to load signatures:", error);
+            setSignatures([]);
+        } finally {
+            if (requestId === requestIdRef.current) {
                 setLoading(false);
             }
-        };
-
-        loadSignatures();
+        }
     }, []);
+
+    useEffect(() => {
+        requestIdRef.current += 1;
+        setSignatures([]);
+        setSelectedSignatureId(null);
+        void loadSignatures();
+    }, [activeAccountId, loadSignatures]);
 
     const handleSignatureSelect = (
         signature: Signature,

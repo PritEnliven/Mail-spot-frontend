@@ -1,7 +1,7 @@
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
-import ContactList from '@features/contacts/ContactList';
-import { useContactsList } from '@features/contacts/useContacts';
+import ContactList, { ContactEmptyState } from '@features/contacts/ContactList';
+import { CONTACTS_LIST_REFRESH_EVENT, useContactsList } from '@features/contacts/useContacts';
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import { useDebounce } from '@hooks/useDebounce';
 import plusIconWhite from '@images/plus-icon-white.svg';
@@ -17,6 +17,7 @@ import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useMailData } from '@context/MailDataContext';
 import { useMailUI } from '@context/MailUIContext';
 import { useContacts } from '@context/ContactsContext';
+import { useScreen } from '@context/ScreenContext';
 // import { buildSearchFilterPayload } from '@utils/filterUtil';
 import { useEffect, useState } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -32,6 +33,7 @@ function ContactsPage() {
     // const navigate = useNavigate();
     const { openModal } = useMailUI();
     const { fetchContacts } = useContacts();
+    const { isMobilebig, isMobile } = useScreen();
     const {
         setBoxName,
         setBoxTitle,
@@ -73,6 +75,16 @@ function ContactsPage() {
         setSearchQuery(debouncedSearch.trim());
         setPage(1);
     }, [debouncedSearch, setSearchQuery, setPage]);
+
+    useEffect(() => {
+        const handleRefresh = () => {
+            refresh();
+        };
+        window.addEventListener(CONTACTS_LIST_REFRESH_EVENT, handleRefresh);
+        return () => {
+            window.removeEventListener(CONTACTS_LIST_REFRESH_EVENT, handleRefresh);
+        };
+    }, [refresh]);
 
     const handleAddContact = () => {
         openModal('contactForm', {
@@ -160,10 +172,17 @@ function ContactsPage() {
         setPage(1);
     };
 
+    const hasActiveSearch = searchInput.trim().length > 0;
+    const showSearch = isLoading || total > 0 || hasActiveSearch;
+    const showPagination = total > 0;
+    const showToolbar = showSearch || !isMobile;
+
     return (
-        <div id="contactsContainer" className="settings-container setting-main-section-left contacts-page">
-            <div className="  pt-3 contacts-page-toolbar">
+        <div id="contactsContainer" className="contacts-page">
+            {showToolbar && (
+            <div className="pt-3 contacts-page-toolbar">
                 <div className="contacts-toolbar-row">
+                    {showSearch && (
                     <div className="contacts-filters-row">
                         <div className="contacts-filter-field">
                             <div className="form-group form-row mb-0">
@@ -171,15 +190,9 @@ function ContactsPage() {
                                     <div className='input-icon-add'>
                                         <InteractiveIcon
                                             defaultIcon={searchIcon}
-                                           
-                                           
-                                           
                                             alt=""
                                             className="input-icon-1"
-                                           
-                                        
                                         />
-
                                         <input
                                             id="contactSearch"
                                             type="search"
@@ -193,94 +206,136 @@ function ContactsPage() {
                                 </div>
                             </div>
                         </div>
-
                     </div>
-                    <div className="contacts-toolbar-actions">
-                        <div className="contacts-filter-field">
-                            <div className="form-group form-row mb-0">
-                                <div className="input-control">
-                                    <Select2Wrapper
-                                        value={sort}
-                                        onChange={handleSortChange}
-                                        options={SORT_OPTIONS}
-                                        isMulti={false}
-                                        typeable={false}
-                                        placeholder="Sort by..."
-                                    />
+                    )}
+                    {!isMobile && (
+                        <div className="contacts-toolbar-actions">
+                            {showSearch && (
+                            <div className="contacts-filter-field">
+                                <div className="form-group form-row mb-0">
+                                    <div className="input-control">
+                                        <Select2Wrapper
+                                            value={sort}
+                                            onChange={handleSortChange}
+                                            options={SORT_OPTIONS}
+                                            isMulti={false}
+                                            typeable={false}
+                                            placeholder="Sort by..."
+                                        />
+                                    </div>
                                 </div>
                             </div>
+                            )}
+                            {isMobilebig ? (
+                                <button
+                                    type="button"
+                                    className="btn-new btn-new-bg hover-link contacts-add-contact-icon-btn"
+                                    onClick={handleAddContact}
+                                    aria-label="Add contact"
+                                >
+                                    <InteractiveIcon
+                                        defaultIcon={plusIconWhite}
+                                        hoverIcon={plusIconWhite}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip="Add contact"
+                                    />
+                                </button>
+                            ) : (
+                                <button type="button" className="btn-new btn-new-bg hover-link" onClick={handleAddContact}>
+                                    <InteractiveIcon
+                                        defaultIcon={plusIconWhite}
+                                        hoverIcon={plusIconWhite}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image me-2"
+                                        renderAs="img"
+                                        tooltip=""
+                                    />
+                                    Add contact
+                                </button>
+                            )}
                         </div>
-                        <button type="button" className="btn-new btn-new-bg hover-link" onClick={handleAddContact}>
-                            <InteractiveIcon
-                                defaultIcon={plusIconWhite}
-                                hoverIcon={plusIconWhite}
-                                activeIcon=""
-                                isActive={false}
-                                alt=""
-                                className="interactive-icon hover-image me-2"
-                                renderAs="img"
-                                tooltip=""
-                            />
-                            Add contact
-                        </button>
-                    </div>
+                    )}
                 </div>
             </div>
+            )}
 
             {error && (
                 <div className="px-3 pt-2 text-danger fs-12-commom contacts-page-error">{error}</div>
             )}
 
-            <div className="setting-features pt-0 pb-0 pe-0 contacts-page-main">
-                <div className="setting-features-sub-box contacts-page-main-inner">
-                    <div className="setting-signature-box contacts-page-table-wrap">
-                        <div className="signature-table-new contacts-table-new">
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th>
-                                            <div className="setting-th-head">No.</div>
-                                        </th>
-                                        <th className="name-size">
-                                            <div className="setting-th-head">Name</div>
-                                        </th>
-                                        <th>
-                                            <div className="setting-th-head">Email</div>
-                                        </th>
-                                        <th>
-                                            <div className="setting-th-head">Phone</div>
-                                        </th>
-                                        <th>
-                                            <div className="setting-th-head">Address</div>
-                                        </th>
-                                        <th>
-                                            <div className="setting-th-head">Birthdate</div>
-                                        </th>
-                                        <th>
-                                            <div className="setting-th-head">Notes</div>
-                                        </th>
-                                        <th className="text-end">
-                                            <div className="setting-th-head">Action</div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <ContactList
-                                        contacts={contacts}
-                                        isLoading={isLoading}
-                                        startIndex={rangeStart}
-                                        onEdit={handleEditContact}
-                                        onDelete={handleDeleteContact}
-                                    // onCompose={handleCompose}
-                                    // onViewEmails={handleViewEmails}
-                                    />
-                                </tbody>
-                            </table>
-                        </div>
+            <div className="pt-0 pb-0 pe-0 contacts-page-main">
+                <div className="contacts-page-main-inner">
+                    <div className="contacts-page-table-wrap">
+                        {isMobilebig ? (
+                            <div className="contacts-mobile-wrap">
+                                <ContactList
+                                    contacts={contacts}
+                                    isLoading={isLoading}
+                                    startIndex={rangeStart}
+                                    onEdit={handleEditContact}
+                                    onDelete={handleDeleteContact}
+                                    layout="mobile"
+                                />
+                            </div>
+                        ) : (
+                            <div className={`contacts-table${(!isLoading && contacts.length === 0) ? ' is-empty' : ''}`}>
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <div className="contacts-th-head">No.</div>
+                                            </th>
+                                            <th className="contacts-table__name">
+                                                <div className="contacts-th-head">Name</div>
+                                            </th>
+                                            <th>
+                                                <div className="contacts-th-head">Email</div>
+                                            </th>
+                                            <th>
+                                                <div className="contacts-th-head">Phone</div>
+                                            </th>
+                                            <th>
+                                                <div className="contacts-th-head">Address</div>
+                                            </th>
+                                            <th>
+                                                <div className="contacts-th-head">Birthdate</div>
+                                            </th>
+                                            <th>
+                                                <div className="contacts-th-head">Notes</div>
+                                            </th>
+                                            <th className="text-end">
+                                                <div className="contacts-th-head">Action</div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <ContactList
+                                            contacts={contacts}
+                                            isLoading={isLoading}
+                                            startIndex={rangeStart}
+                                            onEdit={handleEditContact}
+                                            onDelete={handleDeleteContact}
+                                        />
+                                    </tbody>
+                                </table>
+                                {!isLoading && contacts.length === 0 && (
+                                    <div className="contacts-empty-state-wrap">
+                                        <ContactEmptyState />
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
+            {showPagination && (
             <div className="contacts-page-pagination">
                 <div className="pagination-box d-flex align-items-center">
                     <div className="d-flex align-items-center pagination-btn-box">
@@ -330,6 +385,7 @@ function ContactsPage() {
                     </ul>
                 </div>
             </div>
+            )}
         </div>
     );
 }

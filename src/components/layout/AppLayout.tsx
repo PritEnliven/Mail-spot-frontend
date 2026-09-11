@@ -11,12 +11,14 @@ import AppLoader from "@components/layout/AppLoader";
 import { useGlobalShortcuts } from "@hooks/useGlobalShortcuts";
 import { useScreen } from "@context/ScreenContext";
 import { useAccount } from "@context/AccountContext";
+import { useSyncActiveAccountProfile } from "@hooks/useSyncActiveAccountProfile";
 
 const AppContent = () => {
     useMailSocket();
     useLinkedAccountRevoked();
     useLinkedAccountSignedOut();
     useGlobalShortcuts();
+    useSyncActiveAccountProfile();
 
     const cssLoaded = usePageStylesheet([pageStyles.customCss, pageStyles.inboxCss, pageStyles.scheduleCss, pageStyles.headerCss, pageStyles.settingsCss, pageStyles.responsiveCss]);
     const { isSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();

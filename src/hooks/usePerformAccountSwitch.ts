@@ -4,7 +4,9 @@ import { useAccount } from '@context/AccountContext';
 import { useMailUI } from '@context/MailUIContext';
 import { useMailData } from '@context/MailDataContext';
 import { useContacts } from '@context/ContactsContext';
+import { useCalendar } from '@context/CalendarContext';
 import { useProfile } from '@context/userContext';
+import { CONTACTS_LIST_REFRESH_EVENT } from '@features/contacts/useContacts';
 import { isLinkedAccountSignedOut, type LinkedAccount, type PrimaryAccount } from '@services/accounts/accountService';
 
 export type SwitchableAccount = PrimaryAccount | LinkedAccount;
@@ -32,7 +34,8 @@ export function usePerformAccountSwitch() {
 
   const { activeModals, closeModal } = useMailUI();
   const { reloadForAccountSwitch } = useMailData();
-  const { fetchContacts } = useContacts();
+  const { fetchContacts, clearContacts } = useContacts();
+  const { clearCalendarData } = useCalendar();
   const { updateProfile, setProfileInitial } = useProfile();
   const navigate = useNavigate();
 
@@ -64,6 +67,9 @@ export function usePerformAccountSwitch() {
 
       try {
         prepareMailboxForAccount(accountId);
+        clearContacts();
+        clearCalendarData();
+        window.dispatchEvent(new CustomEvent(CONTACTS_LIST_REFRESH_EVENT));
 
         activeModals
           .filter((m) => m.type === 'compose')
@@ -94,6 +100,8 @@ export function usePerformAccountSwitch() {
       navigate,
       reloadForAccountSwitch,
       fetchContacts,
+      clearContacts,
+      clearCalendarData,
       commitActiveAccount,
       applyActiveProfile,
       activeAccountId,

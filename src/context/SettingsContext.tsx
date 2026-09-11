@@ -1,5 +1,7 @@
 import { getSettings } from '@services/settings/settingsService';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { getActiveAccountId } from '@services/apiService';
+import { useAccount } from '@context/AccountContext';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 export interface ShortCutType {
   id: string;
@@ -26,13 +28,14 @@ interface SettingsContextType {
   loading: boolean;
   error: string | null;
   updateSettings: (newSettings: Partial<SettingsType>) => void;
+  refreshSettings: () => Promise<void>;
 }
 
 const defaultSettings: SettingsType = {
   undoSendPeriod: 30,
   markAsReadDelay: 0,
   shortcuts: [
-    
+
   ],
   pageSize: 25,
   enableSignature: true,
@@ -78,40 +81,62 @@ const normalizeSettings = (raw: any): SettingsType => {
 };
 
 export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
+  const { activeAccountId } = useAccount();
   const [settings, setSettings] = useState<SettingsType>(defaultSettings);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        setLoading(true);
-        const response = await getSettings();
+  const refreshSettings = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    const accountIdAtStart = getActiveAccountId();
+
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getSettings();
+      if (requestId !== requestIdRef.current) return;
+      if (accountIdAtStart !== getActiveAccountId()) return;
+
+      if (response?.data) {
         setSettings(normalizeSettings(response.data));
-      } catch (err) {
-        setError('Failed to load settings');
-        console.error('Error fetching settings:', err);
-      } finally {
+      } else {
+        setSettings(defaultSettings);
+        setError(response?.message || 'Failed to load settings');
+      }
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+      setSettings(defaultSettings);
+      setError('Failed to load settings');
+      console.error('Error fetching settings:', err);
+    } finally {
+      if (requestId === requestIdRef.current) {
         setLoading(false);
       }
-    };
-
-    fetchSettings();
+    }
   }, []);
 
-  const updateSettings = (newSettings: Partial<SettingsType>) => {
+  useEffect(() => {
+    requestIdRef.current += 1;
+    setSettings(defaultSettings);
+    setError(null);
+    void refreshSettings();
+  }, [activeAccountId, refreshSettings]);
+
+  const updateSettings = useCallback((newSettings: Partial<SettingsType>) => {
     setSettings(prev => prev ? { ...prev, ...newSettings } : { ...defaultSettings, ...newSettings });
+  }, []);
+
+  const value = {
+    settings,
+    loading,
+    error,
+    updateSettings,
+    refreshSettings,
   };
 
   return (
-    <SettingsContext.Provider
-      value={{
-        settings,
-        loading,
-        error,
-        updateSettings
-      }}
-    >
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   );

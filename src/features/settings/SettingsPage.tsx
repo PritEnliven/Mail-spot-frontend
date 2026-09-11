@@ -7,12 +7,13 @@ import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useMailData } from '@context/MailDataContext';
 import { useMailUI } from '@context/MailUIContext';
 import { useSettings } from '@context/SettingsContext';
+import { useAccount } from '@context/AccountContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import plusIconHover from "@images/plus-icon-hover.svg";
 import plusIcon from "@images/plus-icon.svg";
 import { deleteRule, deleteSignature, getAllRules, getSettings, saveSettings } from '@services/settings/settingsService';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { SettingsSchema, type SettingPageFormValues, type Signature } from './settings.schema';
 
@@ -33,6 +34,7 @@ function SettingsPage() {
     const { setBoxName, setActiveEmailMessageId, setEmailDetailSelected } = useMailData();
     const { openModal, setIsMailListOpen } = useMailUI();
     const { updateSettings } = useSettings();
+    const { activeAccountId } = useAccount();
     const [signatures, setSignatures] = useState<Signature[]>([]);
     const [selectedSignature, setSelectedSignature] = useState<Signature | null>(null);
     const [rules, setRules] = useState<any[]>([]);
@@ -59,7 +61,7 @@ function SettingsPage() {
         },
     });
 
-    const loadSettings = async () => {
+    const loadSettings = useCallback(async () => {
         try {
             const response = await getSettings();
             const defaultSignature = response.data.signatures?.find((sig: Signature) => sig.isDefault);
@@ -99,20 +101,25 @@ function SettingsPage() {
             });
         } catch (error) {
             console.error('Failed to load settings', error);
+            setSignatures([]);
+            setSelectedSignature(null);
         }
-    };
+    }, [reset, updateSettings]);
 
-    const loadRules = async () => {
+    const loadRules = useCallback(async () => {
         try {
             const response = await getAllRules();
             if (response.statusCode === 200) {
                 setRules(response.data ?? []);
+            } else {
+                setRules([]);
             }
-        } 
+        }
         catch (error) {
             console.error('Failed to load settings', error);
+            setRules([]);
         }
-    }
+    }, []);
 
     useEffect(() => {
         setBoxName('settings');
@@ -120,9 +127,17 @@ function SettingsPage() {
         setActiveEmailMessageId(null);
         setEmailDetailSelected(null);
         setIsMailListOpen(true);
-        loadSettings();
-        loadRules();
-    }, [setBoxName, setActiveEmailMessageId, setEmailDetailSelected, setIsMailListOpen, reset])
+    }, [setBoxName, setActiveEmailMessageId, setEmailDetailSelected, setIsMailListOpen]);
+
+    useEffect(() => {
+        setSignatures([]);
+        setSelectedSignature(null);
+        setRules([]);
+        void loadSettings();
+        void loadRules();
+        // Only refetch when the active mailbox changes — not when loader identities change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeAccountId]);
 
     async function resetSignatureSettings() {
         const response = await getSettings();

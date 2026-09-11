@@ -222,9 +222,15 @@
   .left-side-bar-main #sidebarOtherMenu {
     flex: 0 0 auto;
   }
+  .left-side-bar-main #sidebarOtherMenu {
+    flex-shrink: 0;
+    /* background: #fff; */
+  }
+  /* Cap folder section so Contact/Calendar/Settings stay visible below it */
   .left-side-bar-main .create-folder-sec:has(.add-floder-single-box.show) {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
+    max-height: min(160px, 32vh);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -252,8 +258,10 @@
     height: auto !important;
   }
   .left-side-bar-main .create-new-folder-sec {
-    max-height: none !important;
-    height: 100% !important;
+    max-height: min(120px, 22vh) !important;
+    height: auto !important;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   .left-side-bar-main nav#navbarList > .nav-custom-scroll-scrollbar {
     display: none;
@@ -315,20 +323,25 @@
   .setting-features { padding: 12px !important; }
   #my-tooltip { display: none !important; }
   /* -------------------- Contacts -------------------- */
-  .signature-table-new.contacts-table-new { max-height: none; min-height: 140px; }
+  .contacts-table { max-height: none; min-height: 0; }
+  .contacts-table.is-empty { overflow: hidden; }
   .contacts-page-pagination { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   .contacts-toolbar-row { flex-wrap: wrap; }
   .contacts-filters-row { width: 100%; }
   .contacts-toolbar-actions { width: 100%; justify-content: flex-end; }
+  .contacts-page-main { padding: 12px !important; }
+  .contacts-mobile-list { gap: 8px; }
+
+  .contact-mobile-item__field { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; }
   .contact-hover-popup { max-width: min(280px, calc(100vw - 24px)); }
   .contact-field-row { gap: 6px; }
-  .contact-field-action-btn { width: 36px; height: 36px; min-width: 36px; }
   .contact-form-modal-content { max-height: calc(100dvh - 24px); }
-  .contact-form-modal-scroll { max-height: calc(100dvh - 180px); }
+  .contact-form-modal-scroll { max-height: calc(100dvh - 100px); min-height: 200px; }
   .contact-form-modal-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   /* Calender Event Modal */
   .CalendarModalSimpleBar { max-height: calc(100dvh - 100px); min-height: 200px; }
   .eventInfoModalSimpleBar { max-height: calc(100dvh - 100px); min-height: 200px; }
+  .Calendar-main .modal-title { font-size: 14px;}
   /* Edit Rule modal */
   .edit-rule-modal-simple-scroll-bar-body { max-height: calc(100dvh - 100px); min-height: 200px; }
   /* ---------------------------Scheduled---------------------------- */

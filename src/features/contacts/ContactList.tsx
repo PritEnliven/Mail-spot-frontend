@@ -7,10 +7,15 @@ import { copyEmailToClipBoard } from '@utils/generalUtil';
 import { formatDate, parseDateForFlatpickr, TimeFormat } from '@utils/dateUtil';
 import checkIcon from '@images/checkbox-check-box-blue.svg';
 import copyIcon from '@images/copy-icon-16.svg';
+import dateIcon from '@images/date-icon-16.svg';
+import descriptionIcon from '@images/description-icon-16.svg';
 import editIcon from '@images/edit2-icon.svg';
 import editIconHover from '@images/edit2-icon-hover.svg';
 import deleteIcon from '@images/trash-icon.svg';
 import deleteIconHover from '@images/trash-icon-hover.svg';
+import locationIcon from '@images/location-icon-16.svg';
+import mailIcon from '@images/mail-icon-16.svg';
+import phoneIcon from '@images/phone-icon-16.svg';
 import viewIcon from '@images/view-icon.svg';
 import viewIconHover from '@images/view-icon-hover.svg';
 
@@ -24,6 +29,7 @@ interface ContactListProps {
     startIndex: number;
     onEdit: (contact: Contact) => void;
     onDelete: (contact: Contact) => void;
+    layout?: 'table' | 'mobile';
 }
 
 interface PopupPosition {
@@ -170,6 +176,7 @@ function useHoverPopup() {
     const [open, setOpen] = useState(false);
     const triggerRef = useRef<HTMLElement | null>(null);
     const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const ignoreClickRef = useRef(false);
 
     const clearCloseTimer = () => {
         if (closeTimerRef.current) {
@@ -188,9 +195,51 @@ function useHoverPopup() {
         closeTimerRef.current = setTimeout(() => setOpen(false), 120);
     };
 
+    const closePopup = () => {
+        clearCloseTimer();
+        setOpen(false);
+    };
+
     const togglePopup = () => {
         clearCloseTimer();
         setOpen((prev) => !prev);
+    };
+
+    const canHover = () =>
+        typeof window !== 'undefined'
+        && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    const handleTriggerMouseEnter = () => {
+        if (canHover()) openPopup();
+    };
+
+    const handleTriggerMouseLeave = () => {
+        if (canHover()) scheduleClose();
+    };
+
+    const handleTriggerClick = (event: React.SyntheticEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        // Mobile: focus can open first, then the same tap's click would toggle closed.
+        if (ignoreClickRef.current) {
+            ignoreClickRef.current = false;
+            openPopup();
+            return;
+        }
+        togglePopup();
+    };
+
+    const handleTriggerFocus = () => {
+        // Keyboard focus should open; touch focus is followed by click — skip that click.
+        if (!canHover()) {
+            ignoreClickRef.current = true;
+        }
+        openPopup();
+    };
+
+    const handleTriggerBlur = () => {
+        // Don't close on blur for touch — outside tap handler closes instead.
+        if (canHover()) scheduleClose();
     };
 
     useEffect(() => {
@@ -201,12 +250,17 @@ function useHoverPopup() {
             if (triggerRef.current?.contains(target)) return;
             const popup = document.querySelector('.contact-hover-popup');
             if (popup?.contains(target)) return;
-            setOpen(false);
+            closePopup();
         };
 
-        document.addEventListener('mousedown', onPointerDown);
-        document.addEventListener('touchstart', onPointerDown);
+        // Delay binding so the opening tap does not immediately close the popup.
+        const bindTimer = window.setTimeout(() => {
+            document.addEventListener('mousedown', onPointerDown);
+            document.addEventListener('touchstart', onPointerDown);
+        }, 0);
+
         return () => {
+            window.clearTimeout(bindTimer);
             document.removeEventListener('mousedown', onPointerDown);
             document.removeEventListener('touchstart', onPointerDown);
         };
@@ -219,8 +273,14 @@ function useHoverPopup() {
         triggerRef,
         openPopup,
         scheduleClose,
+        closePopup,
         togglePopup,
         setOpen,
+        handleTriggerMouseEnter,
+        handleTriggerMouseLeave,
+        handleTriggerClick,
+        handleTriggerFocus,
+        handleTriggerBlur,
     };
 }
 
@@ -229,25 +289,47 @@ function ContactPreviewCell({
     title,
     copyLabel,
     viewLabel,
+    singleLine = false,
 }: {
     value?: string | null;
     title: string;
     copyLabel: string;
     viewLabel: string;
+    singleLine?: boolean;
 }) {
-    const { open, triggerRef, openPopup, scheduleClose, togglePopup, setOpen } = useHoverPopup();
+    const {
+        open,
+        triggerRef,
+        openPopup,
+        scheduleClose,
+        togglePopup,
+        setOpen,
+        handleTriggerMouseEnter,
+        handleTriggerMouseLeave,
+        handleTriggerClick,
+        handleTriggerFocus,
+        handleTriggerBlur,
+    } = useHoverPopup();
     const raw = value?.trim() ?? '';
-    const { text, truncated } = truncateNote(raw);
+    const { text, truncated } = singleLine
+        ? { text: raw, truncated: raw.length > NOTE_PREVIEW_LENGTH }
+        : truncateNote(raw);
 
     if (!raw) return <>—</>;
 
     if (!truncated) {
-        return <span className="contact-note-preview">{text}</span>;
+        return (
+            <span className={`contact-note-preview${singleLine ? ' contact-note-preview--single-line' : ''}`}>
+                {text}
+            </span>
+        );
     }
 
     return (
-        <div className="contact-note-cell">
-            <span className="contact-note-preview">{text}</span>
+        <div className={`contact-note-cell${singleLine ? ' contact-note-cell--single-line' : ''}`}>
+            <span className={`contact-note-preview${singleLine ? ' contact-note-preview--single-line' : ''}`}>
+                {text}
+            </span>
             <button
                 type="button"
                 ref={(node) => {
@@ -256,15 +338,11 @@ function ContactPreviewCell({
                 className={`contact-note-view-btn hover-link${open ? ' is-open' : ''}`}
                 aria-expanded={open}
                 aria-label={viewLabel}
-                onMouseEnter={openPopup}
-                onMouseLeave={scheduleClose}
-                onFocus={openPopup}
-                onBlur={scheduleClose}
-                onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    togglePopup();
-                }}
+                onMouseEnter={handleTriggerMouseEnter}
+                onMouseLeave={handleTriggerMouseLeave}
+                onFocus={handleTriggerFocus}
+                onBlur={handleTriggerBlur}
+                onClick={handleTriggerClick}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
@@ -305,7 +383,19 @@ function ContactPreviewCell({
 }
 
 function MultiValueCell({ values, label }: { values: string[]; label: string }) {
-    const { open, triggerRef, openPopup, scheduleClose, togglePopup, setOpen } = useHoverPopup();
+    const {
+        open,
+        triggerRef,
+        openPopup,
+        scheduleClose,
+        togglePopup,
+        setOpen,
+        handleTriggerMouseEnter,
+        handleTriggerMouseLeave,
+        handleTriggerClick,
+        handleTriggerFocus,
+        handleTriggerBlur,
+    } = useHoverPopup();
 
     if (values.length === 0) return <>—</>;
 
@@ -313,7 +403,7 @@ function MultiValueCell({ values, label }: { values: string[]; label: string }) 
 
     return (
         <div className="contact-multi-value">
-            <span className="contact-multi-value__primary" >{primary}</span>
+            <span className="contact-multi-value__primary">{primary}</span>
             {rest.length > 0 && (
                 <>
                     <span
@@ -325,15 +415,11 @@ function MultiValueCell({ values, label }: { values: string[]; label: string }) 
                         role="button"
                         aria-expanded={open}
                         aria-label={`Show ${rest.length} more ${label}`}
-                        onMouseEnter={openPopup}
-                        onMouseLeave={scheduleClose}
-                        onFocus={openPopup}
-                        onBlur={scheduleClose}
-                        onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            togglePopup();
-                        }}
+                        onMouseEnter={handleTriggerMouseEnter}
+                        onMouseLeave={handleTriggerMouseLeave}
+                        onFocus={handleTriggerFocus}
+                        onBlur={handleTriggerBlur}
+                        onClick={handleTriggerClick}
                         onKeyDown={(event) => {
                             if (event.key === 'Enter' || event.key === ' ') {
                                 event.preventDefault();
@@ -373,7 +459,83 @@ function MultiValueCell({ values, label }: { values: string[]; label: string }) 
     );
 }
 
-function ContactList({
+function ContactActions({
+    contact,
+    onEdit,
+    onDelete,
+}: {
+    contact: Contact;
+    onEdit: (contact: Contact) => void;
+    onDelete: (contact: Contact) => void;
+}) {
+    return (
+        <div className="d-flex align-items-center justify-content-end contact-actions">
+            <a
+                href="#"
+                className="hover-link d-flex align-items-center me-2"
+                onClick={(e) => {
+                    e.preventDefault();
+                    onEdit(contact);
+                }}
+                aria-label={`Edit ${contact.name}`}
+            >
+                <InteractiveIcon
+                    defaultIcon={editIcon}
+                    hoverIcon={editIconHover}
+                    activeIcon=""
+                    isActive={false}
+                    alt=""
+                    className="interactive-icon hover-image"
+                    renderAs="img"
+                    tooltip="Edit"
+                />
+            </a>
+            <a
+                href="#"
+                className="hover-link d-flex align-items-center"
+                onClick={(e) => {
+                    e.preventDefault();
+                    onDelete(contact);
+                }}
+                aria-label={`Delete ${contact.name}`}
+            >
+                <InteractiveIcon
+                    defaultIcon={deleteIcon}
+                    hoverIcon={deleteIconHover}
+                    activeIcon=""
+                    isActive={false}
+                    alt=""
+                    className="interactive-icon hover-image"
+                    renderAs="img"
+                    tooltip="Delete"
+                />
+            </a>
+        </div>
+    );
+}
+
+function ContactEmptyState() {
+    return (
+        <div className="no-new-mail contacts-empty-state">
+            <div className="d-block text-center">
+                <h2 className="new-h2 mb-2">No saved contacts yet</h2>
+            </div>
+        </div>
+    );
+}
+
+export { ContactEmptyState };
+
+function ContactFieldIcon({ src, label }: { src: string; label: string }) {
+    return (
+        <span className="contact-mobile-item__icon" aria-hidden="true" title={label}>
+            <img src={src} alt="" width={16} height={16} />
+            <span className="visually-hidden">{label}</span>
+        </span>
+    );
+}
+
+function ContactMobileList({
     contacts,
     isLoading,
     startIndex,
@@ -382,7 +544,149 @@ function ContactList({
 }: ContactListProps) {
     if (isLoading) {
         return (
-            <tr>
+            <div className="contacts-mobile-list">
+                <div className="contacts-mobile-status text-center py-4 fs-12-commom">
+                    Loading contacts...
+                </div>
+            </div>
+        );
+    }
+
+    if (contacts.length === 0) {
+        return (
+            <div className="contacts-mobile-list">
+                <div className="contacts-mobile-status text-center py-4">
+                    <ContactEmptyState />
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="contacts-mobile-list" role="list">
+            {contacts.map((contact, index) => {
+                const emails = getContactEmails(contact);
+                const phones = getContactPhones(contact);
+                const address = contact.address?.trim();
+                const notes = contact.notes?.trim();
+                const birthdate = formatBirthdate(contact.birthdate);
+
+                return (
+                    <article
+                        key={contact._id}
+                        className="contact-mobile-item"
+                        role="listitem"
+                    >
+                        <div className="contact-mobile-item__header">
+                            <div className="contact-mobile-item__identity">
+                                <span className="contact-mobile-item__index">
+                                    {startIndex + index}
+                                </span>
+                                <h3 className="contact-mobile-item__name">{contact.name}</h3>
+                            </div>
+                            <ContactActions
+                                contact={contact}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                            />
+                        </div>
+
+                        <div className="contact-mobile-item__fields-wrapper">
+                            <dl className="contact-mobile-item__fields">
+                            {emails.length > 0 && (
+                                <div className="contact-mobile-item__field">
+                                    <dt>
+                                        <ContactFieldIcon src={mailIcon} label="Email" />
+                                    </dt>
+                                    <dd>
+                                        <MultiValueCell values={emails} label="Emails" />
+                                    </dd>
+                                </div>
+                            )}
+                            {phones.length > 0 && (
+                                <div className="contact-mobile-item__field">
+                                    <dt>
+                                        <ContactFieldIcon src={phoneIcon} label="Phone" />
+                                    </dt>
+                                    <dd>
+                                        <MultiValueCell values={phones} label="Phones" />
+                                    </dd>
+                                </div>
+                            )}
+                            {address && (
+                                <div className="contact-mobile-item__field">
+                                    <dt>
+                                        <ContactFieldIcon src={locationIcon} label="Address" />
+                                    </dt>
+                                    <dd>
+                                        <ContactPreviewCell
+                                            value={contact.address}
+                                            title="Address"
+                                            copyLabel="Copy address"
+                                            viewLabel="View full address"
+                                            singleLine
+                                        />
+                                    </dd>
+                                </div>
+                            )}
+                            {birthdate !== '—' && (
+                                <div className="contact-mobile-item__field">
+                                    <dt>
+                                        <ContactFieldIcon src={dateIcon} label="Birthdate" />
+                                    </dt>
+                                    <dd>
+                                        <span className="contact-mobile-item__text">{birthdate}</span>
+                                    </dd>
+                                </div>
+                            )}
+                            {notes && (
+                                <div className="contact-mobile-item__field">
+                                    <dt>
+                                        <ContactFieldIcon src={descriptionIcon} label="Notes" />
+                                    </dt>
+                                    <dd>
+                                        <ContactPreviewCell
+                                            value={contact.notes}
+                                            title="Notes"
+                                            copyLabel="Copy note"
+                                            viewLabel="View full note"
+                                            singleLine
+                                        />
+                                    </dd>
+                                </div>
+                            )}
+                        </dl>
+                        </div>
+                    </article>
+                );
+            })}
+        </div>
+    );
+}
+
+function ContactList({
+    contacts,
+    isLoading,
+    startIndex,
+    onEdit,
+    onDelete,
+    layout = 'table',
+}: ContactListProps) {
+    if (layout === 'mobile') {
+        return (
+            <ContactMobileList
+                contacts={contacts}
+                isLoading={isLoading}
+                startIndex={startIndex}
+                onEdit={onEdit}
+                onDelete={onDelete}
+            />
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <tr className="contacts-table-status-row">
                 <td colSpan={CONTACT_TABLE_COLSPAN} className="text-center py-4 fs-12-commom">
                     Loading contacts...
                 </td>
@@ -391,20 +695,7 @@ function ContactList({
     }
 
     if (contacts.length === 0) {
-        return (
-            <tr>
-                <td colSpan={CONTACT_TABLE_COLSPAN} className="text-center py-4">
-                    <div className="no-new-mail">
-                        <div className="d-block text-center">
-                            <h2 className="new-h2 mb-2">No saved contacts yet</h2>
-                            <p className="fs-12-commom">
-                                People you email will still appear when you compose.
-                            </p>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        );
+        return null;
     }
 
     return (
@@ -441,48 +732,11 @@ function ContactList({
                             />
                         </td>
                         <td>
-                            <div className="d-flex align-items-center justify-content-end">
-                                <a
-                                    href="#"
-                                    className="hover-link d-flex align-items-center me-2"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        onEdit(contact);
-                                    }}
-                                    aria-label={`Edit ${contact.name}`}
-                                >
-                                    <InteractiveIcon
-                                        defaultIcon={editIcon}
-                                        hoverIcon={editIconHover}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip="Edit"
-                                    />
-                                </a>
-                                <a
-                                    href="#"
-                                    className="hover-link d-flex align-items-center"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        onDelete(contact);
-                                    }}
-                                    aria-label={`Delete ${contact.name}`}
-                                >
-                                    <InteractiveIcon
-                                        defaultIcon={deleteIcon}
-                                        hoverIcon={deleteIconHover}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip="Delete"
-                                    />
-                                </a>
-                            </div>
+                            <ContactActions
+                                contact={contact}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                            />
                         </td>
                     </tr>
                 );

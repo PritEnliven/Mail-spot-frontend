@@ -16,16 +16,9 @@ import { getUserDetail } from '@services/user/userService';
 import { logoutUser } from '@services/login/loginService';
 import { getSocket, disconnectSocket } from '@services/socket/socket';
 import { verifyBoxName } from '@utils/emailUtil';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-
-const computeInitials = (name: string): string => {
-    const parts = name.trim().split(/\s+/);
-    return parts.length > 1
-        ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
-        : name.slice(0, 2).toUpperCase();
-};
 
 interface ActionRowProps {
     icon: string;
@@ -69,22 +62,12 @@ const ActionRow = ({ icon, iconHover, label, onClick, danger }: ActionRowProps) 
 
 const UserProfileMenu = () => {
     const navigate = useNavigate();
-    const { profileName, setProfileName, profileEmail, setProfileEmail, setProfileInitial, profileInitial } = useProfile();
+    const { profileName, profileEmail, profileInitial } = useProfile();
     const { openModal, closeModal, activeModals } = useMailUI();
     const { boxName } = useMailData();
     const { isMobile } = useScreen();
     const [isOpen, setIsOpen] = useState(false);
     const isCalendar = verifyBoxName(boxName, 'calendar');
-
-    useEffect(() => {
-        const name = localStorage.getItem('username');
-        const email = localStorage.getItem('email');
-        if (name) {
-            setProfileName(name);
-            setProfileInitial(computeInitials(name));
-        }
-        if (email) setProfileEmail(email);
-    }, [setProfileEmail, setProfileInitial, setProfileName]);
 
     const handleLogout = async () => {
         try {

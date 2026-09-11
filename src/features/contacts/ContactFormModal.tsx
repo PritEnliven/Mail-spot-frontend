@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, type Resolver } from 'react-hook-form';
 import { lazy, Suspense, useMemo, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import BaseModal from '@components/ui/BaseModal';
@@ -24,8 +24,10 @@ import { addContact, editContact } from '@services/contact/contactService';
 import { formatDate, parseDateForFlatpickr, TimeFormat } from '@utils/dateUtil';
 import {
     CONTACT_MAX_EMAILS,
+    CONTACT_MAX_PHONE_LENGTH,
     CONTACT_MAX_PHONES,
     contactFormSchema,
+    sanitizePhoneInput,
     type ContactFormSchemaValues,
 } from './contactForm.schema';
 
@@ -53,7 +55,7 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
         formState: { errors },
         reset,
     } = useForm<ContactFormSchemaValues>({
-        resolver: zodResolver(contactFormSchema),
+        resolver: zodResolver(contactFormSchema) as Resolver<ContactFormSchemaValues>,
         mode: 'onSubmit',
         defaultValues: {
             name: contact?.name ?? '',
@@ -92,9 +94,6 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
         maxDate: 'today',
         disableMobile: true,
         onReady: (_: Date[], __: string, instance: any) => {
-            mountMonthDropdown(instance);
-        },
-        onOpen: (_: Date[], __: string, instance: any) => {
             mountMonthDropdown(instance);
         },
         onChange: (selectedDates: Date[]) => {
@@ -321,62 +320,75 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
 
                                     <div className="form-group mb-3 w-100">
                                         <label className="control-label">Phone</label>
-                                        {phoneFields.map((item, index) => (
-                                            <div className="contact-field-row mb-2" key={item.id}>
-                                                <Controller
-                                                    name={`phones.${index}.value`}
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <input
-                                                            {...field}
-                                                            id={index === 0 ? 'contactPhone' : `contactPhone-${index}`}
-                                                            type="tel"
-                                                            className="form-control"
-                                                            placeholder="Phone"
-                                                            autoComplete="tel"
+                                        {phoneFields.map((item, index) => {
+                                            const fieldError = errors.phones?.[index]?.value?.message;
+                                            return (
+                                                <div className="mb-2" key={item.id}>
+                                                    <div className="contact-field-row">
+                                                        <Controller
+                                                            name={`phones.${index}.value`}
+                                                            control={control}
+                                                            render={({ field }) => (
+                                                                <input
+                                                                    {...field}
+                                                                    id={index === 0 ? 'contactPhone' : `contactPhone-${index}`}
+                                                                    type="tel"
+                                                                    inputMode="tel"
+                                                                    maxLength={CONTACT_MAX_PHONE_LENGTH}
+                                                                    className={`form-control${fieldError ? ' is-invalid' : ''}`}
+                                                                    placeholder="Phone"
+                                                                    autoComplete="tel"
+                                                                    onChange={(event) => {
+                                                                        field.onChange(sanitizePhoneInput(event.target.value));
+                                                                    }}
+                                                                />
+                                                            )}
                                                         />
+                                                        {index === phoneFields.length - 1 && canAddPhone && (
+                                                            <button
+                                                                type="button"
+                                                                className="contact-field-action-btn hover-link"
+                                                                onClick={handleAddPhone}
+                                                                aria-label="Add phone"
+                                                            >
+                                                                <InteractiveIcon
+                                                                    defaultIcon={plusIcon}
+                                                                    hoverIcon={plusIconHover}
+                                                                    activeIcon=""
+                                                                    isActive={false}
+                                                                    alt=""
+                                                                    className="interactive-icon hover-image"
+                                                                    renderAs="img"
+                                                                    tooltip="Add phone"
+                                                                />
+                                                            </button>
+                                                        )}
+                                                        {index > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                className="contact-field-action-btn hover-link"
+                                                                onClick={() => removePhone(index)}
+                                                                aria-label="Remove phone"
+                                                            >
+                                                                <InteractiveIcon
+                                                                    defaultIcon={removeIcon}
+                                                                    hoverIcon={removeIconHover}
+                                                                    activeIcon=""
+                                                                    isActive={false}
+                                                                    alt=""
+                                                                    className="interactive-icon hover-image"
+                                                                    renderAs="img"
+                                                                    tooltip="Remove"
+                                                                />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {fieldError && (
+                                                        <div className="invalid-feedback d-block">{fieldError}</div>
                                                     )}
-                                                />
-                                                {index === phoneFields.length - 1 && canAddPhone && (
-                                                    <button
-                                                        type="button"
-                                                        className="contact-field-action-btn hover-link"
-                                                        onClick={handleAddPhone}
-                                                        aria-label="Add phone"
-                                                    >
-                                                        <InteractiveIcon
-                                                            defaultIcon={plusIcon}
-                                                            hoverIcon={plusIconHover}
-                                                            activeIcon=""
-                                                            isActive={false}
-                                                            alt=""
-                                                            className="interactive-icon hover-image"
-                                                            renderAs="img"
-                                                            tooltip="Add phone"
-                                                        />
-                                                    </button>
-                                                )}
-                                                {index > 0 && (
-                                                    <button
-                                                        type="button"
-                                                        className="contact-field-action-btn hover-link"
-                                                        onClick={() => removePhone(index)}
-                                                        aria-label="Remove phone"
-                                                    >
-                                                        <InteractiveIcon
-                                                            defaultIcon={removeIcon}
-                                                            hoverIcon={removeIconHover}
-                                                            activeIcon=""
-                                                            isActive={false}
-                                                            alt=""
-                                                            className="interactive-icon hover-image"
-                                                            renderAs="img"
-                                                            tooltip="Remove"
-                                                        />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
+                                                </div>
+                                            );
+                                        })}
                                         {typeof errors.phones?.message === 'string' && (
                                             <div className="invalid-feedback d-block">{errors.phones.message}</div>
                                         )}

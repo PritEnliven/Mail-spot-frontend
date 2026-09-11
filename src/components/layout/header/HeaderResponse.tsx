@@ -61,8 +61,25 @@ const Header = () => {
 
     useEffect(() => {
         // Load profile data from localStorage on component mount
+        // Prefer active mailbox email from session after account switch + reload.
+        const storedActiveEmail = sessionStorage.getItem('activeAccountEmail');
         const storedName = localStorage.getItem('username');
         const storedEmail = localStorage.getItem('email');
+
+        if (storedActiveEmail) {
+            const isPrimaryLogin = storedEmail === storedActiveEmail;
+            const name = isPrimaryLogin && storedName
+                ? storedName
+                : storedActiveEmail.split('@')[0];
+            setProfileName(name);
+            setProfileEmail(storedActiveEmail);
+            setProfileInitial(
+                isPrimaryLogin && storedName
+                    ? storedName.charAt(0).toUpperCase()
+                    : storedActiveEmail.charAt(0).toUpperCase()
+            );
+            return;
+        }
 
         if (storedName) {
             setProfileName(storedName);

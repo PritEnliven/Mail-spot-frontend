@@ -60,6 +60,10 @@ export function createMainCalendarConfig(params: {
         moreLinkClick: 'popover',
         moreLinkContent: (args) => `${args.num} more`,
 
+        // Keep duration-accurate heights so events don't spill past the hour line.
+        eventMinHeight: 1,
+        eventShortHeight: 30,
+
         eventTimeFormat: {
             hour: 'numeric',
             minute: '2-digit',

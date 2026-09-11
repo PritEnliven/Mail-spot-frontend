@@ -2,12 +2,15 @@ import type { Calendar } from '@fullcalendar/core'
 import FullCalendar from '@fullcalendar/react';
 import type { CalendarEvent, EventDetail } from '@models/CalendarModels';
 import type { ApiResponse } from '@models/Response';
+import { useAccount } from '@context/AccountContext';
+import { getActiveAccountId } from '@services/apiService';
 import { getAllEvents } from '@services/calendar/calendarService';
 import { clearFocusDate, formatCalendarEvents } from '@utils/calendarUtil';
 import {
     createContext,
     useCallback,
     useContext,
+    useEffect,
     useRef,
     useState,
     type ReactNode,
@@ -35,6 +38,7 @@ interface CalendarContextType {
     events: CalendarEvent[]
     setEvents: (events: CalendarEvent[]) => void
     getAllEventList: (calendarApi?: Calendar) => Promise<void>,
+    clearCalendarData: () => void,
     calendarAllSearchedEvents: CalendarEvent[],
     setCalendarAllSearchedEvents: (events: CalendarEvent[]) => void,
     isCalendarAllSearchActive: boolean,
@@ -66,8 +70,10 @@ export const useCalendar = () => {
 }
 
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
+    const { activeAccountId } = useAccount()
     const mainCalendarRef = useRef<FullCalendar | null>(null)
     const sidebarCalendarRef = useRef<FullCalendar | null>(null)
+    const requestIdRef = useRef(0)
     const [calendarTitle, setCalendarTitle] = useState(() =>
         new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     );
@@ -89,6 +95,22 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         setIsSearchResultDropdownOpen(false)
     }, [])
 
+    const clearCalendarEventSources = useCallback(() => {
+        const api = mainCalendarRef.current?.getApi()
+        if (!api) return
+        api.getEventSources().forEach((source) => source.remove())
+    }, [])
+
+    const clearCalendarData = useCallback(() => {
+        requestIdRef.current += 1
+        setEvents([])
+        setSelectedEvent(null)
+        setCalendarAllSearchedEvents([])
+        setIsCalendarAllSearchActive(false)
+        resetSearchState()
+        clearCalendarEventSources()
+    }, [resetSearchState, clearCalendarEventSources])
+
     const exitCalendarAllSearch = useCallback(() => {
         setIsCalendarAllSearchActive(false)
         setCalendarAllSearchedEvents([])
@@ -108,8 +130,14 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
         if (!start || !end) return
 
+        const requestId = ++requestIdRef.current
+        const accountIdAtStart = getActiveAccountId()
+
         try {
             const response: ApiResponse<CalendarEvent[]> = await getAllEvents({ start, end })
+            if (requestId !== requestIdRef.current) return
+            if (accountIdAtStart !== getActiveAccountId()) return
+
             if (response.statusCode === 200) {
                 const formattedEvents = formatCalendarEvents(response.data)
                 setEvents(formattedEvents)
@@ -118,11 +146,23 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
                 existingSources.forEach(source => source.remove())
 
                 api.addEventSource(formattedEvents)
+            } else {
+                setEvents([])
+                api.getEventSources().forEach((source) => source.remove())
             }
         } catch (error) {
+            if (requestId !== requestIdRef.current) return
             console.error('Failed to fetch events:', error)
+            setEvents([])
+            api.getEventSources().forEach((source) => source.remove())
         }
     }, []);
+
+    // Drop previous account events as soon as the active mailbox changes.
+    useEffect(() => {
+        clearCalendarData()
+        void getAllEventList()
+    }, [activeAccountId, clearCalendarData, getAllEventList])
 
     let resetLastClickedDateFn: (() => void) | null = null
 
@@ -239,6 +279,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         events,
         setEvents,
         getAllEventList,
+        clearCalendarData,
         selectedEvent,
         setSelectedEvent,
         isCalendarAllSearchActive,
