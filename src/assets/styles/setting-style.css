@@ -607,12 +607,93 @@ span.shortcut-name-text {
 }
 
 .contacts-page-pagination {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: flex-start;
+  gap: 12px;
   padding: 12px 16px;
   border-top: 1px solid #d0d9de;
   background: #fff;
+}
+
+.contacts-pagination-summary {
+  justify-self: start;
+  font-size: 13px;
+  font-weight: 400;
+  color: #717d84;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.contacts-pagination-summary strong {
+  font-weight: 600;
+  color: #212121;
+}
+
+.contacts-pagination-controls {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.contacts-pagination-spacer {
+  justify-self: end;
+}
+
+.contacts-pagination-arrow {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.contacts-pagination-arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.contacts-pagination-arrow:not(:disabled):hover {
+  background: #eef2f4;
+}
+
+.contacts-pagination-page {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #717d84;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contacts-pagination-page:hover:not(.is-active):not(:disabled) {
+  background: #eef2f4;
+  color: #212121;
+}
+
+.contacts-pagination-page.is-active {
+  background: #0097ef;
+  color: #fff;
+}
+
+.contacts-pagination-ellipsis {
+  min-width: 20px;
+  text-align: center;
+  color: #717d84;
+  font-size: 13px;
+  line-height: 28px;
 }
 
 .contacts-toolbar-row {
@@ -643,6 +724,17 @@ span.shortcut-name-text {
   width: 100% !important;
 }
 
+.contacts-page-limit-field {
+  flex: 0 0 72px;
+  min-width: 72px;
+  width: 72px;
+}
+
+.contacts-sort-field {
+  flex: 0 1 180px;
+  min-width: 140px;
+}
+
 .contacts-toolbar-actions {
   flex-shrink: 0;
   display: flex;
@@ -653,8 +745,8 @@ span.shortcut-name-text {
 
 .contacts-add-contact-icon-btn {
   min-width: unset !important;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0 !important;
   display: inline-flex;
   align-items: center;

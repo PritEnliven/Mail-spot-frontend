@@ -171,6 +171,9 @@
   .Calendar-main .search-results-event-active { flex-direction: column; align-items: flex-start !important; gap: 4px; }
   .Calendar-main #calendar .fc-timeGridWeek-view .fc-day-today .fc-col-header-cell-cushion { min-width: unset !important; padding: 3px; width: auto !important; }
   #my-tooltip { display: none !important; }
+  /* Contact */
+  .contacts-pagination-summary{display: none;}
+  .contacts-page-pagination{grid-template-columns: auto;justify-content: center;gap: 0;}
 }
 /* ==========================================================================
    5. Breakpoint: max-width 575px
@@ -325,10 +328,19 @@
   /* -------------------- Contacts -------------------- */
   .contacts-table { max-height: none; min-height: 0; }
   .contacts-table.is-empty { overflow: hidden; }
-  .contacts-page-pagination { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .contacts-page-pagination {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 8px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .contacts-pagination-summary,
+  .contacts-pagination-controls { justify-self: center; }
+  .contacts-pagination-spacer { display: none; }
   .contacts-toolbar-row { flex-wrap: wrap; }
   .contacts-filters-row { width: 100%; }
   .contacts-toolbar-actions { width: 100%; justify-content: flex-end; }
+  .contacts-page-limit-field { flex: 0 0 72px; }
   .contacts-page-main { padding: 12px !important; }
   .contacts-mobile-list { gap: 8px; }
 

@@ -1,7 +1,11 @@
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import ContactList, { ContactEmptyState } from '@features/contacts/ContactList';
-import { CONTACTS_LIST_REFRESH_EVENT, useContactsList } from '@features/contacts/useContacts';
+import {
+    CONTACT_PAGE_LIMIT_OPTIONS,
+    CONTACTS_LIST_REFRESH_EVENT,
+    useContactsList,
+} from '@features/contacts/useContacts';
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import { useDebounce } from '@hooks/useDebounce';
 import plusIconWhite from '@images/plus-icon-white.svg';
@@ -11,16 +15,13 @@ import rightArrowPaginationIconHover from '@images/chevron-right-icon-big-hover.
 import rightArrowPaginationIcon from '@images/chevron-right-icon-big.svg';
 import searchIcon from "@images/search-icon.svg";
 import type { Contact } from '@models/Contact';
-// import { searchAndFilterEmailService } from '@services/email/emailService';
 import { deleteContact } from '@services/contact/contactService';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useMailData } from '@context/MailDataContext';
 import { useMailUI } from '@context/MailUIContext';
 import { useContacts } from '@context/ContactsContext';
 import { useScreen } from '@context/ScreenContext';
-// import { buildSearchFilterPayload } from '@utils/filterUtil';
-import { useEffect, useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 
 const SORT_OPTIONS = [
     { label: 'Name', value: 'name' },
@@ -28,36 +29,42 @@ const SORT_OPTIONS = [
     { label: 'Recently updated', value: 'updatedAt' },
 ];
 
+function getVisiblePages(current: number, totalPages: number): Array<number | 'ellipsis'> {
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    if (current <= 4) {
+        return [1, 2, 3, 4, 'ellipsis', totalPages];
+    }
+
+    if (current >= totalPages - 3) {
+        return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+
+    return [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', totalPages];
+}
+
 function ContactsPage() {
     usePageStylesheet([pageStyles.settingsCss]);
-    // const navigate = useNavigate();
     const { openModal } = useMailUI();
     const { fetchContacts } = useContacts();
     const { isMobilebig, isMobile } = useScreen();
-    const {
-        setBoxName,
-        setBoxTitle,
-        // setEmails,
-        // setPagination,
-        // setSearchTerm,
-        // setFilterForm,
-        // setAllSearchResult,
-        // setMailListPage,
-        // setTotalEmailBadge,
-    } = useMailData();
+    const { setBoxName, setBoxTitle } = useMailData();
 
     const {
         contacts,
         page,
+        limit,
         total,
         totalPages,
         rangeStart,
         rangeEnd,
-        searchQuery,
         sort,
         isLoading,
         error,
         setPage,
+        setLimit,
         setSearchQuery,
         setSort,
         refresh,
@@ -65,6 +72,10 @@ function ContactsPage() {
 
     const [searchInput, setSearchInput] = useState('');
     const debouncedSearch = useDebounce(searchInput, 300);
+    const visiblePages = useMemo(
+        () => getVisiblePages(page, totalPages),
+        [page, totalPages],
+    );
 
     useEffect(() => {
         setBoxName('contact');
@@ -122,54 +133,15 @@ function ContactsPage() {
         });
     };
 
-    // const handleCompose = (contact: Contact) => {
-    //     void fetchContacts();
-    //     openModal('compose', {
-    //         emailData: {
-    //             _id: '',
-    //             to: [contact.email],
-    //             cc: [],
-    //             bcc: [],
-    //         },
-    //     });
-    // };
-
-    // const handleViewEmails = async (contact: Contact) => {
-    //     navigate('/mail/INBOX');
-    //     setBoxName('INBOX');
-    //     setAllSearchResult(true);
-    //     setSearchTerm(contact.email);
-    //     setFilterForm(null);
-    //     setMailListPage(1);
-
-    //     try {
-    //         const response = await searchAndFilterEmailService(
-    //             buildSearchFilterPayload({
-    //                 searchText: contact.email,
-    //                 filterForm: null,
-    //                 limit: 25,
-    //                 direction: 'next',
-    //                 vPage: 1,
-    //             }),
-    //         );
-
-    //         if (response?.statusCode === 200) {
-    //             setEmails(response.data.emailList || []);
-    //             setPagination(response.data.pagination);
-    //             setBoxTitle('Search Results');
-    //             setTotalEmailBadge(response.data.pagination?.totalEmails ?? 0);
-    //         } else {
-    //             showError(response?.message || 'Failed to search emails');
-    //         }
-    //     } catch {
-    //         showError('Failed to search emails');
-    //     }
-    // };
-
     const handleSortChange = (value: string | null) => {
         if (!value) return;
         setSort(value as 'name' | 'email' | 'updatedAt');
         setPage(1);
+    };
+
+    const handleLimitChange = (value: string | null) => {
+        if (!value) return;
+        setLimit(Number(value));
     };
 
     const hasActiveSearch = searchInput.trim().length > 0;
@@ -210,8 +182,8 @@ function ContactsPage() {
                     )}
                     {!isMobile && (
                         <div className="contacts-toolbar-actions">
-                            {showSearch && (
-                            <div className="contacts-filter-field">
+                            {showSearch && !isMobilebig && (
+                            <div className="contacts-filter-field contacts-sort-field">
                                 <div className="form-group form-row mb-0">
                                     <div className="input-control">
                                         <Select2Wrapper
@@ -221,6 +193,22 @@ function ContactsPage() {
                                             isMulti={false}
                                             typeable={false}
                                             placeholder="Sort by..."
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            )}
+                            {showSearch && (
+                            <div className="contacts-filter-field contacts-page-limit-field">
+                                <div className="form-group form-row mb-0">
+                                    <div className="input-control">
+                                        <Select2Wrapper
+                                            value={String(limit)}
+                                            onChange={handleLimitChange}
+                                            options={CONTACT_PAGE_LIMIT_OPTIONS}
+                                            isMulti={false}
+                                            typeable={false}
+                                            placeholder="Limit"
                                         />
                                     </div>
                                 </div>
@@ -245,18 +233,22 @@ function ContactsPage() {
                                     />
                                 </button>
                             ) : (
-                                <button type="button" className="btn-new btn-new-bg hover-link" onClick={handleAddContact}>
+                                <button
+                                    type="button"
+                                    className="btn-new btn-new-bg hover-link contacts-add-contact-btn"
+                                    onClick={handleAddContact}
+                                >
                                     <InteractiveIcon
                                         defaultIcon={plusIconWhite}
                                         hoverIcon={plusIconWhite}
                                         activeIcon=""
                                         isActive={false}
                                         alt=""
-                                        className="interactive-icon hover-image me-2"
+                                        className="interactive-icon hover-image"
                                         renderAs="img"
                                         tooltip=""
                                     />
-                                    Add contact
+                                    <span>Add contact</span>
                                 </button>
                             )}
                         </div>
@@ -337,53 +329,67 @@ function ContactsPage() {
 
             {showPagination && (
             <div className="contacts-page-pagination">
-                <div className="pagination-box d-flex align-items-center">
-                    <div className="d-flex align-items-center pagination-btn-box">
-                        <button
-                            type="button"
-                            className="btn hover-link icon-hover-effect"
-                            disabled={page <= 1 || isLoading}
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            aria-label="Previous page"
-                        >
-                            <InteractiveIcon
-                                defaultIcon={leftArrowPaginationIcon}
-                                hoverIcon={leftArrowPaginationIconHover}
-                                activeIcon=""
-                                isActive={false}
-                                alt=""
-                                className="interactive-icon hover-image"
-                                renderAs="img"
-                                tooltip="Previous"
-                            />
-                        </button>
-                        <button
-                            type="button"
-                            className="btn hover-link icon-hover-effect"
-                            disabled={page >= totalPages || total === 0 || isLoading}
-                            onClick={() => setPage((p) => p + 1)}
-                            aria-label="Next page"
-                        >
-                            <InteractiveIcon
-                                defaultIcon={rightArrowPaginationIcon}
-                                hoverIcon={rightArrowPaginationIconHover}
-                                activeIcon=""
-                                isActive={false}
-                                alt=""
-                                className="interactive-icon hover-image"
-                                renderAs="img"
-                                tooltip="Next"
-                            />
-                        </button>
-                    </div>
-                    <ul className="pagination-cus me-3 mb-0">
-                        <li className="pagination-count">
-                            <span className="email-count">{rangeStart} - {rangeEnd}</span>
-                            <span className="of"> of </span>
-                            <span className="total-email-count">{total}</span>
-                        </li>
-                    </ul>
+                <div className="contacts-pagination-summary">
+                    Showing <strong>{rangeStart}</strong> to <strong>{rangeEnd}</strong> of <strong>{total}</strong> entries
                 </div>
+                <div className="contacts-pagination-controls" aria-label="Contacts pagination">
+                    <button
+                        type="button"
+                        className="contacts-pagination-arrow"
+                        disabled={page <= 1 || isLoading}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        aria-label="Previous page"
+                    >
+                        <InteractiveIcon
+                            defaultIcon={leftArrowPaginationIcon}
+                            hoverIcon={leftArrowPaginationIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt=""
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip="Previous"
+                        />
+                    </button>
+                    {visiblePages.map((item, index) => (
+                        item === 'ellipsis' ? (
+                            <span key={`ellipsis-${index}`} className="contacts-pagination-ellipsis">
+                                …
+                            </span>
+                        ) : (
+                            <button
+                                key={item}
+                                type="button"
+                                className={`contacts-pagination-page${page === item ? ' is-active' : ''}`}
+                                disabled={isLoading}
+                                onClick={() => setPage(item)}
+                                aria-label={`Page ${item}`}
+                                aria-current={page === item ? 'page' : undefined}
+                            >
+                                {item}
+                            </button>
+                        )
+                    ))}
+                    <button
+                        type="button"
+                        className="contacts-pagination-arrow"
+                        disabled={page >= totalPages || isLoading}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        aria-label="Next page"
+                    >
+                        <InteractiveIcon
+                            defaultIcon={rightArrowPaginationIcon}
+                            hoverIcon={rightArrowPaginationIconHover}
+                            activeIcon=""
+                            isActive={false}
+                            alt=""
+                            className="interactive-icon hover-image"
+                            renderAs="img"
+                            tooltip="Next"
+                        />
+                    </button>
+                </div>
+                <div className="contacts-pagination-spacer" aria-hidden="true" />
             </div>
             )}
         </div>

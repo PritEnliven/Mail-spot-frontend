@@ -4,21 +4,33 @@ import { getContactsList } from '@services/contact/contactService';
 import { getActiveAccountId } from '@services/apiService';
 import { useAccount } from '@context/AccountContext';
 
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 25;
 
 export const CONTACTS_LIST_REFRESH_EVENT = 'contacts-list-refresh';
+
+export const CONTACT_PAGE_LIMIT_OPTIONS = [
+    { label: '10', value: '10' },
+    { label: '25', value: '25' },
+    { label: '50', value: '50' },
+    { label: '100', value: '100' },
+];
 
 export function useContactsList() {
     const { activeAccountId } = useAccount();
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [page, setPage] = useState(1);
-    const [limit] = useState(DEFAULT_LIMIT);
+    const [limit, setLimitState] = useState(DEFAULT_LIMIT);
     const [total, setTotal] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
     const [sort, setSort] = useState<ContactSortField>('name');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const requestIdRef = useRef(0);
+
+    const setLimit = useCallback((nextLimit: number) => {
+        setLimitState(nextLimit);
+        setPage(1);
+    }, []);
 
     const fetchList = useCallback(async () => {
         const requestId = ++requestIdRef.current;
@@ -89,6 +101,7 @@ export function useContactsList() {
         isLoading,
         error,
         setPage,
+        setLimit,
         setSearchQuery,
         setSort,
         refresh: fetchList,
