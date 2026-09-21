@@ -187,7 +187,7 @@ export const conditionsFromFormValues = (
                 field: 'size',
                 operator: originalSize?.operator || 'range',
                 value: originalSize?.operator && originalSize.operator !== 'range'
-                    ? attachmentSizeLabelToApiType(bucket.label)
+                    ? (attachmentSizeLabelToApiType(bucket.label) ?? { min: bucket.min, max: bucket.max })
                     : { min: bucket.min, max: bucket.max },
             });
         }

@@ -1,29 +1,38 @@
-import React from 'react';
+﻿import React, { useMemo } from 'react';
 import fileIcon from '@images/file-icon.svg';
 import { isIcsFilename } from '@utils/calendarInviteUtil';
+import { filterNonInlineAttachments } from '@utils/emailCidUtil';
 
 interface Attachment {
     filename: string;
+    [key: string]: any;
 }
 
 interface AttachmentListProps {
     attachments: Attachment[];
+    bodyHtml?: string | null;
     maxVisible?: number;
     className?: string;
 }
 
 const AttachmentList: React.FC<AttachmentListProps> = ({
     attachments,
+    bodyHtml,
     maxVisible = 2
 }) => {
-    if (!attachments?.length) return null;
+    const visibleAttachments = useMemo(
+        () => filterNonInlineAttachments(attachments, bodyHtml),
+        [attachments, bodyHtml]
+    );
 
-    const visibleAttachments = attachments.slice(0, maxVisible);
-    const remainingCount = Math.max(0, attachments.length - maxVisible);
+    if (!visibleAttachments.length) return null;
+
+    const shownAttachments = visibleAttachments.slice(0, maxVisible);
+    const remainingCount = Math.max(0, visibleAttachments.length - maxVisible);
 
     return (
         <>
-            {visibleAttachments.map((attachment, index) => (
+            {shownAttachments.map((attachment, index) => (
                 <a
                     key={`${attachment.filename}-${index}`}
                     className="hover-link mail-received-attachment-list"

@@ -673,7 +673,11 @@ const EmailDetail = ({ email }: Props) => {
                         {email.body && (
                             <div className="horizontal-scroll-content" ref={contentRef}>
                                 <div>
-                                    <EmailBody html={email.body} searchTerm={highlightTerm} />
+                                    <EmailBody
+                                        html={email.body}
+                                        searchTerm={highlightTerm}
+                                        attachments={email.attachments}
+                                    />
                                 </div>
                             </div>
                         )}
@@ -690,6 +694,7 @@ const EmailDetail = ({ email }: Props) => {
                     attachments={email.attachments}
                     messageId={email.messageId}
                     remainingAttachments={email.remainingAttachments}
+                    bodyHtml={email.body}
                     hideIcsAttachments={!!email.calendarInvite}
                     onDownloadAttachment={downloadAttachments}
                     onOpenAttachment={openAttachment}

@@ -7,6 +7,15 @@ interface CalendarEvent {
     [key: string]: any;
 }
 
+interface UserCalendar {
+    _id: string;
+    name: string;
+    color: string;
+    isDefault: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 interface EventDetail {
     id?: string,
     title: string,
@@ -24,7 +33,10 @@ interface EventDetail {
     selectedEventDate?: string | Date,
     isEdit?: boolean,
     folderIconColor?: string,
-    eventColor?: string
+    eventColor?: string,
+    calendarId?: string,
+    calendarName?: string,
+    calendarColor?: string,
 }
 
-export type { CalendarEvent, EventDetail }
+export type { CalendarEvent, EventDetail, UserCalendar }

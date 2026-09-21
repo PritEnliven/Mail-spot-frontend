@@ -1,4 +1,5 @@
 import CalendarAllEventList from '@components/ui/calendar/CalendarAllEventList'
+import CalendarList from '@components/ui/calendar/CalendarList'
 import { useCalendar, type CalendarView } from '@context/CalendarContext'
 import { useMailData } from '@context/MailDataContext'
 import { useMailUI } from '@context/MailUIContext'
@@ -23,6 +24,7 @@ function CalendarPage() {
         calendarTitle,
         setCalendarView,
         getAllEventList,
+        fetchCalendars,
         registerResetLastClickedDate,
         isCalendarAllSearchActive,
         setSelectedEvent,
@@ -86,13 +88,14 @@ function CalendarPage() {
 
     useEffect(() => {
         setBoxName('calendar')
+        void fetchCalendars()
 
         if (registerResetLastClickedDate) {
             registerResetLastClickedDate(() => {
                 lastClickedDateRef.current = null
             })
         }
-    }, [setBoxName, registerResetLastClickedDate])
+    }, [setBoxName, fetchCalendars, registerResetLastClickedDate])
 
     useEffect(() => {
         if (!cssLoaded || !isCalendarReady) return
@@ -209,14 +212,6 @@ function CalendarPage() {
             }
         }
     }, [sidebarCalendarRef, isCalendarReady])
-
-    const handleSidebarPrev = () => {
-        sidebarCalendarRef.current?.getApi().prev()
-    }
-
-    const handleSidebarNext = () => {
-        sidebarCalendarRef.current?.getApi().next()
-    }
 
     const handleDatesSet = useCallback((info: DatesSetArg) => {
         let title = info.view.title
@@ -374,6 +369,7 @@ function CalendarPage() {
                         <div className="sidebar" id="sidebar-calendar">
                             <FullCalendar ref={sidebarCalendarRef} {...sidebarCalendarConfig} />
                         </div>
+                        <CalendarList />
                     </div>
 
                     <div className="right-side-calendar-box" id="calendar">

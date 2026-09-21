@@ -731,16 +731,37 @@ span.shortcut-name-text {
 }
 
 .contacts-sort-field {
-  flex: 0 1 180px;
-  min-width: 140px;
+  flex: 0 0 160px;
+  min-width: 160px;
+  width: 160px;
 }
 
 .contacts-toolbar-actions {
   flex-shrink: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   margin-left: auto;
-  gap: 16px;
+  gap: 12px;
+}
+
+.contacts-add-contact-btn {
+  flex: 0 0 auto;
+  min-width: max-content !important;
+  width: auto;
+  height: 32px;
+  padding: 5px 12px !important;
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.contacts-add-contact-btn span {
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.contacts-add-contact-btn img {
+  margin: 0 !important;
+  flex-shrink: 0;
 }
 
 .contacts-add-contact-icon-btn {
@@ -915,12 +936,12 @@ span.shortcut-name-text {
   min-width: 0;
 }
 
-.contact-mobile-item .contact-note-preview,
+.contact-mobile-item .contact-note-preview,                             
 .contact-mobile-item .contact-note-preview--single-line {
   max-width: 100%;
   min-width: 0;
   flex: 1 1 auto;
-  display: block;
+  display: block; 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

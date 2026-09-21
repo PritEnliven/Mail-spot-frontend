@@ -10,8 +10,8 @@ export interface LinkedAccount {
 }
 
 export const isLinkedAccountSignedOut = (
-  account: { isSignedOut?: boolean } | null | undefined
-): boolean => account?.isSignedOut === true;
+  account: LinkedAccount | PrimaryAccount | { isSignedOut?: boolean } | null | undefined
+): boolean => Boolean(account && 'isSignedOut' in account && account.isSignedOut === true);
 
 export const normalizeLinkedAccount = (account: LinkedAccount): LinkedAccount => {
   const isSignedOut = account.isSignedOut === true;

@@ -12,7 +12,8 @@ export const useCalendarEventForm = () => {
         resolver: zodResolver(calendarEventModalSchema),
         defaultValues: {
             title: '',
-            eventColor: '#FF8A00',
+            eventColor: '',
+            calendarId: '',
             eventStartDate: today,
             eventStartTime: '',
             eventEndDate: today,

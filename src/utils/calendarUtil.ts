@@ -84,6 +84,9 @@ const normalizeEventForModal = (event: any): EventDetail => {
         guestList: event.guest || [],
         timeZone: event.timeZone || 'Asia/Kolkata',
         selectedEventDate: event.selectedEventDate,
+        calendarId: event.calendarId || event.extendedProps?.calendarId || '',
+        calendarName: event.calendarName || event.extendedProps?.calendarName || '',
+        calendarColor: event.calendarColor || event.extendedProps?.calendarColor || '',
         eventColor: event.eventColor
     };
 

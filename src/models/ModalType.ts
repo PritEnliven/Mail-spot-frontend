@@ -15,4 +15,5 @@ export type ModalType =
     'moveToFolder' |
     'editRule' |
     'contactForm' |
+    'calendarForm' |
 null;

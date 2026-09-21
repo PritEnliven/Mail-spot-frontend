@@ -6,16 +6,24 @@ interface FolderActionsDropdownProps {
     onDelete: () => void;
     isOpen: boolean;
     onToggle: (nextOpen: boolean) => void;
+    showDelete?: boolean;
+    drop?: 'up' | 'start' | 'end' | 'down';
+    align?: 'start' | 'end';
 }
 
 const FolderActionsDropdown: React.FC<FolderActionsDropdownProps> = ({
     onEdit,
     onDelete,
     isOpen,
-    onToggle
+    onToggle,
+    showDelete = true,
+    drop = 'end',
+    align = 'start',
 }) => {
+    const isVertical = drop === 'down' || drop === 'up';
+
     return (
-        <Dropdown show={isOpen} drop="end" align="start"
+        <Dropdown show={isOpen} drop={drop} align={align}
             onClick={(e) => e.stopPropagation()}
             onToggle={(nextShow) => onToggle(nextShow)}
         >
@@ -30,8 +38,8 @@ const FolderActionsDropdown: React.FC<FolderActionsDropdownProps> = ({
                 popperConfig={{
                     strategy: 'fixed',
                     modifiers: [
-                        { name: 'offset', options: { offset: [8, 0] } },
-                        { name: 'flip', options: { fallbackPlacements: ['start'] } },
+                        { name: 'offset', options: { offset: isVertical ? [0, 4] : [8, 0] } },
+                        { name: 'flip', options: { fallbackPlacements: isVertical ? ['up'] : ['start'] } },
                         { name: 'preventOverflow', options: { boundary: 'viewport', padding: 10 } },
                     ],
                 }}
@@ -46,15 +54,17 @@ const FolderActionsDropdown: React.FC<FolderActionsDropdownProps> = ({
                     Edit
                 </Dropdown.Item>
 
-                <Dropdown.Item
-                    as="button"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete();
-                    }}
-                >
-                    Delete
-                </Dropdown.Item>
+                {showDelete && (
+                    <Dropdown.Item
+                        as="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                        }}
+                    >
+                        Delete
+                    </Dropdown.Item>
+                )}
             </Dropdown.Menu>
         </Dropdown>
     );

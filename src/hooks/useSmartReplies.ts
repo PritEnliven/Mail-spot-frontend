@@ -34,9 +34,10 @@ export const useSmartReplies = ({ emailContent, onSmartReplyClick }: UseSmartRep
                     'I will look into this and respond soon.',
                     'Thank you for your patience.',
                     'Got it, let me get back to you.'
-                ]);
+                ])
             }
-        } catch (err) {
+        }  
+        catch (err) {
             console.error('Error fetching smart replies:', err);
             setError('Failed to load smart replies');
             // Fallback to default replies on error
@@ -47,7 +48,8 @@ export const useSmartReplies = ({ emailContent, onSmartReplyClick }: UseSmartRep
                 'Thank you for your patience.',
                 'Got it, let me get back to you.'
             ]);
-        } finally {
+        } 
+        finally {
             setIsLoading(false);
         }
     }, [emailContent]);

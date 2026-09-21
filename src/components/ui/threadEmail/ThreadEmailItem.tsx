@@ -34,6 +34,7 @@ import { Dropdown } from "react-bootstrap";
 import { useMailData, useMailUI } from '../../../context/index';
 import CalendarInviteCard from "@components/ui/calendar/CalendarInviteCard";
 import { canRenderCalendarInviteCard } from "@utils/calendarInviteUtil";
+import { filterNonInlineAttachments } from "@utils/emailCidUtil";
 
 // Lazy loaded components
 const ReplyForwardComposer = lazy(() => import("@components/ui/ReplyForwardComposer"));
@@ -86,12 +87,15 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
         ? formatDate(email.date, TimeFormat.CALENDAR_SEARCH)
         : formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
 
-    const DateMeta = ({ className = "" }: { className?: string }) => (
+    const DateMeta = ({ className = "" }: { className?: string }) => {
+        const hasVisibleAttachments = filterNonInlineAttachments(email.attachments, email.body).length > 0;
+
+        return (
         <div className={className}>
             <span className="info-received-details d-block mb-1">
                 {formattedDate}
             </span>
-            {email.attachments?.length > 0 &&
+            {hasVisibleAttachments &&
                 <a href="#" className="hover-link d-inline-flex align-items-center justify-content-end" onClick={(e) => e.preventDefault()}>
                     <InteractiveIcon
                         defaultIcon={attachmentStrokesRoundedIcon}
@@ -106,7 +110,8 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                 </a>
             }
         </div>
-    );
+        );
+    };
 
     const toggleThread = () => {
         setisThreadItemOpen(prev => {
@@ -458,7 +463,7 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                         {email.body && (
                             <div className="horizontal-scroll-content" ref={contentRef}>
                                 <div id={`send-box-mail-content-${index}`}>
-                                    <EmailBody html={email.body} />
+                                    <EmailBody html={email.body} attachments={email.attachments} />
                                 </div>
                             </div>
                         )}
@@ -466,11 +471,12 @@ const ThreadEmailItem = ({ index, email, onEmailSent, onPendingReply, onThreadEm
                             <div className="custom-scrollbar-thumb-horizontal" ref={thumbRef}></div>
                         </div>
                     </div>
-                    {(email.attachments?.length > 0 || (email.remainingAttachments ?? 0) > 0) && (
+                    {(filterNonInlineAttachments(email.attachments, email.body).length > 0 || (email.remainingAttachments ?? 0) > 0) && (
                         <EmailDetailAttachmentPreview
                             attachments={email.attachments}
                             messageId={email.messageId}
                             remainingAttachments={email.remainingAttachments}
+                            bodyHtml={email.body}
                             hideIcsAttachments={!!email.calendarInvite}
                             onDownloadAttachment={downloadAttachments}
                             onOpenAttachment={openAttachment}

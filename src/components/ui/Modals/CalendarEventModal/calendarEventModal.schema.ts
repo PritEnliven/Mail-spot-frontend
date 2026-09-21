@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 export const calendarEventModalSchema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
-  eventColor: z.string().min(1, 'Event color is required'),
+  eventColor: z.string().optional(),
+  calendarId: z.string().min(1, 'Calendar is required'),
   eventStartDate: z.string().min(1, 'Start date is required'),
   eventStartTime: z.string().optional(),
   eventEndDate: z.string().min(1, 'End date is required'),

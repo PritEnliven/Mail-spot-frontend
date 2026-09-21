@@ -1379,7 +1379,8 @@ export const getSelectStyles = (
     option: (base, state) => ({
       ...base,
       cursor: 'pointer',
-      backgroundColor: state.isSelected
+      // isFocused covers keyboard (↑/↓) highlight; isSelected is the chosen value
+      backgroundColor: state.isFocused || state.isSelected
         ? '#e5e8ea'
         : 'transparent',
       color: '#212121',
@@ -1503,21 +1504,55 @@ export const DropdownIndicator = (props: any) => {
 };
 
 export const MenuList = (props: any) => {
+  const { children, innerRef, innerProps, focusedOption } = props;
+  const simpleBarRef = useRef<any>(null);
+  const focusedKey =
+    focusedOption?.value ?? focusedOption?.email ?? focusedOption?.label ?? null;
+
+  // Keep the keyboard-focused option visible inside SimpleBar's scroll container
+  useEffect(() => {
+    if (!focusedKey) return;
+
+    const scrollEl =
+      simpleBarRef.current?.getScrollElement?.() ??
+      simpleBarRef.current?.contentWrapperEl ??
+      null;
+    if (!scrollEl) return;
+
+    const focusedEl = scrollEl.querySelector(
+      '.react-select__option--is-focused'
+    ) as HTMLElement | null;
+    if (!focusedEl) return;
+
+    const optionTop = focusedEl.offsetTop;
+    const optionBottom = optionTop + focusedEl.offsetHeight;
+    const viewTop = scrollEl.scrollTop;
+    const viewBottom = viewTop + scrollEl.clientHeight;
+
+    if (optionTop < viewTop) {
+      scrollEl.scrollTop = optionTop;
+    } else if (optionBottom > viewBottom) {
+      scrollEl.scrollTop = optionBottom - scrollEl.clientHeight;
+    }
+  }, [focusedKey]);
+
   return (
     <SimpleBar
+      ref={simpleBarRef}
       style={{ maxHeight: 200, scrollBehavior: 'smooth' }}
       autoHide={false}
       forceVisible="y"
       scrollableNodeProps={{
-        ref: props.innerRef,
-        style: { scrollBehavior: 'smooth' }
+        ref: innerRef,
+        style: { scrollBehavior: 'smooth' },
       }}
     >
       <div
         className="react-select__menu-list"
         style={{ padding: 0 }}
+        {...innerProps}
       >
-        {props.children}
+        {children}
       </div>
     </SimpleBar>
   );

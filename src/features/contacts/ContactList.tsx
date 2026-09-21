@@ -593,69 +593,69 @@ function ContactMobileList({
 
                         <div className="contact-mobile-item__fields-wrapper">
                             <dl className="contact-mobile-item__fields">
-                            {emails.length > 0 && (
-                                <div className="contact-mobile-item__field">
-                                    <dt>
-                                        <ContactFieldIcon src={mailIcon} label="Email" />
-                                    </dt>
-                                    <dd>
-                                        <MultiValueCell values={emails} label="Emails" />
-                                    </dd>
-                                </div>
-                            )}
-                            {phones.length > 0 && (
-                                <div className="contact-mobile-item__field">
-                                    <dt>
-                                        <ContactFieldIcon src={phoneIcon} label="Phone" />
-                                    </dt>
-                                    <dd>
-                                        <MultiValueCell values={phones} label="Phones" />
-                                    </dd>
-                                </div>
-                            )}
-                            {address && (
-                                <div className="contact-mobile-item__field">
-                                    <dt>
-                                        <ContactFieldIcon src={locationIcon} label="Address" />
-                                    </dt>
-                                    <dd>
-                                        <ContactPreviewCell
-                                            value={contact.address}
-                                            title="Address"
-                                            copyLabel="Copy address"
-                                            viewLabel="View full address"
-                                            singleLine
-                                        />
-                                    </dd>
-                                </div>
-                            )}
-                            {birthdate !== '—' && (
-                                <div className="contact-mobile-item__field">
-                                    <dt>
-                                        <ContactFieldIcon src={dateIcon} label="Birthdate" />
-                                    </dt>
-                                    <dd>
-                                        <span className="contact-mobile-item__text">{birthdate}</span>
-                                    </dd>
-                                </div>
-                            )}
-                            {notes && (
-                                <div className="contact-mobile-item__field">
-                                    <dt>
-                                        <ContactFieldIcon src={descriptionIcon} label="Notes" />
-                                    </dt>
-                                    <dd>
-                                        <ContactPreviewCell
-                                            value={contact.notes}
-                                            title="Notes"
-                                            copyLabel="Copy note"
-                                            viewLabel="View full note"
-                                            singleLine
-                                        />
-                                    </dd>
-                                </div>
-                            )}
-                        </dl>
+                                {emails.length > 0 && (
+                                    <div className="contact-mobile-item__field">
+                                        <dt>
+                                            <ContactFieldIcon src={mailIcon} label="Email" />
+                                        </dt>
+                                        <dd>
+                                            <MultiValueCell values={emails} label="Emails" />
+                                        </dd>
+                                    </div>
+                                )}
+                                { phones.length > 0 && (
+                                    <div className="contact-mobile-item__field">
+                                        <dt>
+                                            <ContactFieldIcon src={phoneIcon} label="Phone" />
+                                        </dt>
+                                        <dd>
+                                            <MultiValueCell values={phones} label="Phones" />
+                                        </dd>
+                                    </div>
+                                ) }
+                                {address && (
+                                    <div className="contact-mobile-item__field">
+                                        <dt>
+                                            <ContactFieldIcon src={locationIcon} label="Address" />
+                                        </dt>
+                                        <dd>
+                                            <ContactPreviewCell
+                                                value={contact.address}
+                                                title="Address"
+                                                copyLabel="Copy address"
+                                                viewLabel="View full address"
+                                                singleLine
+                                            />
+                                        </dd>
+                                    </div>
+                                )}
+                                {birthdate !== '—' && (
+                                    <div className="contact-mobile-item__field">
+                                        <dt>
+                                            <ContactFieldIcon src={dateIcon} label="Birthdate" />
+                                        </dt>
+                                        <dd>
+                                            <span className="contact-mobile-item__text">{birthdate}</span>
+                                        </dd>
+                                    </div>
+                                )}
+                                {notes && (
+                                    <div className="contact-mobile-item__field">
+                                        <dt>
+                                            <ContactFieldIcon src={descriptionIcon} label="Notes" />
+                                        </dt>
+                                        <dd>
+                                            <ContactPreviewCell
+                                                value={contact.notes}
+                                                title="Notes"
+                                                copyLabel="Copy note"
+                                                viewLabel="View full note"
+                                                singleLine
+                                            />
+                                        </dd>
+                                    </div>
+                                )}
+                            </dl>
                         </div>
                     </article>
                 );

@@ -187,7 +187,7 @@ const EmailRow = memo(({
 
                     {safeAttachments.length > 0 && (
                         <div className="mail-received-attachment-box d-flex align-items-center">
-                            <AttachmentList attachments={safeAttachments} maxVisible={2} />
+                            <AttachmentList attachments={safeAttachments} bodyHtml={email.body} maxVisible={2} />
                         </div>
                     )}
 

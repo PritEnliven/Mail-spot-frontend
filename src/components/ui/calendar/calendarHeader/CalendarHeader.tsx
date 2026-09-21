@@ -504,7 +504,7 @@ const CALENDAR_VIEW_OPTIONS = [
 ];
 
 function CalendarHeader() {
-    const { goPrev, goNext, goToday, calendarTitle, calendarView, changeView, mainCalendarRef, searchText, setSearchText, searchResults, setSearchResults, noResult, setNoResult, isSearchResultDropdownOpen, setIsSearchResultDropdownOpen } = useCalendar();
+    const { goPrev, goNext, goToday, calendarTitle, calendarView, changeView, mainCalendarRef, searchText, setSearchText, searchResults, setSearchResults, noResult, setNoResult, isSearchResultDropdownOpen, setIsSearchResultDropdownOpen, selectedCalendarIds } = useCalendar();
     const { control, handleSubmit, reset, getValues } = useCalendarFilterForm();
     const { isDesktop, isMobile } = useScreen();
     const { isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
@@ -581,7 +581,7 @@ function CalendarHeader() {
 
         const searchEvents = async () => {
             try {
-                const response: Response = await searchEvent({ searchText: currentSearch });
+                const response: Response = await searchEvent({ searchText: currentSearch, calendarIds: selectedCalendarIds });
                 if (response?.statusCode === 200) {
                     if (allowSearchDropdownRef.current) {
                         setIsSearchResultDropdownOpen(true);
@@ -604,7 +604,7 @@ function CalendarHeader() {
 
         searchEvents();
         return () => controller.abort();
-    }, [debouncedSearchText]);
+    }, [debouncedSearchText, selectedCalendarIds]);
 
     const onSubmit = async (data: CalendarFilterFormValues) => {
         try {
@@ -614,6 +614,7 @@ function CalendarHeader() {
                 calendarFilterOrganizer: data.calendarFilterOrganizer,
                 searchIn: data.searchIn === 'allCalendar' ? 'all' : 'thisMonth',
                 eventDate: data.eventDate?.length === 2 ? `${formatDate(data.eventDate[0], TimeFormat.DD_MM_YYYY)} to ${formatDate(data.eventDate[1], TimeFormat.DD_MM_YYYY)}` : undefined,
+                calendarIds: selectedCalendarIds,
             };
 
             if (!data.eventName && !data.eventLocation && !data.calendarFilterOrganizer && !data.searchIn) {
@@ -660,6 +661,7 @@ function CalendarHeader() {
                 calendarFilterOrganizer: data.calendarFilterOrganizer,
                 searchIn: data.searchIn === 'allCalendar' ? 'all' : 'thisMonth',
                 eventDate: data.eventDate?.length === 2 ? `${formatDate(data.eventDate[0], TimeFormat.DD_MM_YYYY)} to ${formatDate(data.eventDate[1], TimeFormat.DD_MM_YYYY)}` : undefined,
+                calendarIds: selectedCalendarIds,
             };
 
             if (!data.eventName && !data.eventLocation && !data.calendarFilterOrganizer && !data.searchIn) {

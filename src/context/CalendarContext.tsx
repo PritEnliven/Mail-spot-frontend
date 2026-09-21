@@ -1,10 +1,11 @@
-import type { Calendar } from '@fullcalendar/core'
+import type { CalendarApi } from '@fullcalendar/core'
 import FullCalendar from '@fullcalendar/react';
-import type { CalendarEvent, EventDetail } from '@models/CalendarModels';
+import type { CalendarEvent, EventDetail, UserCalendar } from '@models/CalendarModels';
 import type { ApiResponse } from '@models/Response';
 import { useAccount } from '@context/AccountContext';
 import { getActiveAccountId } from '@services/apiService';
 import { getAllEvents } from '@services/calendar/calendarService';
+import { getCalendars } from '@services/calendar/calendarsService';
 import { clearFocusDate, formatCalendarEvents } from '@utils/calendarUtil';
 import {
     createContext,
@@ -16,6 +17,11 @@ import {
     type ReactNode,
 } from 'react';
 export type CalendarView = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'
+
+export interface FetchCalendarsOptions {
+    resetSelection?: boolean;
+    ensureSelectedIds?: string[];
+}
 
 interface CalendarContextType {
     mainCalendarRef: React.RefObject<FullCalendar | null>
@@ -37,14 +43,22 @@ interface CalendarContextType {
     // Event management
     events: CalendarEvent[]
     setEvents: (events: CalendarEvent[]) => void
-    getAllEventList: (calendarApi?: Calendar) => Promise<void>,
+    getAllEventList: (calendarApi?: CalendarApi) => Promise<void>,
     clearCalendarData: () => void,
-    calendarAllSearchedEvents: CalendarEvent[],
-    setCalendarAllSearchedEvents: (events: CalendarEvent[]) => void,
+    calendarAllSearchedEvents: CalendarEvent[] | Record<string, any[]>,
+    setCalendarAllSearchedEvents: (events: CalendarEvent[] | Record<string, any[]>) => void,
     isCalendarAllSearchActive: boolean,
     setIsCalendarAllSearchActive: (active: boolean) => void,
     exitCalendarAllSearch: () => void,
     resetSearchState: () => void,
+
+    // User calendars
+    calendars: UserCalendar[],
+    selectedCalendarIds: string[],
+    calendarsLoaded: boolean,
+    fetchCalendars: (options?: FetchCalendarsOptions) => Promise<UserCalendar[]>,
+    toggleCalendarVisibility: (calendarId: string) => void,
+    setCalendarVisible: (calendarId: string, visible: boolean) => void,
 
     // Search state
     searchText: string,
@@ -69,24 +83,47 @@ export const useCalendar = () => {
     return ctx
 }
 
+const sortCalendars = (list: UserCalendar[]): UserCalendar[] => {
+    return [...list].sort((a, b) => {
+        if (a.isDefault && !b.isDefault) return -1
+        if (!a.isDefault && b.isDefault) return 1
+        return a.name.localeCompare(b.name)
+    })
+}
+
+const sameIdSet = (a: string[], b: string[]): boolean => {
+    if (a.length !== b.length) return false
+    const setB = new Set(b)
+    return a.every((id) => setB.has(id))
+}
+
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     const { activeAccountId } = useAccount()
     const mainCalendarRef = useRef<FullCalendar | null>(null)
     const sidebarCalendarRef = useRef<FullCalendar | null>(null)
     const requestIdRef = useRef(0)
+    const calendarsRequestIdRef = useRef(0)
+    const selectedCalendarIdsRef = useRef<string[]>([])
+    const calendarsLoadedRef = useRef(false)
     const [calendarTitle, setCalendarTitle] = useState(() =>
         new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     );
     const [calendarView, setCalendarView] = useState<CalendarView>('dayGridMonth');
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null)
-    const [calendarAllSearchedEvents, setCalendarAllSearchedEvents] = useState<CalendarEvent[]>([]);
+    const [calendarAllSearchedEvents, setCalendarAllSearchedEvents] = useState<CalendarEvent[] | Record<string, any[]>>([]);
     const [isCalendarAllSearchActive, setIsCalendarAllSearchActive] = useState(false)
     const [searchText, setSearchText] = useState('')
     const [searchResults, setSearchResults] = useState<CalendarEvent[]>([])
     const [noResult, setNoResult] = useState(false)
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false)
     const [isSidebarCalendarOpen, setIsSidebarCalendarOpen] = useState(true)
+    const [calendars, setCalendars] = useState<UserCalendar[]>([])
+    const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([])
+    const [calendarsLoaded, setCalendarsLoaded] = useState(false)
+
+    selectedCalendarIdsRef.current = selectedCalendarIds
+    calendarsLoadedRef.current = calendarsLoaded
 
     const resetSearchState = useCallback(() => {
         setSearchText('')
@@ -103,10 +140,16 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
     const clearCalendarData = useCallback(() => {
         requestIdRef.current += 1
+        calendarsRequestIdRef.current += 1
         setEvents([])
         setSelectedEvent(null)
         setCalendarAllSearchedEvents([])
         setIsCalendarAllSearchActive(false)
+        setCalendars([])
+        setSelectedCalendarIds([])
+        selectedCalendarIdsRef.current = []
+        setCalendarsLoaded(false)
+        calendarsLoadedRef.current = false
         resetSearchState()
         clearCalendarEventSources()
     }, [resetSearchState, clearCalendarEventSources])
@@ -121,7 +164,9 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         })
     }, [resetSearchState])
 
-    const getAllEventList = useCallback(async (calendarApi?: Calendar) => {
+    const getAllEventList = useCallback(async (calendarApi?: CalendarApi) => {
+        if (!calendarsLoadedRef.current) return
+
         const api = calendarApi ?? mainCalendarRef.current?.getApi()
         if (!api) return
 
@@ -132,9 +177,10 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
         const requestId = ++requestIdRef.current
         const accountIdAtStart = getActiveAccountId()
+        const calendarIds = selectedCalendarIdsRef.current
 
         try {
-            const response: ApiResponse<CalendarEvent[]> = await getAllEvents({ start, end })
+            const response: ApiResponse<CalendarEvent[]> = await getAllEvents({ start, end, calendarIds })
             if (requestId !== requestIdRef.current) return
             if (accountIdAtStart !== getActiveAccountId()) return
 
@@ -158,11 +204,82 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    // Drop previous account events as soon as the active mailbox changes.
+    const fetchCalendars = useCallback(async (options?: FetchCalendarsOptions): Promise<UserCalendar[]> => {
+        if (!localStorage.getItem('token')) return []
+
+        const requestId = ++calendarsRequestIdRef.current
+        const accountIdAtStart = getActiveAccountId()
+
+        try {
+            const response = await getCalendars()
+            if (requestId !== calendarsRequestIdRef.current) return []
+            // Skip stale mailbox results, but keep the bootstrap response
+            // (header is often still null when the first reload request starts).
+            if (accountIdAtStart && accountIdAtStart !== getActiveAccountId()) return []
+
+            if (response.statusCode === 200) {
+                const list = sortCalendars(response.data?.calendars || [])
+                const allIds = list.map((calendar) => calendar._id)
+                setCalendars(list)
+                setSelectedCalendarIds((prev) => {
+                    let next: string[]
+                    if (options?.resetSelection || prev.length === 0) {
+                        next = allIds
+                    } else {
+                        const kept = prev.filter((id) => allIds.includes(id))
+                        const extra = (options?.ensureSelectedIds || []).filter((id) => allIds.includes(id))
+                        next = [...new Set([...kept, ...extra])]
+                    }
+                    if (sameIdSet(prev, next)) return prev
+                    selectedCalendarIdsRef.current = next
+                    return next
+                })
+                calendarsLoadedRef.current = true
+                setCalendarsLoaded(true)
+                return list
+            }
+
+            return []
+        } catch (error) {
+            if (requestId !== calendarsRequestIdRef.current) return []
+            console.error('Failed to fetch calendars:', error)
+            return []
+        }
+    }, [])
+
+    const toggleCalendarVisibility = useCallback((calendarId: string) => {
+        setSelectedCalendarIds((prev) => {
+            const next = prev.includes(calendarId)
+                ? prev.filter((id) => id !== calendarId)
+                : [...prev, calendarId]
+            selectedCalendarIdsRef.current = next
+            return next
+        })
+    }, [])
+
+    const setCalendarVisible = useCallback((calendarId: string, visible: boolean) => {
+        setSelectedCalendarIds((prev) => {
+            const isSelected = prev.includes(calendarId)
+            if (visible === isSelected) return prev
+            const next = visible ? [...prev, calendarId] : prev.filter((id) => id !== calendarId)
+            selectedCalendarIdsRef.current = next
+            return next
+        })
+    }, [])
+
+    // Drop previous account calendars/events as soon as the active mailbox changes.
     useEffect(() => {
         clearCalendarData()
+        if (activeAccountId && localStorage.getItem('token')) {
+            void fetchCalendars({ resetSelection: true })
+        }
+    }, [activeAccountId, clearCalendarData, fetchCalendars])
+
+    // Refetch grid events when visibility changes (including first load after calendars arrive).
+    useEffect(() => {
+        if (!calendarsLoaded) return
         void getAllEventList()
-    }, [activeAccountId, clearCalendarData, getAllEventList])
+    }, [selectedCalendarIds, calendarsLoaded, getAllEventList])
 
     let resetLastClickedDateFn: (() => void) | null = null
 
@@ -288,6 +405,12 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         calendarAllSearchedEvents,
         setCalendarAllSearchedEvents,
         resetSearchState,
+        calendars,
+        selectedCalendarIds,
+        calendarsLoaded,
+        fetchCalendars,
+        toggleCalendarVisibility,
+        setCalendarVisible,
         // Search state
         searchText,
         setSearchText,

@@ -1,6 +1,7 @@
 import attachmentIcon from "@images/attachment-stroke-rounded-icon.svg";
 import { HighlightText } from "@components/ui/HighlightText";
 import { getParticipantsLabel, getSenderLabel, normalizeMailboxList } from "@utils/emailUtil";
+import { filterNonInlineAttachments } from "@utils/emailCidUtil";
 
 
 interface Email {
@@ -104,7 +105,7 @@ function SearchEmailRow({ email, onEmailClick, searchTerm }: SearchEmailRowProps
                         <HighlightText text={subject} searchTerm={searchTerm} />
                     </div>
                     <div className="right-attachment-time">
-                        {email.attachments && email.attachments.length > 0 && (
+                        {filterNonInlineAttachments(email.attachments, email.body).length > 0 && (
                             <img src={attachmentIcon} className="me-2" alt="attachment" />
                         )}
                         <div className="time">{formatDate(email.date)}</div>

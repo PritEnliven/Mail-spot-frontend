@@ -132,7 +132,7 @@ const formatAction = (action: Action): string => {
         case 'markAsRead':
             return value ? 'Mark as read' : 'Mark as unread';
         case 'moveToFolder': {
-            const folder = folderKey || value;
+            const folder = folderKey || (typeof value === 'string' ? value : '');
             return `Move to ${folder ? formatFolderName(folder) : 'folder'}`;
         }
         case 'label':

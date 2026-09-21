@@ -74,6 +74,7 @@ const MAILBOX_SCOPED_PREFIXES = [
   'email/',
   'customBox/',
   'event/',
+  'calendar/',
   'rule/',
   'contact/',
   'importData/',

@@ -5,6 +5,7 @@ import { deleteData, getData, postData } from '../apiService';
 interface getAlLEventPayload {
     start: string;
     end: string;
+    calendarIds?: string[];
 }
 
 interface createEventPayload {
@@ -16,7 +17,8 @@ interface createEventPayload {
     meetingLink?: string;
     description?: string;
     timeZone: string;
-    eventColor: string;
+    eventColor?: string;
+    calendarId?: string;
     recurrence?: string | null;
     sendMailToGuest: boolean;
     guest?: string;
@@ -25,7 +27,8 @@ interface createEventPayload {
 interface editEventPayload {
     eventId: string;
     title: string;
-    eventColor: string;
+    eventColor?: string;
+    calendarId?: string;
     startDate: string;
     endDate: string;
     startTime?: string;
@@ -50,6 +53,7 @@ interface deleteEventPayload {
 
 interface calendarSearchEvent {
     searchText: string
+    calendarIds?: string[]
 }
 
 interface SearchEventResponse {
@@ -62,6 +66,7 @@ interface FilterEventPayload {
     calendarFilterOrganizer?: string[] | undefined;
     searchIn?: string | undefined;
     eventDate?: string | undefined;
+    calendarIds?: string[];
 }
 
 async function getAllEvents(payload: getAlLEventPayload): Promise<ApiResponse<CalendarEvent[]>> {

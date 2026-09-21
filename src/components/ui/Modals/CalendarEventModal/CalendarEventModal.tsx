@@ -1,6 +1,7 @@
 import addTitleIcon from "@assets/images/add-title-icon-16.svg";
 import arrowPointingOutIconHover from "@assets/images/arrows-pointing-out-icon-hover.svg";
 import arrowPointingOutIcon from "@assets/images/arrows-pointing-out-icon.svg";
+import calendarEventIcon from "@assets/images/calendar-event-icon.svg";
 import closeIconHover from "@assets/images/close-icon-hover.svg";
 import closeIcon from "@assets/images/close-icon.svg";
 import dateIcon from "@assets/images/date-icon-16.svg";
@@ -102,7 +103,7 @@ export function getISTRoundedStartEndTime(
 function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalProps) {
     const { contacts, searchContacts } = useContacts();
     const { closeModal, openModal } = useMailUI();
-    const { getAllEventList, selectedEvent } = useCalendar();
+    const { getAllEventList, selectedEvent, calendars } = useCalendar();
     const pendingEditDataRef = useRef<any>(null);
     const { startTime, endTime } = getISTRoundedStartEndTime(props.dateStr);
 
@@ -158,6 +159,26 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
     });
 
     const guests: Guest[] = normalizeGuests(guestsList);
+    const selectedCalendarId = useWatch({
+        control,
+        name: 'calendarId',
+    });
+
+    const defaultCalendarId = calendars.find((calendar) => calendar.isDefault)?._id || calendars[0]?._id || '';
+    const calendarOptions = calendars.map((calendar) => ({
+        value: calendar._id,
+        label: calendar.name,
+    }));
+    const selectedCalendar = calendars.find((calendar) => calendar._id === selectedCalendarId);
+    const selectedCalendarColor = selectedCalendar?.color || '';
+
+    const resolveEventColor = (eventColor: string | undefined, calendarId: string) => {
+        const calendar = calendars.find((item) => item._id === calendarId);
+        if (eventColor && eventColor !== calendar?.color) {
+            return eventColor;
+        }
+        return '';
+    };
 
     const onRemoveGuest = (email: string) => {
         const current = getValues("guestsList") || [];
@@ -185,6 +206,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                 eventTimeZone: props.timeZone || 'Asia/Kolkata',
                 guestsList: normalizedGuests,
                 eventColor: props.eventColor || '',
+                calendarId: props.calendarId || defaultCalendarId,
                 recurrence: props.recurrence?.isCustom
                     ? "custom"
                     : (props.recurrence?.type ?? "doesNotRepeat"),
@@ -194,7 +216,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         else if (props?.date) {
             reset({
                 title: '',
-                eventColor: '#FF8A00',
+                eventColor: '',
+                calendarId: defaultCalendarId,
                 eventStartDate: formatDate(props.date, TimeFormat.YYYYMMDD) as string,
                 eventEndDate: formatDate(props.date, TimeFormat.YYYYMMDD) as string,
                 eventStartTime: '',
@@ -209,11 +232,11 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                 eventTimeZone: 'Asia/Kolkata',
             });
         } else {
-            // reset();
             const today = new Date().toISOString().split('T')[0];
             reset({
                 title: '',
-                eventColor: '#FF8A00',
+                eventColor: '',
+                calendarId: defaultCalendarId,
                 eventStartDate: today,
                 eventStartTime: '',
                 eventEndDate: today,
@@ -231,7 +254,14 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         return () => {
             reset();
         };
-    }, [props?.isEdit, props?.date, reset]);
+    }, [props?.isEdit, props?.date, props?.calendarId, reset]);
+
+    useEffect(() => {
+        if (!defaultCalendarId) return;
+        if (!getValues('calendarId')) {
+            setValue('calendarId', props?.calendarId || defaultCalendarId, { shouldDirty: false });
+        }
+    }, [defaultCalendarId, getValues, props?.calendarId, setValue]);
 
     const onClose = () => {
         closeModal(modalId);
@@ -269,7 +299,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
             meetingLink: data.eventMeetingLink || '',
             description: data.eventDescription || '',
             timeZone: data.eventTimeZone,
-            eventColor: data.eventColor,
+            eventColor: resolveEventColor(data.eventColor, data.calendarId),
+            calendarId: data.calendarId,
             recurrence: recurrencePayloadString,
             sendMailToGuest: data.sendMailToGuest,
             guest: data.guestsList ? data.guestsList.join(',') : ''
@@ -287,7 +318,8 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
             const editPayload = {
                 eventId: selectedEvent?.id || '',
                 title: data.title,
-                eventColor: data.eventColor,
+                eventColor: resolveEventColor(data.eventColor, data.calendarId),
+                calendarId: data.calendarId,
                 startDate: formatDateForCalendarEvent(data.eventStartDate),
                 endDate: formatDateForCalendarEvent(data.eventEndDate),
                 startTime: formatTime24HrFrom12HrString(data.eventStartTime),
@@ -298,7 +330,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                 location: data.eventLocation || '',
                 meetingLink: data.eventMeetingLink || '',
                 description: data.eventDescription || '',
-                attachments: data.attachments || [],
+                attachments: [],
                 editEventDate,
                 eventEditType: '',
                 sendMailToGuest: data.sendMailToGuest,
@@ -475,8 +507,12 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                         name="eventColor"
                                                         control={control}
                                                         render={({ field }) => {
+                                                            const displayColor = field.value || selectedCalendarColor;
                                                             const selectedOption =
-                                                                colorListConfi.find(opt => opt.value === field.value) ?? null;
+                                                                colorListConfi.find(opt => opt.value === displayColor) ??
+                                                                (displayColor
+                                                                    ? { label: displayColor, value: displayColor, color: displayColor }
+                                                                    : null);
 
                                                             return (
                                                                 <ColorSingleSelect
@@ -491,6 +527,29 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                     />
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div className="form-group mb-3">
+                                            <label className="control-label" htmlFor="eventCalendar">Calendar</label>
+                                            <div className="input-icon-add">
+                                                <img src={calendarEventIcon} alt="" className="input-icon-1" width={16} height={16} />
+                                                <Controller
+                                                    name="calendarId"
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Select2Wrapper
+                                                            value={field.value || defaultCalendarId}
+                                                            onChange={field.onChange}
+                                                            options={calendarOptions}
+                                                            isMulti={false}
+                                                            isModal={true}
+                                                            placeholder="Select calendar"
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                            {errors.calendarId && (
+                                                <div className="invalid-feedback d-block">{errors.calendarId.message}</div>
+                                            )}
                                         </div>
                                         <div className="row time-cntrol">
                                             <div className="form-group m-0 mb-2 px-2 d-flex align-items-center justify-content-between">

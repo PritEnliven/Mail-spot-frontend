@@ -1,6 +1,6 @@
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import type { Control, UseFormSetValue } from 'react-hook-form';
-import { Controller, useWatch } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
 import type { CreateRuleFormValues } from './CreateRuleForm.schema';
 
 interface LabelOption {
@@ -32,8 +32,6 @@ const CreateRuleActionsFields = ({
     const check5 = `${idPrefix}-check5`;
     const check6 = `${idPrefix}-check6`;
     const check7 = `${idPrefix}-check7`;
-    const forwardEmails = useWatch({ control, name: 'forwardEmails' }) || [];
-    const hasForwardRecipients = Array.isArray(forwardEmails) && forwardEmails.length > 0;
 
     return (
         <>

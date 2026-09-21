@@ -1,4 +1,4 @@
-import downloadIcon from "@images/arrow-down-tray-icon.svg";
+﻿import downloadIcon from "@images/arrow-down-tray-icon.svg";
 import { config } from "../../../config/config";
 import { useMemo } from "react";
 import pdfIcon from "@images/pdf-image.png";
@@ -12,6 +12,7 @@ import emlIcon from "@images/eml-image.png";
 import defaultIcon from "@images/no-image.png";
 import AttachmentLoadingPlaceholder from "./AttachmentLoadingPlaceholder";
 import { isIcsFilename } from "@utils/calendarInviteUtil";
+import { filterNonInlineAttachments } from "@utils/emailCidUtil";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -21,12 +22,19 @@ interface Attachment {
     size: number;
     isEml: boolean;
     isSchedule?: boolean;
+    contentId?: string;
+    contentDisposition?: string;
+    disposition?: string;
+    contentType?: string;
+    isInline?: boolean;
+    [key: string]: any;
 }
 
 interface Props {
     attachments: Attachment[];
     messageId: string;
     remainingAttachments?: number;
+    bodyHtml?: string | null;
     hideIcsAttachments?: boolean;
     onDownloadAttachment: (downloadType: string, customFileName: string, fileName: string, messageid: string) => void;
     onOpenAttachment: (customFileName: string, filename: string, isEml: boolean) => void;
@@ -38,17 +46,21 @@ const EmailDetailAttachmentPreview = ({
     attachments,
     messageId,
     remainingAttachments = 0,
+    bodyHtml,
     hideIcsAttachments = false,
     onDownloadAttachment,
     onOpenAttachment
 }: Props) => {
+    const visibleAttachments = useMemo(
+        () => filterNonInlineAttachments(attachments, bodyHtml),
+        [attachments, bodyHtml]
+    );
     const extraPendingCount = Math.max(0, remainingAttachments - attachments.length);
     const displayAttachments = hideIcsAttachments
-        ? attachments.filter((attachment) => !isIcsFilename(attachment.filename))
-        : attachments;
+        ? visibleAttachments.filter((attachment) => !isIcsFilename(attachment.filename))
+        : visibleAttachments;
     const allAttachmentsReady = displayAttachments.every(isAttachmentReady) && extraPendingCount === 0;
 
-    // Cache preview URLs to prevent continuous requests
     const attachmentPreviews = useMemo(() => {
         return displayAttachments
             .filter(isAttachmentReady)
@@ -79,23 +91,17 @@ const EmailDetailAttachmentPreview = ({
 
         const iconMap: Record<string, string> = {
             pdf: pdfIcon,
-
             doc: docIcon, docx: docIcon, odt: docIcon,
             xls: xlsIcon, xlsx: xlsIcon, csv: xlsIcon, ods: xlsIcon,
             ppt: pptIcon, pptx: pptIcon, odp: pptIcon,
             txt: docIcon, rtf: docIcon,
-
             zip: zipIcon, rar: zipIcon, "7z": zipIcon, tar: zipIcon, gz: zipIcon,
-
             mp4: videoIcon, avi: videoIcon, mov: videoIcon, wmv: videoIcon,
             mkv: videoIcon, webm: videoIcon, flv: videoIcon,
-
-
             js: codeIcon, jsx: codeIcon, ts: codeIcon, tsx: codeIcon,
             html: codeIcon, htm: codeIcon,
             css: codeIcon, scss: codeIcon, sass: codeIcon, less: codeIcon,
             json: codeIcon, yml: codeIcon, yaml: codeIcon,
-
             eml: emlIcon,
         };
 
