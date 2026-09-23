@@ -46,24 +46,16 @@ describe('parseFilterQuery', () => {
         });
     });
 
-    it('infers from from bare email', () => {
-        expect(parseFilterQuery('prit.d@enlivendc.com')).toEqual({
-            from: ['prit.d@enlivendc.com'],
-        });
+    it('does not treat a bare email as From or To', () => {
+        expect(parseFilterQuery('prit.d@enlivendc.com')).toEqual({});
     });
 
-    it('infers from and to from two bare emails', () => {
-        expect(parseFilterQuery('prit.d@enlivendc.com vishal.d@enlivendc.com')).toEqual({
-            from: ['prit.d@enlivendc.com'],
-            to: ['vishal.d@enlivendc.com'],
-        });
+    it('does not treat two bare emails as From and To', () => {
+        expect(parseFilterQuery('prit.d@enlivendc.com vishal.d@enlivendc.com')).toEqual({});
     });
 
-    it('infers from and to from emails without treating trailing text as subject', () => {
-        expect(parseFilterQuery('prit.d@enlivendc.com vishal.d@enlivendc.com invoice')).toEqual({
-            from: ['prit.d@enlivendc.com'],
-            to: ['vishal.d@enlivendc.com'],
-        });
+    it('does not treat bare emails with trailing text as From or To', () => {
+        expect(parseFilterQuery('prit.d@enlivendc.com vishal.d@enlivendc.com invoice')).toEqual({});
     });
 
     it('does not infer subject from trailing text after from keyword', () => {
@@ -76,17 +68,15 @@ describe('parseFilterQuery', () => {
         expect(parseFilterQuery('invoice')).toEqual({});
     });
 
-    it('parses mixed bare email and subject keyword', () => {
+    it('keeps a bare email out of From when a subject keyword is present', () => {
         expect(parseFilterQuery('prit.d@enlivendc.com subject:invoice')).toEqual({
-            from: ['prit.d@enlivendc.com'],
             subject: 'invoice',
         });
     });
 
-    it('does not overwrite explicit from when second email is inferred as to', () => {
+    it('does not assign a second bare email to To when From is explicit', () => {
         expect(parseFilterQuery('from:abc@test.com xyz@test.com')).toEqual({
             from: ['abc@test.com'],
-            to: ['xyz@test.com'],
         });
     });
 

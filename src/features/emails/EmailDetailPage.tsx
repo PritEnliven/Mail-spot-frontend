@@ -19,7 +19,9 @@ const EmailDetailPage = () => {
       };
 
       const data = await getSingleEmailService(payload);
-      setEmail(data.emailList);
+      if (data?.emailList) {
+        setEmail(data.emailList);
+      }
     };
 
     fetchEmail();

@@ -398,7 +398,7 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
                                     </div>
 
                                     <div className="form-group mb-3 w-100 two-arrow-input">
-                                        <label className="control-label" htmlFor="contactBirthdate">Birthdate</label>
+                                        <label className="control-label" htmlFor="contactBirthdate">Date of birth</label>
                                         <div className="input-icon-add custom-datepicker-month-selector-c2-vm">
                                             <Controller
                                                 name="birthdate"

@@ -222,7 +222,7 @@ const ckEditorConfig: any = {
     },
     toolbar: {
         items: [
-            'fontColor', 'heading', 'SourceEditing', 'fontSize', 'bold', 'italic', 'underline', 'insertTable', 'customMedia', 'link', 'alignment', 'bulletedList', 'numberedList', 'undo', 'redo', 'strikethrough', 'code', 'horizontalLine',
+            'fontFamily', 'fontSize', 'fontColor', 'heading', 'SourceEditing', 'bold', 'italic', 'underline', 'insertTable', 'customMedia', 'link', 'alignment', 'bulletedList', 'numberedList', 'undo', 'redo', 'strikethrough', 'code', 'horizontalLine',
             {
                 label: 'More options',
                 icon: 'text',
@@ -253,8 +253,21 @@ const ckEditorConfig: any = {
     language: 'en',
     fontFamily: {
         options: [
-            'DM Sans, sans-serif',
-        ] as any
+            'default',
+            { title: 'Sans Serif', model: 'Arial, Helvetica, sans-serif' },
+            { title: 'Serif', model: 'Times New Roman, Times, serif' },
+            { title: 'Fixed Width', model: 'Courier New, Courier, monospace' },
+            { title: 'Wide', model: 'Arial Black, Gadget, sans-serif' },
+            { title: 'Narrow', model: 'Arial Narrow, Arial, sans-serif' },
+            { title: 'Comic Sans MS', model: 'Comic Sans MS, cursive' },
+            { title: 'Garamond', model: 'Garamond, serif' },
+            { title: 'Georgia', model: 'Georgia, serif' },
+            { title: 'Tahoma', model: 'Tahoma, Geneva, sans-serif' },
+            { title: 'Trebuchet MS', model: 'Trebuchet MS, Helvetica, sans-serif' },
+            { title: 'Verdana', model: 'Verdana, Geneva, sans-serif' },
+            { title: 'DM Sans', model: 'DM Sans, sans-serif' },
+        ],
+        supportAllValues: true,
     },
     fontSize: {
         options: [10, 12, 14, 'default', 18, 20, 22],

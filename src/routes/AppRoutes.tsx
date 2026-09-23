@@ -2,24 +2,26 @@ import { AdminUIProvider } from '@context/AdminUIContext';
 import { ProfileProvider } from '@context/userContext';
 import { AccountProvider } from '@context/AccountContext';
 import { ApiInterceptor, isJwtExpired } from '@services/apiService';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { lazyWithRetry } from '@utils/lazyWithRetry';
+import AppLoader from '@components/layout/AppLoader';
+import ProtectedRoute from '@components/auth/ProtectedRoute';
 
-// Lazy loaded components
-const AdminSettings = lazy(() => import('@features/AdminSettings/AdminSettings'));
-const Login = lazy(() => import('@features/login/Login'));
-const MailboxPage = lazy(() => import('@features/emails/MailBoxPage'));
-const EmailDetailPage = lazy(() => import('@features/emails/EmailDetailPage'));
-const SettingsPage = lazy(() => import('@features/settings/SettingsPage'));
-const CalendarPage = lazy(() => import('@features/calendar/CalendarPage'));
-const ContactsPage = lazy(() => import('@features/contacts/ContactsPage'));
-const RegisterPage = lazy(() => import('@features/register/RegisterPage'));
-const ForgotPage = lazy(() => import('@features/forgot/ForgotPage'));
-const AppLayout = lazy(() => import('@components/layout/AppLayout'));
-const ProtectedRoute = lazy(() => import('@components/auth/ProtectedRoute'));
-const AdminLogin = lazy(() => import('@features/adminLogin/adminLogin'));
-const AdminLayout = lazy(() => import('@components/layout/adminLayout/AdminLayout'));
-const AdminDashboard = lazy(() => import('@features/AdminDashboard/AdminDashboard'));
+// Lazy loaded components (retry + one-shot full reload on stale Firebase chunks)
+const AdminSettings = lazyWithRetry(() => import('@features/AdminSettings/AdminSettings'));
+const Login = lazyWithRetry(() => import('@features/login/Login'));
+const MailboxPage = lazyWithRetry(() => import('@features/emails/MailBoxPage'));
+const EmailDetailPage = lazyWithRetry(() => import('@features/emails/EmailDetailPage'));
+const SettingsPage = lazyWithRetry(() => import('@features/settings/SettingsPage'));
+const CalendarPage = lazyWithRetry(() => import('@features/calendar/CalendarPage'));
+const ContactsPage = lazyWithRetry(() => import('@features/contacts/ContactsPage'));
+const RegisterPage = lazyWithRetry(() => import('@features/register/RegisterPage'));
+const ForgotPage = lazyWithRetry(() => import('@features/forgot/ForgotPage'));
+const AppLayout = lazyWithRetry(() => import('@components/layout/AppLayout'));
+const AdminLogin = lazyWithRetry(() => import('@features/adminLogin/adminLogin'));
+const AdminLayout = lazyWithRetry(() => import('@components/layout/adminLayout/AdminLayout'));
+const AdminDashboard = lazyWithRetry(() => import('@features/AdminDashboard/AdminDashboard'));
 
 // Admin protected route component
 const AdminProtectedRoute = () => {
@@ -35,7 +37,7 @@ const AdminProtectedRoute = () => {
 
 const AppRoutes = () => {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AppLoader />}>
       <Routes>
 
         {/* public routes */}

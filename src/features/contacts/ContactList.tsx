@@ -632,7 +632,7 @@ function ContactMobileList({
                                 {birthdate !== '—' && (
                                     <div className="contact-mobile-item__field">
                                         <dt>
-                                            <ContactFieldIcon src={dateIcon} label="Birthdate" />
+                                            <ContactFieldIcon src={dateIcon} label="Date of birth" />
                                         </dt>
                                         <dd>
                                             <span className="contact-mobile-item__text">{birthdate}</span>

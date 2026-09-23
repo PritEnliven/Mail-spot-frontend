@@ -27,7 +27,7 @@ import {
   verifyImapConnection,
   verifySmtpConnection,
 } from "@services/register/registerService";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { RegisterPageSchema, type RegisterPageFormValues } from "./RegisterPage.schema";
@@ -66,10 +66,12 @@ const RegisterPage = () => {
     handleSubmit,
     getValues,
     setValue,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<RegisterPageFormValues>({
     resolver: zodResolver(RegisterPageSchema),
     mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: {
       name: "",
       email: "",
@@ -85,12 +87,22 @@ const RegisterPage = () => {
     },
   });
 
-  const redirectToLogin = () => {
+  const redirectToLogin = (e?: MouseEvent) => {
+    e?.preventDefault();
     navigate("/login");
   };
 
+  /** Clear a field's error as soon as the user edits it. */
+  const clearOnChange =
+    (name: keyof RegisterPageFormValues, fieldOnChange: (...args: unknown[]) => void) =>
+    (...args: unknown[]) => {
+      clearErrors(name);
+      fieldOnChange(...args);
+    };
+
   const buildRegisterPayload = (): RegisterPayload => {
     const v = getValues();
+    const smtpPassword = v.smtpPassword?.trim() ? v.smtpPassword : (v.imapPassword ?? "");
 
     return {
       email: {
@@ -107,7 +119,7 @@ const RegisterPage = () => {
       },
       smtp: {
         smtpUsername: v.smtpUsername ?? "",
-        smtpPassword: v.smtpPassword ?? v.imapPassword ?? "",
+        smtpPassword,
         smtpHost: v.smtpHost ?? "",
         smtpPort: Number(v.smtpPort) || 0,
         smtpSecureType: v.smtpSecurityType ?? "",
@@ -293,6 +305,7 @@ const RegisterPage = () => {
                                   id="UserName"
                                   onFocus={() => setFocusedField("username")}
                                   onBlur={() => setFocusedField(null)}
+                                  onChange={clearOnChange("name", field.onChange)}
                                 />
                               )}
                             />
@@ -327,6 +340,7 @@ const RegisterPage = () => {
                                   id="UserEmail"
                                   onFocus={() => setFocusedField("useremail")}
                                   onBlur={() => setFocusedField(null)}
+                                  onChange={clearOnChange("email", field.onChange)}
                                 />
                               )}
                             />
@@ -363,6 +377,7 @@ const RegisterPage = () => {
                                   autoComplete="new-password"
                                   onFocus={() => setFocusedField("userPassword")}
                                   onBlur={() => setFocusedField(null)}
+                                  onChange={clearOnChange("password", field.onChange)}
                                 />
                               )}
                             />
@@ -409,7 +424,7 @@ const RegisterPage = () => {
                     <hr />
                     <div className="d-flex align-items-center justify-content-between">
                       <p className="mb-0">Already have an account?</p>
-                      <a href="#" className="link-ap" onClick={redirectToLogin}>Login</a>
+                      <a href="/login" className="link-ap" onClick={redirectToLogin}>Login</a>
                     </div>
                   </div>
 
@@ -432,6 +447,7 @@ const RegisterPage = () => {
                                   placeholder="Email"
                                   onFocus={() => setFocusedField("IMAPmailIcon")}
                                   onBlur={() => setFocusedField(null)}
+                                  onChange={clearOnChange("imapEmail", field.onChange)}
                                 />
                               )}
                             />
@@ -465,6 +481,7 @@ const RegisterPage = () => {
                                   placeholder="Password"
                                   onFocus={() => setFocusedField("IMAPPassword")}
                                   onBlur={() => setFocusedField(null)}
+                                  onChange={clearOnChange("imapPassword", field.onChange)}
                                 />
                               )}
                             />
@@ -510,6 +527,7 @@ const RegisterPage = () => {
                                     id="imapServer"
                                     onFocus={() => setFocusedField("imapServer")}
                                     onBlur={() => setFocusedField(null)}
+                                    onChange={clearOnChange("imapServer", field.onChange)}
                                   />
                                 )}
                               />
@@ -537,9 +555,15 @@ const RegisterPage = () => {
                                 <input
                                   {...field}
                                   type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   className="form-control"
                                   placeholder="Port"
                                   id="Port"
+                                  onChange={(e) => {
+                                    clearErrors("imapPort");
+                                    field.onChange(e.target.value.replace(/\D/g, ""));
+                                  }}
                                 />
                               )}
                             />
@@ -565,7 +589,7 @@ const RegisterPage = () => {
                           render={({ field }) => (
                             <Select2Wrapper
                               value={field.value || null}
-                              onChange={field.onChange}
+                              onChange={clearOnChange("secureType", field.onChange)}
                               options={[
                                 { label: "SSL / TLS (recommended)", value: "tls" },
                                 { label: "STARTTLS", value: "startls" },
@@ -601,7 +625,7 @@ const RegisterPage = () => {
                     <hr />
                     <div className="d-flex align-items-center justify-content-between">
                       <p className="mb-0">Already have an account?</p>
-                      <a href="#" className="link-ap">Login</a>
+                      <a href="/login" className="link-ap" onClick={redirectToLogin}>Login</a>
                     </div>
                   </div>
 
@@ -619,11 +643,12 @@ const RegisterPage = () => {
                               render={({ field }) => (
                                 <input
                                   {...field}
-                                  type="smtpUsername"
+                                  type="email"
                                   className="form-control"
                                   placeholder="Email"
                                   onFocus={() => setFocusedField("smtpUsername")}
                                   onBlur={() => setFocusedField(null)}
+                                  onChange={clearOnChange("smtpUsername", field.onChange)}
                                 />
                               )}
                             />
@@ -632,16 +657,16 @@ const RegisterPage = () => {
                           </div>
                         </div>
                       </div>
-                      {errors.imapEmail && (
+                      {errors.smtpUsername && (
                         <span className="error-input-text">
                           <img src={errorIcon16} alt="" width="16" height="16" className="me-2" />
-                          {errors.imapEmail.message}
+                          {errors.smtpUsername.message}
                         </span>
                       )}
                     </div>
                     {/* SMTP Password with toggle */}
                     <div className="form-group">
-                      <label className="control-label required">SMTP Password</label>
+                      <label className="control-label">SMTP Password</label>
                       <div className="input-group2 icon-right2 password-show-hide">
                         <div className="input-control">
                           <div className="input-icon-add">
@@ -656,6 +681,7 @@ const RegisterPage = () => {
                                   placeholder="SMTP Password"
                                   onFocusCapture={() => setFocusedField("smtppassword")}
                                   onBlurCapture={() => setFocusedField(null)}
+                                  onChange={clearOnChange("smtpPassword", field.onChange)}
                                 />
                               )}
                             />
@@ -699,6 +725,7 @@ const RegisterPage = () => {
                                     id="smtpHost"
                                     onFocus={() => setFocusedField("smtpHost")}
                                     onBlur={() => setFocusedField(null)}
+                                    onChange={clearOnChange("smtpHost", field.onChange)}
                                   />
                                 )}
                               />
@@ -707,10 +734,10 @@ const RegisterPage = () => {
                             </div>
                           </div>
                         </div>
-                        {errors.imapServer && (
+                        {errors.smtpHost && (
                           <span className="error-input-text">
                             <img src={errorIcon16} alt="" width="16" height="16" className="me-2" />
-                            <span className="error-text">{errors.imapServer.message}</span>
+                            <span className="error-text">{errors.smtpHost.message}</span>
                           </span>
                         )}
                       </div>
@@ -726,18 +753,24 @@ const RegisterPage = () => {
                                 <input
                                   {...field}
                                   type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   className="form-control"
                                   placeholder="Port"
-                                  id="Port"
+                                  id="smtpPort"
+                                  onChange={(e) => {
+                                    clearErrors("smtpPort");
+                                    field.onChange(e.target.value.replace(/\D/g, ""));
+                                  }}
                                 />
                               )}
                             />
                           </div>
                         </div>
-                        {errors.imapPort && (
+                        {errors.smtpPort && (
                           <span className="error-input-text">
                             <img src={errorIcon16} alt="" width="16" height="16" className="me-2" />
-                            <span className="error-text">{errors.imapPort.message}</span>
+                            <span className="error-text">{errors.smtpPort.message}</span>
                           </span>
                         )}
                       </div>
@@ -754,7 +787,7 @@ const RegisterPage = () => {
                           render={({ field }) => (
                             <Select2Wrapper
                               value={field.value || null}
-                              onChange={field.onChange}
+                              onChange={clearOnChange("smtpSecurityType", field.onChange)}
                               options={[
                                 { label: "SSL / TLS (recommended)", value: "tls" },
                                 { label: "STARTTLS", value: "startls" },
@@ -767,10 +800,10 @@ const RegisterPage = () => {
                         <img src={focusedField === "smtpSecurityType" ? recommendedIconfocuse : recommendedIcon} alt={focusedField === "name" ? "Hide" : "Show"} className="input-icon-1"
                         />
                       </div>
-                      {errors.secureType && (
+                      {errors.smtpSecurityType && (
                         <span className="error-input-text">
                           <img src={errorIcon16} alt="" width="16" height="16" className="me-2" />
-                          <span className="error-text">{errors.secureType.message}</span>
+                          <span className="error-text">{errors.smtpSecurityType.message}</span>
                         </span>
                       )}
                     </div>
@@ -792,7 +825,7 @@ const RegisterPage = () => {
                     <hr />
                     <div className="d-flex align-items-center justify-content-between">
                       <p className="mb-0">Already have an account?</p>
-                      <a href="#" className="link-ap">Login</a>
+                      <a href="/login" className="link-ap" onClick={redirectToLogin}>Login</a>
                     </div>
                   </div>
 

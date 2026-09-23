@@ -206,6 +206,13 @@ const MailBoxPage = () => {
             };
 
             let data = await getSingleEmailService(payload);
+            // Service returns the error object on failure (e.g. 403) instead of throwing.
+            if (!data?.emailList) {
+                throw new Error(
+                    data?.message || `Failed to fetch email detail (status ${data?.statusCode ?? 'unknown'})`
+                );
+            }
+
             if (data.isScheduled) {
                 data.emailList.isSchedule = true;
             }
@@ -244,7 +251,7 @@ const MailBoxPage = () => {
             setToolbarState({
                 showBack: !isDesktop,
                 showSelectAll: isDesktop,
-                showRefresh: false,
+                showRefresh: true,
                 showDelete: true,
                 showMarkAsRead: !isDesktop && !toolbarIsRead,
                 showMarkAsUnread: !isDesktop && toolbarIsRead,

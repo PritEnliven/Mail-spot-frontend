@@ -7,31 +7,31 @@ export const RegisterPageSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
   password: passwordSchema,
 
-
   // Step 2 – IMAP
-  imapEmail: z.string().email("Invalid IMAP email").optional(),
-  imapPassword: z.string().min(1, "IMAP password is required").optional(),
-  imapServer: z.string().min(1, "IMAP server is required").optional(),
-  imapPort: z.string().regex(/^\d+$/, "Port must be a number").optional(),
-  secureType: z.enum(["tls", "startls", "None"]).optional(),
+  imapEmail: z.string().min(1, "Email is required").email("Invalid IMAP email"),
+  imapPassword: z.string().min(1, "IMAP password is required"),
+  imapServer: z.string().min(1, "IMAP server is required"),
+  imapPort: z
+    .string()
+    .min(1, "Required")
+    .regex(/^\d+$/, "Port must be a number"),
+  secureType: z.enum(["tls", "startls", "None"], {  
+    message: "Security type is required",
+  }),
 
   // Step 3 – SMTP
-  smtpUsername: z.string().optional(),
+  smtpUsername: z.string().min(1, "Email is required").email("Invalid email address"),
   smtpPassword: z.string().optional(),
-  smtpHost: z.string().optional(),
-  smtpPort: z.string().regex(/^\d+$/, "Port must be a number").optional(),
-  smtpSecurityType: z.enum(["tls", "startls", "None"]).optional(),
+  smtpHost: z.string().min(1, "SMTP server is required"),
+  smtpPort: z
+    .string()
+    .min(1, "Required")
+    .regex(/^\d+$/, "Port must be a number"),
+  smtpSecurityType: z.enum(["tls", "startls", "None"], {
+    message: "Security type is required",
+  }),
 
   rememberMe: z.boolean().optional(),
-}).refine(
-  (data) => {
-    // Require IMAP fields only if user proceeds to step 2
-    if (data.imapEmail || data.imapPassword || data.imapServer) {
-      return !!data.imapEmail && !!data.imapPassword && !!data.imapServer && !!data.imapPort;
-    }
-    return true;
-  },
-  { message: "Complete IMAP configuration", path: ["imapEmail"] }
-);
+});
 
 export type RegisterPageFormValues = z.infer<typeof RegisterPageSchema>;

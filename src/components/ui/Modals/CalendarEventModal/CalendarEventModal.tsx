@@ -30,12 +30,38 @@ import { createEvent, editEvent } from "@services/calendar/calendarService";
 import { generateTimeOptions } from "@utils/calendarUtil";
 import { formatDate, formatTime24HrFrom12HrString, parseDateForFlatpickr, TimeFormat } from "@utils/dateUtil";
 import { filterGuestByEmail, normalizeGuests } from "@utils/guestUtil";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Flatpickr from 'react-flatpickr';
 import { Controller, useWatch, type FieldErrors } from "react-hook-form";
 import SimpleBar from 'simplebar-react';
 import { colorListConfi } from "../../../../config/fullCalendar.config";
 import type { CalendarEventModalFormValues } from "./calendarEventModal.schema";
+
+/** Keeps Flatpickr's `value` Date referentially stable unless the form string changes. */
+function StableEventDatePicker({
+    value,
+    options,
+    className,
+    placeholder,
+    id,
+}: {
+    value?: string;
+    options: Record<string, unknown>;
+    className?: string;
+    placeholder?: string;
+    id?: string;
+}) {
+    const parsedValue = useMemo(() => parseDateForFlatpickr(value) ?? '', [value]);
+    return (
+        <Flatpickr
+            id={id}
+            value={parsedValue}
+            options={options}
+            className={className}
+            placeholder={placeholder}
+        />
+    );
+}
 
 const timezoneOptions = [
     { value: "UTC", label: "GMT +00:00 — UTC" },
@@ -101,7 +127,7 @@ export function getISTRoundedStartEndTime(
 }
 
 function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalProps) {
-    const { contacts, searchContacts } = useContacts();
+    const { contacts, searchContacts, fetchContacts, resetContactSuggestions, loadMoreContacts, hasMoreContacts, isLoadingContacts, isLoadingMoreContacts } = useContacts();
     const { closeModal, openModal } = useMailUI();
     const { getAllEventList, selectedEvent, calendars } = useCalendar();
     const pendingEditDataRef = useRef<any>(null);
@@ -142,16 +168,6 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         control,
         name: 'guestsList',
     });
-
-    const getMinEndDate = () => {
-        if (!eventStartDate) return undefined;
-
-        const [year, month, day] = eventStartDate.split('-').map(Number);
-        const localStart = new Date(year, month - 1, day);
-        localStart.setHours(0, 0, 0, 0);
-
-        return localStart;
-    };
 
     const eventStartTime = useWatch({
         control,
@@ -412,8 +428,56 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         return startIndex + 1;
     })();
 
-    const startFromMonth = new Date().getMonth();
+    // Keep Flatpickr option objects stable across guest-contact pagination re-renders.
+    // Otherwise react-flatpickr destroys/recreates the inputs and they visibly blink.
+    const startFromMonth = useMemo(() => new Date().getMonth(), []);
     const mountMonthDropdown = useFlatpickrMonthDropdown(startFromMonth);
+    const startDateOnChangeRef = useRef<(value: string) => void>(() => {});
+    const endDateOnChangeRef = useRef<(value: string) => void>(() => {});
+
+    const minEndDate = useMemo(() => {
+        if (!eventStartDate) return undefined;
+        const [year, month, day] = eventStartDate.split('-').map(Number);
+        const localStart = new Date(year, month - 1, day);
+        localStart.setHours(0, 0, 0, 0);
+        return localStart;
+    }, [eventStartDate]);
+
+    const startFlatpickrOptions = useMemo(() => ({
+        mode: 'single' as const,
+        dateFormat: 'd-m-Y',
+        allowInput: false,
+        disableMobile: true,
+        onReady: (_dates: Date[], _str: string, instance: any) => mountMonthDropdown(instance),
+        onChange: (dates: Date[]) => {
+            const date = dates[0];
+            if (date) {
+                startDateOnChangeRef.current(date.toISOString().split('T')[0]);
+            } else {
+                startDateOnChangeRef.current('');
+            }
+        },
+    }), [mountMonthDropdown]);
+
+    const endFlatpickrOptions = useMemo(() => ({
+        mode: 'single' as const,
+        dateFormat: 'd-m-Y',
+        allowInput: false,
+        minDate: minEndDate,
+        disableMobile: true,
+        onReady: (_dates: Date[], _str: string, instance: any) => mountMonthDropdown(instance),
+        onChange: (dates: Date[]) => {
+            const date = dates[0];
+            if (date) {
+                const localYear = date.getFullYear();
+                const localMonth = String(date.getMonth() + 1).padStart(2, '0');
+                const localDay = String(date.getDate()).padStart(2, '0');
+                endDateOnChangeRef.current(`${localYear}-${localMonth}-${localDay}`);
+            } else {
+                endDateOnChangeRef.current('');
+            }
+        },
+    }), [mountMonthDropdown, minEndDate]);
 
     return (
         <BaseModal
@@ -567,30 +631,18 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                             <Controller
                                                                 name="eventStartDate"
                                                                 control={control}
-                                                                render={({ field }) => (
-                                                                    <Flatpickr
-                                                                        value={parseDateForFlatpickr(field.value)}
+                                                                render={({ field }) => {
+                                                                    startDateOnChangeRef.current = field.onChange;
+                                                                    return (
+                                                                    <StableEventDatePicker
+                                                                        value={field.value}
                                                                         id="eventStartDate"
-                                                                        onChange={(dates: Date[]) => {
-                                                                            const date = dates[0];
-                                                                            if (date) {
-                                                                                const isoString = date.toISOString().split('T')[0];
-                                                                                field.onChange(isoString);
-                                                                            } else {
-                                                                                field.onChange('');
-                                                                            }
-                                                                        }}
-                                                                        options={{
-                                                                            mode: 'single',
-                                                                            dateFormat: 'd-m-Y',
-                                                                            allowInput: false,
-                                                                            disableMobile: true,
-                                                                            onReady: (_, __, instance) => mountMonthDropdown(instance)
-                                                                        }}
+                                                                        options={startFlatpickrOptions}
                                                                         className={`form-control DateRangePickerStaticTop datepickermodal ${errors.eventStartDate ? 'is-invalid' : ''}`}
                                                                         placeholder="Select date range"
                                                                     />
-                                                                )}
+                                                                    );
+                                                                }}
                                                             />
                                                             <img
                                                                 src={dateIcon}
@@ -634,31 +686,11 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                 name="eventEndDate"
                                                                 control={control}
                                                                 render={({ field }) => {
+                                                                    endDateOnChangeRef.current = field.onChange;
                                                                     return (
-                                                                        <Flatpickr
-                                                                            value={parseDateForFlatpickr(field.value)}
-                                                                            onChange={(dates: Date[]) => {
-                                                                                const date = dates[0];
-                                                                                if (date) {
-                                                                                    // Use local date conversion to avoid timezone offset issues
-                                                                                    const localYear = date.getFullYear();
-                                                                                    const localMonth = String(date.getMonth() + 1).padStart(2, '0');
-                                                                                    const localDay = String(date.getDate()).padStart(2, '0');
-                                                                                    const localDateString = `${localYear}-${localMonth}-${localDay}`;
-                                                                                    field.onChange(localDateString);
-                                                                                } else {
-                                                                                    field.onChange('');
-                                                                                }
-                                                                            }}
-                                                                            options={{
-                                                                                mode: 'single',
-                                                                                dateFormat: 'd-m-Y',
-                                                                                allowInput: false,
-                                                                                minDate: getMinEndDate(),
-                                                                                disableMobile: true,
-                                                                                onReady: (_, __, instance) => mountMonthDropdown(instance)
-
-                                                                            }}
+                                                                        <StableEventDatePicker
+                                                                            value={field.value}
+                                                                            options={endFlatpickrOptions}
                                                                             className={`form-control DateRangePickerStaticTop datepickermodal ${errors.eventEndDate ? 'is-invalid' : ''}`}
                                                                             placeholder="Select enddate"
                                                                         />
@@ -842,6 +874,12 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                                                                     onChange={field.onChange}
                                                                     options={contacts}
                                                                     onInputChange={searchContacts}
+                                                                    onOpen={fetchContacts}
+                                                                    onClose={resetContactSuggestions}
+                                                                    onLoadMore={loadMoreContacts}
+                                                                    hasMore={hasMoreContacts}
+                                                                    isLoading={isLoadingContacts}
+                                                                    isLoadingMore={isLoadingMoreContacts}
                                                                     showSuggestionBadge={true}
                                                                     placeholder="Select or type to add"
                                                                     isMulti={true}

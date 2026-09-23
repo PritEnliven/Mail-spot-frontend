@@ -295,12 +295,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                                     setTotalEmailBadge(totalCount);
                                 }
 
-                                setPagination(prevPagination => prevPagination ? {
-                                    ...prevPagination,
-                                    totalEmails: totalCount ?? prevPagination.totalEmails,
-                                    startCount: 1,
-                                    endCount: emailList.length
-                                } : prevPagination);
+                                // Sidebar counts stay on the folder badges. The range label
+                                // keeps startCount–endCount of totalEmails from get-emails.
 
                                 // Update sidebar state for all boxes returned in sidebarCounts
                                 setSidebarState(prev => {
@@ -352,15 +348,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         const emailList = response.data.emailList || [];
                         const paginationData = response.data.pagination;
 
-                        // Calculate start and end counts if they aren't provided correctly by backend
-                        if (page === 1) {
-                            paginationData.startCount = 1;
-                            paginationData.endCount = emailList.length;
-                        } else {
-                            paginationData.startCount = (page - 1) * 25 + 1;
-                            paginationData.endCount = paginationData.startCount + emailList.length - 1;
-                        }
-
                         setEmails(emailList);
                         setPagination(paginationData);
                         setMailListPage(page);
@@ -378,11 +365,9 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                             getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
                                 if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
                                     const totalCount = getNumericCount(boxCountResponse.data.totalCount);
-
-                                    setPagination(prev => prev ? {
-                                        ...prev,
-                                        totalEmails: totalCount ?? prev.totalEmails
-                                    } : prev);
+                                    if (totalCount !== null) {
+                                        setTotalEmailBadge(totalCount);
+                                    }
 
                                     setSidebarState(prev => {
                                         const updatedBoxCounts = { ...prev.boxCounts };
@@ -433,6 +418,23 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         // [mailListPage, readUnreadFilter, userId, boxName]
         [userId, boxName]
     );
+
+    const receiveOutsideRef = useRef<boolean | undefined>(undefined);
+    useEffect(() => {
+        if (!permissionsLoaded || !userPermissions) return;
+
+        const next = Boolean(userPermissions.receiveFromOutsideDomain);
+        const previous = receiveOutsideRef.current;
+        receiveOutsideRef.current = next;
+        if (previous === undefined || previous === next) return;
+
+        // Outside-domain receive changed the mailbox total. Drop whatever page
+        // is open and load page 1 from get-emails instead of refreshing it in place.
+        setEmails([]);
+        setPagination(null);
+        setMailListPage(1);
+        void fetchEmails(1, boxName, false, readUnreadFilter);
+    }, [permissionsLoaded, userPermissions, boxName, readUnreadFilter, fetchEmails]);
 
     const fetchSearchEmails = useCallback(
         async (isPrevious = false) => {

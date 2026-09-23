@@ -291,16 +291,40 @@ api.interceptors.response.use(
         isRateLimit: true,
       });
     }
-    if (error.response.status === 401) {
-      const url = error.config?.url || '';
-      const method = error.config?.method || '';
 
+    const url = error.config?.url || '';
+    const method = error.config?.method || '';
+    const isAuthFormRequest =
+      isCredentialLoginRequest(url) ||
+      isLoginAsUserRequest(url) ||
+      isAccountLinkPostRequest(url, method);
+
+    // Some backends return 403 (not 401) when the session/token is no longer valid.
+    // Idle tabs often hit this; without a redirect the UI keeps rendering on bad data and can white-screen.
+    if (error.response.status === 403 && !isAuthFormRequest) {
+      const token = isAdminApiRequest(url)
+        ? localStorage.getItem('adminToken')
+        : localStorage.getItem('token');
+      const authMessage = getErrorMessage(error.response.data, '');
+      const looksLikeExpiredSession =
+        isJwtExpired(token) ||
+        /unauthorized|unauthenticated|token|jwt|expired|authentication|invalid session|please\s+log\s*in|please\s+sign\s*in/i.test(
+          authMessage
+        );
+
+      if (looksLikeExpiredSession) {
+        redirectToLogin(isAdminApiRequest(url));
+        return Promise.reject({
+          message: 'Unauthorized - session expired',
+          statusCode: 403,
+          silent: true,
+        });
+      }
+    }
+
+    if (error.response.status === 401) {
       // Don't redirect for credential login / login-as-user / link re-auth — let the caller handle the error
-      if (
-        isCredentialLoginRequest(url) ||
-        isLoginAsUserRequest(url) ||
-        isAccountLinkPostRequest(url, method)
-      ) {
+      if (isAuthFormRequest) {
         return Promise.reject({
           message: getErrorMessage(
             error.response.data,

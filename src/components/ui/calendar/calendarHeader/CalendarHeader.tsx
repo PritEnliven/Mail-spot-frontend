@@ -508,7 +508,7 @@ function CalendarHeader() {
     const { control, handleSubmit, reset, getValues } = useCalendarFilterForm();
     const { isDesktop, isMobile } = useScreen();
     const { isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useMailUI();
-    const { contacts, searchContacts } = useContacts();
+    const { contacts, searchContacts, fetchContacts, resetContactSuggestions, loadMoreContacts, hasMoreContacts, isLoadingContacts, isLoadingMoreContacts } = useContacts();
     const [isCalendarFilterDropdownOpen, setIsCalendarFilterDropdownOpen] = useState(false);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
     const { setCalendarAllSearchedEvents, setIsCalendarAllSearchActive, isSidebarCalendarOpen, setIsSidebarCalendarOpen } = useCalendar();
@@ -902,6 +902,12 @@ function CalendarHeader() {
                                                     onChange={field.onChange}
                                                     options={contacts}
                                                     onInputChange={searchContacts}
+                                                    onOpen={fetchContacts}
+                                                    onClose={resetContactSuggestions}
+                                                    onLoadMore={loadMoreContacts}
+                                                    hasMore={hasMoreContacts}
+                                                    isLoading={isLoadingContacts}
+                                                    isLoadingMore={isLoadingMoreContacts}
                                                     showSuggestionBadge={true}
                                                     placeholder="Select or type to add"
                                                     isMulti={true}

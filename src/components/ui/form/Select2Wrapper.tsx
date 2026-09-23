@@ -1122,7 +1122,7 @@
 
 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import Select, { components } from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { MultiValue, StylesConfig, GroupBase } from 'react-select';
@@ -1130,6 +1130,7 @@ import dropdownIcon from "@images/chevron-down-icon.svg"
 import dropUpIcon from "@images/chevron-up-icon.svg";
 import removeIcon from "@images/close-icon.svg";
 import SimpleBar from 'simplebar-react';
+import SearchFadeLoader from '@components/ui/SearchFadeLoader';
 
 // ---------- helper hook ----------
 const useIsMobile = (breakpoint: number = 575) => {
@@ -1337,6 +1338,14 @@ export const getSelectStyles = (
       padding: '0',
     }),
 
+    /** Contact search loader in the control */
+    loadingIndicator: (base) => ({
+      ...base,
+      padding: '0 4px',
+      display: 'flex',
+      alignItems: 'center',
+    }),
+
     /** Vertical separator */
     indicatorSeparator: (base) => ({
       ...base,
@@ -1476,6 +1485,15 @@ type MultiSelectProps = {
   isEmail?: boolean | false;
   typeable?: boolean | true;
   onInputChange?: (inputValue: string) => void;
+  /** Called when the suggestion menu opens (e.g. click/focus on To/From). */
+  onOpen?: () => void;
+  /** Called when the suggestion menu closes — reset pagination, etc. */
+  onClose?: () => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  /** Initial / typed contact search in progress */
+  isLoading?: boolean;
   showSuggestionBadge?: boolean;
 };
 
@@ -1503,48 +1521,306 @@ export const DropdownIndicator = (props: any) => {
   );
 };
 
+const ContactSearchLoadingMessage = (props: any) => (
+  <components.LoadingMessage {...props}>
+    <div className="select2-searching-message">
+      <div className="subject-search">
+        <div className="subject text-center">Searching...</div>
+      </div>
+    </div>
+  </components.LoadingMessage>
+);
+
+const MENU_SCROLL_LOAD_THRESHOLD_PX = 64;
+const KEYBOARD_LOAD_MORE_REMAINING = 5;
+
+type MenuScrollState = {
+  top: number;
+  /** Keep list pinned until the user scrolls again after a page append. */
+  lockUntilUserScroll: boolean;
+  /**
+   * Whether the in-flight/most recent "load more" was triggered by manual
+   * mouse-wheel scrolling (true → pin `top` while the page loads/appends) or
+   * by keyboard/hover reaching the end of the list (false → let the list
+   * scroll freely, since react-select natively scrolls the focused option
+   * into view as the user holds an arrow key down). Without this split, the
+   * pin logic below would keep snapping the list back to a stale scroll
+   * position while the user was actively navigating with the keyboard,
+   * making it look "stuck" / jumping back up.
+   */
+  pinOnAppend: boolean;
+};
+
 export const MenuList = (props: any) => {
-  const { children, innerRef, innerProps, focusedOption } = props;
-  const simpleBarRef = useRef<any>(null);
+  const { children, innerRef, innerProps, focusedOption, options = [] } = props;
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreRequestedRef = useRef(false);
+  const scrollRafRef = useRef<number | null>(null);
+  const restoreRafRef = useRef<number | null>(null);
+  const prevOptionsLengthRef = useRef(options.length);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
+  const onLoadMore = props.selectProps?.onLoadMore as (() => void) | undefined;
+  const hasMore = Boolean(props.selectProps?.hasMore);
+  const isLoadingMore = Boolean(props.selectProps?.isLoadingMore);
+  const isSearching = Boolean(props.selectProps?.isSearching);
+  const scrollState = props.selectProps?.menuScrollState as
+    | React.MutableRefObject<MenuScrollState>
+    | undefined;
+
+  const onLoadMoreRef = useRef(onLoadMore);
+  const hasMoreRef = useRef(hasMore);
+  const isLoadingMoreRef = useRef(isLoadingMore);
+
+  onLoadMoreRef.current = onLoadMore;
+  hasMoreRef.current = hasMore;
+  isLoadingMoreRef.current = isLoadingMore;
+
   const focusedKey =
     focusedOption?.value ?? focusedOption?.email ?? focusedOption?.label ?? null;
 
-  // Keep the keyboard-focused option visible inside SimpleBar's scroll container
+  const setListNode = (node: HTMLDivElement | null) => {
+    listRef.current = node;
+    if (typeof innerRef === 'function') {
+      innerRef(node);
+    } else if (innerRef) {
+      (innerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    }
+    // Remount / first paint: put the list back where the user was.
+    if (node && scrollState?.current.lockUntilUserScroll) {
+      node.scrollTop = scrollState.current.top;
+    }
+  };
+
+  const restoreScroll = () => {
+    const el = listRef.current;
+    if (!el || !scrollState?.current.lockUntilUserScroll) return;
+    el.scrollTop = scrollState.current.top;
+  };
+
+  const scheduleRestoreScroll = () => {
+    restoreScroll();
+    if (restoreRafRef.current != null) {
+      cancelAnimationFrame(restoreRafRef.current);
+    }
+    restoreRafRef.current = requestAnimationFrame(() => {
+      restoreScroll();
+      restoreRafRef.current = requestAnimationFrame(() => {
+        restoreScroll();
+        restoreRafRef.current = null;
+      });
+    });
+  };
+
+  // `pin`: true for manual mouse-wheel scrolling near the bottom (we want to
+  // keep the viewport exactly where the user left it while the page loads in).
+  // false for keyboard/hover reaching the end of the list (we want the list to
+  // stay free to keep scrolling with the focused option instead of snapping
+  // back to wherever it was when the fetch started).
+  const requestLoadMore = (pin: boolean) => {
+    if (!onLoadMoreRef.current) return;
+    if (!hasMoreRef.current) return;
+    if (isLoadingMoreRef.current) return;
+    if (loadMoreRequestedRef.current) return;
+
+    const el = listRef.current;
+    if (scrollState) {
+      scrollState.current.pinOnAppend = pin;
+      if (pin && el) {
+        scrollState.current.top = el.scrollTop;
+        scrollState.current.lockUntilUserScroll = true;
+      } else {
+        scrollState.current.lockUntilUserScroll = false;
+      }
+    }
+
+    loadMoreRequestedRef.current = true;
+    try {
+      onLoadMoreRef.current();
+    } catch {
+      loadMoreRequestedRef.current = false;
+      if (scrollState) scrollState.current.lockUntilUserScroll = false;
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoadingMore) {
+      loadMoreRequestedRef.current = false;
+    }
+  }, [isLoadingMore]);
+
+  useEffect(() => {
+    if (hasMore && !isLoadingMore) {
+      loadMoreRequestedRef.current = false;
+    }
+  }, [hasMore, isLoadingMore, options.length]);
+
+  // After each page append / loader toggle, force the saved scroll position
+  // back — but only when the load was a "pinned" (mouse-scroll-triggered)
+  // one. Keyboard/hover-triggered loads leave `pinOnAppend` false, so this
+  // deliberately no-ops for them and lets the list keep following the
+  // focused option instead of yanking it back up mid-navigation.
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    const prevLength = prevOptionsLengthRef.current;
+    const nextLength = options.length;
+    prevOptionsLengthRef.current = nextLength;
+
+    if (!el || !scrollState || !scrollState.current.pinOnAppend) return;
+
+    const appended = nextLength > prevLength && prevLength > 0;
+
+    if (appended || isLoadingMore || scrollState.current.lockUntilUserScroll) {
+      if (appended || isLoadingMore) {
+        scrollState.current.lockUntilUserScroll = true;
+      }
+      scheduleRestoreScroll();
+    }
+  }, [options.length, isLoadingMore, scrollState]);
+
+  // Hold the lock long enough to beat react-select's delayed focus reset, then unlock
+  // so the user can keep arrowing through the list.
+  useEffect(() => {
+    if (!scrollState?.current.lockUntilUserScroll) return;
+    if (isLoadingMore) return;
+
+    const timer = window.setTimeout(() => {
+      restoreScroll();
+      if (scrollState) {
+        scrollState.current.lockUntilUserScroll = false;
+      }
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [options.length, isLoadingMore, scrollState]);
+
+  useEffect(() => () => {
+    if (restoreRafRef.current != null) {
+      cancelAnimationFrame(restoreRafRef.current);
+    }
+    if (scrollRafRef.current != null) {
+      cancelAnimationFrame(scrollRafRef.current);
+    }
+  }, []);
+
+  const checkNearBottom = (el: HTMLDivElement) => {
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (remaining <= MENU_SCROLL_LOAD_THRESHOLD_PX) {
+      requestLoadMore(true);
+    }
+  };
+
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    innerProps?.onScroll?.(event);
+    const el = event.currentTarget;
+
+    // While locked, keep fighting anything that tries to reset to top.
+    if (scrollState?.current.lockUntilUserScroll) {
+      const target = scrollState.current.top;
+      // Treat tiny drift as restore noise; a real user scroll moves further.
+      if (Math.abs(el.scrollTop - target) > 8) {
+        scrollState.current.lockUntilUserScroll = false;
+        scrollState.current.top = el.scrollTop;
+      } else if (el.scrollTop !== target) {
+        el.scrollTop = target;
+        return;
+      }
+    } else if (scrollState) {
+      scrollState.current.top = el.scrollTop;
+    }
+
+    if (scrollRafRef.current != null) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      checkNearBottom(el);
+    });
+  };
+
+  // Prefetch when already sitting at the bottom after a page lands.
+  useEffect(() => {
+    if (!onLoadMore || !hasMore || isLoadingMore) return;
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollHeight <= el.clientHeight + 1) return;
+    checkNearBottom(el);
+  }, [onLoadMore, hasMore, isLoadingMore, options.length]);
+
+  // If the option that's currently "focused" (via real keyboard nav OR plain
+  // mouse hover — react-select doesn't distinguish the two) is near the end
+  // of the loaded list, prefetch the next page.
+  //
+  // NOTE: this used to also force `el.scrollTop` to bring the focused option
+  // into view. That was the actual cause of the "scroller jumps back to the
+  // top / first suggestion" bug: react-select tracks the focused option by
+  // object *reference* (see its internal `getNextFocusedOption`, which uses
+  // `Array.prototype.indexOf`). Every time a fresh page of contacts loaded,
+  // the options array was rebuilt with brand-new objects, so react-select
+  // could no longer find the previously-focused/hovered option by reference
+  // and reset focus to `options[0]` — which this effect then dutifully
+  // scrolled into view, yanking the list back to the top. React-select
+  // already scrolls the focused option into view natively for real keyboard
+  // navigation, so we don't need to (and must not) do it ourselves here.
   useEffect(() => {
     if (!focusedKey) return;
 
-    const scrollEl =
-      simpleBarRef.current?.getScrollElement?.() ??
-      simpleBarRef.current?.contentWrapperEl ??
-      null;
-    if (!scrollEl) return;
+    const flatOptions = Array.isArray(optionsRef.current) ? optionsRef.current : [];
+    const focusedIndex = flatOptions.findIndex((opt: any) => {
+      const key = opt?.value ?? opt?.email ?? opt?.label ?? null;
+      return key != null && key === focusedKey;
+    });
 
-    const focusedEl = scrollEl.querySelector(
-      '.react-select__option--is-focused'
-    ) as HTMLElement | null;
-    if (!focusedEl) return;
-
-    const optionTop = focusedEl.offsetTop;
-    const optionBottom = optionTop + focusedEl.offsetHeight;
-    const viewTop = scrollEl.scrollTop;
-    const viewBottom = viewTop + scrollEl.clientHeight;
-
-    if (optionTop < viewTop) {
-      scrollEl.scrollTop = optionTop;
-    } else if (optionBottom > viewBottom) {
-      scrollEl.scrollTop = optionBottom - scrollEl.clientHeight;
+    if (
+      focusedIndex >= 0 &&
+      focusedIndex >= flatOptions.length - KEYBOARD_LOAD_MORE_REMAINING
+    ) {
+      // Don't pin: let the list keep scrolling with the focused option
+      // instead of snapping back once the next page lands.
+      requestLoadMore(false);
     }
   }, [focusedKey]);
 
+  if (onLoadMore) {
+    const { onScroll: _ignored, ...restInnerProps } = innerProps ?? {};
+    return (
+      <div
+        {...restInnerProps}
+        ref={setListNode}
+        className="react-select__menu-list"
+        onScroll={handleScroll}
+        style={{
+          maxHeight: 200,
+          overflowY: 'auto',
+          padding: 0,
+        }}
+      >
+        {isSearching && !isLoadingMore ? (
+          <div className="select2-searching-message">
+            <div className="subject-search">
+              <div className="subject text-center">Searching...</div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {children}
+            {isLoadingMore && (
+              <div className="d-flex align-items-center justify-content-center py-2">
+                <SearchFadeLoader className="search-fade-loader--sm" label="Loading" />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <SimpleBar
-      ref={simpleBarRef}
-      style={{ maxHeight: 200, scrollBehavior: 'smooth' }}
+      style={{ maxHeight: 200 }}
       autoHide={false}
       forceVisible="y"
       scrollableNodeProps={{
         ref: innerRef,
-        style: { scrollBehavior: 'smooth' },
       }}
     >
       <div
@@ -1573,20 +1849,59 @@ interface MappedOption extends Omit<MultiOption, 'label'> {
   label: string;
 }
 
-const mapMultiOptions = (options: MultiOption[]): MappedOption[] =>
-  options
+// `cache` (optional) is a value -> MappedOption map kept across renders by the
+// caller. When provided, options whose relevant fields haven't changed reuse
+// their *same* object reference instead of getting a brand-new one.
+//
+// This matters a lot for react-select: it tracks the currently focused /
+// hovered option by object identity (`Array.prototype.indexOf`). If we hand
+// it a fresh set of objects on every render (e.g. every time a new page of
+// contacts loads in), it can no longer find the previously-focused option in
+// the new list and silently resets focus to `options[0]` — which visually
+// looks like the highlighted row (and, previously, the scroll position)
+// jumping back to the first suggestion. Reusing references for unchanged
+// contacts keeps react-select's internal focus tracking stable across pages.
+const mapMultiOptions = (
+  options: MultiOption[],
+  cache?: Map<string, MappedOption>,
+): MappedOption[] => {
+  const nextCache: Map<string, MappedOption> | null = cache ? new Map() : null;
+
+  const mapped = options
     .map(opt => {
       const value = opt.email || opt.value || '';
       const label = opt.name || opt.email || opt.label || '';
-      return {
-        ...opt,
-        value,
-        label,
-      };
+      if (!value || !label) return null;
+
+      if (cache) {
+        const prev = cache.get(value);
+        const unchanged =
+          prev &&
+          prev.value === value &&
+          prev.label === label &&
+          prev.name === opt.name &&
+          prev.email === opt.email &&
+          prev.isSuggestion === opt.isSuggestion;
+
+        if (unchanged) {
+          nextCache!.set(value, prev!);
+          return prev!;
+        }
+      }
+
+      const mappedOpt: MappedOption = { ...opt, value, label };
+      nextCache?.set(value, mappedOpt);
+      return mappedOpt;
     })
-    .filter((opt): opt is MappedOption =>
-      Boolean(opt.value) && Boolean(opt.label)
-    );
+    .filter((opt): opt is MappedOption => Boolean(opt));
+
+  if (cache && nextCache) {
+    cache.clear();
+    nextCache.forEach((v, k) => cache.set(k, v));
+  }
+
+  return mapped;
+};
 
 const getSelectedMultiOptions = (
   allOptions: MappedOption[],
@@ -1619,7 +1934,7 @@ const getSelectedSingleOption = (
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-const renderMultiSelect = ({
+const MultiSelect = ({
   value,
   onChange,
   options,
@@ -1628,27 +1943,59 @@ const renderMultiSelect = ({
   isModal = false,
   isEmail,
   onInputChange,
+  onOpen,
+  onClose,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
+  isLoading = false,
   showSuggestionBadge = false,
-}: MultiSelectProps, _isMobile: boolean) => {
+}: MultiSelectProps) => {
   const { selectRef, menuPlacement, handleMenuOpen } = useMenuPlacement();
+  const menuScrollState = useRef<MenuScrollState>({ top: 0, lockUntilUserScroll: false, pinOnAppend: false });
+  const optionsCacheRef = useRef<Map<string, MappedOption>>(new Map());
+  const [isActiveSelect, setIsActiveSelect] = useState(false);
 
   const handleChange = (selected: MultiValue<MappedOption>) => {
     onChange(selected.map((opt) => opt.value));
   };
 
-  const transformedOptions = mapMultiOptions(options);
+  // Memoized (and identity-cached, see mapMultiOptions) so that unrelated
+  // re-renders — or even a genuine new page of contacts loading in — don't
+  // hand react-select a brand-new `options` array/objects unless the
+  // underlying data actually changed. See mapMultiOptions for why that
+  // matters for keeping the scroll position stable while paginating.
+  const transformedOptions = useMemo(() => {
+    const mapped = mapMultiOptions(options, optionsCacheRef.current);
+    // Defense in depth: keep Suggested rows first even if the parent list is alphabetical.
+    const suggestions = mapped.filter((opt) => opt.isSuggestion);
+    if (suggestions.length === 0) return mapped;
+    const addressBook = mapped.filter((opt) => !opt.isSuggestion);
+    return [...suggestions, ...addressBook];
+  }, [options]);
 
-  const createdOptions: MappedOption[] = value
-    .filter((val): val is string => Boolean(val))
-    .filter(val => !transformedOptions.some(opt => opt.value === val))
-    .map(val => ({
-      value: val,
-      label: val,
-      __isNew__: true,
-    }));
+  const createdOptions: MappedOption[] = useMemo(
+    () =>
+      value
+        .filter((val): val is string => Boolean(val))
+        .filter(val => !transformedOptions.some(opt => opt.value === val))
+        .map(val => ({
+          value: val,
+          label: val,
+          __isNew__: true,
+        })),
+    [value, transformedOptions],
+  );
 
-  const allOptions: MappedOption[] = [...transformedOptions, ...createdOptions];
-  const selectedOptions = getSelectedMultiOptions(allOptions, value);
+  const allOptions: MappedOption[] = useMemo(
+    () => [...transformedOptions, ...createdOptions],
+    [transformedOptions, createdOptions],
+  );
+
+  const selectedOptions = useMemo(
+    () => getSelectedMultiOptions(allOptions, value),
+    [allOptions, value],
+  );
 
   const isValidNewValue = (input: string) => {
     if (!input.trim()) return false;
@@ -1662,8 +2009,21 @@ const renderMultiSelect = ({
     onChange([...value, inputValue]);
   };
 
+  const handleOpen = () => {
+    handleMenuOpen();
+    setIsActiveSelect(true);
+    menuScrollState.current = { top: 0, lockUntilUserScroll: false, pinOnAppend: false };
+    onOpen?.();
+  };
+
+  const handleClose = () => {
+    setIsActiveSelect(false);
+    menuScrollState.current = { top: 0, lockUntilUserScroll: false, pinOnAppend: false };
+    onClose?.();
+  };
+
   return (
-    <CreatableSelect<MappedOption, true, GroupBase<MappedOption>>
+    <CreatableSelect
       ref={selectRef}
       isMulti
       options={allOptions}
@@ -1671,8 +2031,9 @@ const renderMultiSelect = ({
       placeholder={placeholder}
       classNamePrefix="react-select"
       isClearable={false}
+      isLoading={isLoading && isActiveSelect}
       onCreateOption={handleCreate}
-      isValidNewOption={(inputValue, _, opts) =>
+      isValidNewOption={(inputValue: string, _: unknown, opts: any[]) =>
         isValidEmail(inputValue) &&
         !opts.some((o: any) => o.value === inputValue) &&
         !value.includes(inputValue)
@@ -1680,24 +2041,35 @@ const renderMultiSelect = ({
       menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
       menuPosition="fixed"
       menuPlacement={menuPlacement}
-      onMenuOpen={handleMenuOpen}
+      onMenuOpen={handleOpen}
+      onMenuClose={handleClose}
       styles={getSelectStyles("multiple", moduleName, isModal) as any}
       captureMenuScroll={false}
       menuShouldBlockScroll={false}
+      {...({
+        scrollToFocusedOptionOnUpdate: false,
+        onLoadMore,
+        hasMore,
+        isLoadingMore,
+        isSearching: isLoading && isActiveSelect,
+        menuScrollState,
+      } as any)}
       components={{
         DropdownIndicator: null,
         MenuList,
         MultiValueRemove: RemoveItemIndicator,
         ClearIndicator: () => null,
+        LoadingIndicator: () => null,
+        LoadingMessage: ContactSearchLoadingMessage,
       }}
       onChange={handleChange}
-      onInputChange={(inputValue, meta) => {
+      onInputChange={(inputValue: string, meta: { action: string }) => {
         if (meta.action === 'input-change') {
           onInputChange?.(inputValue);
         }
       }}
       createOptionPosition="first"
-      formatOptionLabel={(option, { context }) => {
+      formatOptionLabel={(option: MappedOption, { context }: { context: 'menu' | 'value' }) => {
         const email = option.email || option.value || '';
         const displayName = option.name || option.label || email;
         const initial = displayName.charAt(0).toUpperCase();
@@ -1770,7 +2142,7 @@ export default function Select2Wrapper(props: Select2WrapperProps) {
   const isMobile = useIsMobile();
 
   if (props.isMulti) {
-    return renderMultiSelect(props, isMobile);
+    return <MultiSelect {...props} />;
   }
 
   return renderSingleSelect(props, isMobile);

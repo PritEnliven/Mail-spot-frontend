@@ -45,27 +45,11 @@ export function extractFreeTextSearchTerm(query: string): string {
     if (!trimmed) return '';
 
     const operatorTokens = tokenizeOperators(trimmed);
-    let remainder = removeOperatorSpans(trimmed, operatorTokens).trim();
+    const remainder = removeOperatorSpans(trimmed, operatorTokens).trim();
     if (!remainder) return '';
 
-    const inferredEmails = extractEmails(remainder);
-    for (const email of inferredEmails) {
-        remainder = remainder.replace(email, ' ');
-    }
-
+    // Emails without from:/to: stay in the free text so they can fill Has the words.
     return remainder.replace(/\s+/g, ' ').trim();
-}
-
-function extractEmails(text: string): string[] {
-    const emails: string[] = [];
-    let match: RegExpExecArray | null;
-    const pattern = new RegExp(EMAIL_PATTERN.source, EMAIL_PATTERN.flags);
-
-    while ((match = pattern.exec(text)) !== null) {
-        emails.push(match[0]);
-    }
-
-    return emails;
 }
 
 export function parseFilterQuery(query: string): ParsedFilterQuery {
@@ -114,19 +98,6 @@ export function parseFilterQuery(query: string): ParsedFilterQuery {
         }
     }
 
-    const remainder = removeOperatorSpans(trimmed, operatorTokens).trim();
-    if (!remainder) return result;
-
-    const inferredEmails = extractEmails(remainder);
-
-    for (const email of inferredEmails) {
-        if (!result.from?.length) {
-            result.from = [email];
-        } else if (!result.to?.length && !result.from.includes(email)) {
-            result.to = [email];
-        }
-    }
-
     return result;
 }
 
@@ -151,7 +122,8 @@ export function isStructuredFilterQuery(query: string): boolean {
     const trimmed = query.trim();
     if (!trimmed) return false;
     if (tokenizeOperators(trimmed).length > 0) return true;
-    return EMAIL_PATTERN.test(trimmed);
+    // Avoid EMAIL_PATTERN.test() with /g — lastIndex makes alternate calls fail
+    return new RegExp(EMAIL_PATTERN.source, 'i').test(trimmed);
 }
 
 export function parseFilterQueryToFormValues(query: string): Partial<FilterEmailFormValues> {

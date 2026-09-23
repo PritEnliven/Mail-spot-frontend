@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSearchFilterPayload } from '@utils/filterUtil';
-import { buildDisplaySearchQuery, resolveSearchFromQuery } from './searchQueryUtil';
+import { buildDisplaySearchQuery, omitFilterCoveredFreeText, promoteSearchQueryToFilterForm, resolveSearchFromQuery } from './searchQueryUtil';
 
 describe('resolveSearchFromQuery', () => {
     it('combines parsed filters with trailing free-text search term', () => {
@@ -31,11 +31,120 @@ describe('resolveSearchFromQuery', () => {
         expect(result.searchTerm).toBe('meeting notes');
     });
 
+    it('does not keep a plain email as free text when it is already the From filter', () => {
+        const activeFilter = {
+            from: ['raj.v@mail.enlivendc.com'],
+            to: [],
+            subject: '',
+            dateRange: undefined,
+        };
+
+        const result = resolveSearchFromQuery('raj.v@mail.enlivendc.com', activeFilter);
+
+        expect(result.filterForm?.from).toEqual(['raj.v@mail.enlivendc.com']);
+        expect(result.searchTerm).toBe('');
+    });
+
     it('returns keyword-only search when no filters are active', () => {
         expect(resolveSearchFromQuery('meeting notes')).toEqual({
             filterForm: null,
             searchTerm: 'meeting notes',
         });
+    });
+
+    it('keeps a plain name search intact when hasWord is only its first letter', () => {
+        const activeFilter = {
+            from: [],
+            to: [],
+            subject: '',
+            hasWord: 'r',
+            dateRange: undefined,
+        };
+
+        const result = resolveSearchFromQuery('raj v', activeFilter);
+
+        expect(result.filterForm?.hasWord).toBe('r');
+        expect(result.searchTerm).toBe('raj v');
+    });
+});
+
+describe('omitFilterCoveredFreeText', () => {
+    it('removes a hasWord phrase without eating letters inside another word', () => {
+        expect(
+            omitFilterCoveredFreeText('raj v invoice', {
+                from: [],
+                to: [],
+                subject: '',
+                hasWord: 'r',
+            }),
+        ).toBe('raj v invoice');
+
+        expect(
+            omitFilterCoveredFreeText('raj v invoice', {
+                from: [],
+                to: [],
+                subject: '',
+                hasWord: 'invoice',
+            }),
+        ).toBe('raj v');
+    });
+});
+
+describe('promoteSearchQueryToFilterForm', () => {
+    it('puts plain keyword search into Has the words when opening filter', () => {
+        const result = promoteSearchQueryToFilterForm('invoice');
+
+        expect(result.filterForm?.hasWord).toBe('invoice');
+        expect(result.searchTerm).toBe('');
+    });
+
+    it('puts a bare email into Has the words', () => {
+        const result = promoteSearchQueryToFilterForm('raj.v@mail.enlivendc.com');
+
+        expect(result.filterForm?.from ?? []).toEqual([]);
+        expect(result.filterForm?.to ?? []).toEqual([]);
+        expect(result.filterForm?.hasWord).toBe('raj.v@mail.enlivendc.com');
+        expect(result.searchTerm).toBe('');
+    });
+
+    it('puts an email typed next to other words into Has the words', () => {
+        const result = promoteSearchQueryToFilterForm('raj.v@mail.enlivendc.com invoice');
+
+        expect(result.filterForm?.from ?? []).toEqual([]);
+        expect(result.filterForm?.hasWord).toBe('raj.v@mail.enlivendc.com invoice');
+        expect(result.searchTerm).toBe('');
+    });
+
+    it('keeps an explicit from: address in From and puts a bare address in Has the words', () => {
+        const result = promoteSearchQueryToFilterForm('from:(user@mail.com) other@mail.com');
+
+        expect(result.filterForm?.from).toEqual(['user@mail.com']);
+        expect(result.filterForm?.to ?? []).toEqual([]);
+        expect(result.filterForm?.hasWord).toBe('other@mail.com');
+        expect(result.searchTerm).toBe('');
+    });
+
+    it('does not put a plain date into Has the words', () => {
+        const result = promoteSearchQueryToFilterForm('05/06/2026');
+
+        expect(result.filterForm?.hasWord ?? '').toBe('');
+        expect(result.searchTerm).toBe('05/06/2026');
+    });
+
+    it('appends free text into Has the words while keeping existing From filter', () => {
+        const activeFilter = {
+            from: ['user@mail.com'],
+            to: [],
+            subject: '',
+            hasWord: '',
+            dateRange: undefined,
+        };
+
+        const result = promoteSearchQueryToFilterForm('meeting notes', activeFilter);
+
+        expect(result.filterForm?.from).toEqual(['user@mail.com']);
+        expect(result.filterForm?.hasWord).toBe('meeting notes');
+        expect(result.searchTerm).toBe('');
     });
 });
 
@@ -47,6 +156,15 @@ describe('buildDisplaySearchQuery', () => {
                 'meeting notes',
             ),
         ).toBe('meeting notes from:(user@mail.com)');
+    });
+
+    it('does not duplicate an email already mapped into From', () => {
+        expect(
+            buildDisplaySearchQuery(
+                { from: ['raj.v@mail.enlivendc.com'], to: [], subject: '' },
+                'raj.v@mail.enlivendc.com',
+            ),
+        ).toBe('from:(raj.v@mail.enlivendc.com)');
     });
 
     it('returns only free text when no filters are active', () => {

@@ -38,8 +38,9 @@ import { getSocket, disconnectSocket } from "@services/socket/socket";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { verifyBoxName } from "@utils/emailUtil";
 import { areFilterFormsEqual, buildSearchFilterPayload } from "@utils/filterUtil";
-import { buildDisplaySearchQuery, resolveSearchFromQuery } from "@utils/searchQueryUtil";
+import { buildDisplaySearchQuery, omitFilterCoveredFreeText, promoteSearchQueryToFilterForm, resolveSearchFromQuery } from "@utils/searchQueryUtil";
 import AccountSwitcher from "@components/ui/AccountSwitcher/AccountSwitcher";
+import SearchFadeLoader from "@components/ui/SearchFadeLoader";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dropdown } from 'react-bootstrap';
 import { Controller } from 'react-hook-form';
@@ -122,9 +123,11 @@ const Header = () => {
         setEmailDetailSelected, setActiveEmailMessageId,
         headerSearchResults: searchResults, setHeaderSearchResults: setSearchResults,
         clearMailSearch, mailSearchResetKey, sidebarState } = useMailData();
-    const { contacts, fetchContacts } = useContacts();
+    const { contacts, fetchContacts, resetContactSuggestions, searchContacts, loadMoreContacts, hasMoreContacts, isLoadingContacts, isLoadingMoreContacts } = useContacts();
     const { calendarView, setCalendarView, changeView, calendarTitle } = useCalendar();
     const [noResult, setNoResult] = useState(false);
+    const [isDropdownSearchLoading, setIsDropdownSearchLoading] = useState(false);
+    const [isFullSearchLoading, setIsFullSearchLoading] = useState(false);
     const [isSearchResultDropdownOpen, setIsSearchResultDropdownOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [profileNestedOverlayOpen, setProfileNestedOverlayOpen] = useState(false);
@@ -203,7 +206,7 @@ const Header = () => {
     } = useFilterEmailForm();
 
     const isExecutingFullSearchRef = useRef(false);
-    const syncFilterFormFromQuery = useCallback((query: string) => {
+    const syncFilterFormFromQuery = useCallback((query: string, promoteFreeText = false) => {
         const trimmed = query.trim();
 
         if (!trimmed) {
@@ -223,10 +226,12 @@ const Header = () => {
             return;
         }
 
-        const { filterForm: resolvedFilter, searchTerm: resolvedSearchTerm } = resolveSearchFromQuery(
-            trimmed,
-            filterForm,
-        );
+        // Promoting on each keystroke stores the first character in hasWord, then
+        // strips it from the rest of the query ("raj v" → hasWord "r", searchTerm "aj v").
+        // Free text moves into Has the words only when the filter panel opens.
+        const { filterForm: resolvedFilter, searchTerm: resolvedSearchTerm } = (
+            promoteFreeText ? promoteSearchQueryToFilterForm : resolveSearchFromQuery
+        )(trimmed, filterForm);
 
         if (resolvedSearchTerm !== searchTerm) {
             setSearchTerm(resolvedSearchTerm);
@@ -255,6 +260,7 @@ const Header = () => {
         prevDebouncedSearchRef.current = debouncedSearchText;
 
         if (isExecutingFullSearchRef.current) {
+            setIsDropdownSearchLoading(false);
             return;
         }
 
@@ -269,6 +275,7 @@ const Header = () => {
                 return;
             }
 
+            setIsDropdownSearchLoading(false);
             setSearchResults([]);
             setNoResult(false);
 
@@ -288,6 +295,8 @@ const Header = () => {
         );
 
         const controller = new AbortController();
+        let cancelled = false;
+        setIsDropdownSearchLoading(true);
 
         const searchEmails = async () => {
             try {
@@ -302,6 +311,8 @@ const Header = () => {
                         limit: 5,
                     })
                 );
+
+                if (cancelled) return;
 
                 if (response?.statusCode === 200) {
                     if (allowSearchDropdownRef.current) {
@@ -321,12 +332,19 @@ const Header = () => {
                 if (err.name !== "AbortError") {
                     console.error("Search failed:", err);
                 }
+            } finally {
+                if (!cancelled) {
+                    setIsDropdownSearchLoading(false);
+                }
             }
         };
 
         searchEmails();
 
-        return () => controller.abort();
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
         // }, [debouncedSearchText, searchText, allSearchResult, boxTitle, clearMailSearch, filterForm, setSearchTerm]);
     }, [debouncedSearchText]);
 
@@ -359,7 +377,11 @@ const Header = () => {
     };
 
     const onSubmit = async (data: FilterEmailFormValues) => {
-        const { searchTerm: existingSearchTerm } = resolveSearchFromQuery(searchText, filterForm);
+        // Parse free text from the search bar; submitted form `data` owns filter fields.
+        // Do not pass active filterForm here — that kept the plain email as free text after
+        // it was already promoted into From, producing: email from:(email).
+        const { searchTerm: parsedSearchTerm } = resolveSearchFromQuery(searchText);
+        const existingSearchTerm = omitFilterCoveredFreeText(parsedSearchTerm, data);
 
         setAllSearchResult(true);
         setSearchTerm(existingSearchTerm);
@@ -367,6 +389,9 @@ const Header = () => {
 
         const displayQuery = buildDisplaySearchQuery(data, existingSearchTerm);
 
+        isExecutingFullSearchRef.current = true;
+        setIsFullSearchLoading(true);
+        setIsDropdownSearchLoading(false);
         allowSearchDropdownRef.current = false;
         setIsSearchResultDropdownOpen(false);
         setSearchText(displayQuery);
@@ -395,6 +420,9 @@ const Header = () => {
             }
         } catch (err) {
             console.error('Filter failed:', err);
+        } finally {
+            isExecutingFullSearchRef.current = false;
+            setIsFullSearchLoading(false);
         }
     };
 
@@ -500,6 +528,9 @@ const Header = () => {
 
         const { filterForm: resolvedFilter, searchTerm: resolvedSearchTerm } = resolveSearchFromQuery(trimmed, filterForm);
 
+        isExecutingFullSearchRef.current = true;
+        setIsFullSearchLoading(true);
+        setIsDropdownSearchLoading(false);
         setAllSearchResult(true);
         syncFilterFormFromQuery(trimmed);
         setSearchText(trimmed);
@@ -539,6 +570,9 @@ const Header = () => {
             }
         } catch (err) {
             console.error('Search failed:', err);
+        } finally {
+            isExecutingFullSearchRef.current = false;
+            setIsFullSearchLoading(false);
         }
     };
 
@@ -569,6 +603,12 @@ const Header = () => {
             };
 
             let data = await getSingleEmailService(payload);
+            // Service returns the error object on failure (e.g. 403) instead of throwing.
+            if (!data?.emailList) {
+                throw new Error(
+                    data?.message || `Failed to fetch email detail (status ${data?.statusCode ?? 'unknown'})`
+                );
+            }
 
             if (data.isScheduled) {
                 data.emailList.isSchedule = true;
@@ -591,7 +631,7 @@ const Header = () => {
             setToolbarState({
                 showBack: !isDesktop,
                 showSelectAll: isDesktop,
-                showRefresh: false,
+                showRefresh: true,
                 showDelete: true,
                 showMarkAsRead: !isDesktop && !isRead,
                 showMarkAsUnread: !isDesktop && isRead,
@@ -679,7 +719,7 @@ const Header = () => {
             return;
         }
 
-        syncFilterFormFromQuery(searchText);
+        syncFilterFormFromQuery(searchText, true);
         setIsFilterDropdownOpen(true);
     };
 
@@ -719,6 +759,9 @@ const Header = () => {
         setSearchResults([]);
         setIsSearchResultDropdownOpen(false);
         setNoResult(false);
+        setIsDropdownSearchLoading(false);
+        setIsFullSearchLoading(false);
+        isExecutingFullSearchRef.current = false;
 
         if (filterForm) {
             const displayQuery = buildDisplaySearchQuery(filterForm, searchTerm);
@@ -743,6 +786,9 @@ const Header = () => {
     const resetSearch = () => {
         allowSearchDropdownRef.current = false;
         prevDebouncedSearchRef.current = '';
+        setIsDropdownSearchLoading(false);
+        setIsFullSearchLoading(false);
+        isExecutingFullSearchRef.current = false;
         reset({
             from: [],
             to: [],
@@ -784,6 +830,13 @@ const Header = () => {
             mountFilterMonthDropdownRef.current(instance);
         },
     }), []);
+
+    const isSearchDebouncing =
+        searchText.trim().length > 0 &&
+        searchText.trim() !== debouncedSearchText.trim();
+    const showDropdownLoader =
+        !isFullSearchLoading &&
+        (isDropdownSearchLoading || isSearchDebouncing);
 
     return (
         <div className={`mail-details-header ${isCalendar ? 'is-calendar-header' : ''} ${isCalendar && !isDesktop ? 'calendar-mobile-header-wrap' : ''}`}>
@@ -885,6 +938,12 @@ const Header = () => {
                                                     }}
                                                 />
 
+                                                {isFullSearchLoading && (
+                                                    <div className="btn-loader" aria-live="polite" aria-busy="true">
+                                                        <SearchFadeLoader label="Searching" />
+                                                    </div>
+                                                )}
+
                                                 <div
                                                     className={`dropdown-menu dropdown-menu-end t-search-dropdown-menu more-list white-scroll-bar searchEmailDropdown-cm t-search-dropdown-menu-home-action ${isSearchResultDropdownOpen ? 'show' : ''}`}
                                                     id="searchEmailDropdown1"
@@ -893,7 +952,19 @@ const Header = () => {
                                                     data-simplebar-auto-hide="false"
                                                 >
                                                     <ul>
-                                                        {searchResults.length > 0 ? (
+                                                        {showDropdownLoader ? (
+                                                            <li className="no-result">
+                                                                <div className="subject-search subject-search--loading">
+                                                                    <div className="subject text-center mb-0">
+                                                                        Searching...
+                                                                    </div>
+                                                                    <SearchFadeLoader
+                                                                        className="search-fade-loader--dropdown"
+                                                                        label="Searching"
+                                                                    />
+                                                                </div>
+                                                            </li>
+                                                        ) : searchResults.length > 0 ? (
                                                             searchResults.map((email) => (
                                                                 <Suspense key={email.uid} fallback={null}>
                                                                     <SearchEmailRow
@@ -924,7 +995,7 @@ const Header = () => {
                                                             </li>
                                                         )}
                                                     </ul>
-                                                    {searchResults.length > 0 && (
+                                                    {!showDropdownLoader && searchResults.length > 0 && (
                                                         <div className="all-search-result-show" onClick={showAllSearchResult}>
                                                             <div className="d-flex align-items-center justify-content-strat">
                                                                 <img src={searchIcon} className="me-2" alt="" width={18} height={18} />
@@ -991,6 +1062,14 @@ const Header = () => {
                                                                         value={field.value || []}
                                                                         onChange={field.onChange}
                                                                         options={contacts}
+                                                                        onInputChange={searchContacts}
+                                                                        onOpen={fetchContacts}
+                                                                        onClose={resetContactSuggestions}
+                                                                        onLoadMore={loadMoreContacts}
+                                                                        hasMore={hasMoreContacts}
+                                                                        isLoading={isLoadingContacts}
+                                                                        isLoadingMore={isLoadingMoreContacts}
+                                                                        showSuggestionBadge={true}
                                                                         placeholder="Select or type to add"
                                                                         isMulti={true}
                                                                     />
@@ -1008,6 +1087,14 @@ const Header = () => {
                                                                         value={field.value || []}
                                                                         onChange={field.onChange}
                                                                         options={contacts}
+                                                                        onInputChange={searchContacts}
+                                                                        onOpen={fetchContacts}
+                                                                        onClose={resetContactSuggestions}
+                                                                        onLoadMore={loadMoreContacts}
+                                                                        hasMore={hasMoreContacts}
+                                                                        isLoading={isLoadingContacts}
+                                                                        isLoadingMore={isLoadingMoreContacts}
+                                                                        showSuggestionBadge={true}
                                                                         placeholder="Select or type to add"
                                                                         isMulti={true}
                                                                     />

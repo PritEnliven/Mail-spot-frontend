@@ -1,8 +1,11 @@
 import { createRoot, type Root } from "react-dom/client";
+import { useCallback } from "react";
 import { MonthDropdown } from "./MonthDropdown";
 
 export function useFlatpickrMonthDropdown(startFromMonth: number) {
-    return (instance: any) => {
+    // Must stay referentially stable — react-flatpickr remounts when `options` identity changes,
+    // which made date inputs blink while unrelated state (e.g. guest contact pagination) updated.
+    return useCallback((instance: any) => {
         // Flatpickr skips building its calendar on mobile user-agents (native date input instead)
         const container = instance.calendarContainer;
         if (!container) return;
@@ -48,5 +51,5 @@ export function useFlatpickrMonthDropdown(startFromMonth: number) {
                 mountEl.remove();
             }, 0);
         });
-    };
+    }, [startFromMonth]);
 }

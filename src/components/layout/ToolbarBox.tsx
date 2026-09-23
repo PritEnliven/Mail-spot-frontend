@@ -18,17 +18,55 @@ import refreshIconHover from "@images/refresh-icon-hover.svg";
 import refreshIcon from "@images/refresh-icon.svg";
 import deleteIconHover from "@images/trash-icon-hover.svg";
 import deleteIcon from "@images/trash-icon.svg";
+import type { Email } from "@models/Email";
 import { moveToFolder, refreshMailBox } from "@services/emailAction/emailActionService";
 import { handleEmailDeletion, verifyBoxName } from "@utils/emailUtil";
 import { useEffect, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import SimpleBar from 'simplebar-react';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
-import CountSkeleton from "@components/ui/CountSkeletonLoader";
+
+function readRefreshTotal(data: unknown): number | null {
+    if (!data || typeof data !== 'object') return null;
+    const record = data as { totalCount?: unknown; pagination?: { totalEmails?: unknown; totalCount?: unknown } };
+    const candidates = [record.totalCount, record.pagination?.totalEmails, record.pagination?.totalCount];
+    for (const value of candidates) {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) return parsed;
+    }
+    return null;
+}
+
+/** Messages strictly newer than the anchor row. Newest-first lists keep the slice before that row. */
+function emailsNewerThan(incoming: Email[], anchorId: string | null, anchorDate?: string): Email[] {
+    if (!incoming.length) return [];
+
+    const anchorTime = anchorDate ? Date.parse(anchorDate) : NaN;
+    if (Number.isFinite(anchorTime)) {
+        return incoming.filter((email) => {
+            if (!email?.messageId || email.messageId === anchorId) return false;
+            const time = Date.parse(email.date);
+            return Number.isFinite(time) && time > anchorTime;
+        });
+    }
+
+    if (!anchorId) return incoming.filter((email) => Boolean(email?.messageId));
+    const anchorIndex = incoming.findIndex((email) => email?.messageId === anchorId);
+    const candidates = anchorIndex >= 0 ? incoming.slice(0, anchorIndex) : incoming;
+    return candidates.filter((email) => Boolean(email?.messageId) && email.messageId !== anchorId);
+}
+
+function normalizeIncomingEmail(email: Email): Email {
+    const rawAttachments = email.attachments as { attachments?: Email['attachments'] } | Email['attachments'];
+    const attachments = rawAttachments && typeof rawAttachments === 'object' && 'attachments' in rawAttachments
+        ? rawAttachments.attachments ?? []
+        : email.attachments || [];
+    return { ...email, attachments };
+}
 
 const ToolbarBox = () => {
     const { pagination, boxName, sidebarState, mailListPage, fetchEmails, readUnreadFilter, fetchSearchEmails, allSearchResult, emailDetailSelected, emails,
-        addNewEmail, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId, isTotalCountLoading } = useMailData();
+        setEmails, setPagination, setTotalEmailBadge, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId } = useMailData();
     const { selectAllEmails, selectedEmails, clearEmailSelection } = useMailSelection();
     const { toolbarState, activeEmailMessageId, setToolbarState, openModal, setIsMailListOpen, setIsLoading } = useMailUI();
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
@@ -113,14 +151,66 @@ const ToolbarBox = () => {
         setIsRefreshing(true);
 
         try {
-            const payLoad = {
+            const newest = emails[0];
+            const newestMessageId = newest?.messageId ?? '';
+            const response = await refreshMailBox({
                 current_active_box: boxName,
-                lastEmailMessageId: emails[0]?.messageId ?? null
-            }
-            const response = await refreshMailBox(payLoad);
+                lastEmailMessageId: newestMessageId,
+            });
             if (response.statusCode === 200) {
-                addNewEmail(response.data.emailList);
-                showSuccess("loading new emails...")
+                const incoming = Array.isArray(response.data?.emailList) ? response.data.emailList as Email[] : [];
+                const newer = emailsNewerThan(incoming, newestMessageId || null, newest?.date);
+                const totalCount = readRefreshTotal(response.data);
+
+                if (totalCount !== null) {
+                    setTotalEmailBadge(totalCount);
+                }
+
+                if (mailListPage <= 1) {
+                    const pageSize = pagination?.emailsPerPage && pagination.emailsPerPage > 0
+                        ? pagination.emailsPerPage
+                        : emails.length;
+                    const seen = new Set(emails.map((email) => email.messageId));
+                    const fresh = newer
+                        .filter((email) => email.messageId && !seen.has(email.messageId))
+                        .map(normalizeIncomingEmail);
+                    const merged = [...fresh, ...emails];
+                    const trimmed = pageSize > 0 ? merged.slice(0, pageSize) : merged;
+                    setEmails(trimmed);
+
+                    if (pagination) {
+                        const start = pagination.startCount || 1;
+                        const totalEmails = totalCount ?? pagination.totalEmails;
+                        const totalPages = pageSize > 0 && totalEmails > 0
+                            ? Math.ceil(totalEmails / pageSize)
+                            : pagination.totalPages;
+                        const currentPage = pagination.currentPage || mailListPage;
+                        setPagination({
+                            ...pagination,
+                            totalEmails,
+                            totalPages,
+                            startCount: start,
+                            endCount: trimmed.length ? start + trimmed.length - 1 : start,
+                            hasNextPage: totalPages > 0 ? currentPage < totalPages : pagination.hasNextPage,
+                            hasPreviousPage: currentPage > 1,
+                        });
+                    }
+                } else if (pagination && totalCount !== null) {
+                    const pageSize = pagination.emailsPerPage > 0 ? pagination.emailsPerPage : 0;
+                    const totalPages = pageSize > 0
+                        ? Math.ceil(totalCount / pageSize)
+                        : pagination.totalPages;
+                    const currentPage = pagination.currentPage || mailListPage;
+                    setPagination({
+                        ...pagination,
+                        totalEmails: totalCount,
+                        totalPages,
+                        hasNextPage: totalPages > 0 ? currentPage < totalPages : pagination.hasNextPage,
+                        hasPreviousPage: currentPage > 1,
+                    });
+                }
+
+                showSuccess("Loading new emails...")
             }
         } catch (error) {
             console.error('Refresh failed:', error);
@@ -178,7 +268,7 @@ const ToolbarBox = () => {
             setToolbarState({
                 showBack: true,
                 showSelectAll: false,
-                showRefresh: false,
+                showRefresh: true,
                 showDelete: true,
                 showMarkAsRead: !isRead,
                 showMarkAsUnread: isRead,
@@ -191,7 +281,7 @@ const ToolbarBox = () => {
         setToolbarState({
             showBack: false,
             showSelectAll: true,
-            showRefresh: !activeEmailMessageId,
+            showRefresh: true,
             showDelete: !!activeEmailMessageId,
             showMarkAsRead: false,
             showMarkAsUnread: false,
@@ -489,11 +579,7 @@ const ToolbarBox = () => {
                                 <>
                                     <span className="of me-1">{pagination.startCount} - {pagination.endCount}</span>
                                     <span className="of me-1"> of </span>
-                                    {isTotalCountLoading ? (
-                                        <CountSkeleton isTotal={true} />
-                                    ) : (
-                                        <span id="totalEmailCount" className="total-email-count"> {pagination.totalEmails} </span>
-                                    )}
+                                    <span id="totalEmailCount" className="total-email-count"> {pagination.totalEmails} </span>
                                 </>
                             )}
                         </li>
@@ -506,7 +592,7 @@ const ToolbarBox = () => {
                                 id="previousPageBtn"
                                 className="btn hover-link icon-hover-effect"
                                 onClick={() => handlePagination(true)}
-                                disabled={!pagination?.hasPreviousPage}
+                                disabled={!pagination?.hasPreviousPage || (pagination.currentPage || mailListPage) <= 1}
                             >
                                 <InteractiveIcon
                                     defaultIcon={leftArrowPaginationIcon}
@@ -524,7 +610,10 @@ const ToolbarBox = () => {
                                 id="nextPageBtn"
                                 className="btn hover-link icon-hover-effect"
                                 onClick={() => handlePagination(false)}
-                                disabled={!pagination?.hasNextPage}
+                                disabled={
+                                    !pagination?.hasNextPage
+                                    || (pagination.totalPages > 0 && (pagination.currentPage || mailListPage) >= pagination.totalPages)
+                                }
                             >
                                 <InteractiveIcon
                                     defaultIcon={rightArrowPaginationIcon}

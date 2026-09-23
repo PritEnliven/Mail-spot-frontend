@@ -524,7 +524,7 @@ const EmailDetail = ({ email }: Props) => {
                                 )}
 
                                 {/* CC */}
-                                {isRootExpanded && isCcBccExpanded && email.cc.length > 0 && (
+                                {isRootExpanded && isCcBccExpanded && (email.cc?.length ?? 0) > 0 && (
                                     <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
                                         <span className="label-sm flex-shrink-0">CC</span>
                                         <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>
@@ -540,7 +540,7 @@ const EmailDetail = ({ email }: Props) => {
                                 )}
 
                                 {/* BCC */}
-                                {isRootExpanded && isCcBccExpanded && email.bcc.length > 0 && (
+                                {isRootExpanded && isCcBccExpanded && (email.bcc?.length ?? 0) > 0 && (
                                     <div className="mail-details-information-details-box d-flex align-items-start m-0" onClick={(e) => e.stopPropagation()}>
                                         <span className="label-sm flex-shrink-0">BCC</span>
                                         <div className="d-flex align-items-center flex-grow-1 tomail-list" style={{ minWidth: 0 }}>

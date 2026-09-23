@@ -296,7 +296,7 @@ function ContactsPage() {
                                                 <div className="contacts-th-head">Address</div>
                                             </th>
                                             <th>
-                                                <div className="contacts-th-head">Birthdate</div>
+                                                <div className="contacts-th-head">Date of birth</div>
                                             </th>
                                             <th>
                                                 <div className="contacts-th-head">Notes</div>

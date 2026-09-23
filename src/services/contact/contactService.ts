@@ -56,10 +56,10 @@ async function getContactsList(params: GetContactsParams = {}) {
     }
 }
 
-async function searchContacts(q: string, limit = 20) {
+async function searchContacts(q: string, limit = 150, page = 1) {
     try {
         const response = await getData('contact/search', {
-            params: { q, limit },
+            params: { q, limit, page },
         });
         return response;
     } catch (error: any) {

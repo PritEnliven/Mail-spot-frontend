@@ -33,9 +33,26 @@ const formatRangeForFlatpickr = (value: Date[] | undefined): string | undefined 
 interface EditRuleConditionsFieldsProps {
     control: Control<EditRuleFormValues>;
     contacts: any[];
+    searchContacts: (query: string) => void;
+    fetchContacts: () => void;
+    resetContactSuggestions: () => void;
+    loadMoreContacts: () => void;
+    hasMoreContacts: boolean;
+    isLoadingContacts: boolean;
+    isLoadingMoreContacts: boolean;
 }
 
-const EditRuleConditionsFields = ({ control, contacts }: EditRuleConditionsFieldsProps) => {
+const EditRuleConditionsFields = ({
+    control,
+    contacts,
+    searchContacts,
+    fetchContacts,
+    resetContactSuggestions,
+    loadMoreContacts,
+    hasMoreContacts,
+    isLoadingContacts,
+    isLoadingMoreContacts,
+}: EditRuleConditionsFieldsProps) => {
     const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
     const mountFilterMonthDropdownRef = useRef(mountFilterMonthDropdown);
     mountFilterMonthDropdownRef.current = mountFilterMonthDropdown;
@@ -69,6 +86,14 @@ const EditRuleConditionsFields = ({ control, contacts }: EditRuleConditionsField
                             value={field.value || []}
                             onChange={field.onChange}
                             options={contacts}
+                            onInputChange={searchContacts}
+                            onOpen={fetchContacts}
+                            onClose={resetContactSuggestions}
+                            onLoadMore={loadMoreContacts}
+                            hasMore={hasMoreContacts}
+                            isLoading={isLoadingContacts}
+                            isLoadingMore={isLoadingMoreContacts}
+                            showSuggestionBadge={true}
                             placeholder="Select or type to add"
                             isMulti={true}
                             isModal={true}
@@ -88,6 +113,14 @@ const EditRuleConditionsFields = ({ control, contacts }: EditRuleConditionsField
                             value={field.value || []}
                             onChange={field.onChange}
                             options={contacts}
+                            onInputChange={searchContacts}
+                            onOpen={fetchContacts}
+                            onClose={resetContactSuggestions}
+                            onLoadMore={loadMoreContacts}
+                            hasMore={hasMoreContacts}
+                            isLoading={isLoadingContacts}
+                            isLoadingMore={isLoadingMoreContacts}
+                            showSuggestionBadge={true}
                             placeholder="Select or type to add"
                             isMulti={true}
                             isModal={true}

@@ -12,6 +12,16 @@ function App() {
   useNotifications();
 
   useEffect(() => {
+    // After a healthy boot, clear one-shot reload guards so a later idle/deploy
+    // failure can auto-recover again without looping forever.
+    const timer = window.setTimeout(() => {
+      sessionStorage.removeItem('mailspot_chunk_reload');
+      sessionStorage.removeItem('mailspot_error_reload');
+    }, 5000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     // Check if current route is calendar
     const isCalendarRoute = location.pathname.includes('/calendar') || location.pathname.includes('mail/calendar');
     const isSettingRoute = location.pathname.includes('/settings') || location.pathname.includes('mail/settings');

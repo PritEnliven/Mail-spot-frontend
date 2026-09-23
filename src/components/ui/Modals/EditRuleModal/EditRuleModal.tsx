@@ -43,7 +43,7 @@ interface EditRuleModalProps {
 function EditRuleModal({ modalId, zIndex, rule, onSuccess }: EditRuleModalProps) {
     const { closeModal, openModal, activeModals } = useMailUI();
     const { sidebarState } = useMailData();
-    const { contacts, fetchContacts } = useContacts();
+    const { contacts, fetchContacts, resetContactSuggestions, searchContacts, loadMoreContacts, hasMoreContacts, isLoadingContacts, isLoadingMoreContacts } = useContacts();
     const [validLabels, setValidLabels] = useState<LabelOption[]>([]);
 
     const {
@@ -200,6 +200,13 @@ function EditRuleModal({ modalId, zIndex, rule, onSuccess }: EditRuleModalProps)
                                     <EditRuleConditionsFields
                                         control={control as unknown as Control<EditRuleFormValues>}
                                         contacts={contacts}
+                                        searchContacts={searchContacts}
+                                        fetchContacts={fetchContacts}
+                                        resetContactSuggestions={resetContactSuggestions}
+                                        loadMoreContacts={loadMoreContacts}
+                                        hasMoreContacts={hasMoreContacts}
+                                        isLoadingContacts={isLoadingContacts}
+                                        isLoadingMoreContacts={isLoadingMoreContacts}
                                     />
                                 </div>
 

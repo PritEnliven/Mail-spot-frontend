@@ -505,6 +505,11 @@ const openEmailDetail = async (
     }
 
     const data = await getSingleEmailService(payload);
+    if (!data?.emailList) {
+        throw new Error(
+            data?.message || `Failed to fetch email detail (status ${data?.statusCode ?? 'unknown'})`
+        );
+    }
     if (data.isScheduled) {
         data.emailList.isSchedule = true;
     }

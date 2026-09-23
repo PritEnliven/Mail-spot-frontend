@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom'
 
 import App from './App.tsx';
 import AppToast from '@components/ui/toast/ToastNotification.tsx';
+import ErrorBoundary from '@components/ErrorBoundary';
 
 import 'ckeditor5/ckeditor5.css';
 import 'simplebar-react/dist/simplebar.min.css';
@@ -15,9 +16,11 @@ import 'react-tooltip/dist/react-tooltip.css';
 import GlobalUIRoot from './GlobalUiRoot.tsx';
 
 createRoot(document.getElementById('root')!).render(
-    <BrowserRouter>
-        <GlobalUIRoot />
-        <App />
-        <AppToast />
-    </BrowserRouter>
+    <ErrorBoundary>
+        <BrowserRouter>
+            <GlobalUIRoot />
+            <App />
+            <AppToast />
+        </BrowserRouter>
+    </ErrorBoundary>
 )

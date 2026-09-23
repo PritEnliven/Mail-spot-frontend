@@ -180,7 +180,6 @@ const LoginPage = () => {
                                                     render={({ field }) => (
                                                         <input type={showPassword ? "password" : "text"} id="password"
                                                             className="form-control"
-                                                            maxLength={25}
                                                             placeholder="Enter your password"
                                                             {...field} />
                                                     )}

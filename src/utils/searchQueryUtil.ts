@@ -59,6 +59,105 @@ export function buildSearchQueryFromFilters(filter: FilterEmailFormValues): stri
     return parts.join(' ');
 }
 
+/** Strip free-text tokens already represented in From/To/Has the words so they are not duplicated. */
+export function omitFilterCoveredFreeText(
+    freeText: string | null | undefined,
+    filter: FilterEmailFormValues | null | undefined,
+): string {
+    let text = freeText?.trim() ?? '';
+    if (!text || !filter) return text;
+
+    const coveredEmails = [...(filter.from ?? []), ...(filter.to ?? [])]
+        .map((email) => email.trim())
+        .filter(Boolean);
+
+    for (const email of coveredEmails) {
+        const escaped = email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        text = text.replace(new RegExp(escaped, 'gi'), ' ');
+    }
+
+    const hasWord = filter.hasWord?.trim();
+    if (hasWord) {
+        const escaped = hasWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Whole phrase only — a short hasWord like "r" must not eat letters inside "raj".
+        text = text.replace(new RegExp(`(^|\\s)${escaped}(?=\\s|$)`, 'gi'), '$1');
+    }
+
+    return text.replace(/\s+/g, ' ').trim();
+}
+
+function emptyFilterForm(): FilterEmailFormValues {
+    return {
+        from: [],
+        to: [],
+        subject: '',
+        hasWord: '',
+        doesNotHave: '',
+        attachmentSize: undefined,
+        dateRange: undefined,
+        boxName: '',
+    };
+}
+
+function isPlainDateSearchTerm(text: string): boolean {
+    const trimmed = text.trim();
+    if (!trimmed) return false;
+
+    const compactRange = trimmed.match(/^(\d{2}[/-]\d{2}[/-]\d{4})to(\d{2}[/-]\d{2}[/-]\d{4})$/i);
+    if (compactRange) {
+        return true;
+    }
+
+    const parts = trimmed.split(/\s+to\s+/i).map((part) => part.trim()).filter(Boolean);
+    if (parts.length === 0 || parts.length > 2) return false;
+
+    return parts.every((part) => /^\d{2}[/-]\d{2}[/-]\d{4}$/.test(part));
+}
+
+/**
+ * Used when opening the filter panel: map leftover free text into Has the words.
+ * Plain dates stay out of Has the words. An email with no from: or to: keyword
+ * is free text and goes into Has the words.
+ */
+export function promoteSearchQueryToFilterForm(
+    query: string,
+    activeFilterForm: FilterEmailFormValues | null = null,
+): {
+    filterForm: FilterEmailFormValues | null;
+    searchTerm: string;
+} {
+    const resolved = resolveSearchFromQuery(query, activeFilterForm);
+    let filterForm = resolved.filterForm;
+    let searchTerm = resolved.searchTerm.trim();
+
+    if (!searchTerm) {
+        return resolved;
+    }
+
+    // Plain dates should not fill "Has the words"
+    if (isPlainDateSearchTerm(searchTerm)) {
+        return resolved;
+    }
+
+    const base = filterForm ?? emptyFilterForm();
+    if (base.hasWord?.trim()) {
+        return {
+            filterForm: base,
+            searchTerm: omitFilterCoveredFreeText(searchTerm, base),
+        };
+    }
+
+    filterForm = {
+        ...base,
+        hasWord: searchTerm,
+    };
+
+    return {
+        filterForm,
+        searchTerm: '',
+    };
+}
+
 export function buildDisplaySearchQuery(
     filterForm: FilterEmailFormValues | null | undefined,
     freeTextSearchTerm?: string | null,
@@ -67,7 +166,7 @@ export function buildDisplaySearchQuery(
         filterForm && getAppliedFilterCount(filterForm) > 0
             ? buildSearchQueryFromFilters(filterForm)
             : '';
-    const searchPart = freeTextSearchTerm?.trim() ?? '';
+    const searchPart = omitFilterCoveredFreeText(freeTextSearchTerm, filterForm);
 
     if (filterPart && searchPart) return `${searchPart} ${filterPart}`;
     return filterPart || searchPart;
@@ -111,7 +210,10 @@ export function resolveSearchFromQuery(
     }
 
     if (activeFilterForm && getAppliedFilterCount(activeFilterForm) > 0) {
-        return { filterForm: activeFilterForm, searchTerm: trimmed };
+        return {
+            filterForm: activeFilterForm,
+            searchTerm: omitFilterCoveredFreeText(trimmed, activeFilterForm),
+        };
     }
 
     return { filterForm: null, searchTerm: trimmed };

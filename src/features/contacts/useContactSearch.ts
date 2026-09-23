@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ContactAutocompleteOption } from '@models/Contact';
 import { searchContacts as searchContactsApi } from '@services/contact/contactService';
 
-const AUTOCOMPLETE_LIMIT = 20;
+const AUTOCOMPLETE_LIMIT = 150;
 const DEBOUNCE_MS = 300;
 
 function mapToAutocompleteOptions(items: any[]): ContactAutocompleteOption[] {
