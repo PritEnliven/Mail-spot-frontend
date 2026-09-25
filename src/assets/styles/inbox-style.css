@@ -1126,7 +1126,11 @@ div.accordion-button.custom-toggle-btn
   .quoted-content {
     margin-top: 10px !important;
     padding: 0 !important;
-    background-color: #f9f9f9 !important;
+    background-color: transparent !important;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    box-sizing: border-box;
   }
 
 /* ---------- Calendar invite card ---------- */

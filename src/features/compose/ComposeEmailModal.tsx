@@ -31,7 +31,7 @@ import { useContacts, useMailUI } from '../../context/index';
 import { useSettings } from '@context/SettingsContext';
 import { useComposeFormContext } from '@context/ComposeFormContext';
 import { useCcBccToggle } from '@hooks/useCcBccToggle';
-import { useSignatureManager } from '@hooks/useSignatureManager';
+import { buildSignatureHtml, useSignatureManager } from '@hooks/useSignatureManager';
 import { useAttachmentManager, isExistingAttachment } from '@hooks/useAttachmentManager';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { composeSchema, type ComposeFormValues } from './compose.schema';
@@ -155,8 +155,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 // `response.data` can be null even when statusCode is 200.
                 const signatureBody = response?.data?.body;
                 if (!emailData?.body && signatureBody) {
-                    const signatureWithId = `<br><br><br><div id="email-signature" data-signature-id="default">${signatureBody}</div>`;
-                    setValue('body', signatureWithId);
+                    setValue('body', buildSignatureHtml(signatureBody, 'default'));
                 }
             } catch (e) {
                 console.error('Failed to fetch default signature:', e);

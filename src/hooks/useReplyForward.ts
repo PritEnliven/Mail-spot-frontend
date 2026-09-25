@@ -1,6 +1,7 @@
 import type { Email } from '@models/Email';
 import { useMailData } from '@context/MailDataContext';
 import { formatDate, TimeFormat } from '@utils/dateUtil';
+import { prepareQuotedEmailHtml } from '@utils/emailHtmlUtil';
 import { useCallback, useState } from 'react';
 import { useContacts } from '../context/index';
 
@@ -134,7 +135,7 @@ export const useReplyForward = () => {
         const cc = email.cc?.map(v => v.email).join(', ');
 
         const containerStyle =
-            'background-color:#f9f9f9;padding:15px;border-radius:4px;margin-top:10px;';
+            'width:100%;max-width:100%;overflow-x:auto;box-sizing:border-box;margin-top:10px;';
 
         const header = `
                     <br>
@@ -158,12 +159,10 @@ export const useReplyForward = () => {
         let extraStyle = 'color:#999;';
 
         if (email.body) {
-            content = email.body
-                .replace(/<style[^>]*>.*?<\/style>/gis, '')
-                .replace(/:root\s*\{[^}]*\}/g, '')
-                .replace(/<meta[^>]*>/gi, '')
-                .replace(/<link[^>]*>/gi, '');
-
+            // Keep layout CSS by inlining it. Stripping <style> (old behavior)
+            // made centered marketing templates shift left in the reply and
+            // for recipients after send.
+            content = prepareQuotedEmailHtml(email.body);
             extraStyle = '';
         } else if (email.bodyText) {
             content = email.bodyText

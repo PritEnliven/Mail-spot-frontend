@@ -17,6 +17,24 @@ const HIGHLIGHT_STYLE = `
     height: auto;
   }
 
+  svg {
+    max-width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* iCloud calendar RSVP reply icons (Accept / Decline / Maybe) */
+  a[href*="icloud.com"] img,
+  a[href*="gateway.icloud.com"] img {
+    width: 20px !important;
+    height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+    object-fit: contain !important;
+    vertical-align: middle !important;
+    display: inline-block !important;
+  }
+
   .search-term-highlight {
     background-color: #FFE799;
     color: inherit;
@@ -26,14 +44,20 @@ const HIGHLIGHT_STYLE = `
 
     .quoted-content {
       margin-top: 8px !important;
-      font-size:18px !important;
-      background-color: #F5F5F5 !important;
+      /* Do not force font-size/background — that breaks quoted marketing templates. */
+      background-color: transparent !important;
+      padding: 0 !important;
   }
  
 `;
 
 /** Pixel sizes at or below this are treated as fixed (e.g. signature icons). */
 const FIXED_IMG_PX_MAX = 128;
+
+/** Apple iCloud / calendar invite RSVP icons (Accept / Decline / Maybe). */
+const RSVP_ACTION_ICON_PX = 26;
+const RSVP_ACTION_HINT =
+  /\b(accept|decline|maybe|tentative)\b/i;
 
 function parseHtmlPx(value: string | null): number | null {
   if (!value) return null;
@@ -73,6 +97,126 @@ function honorHtmlImgPixelSizes(root: ParentNode) {
   });
 }
 
+function looksLikeCalendarInviteActions(root: ParentNode): boolean {
+  const text = (root.textContent || "").toLowerCase();
+  const hasAccept = text.includes("accept");
+  const hasDecline = text.includes("decline");
+  const hasMaybe = text.includes("maybe");
+  return (hasAccept && hasDecline) || (hasAccept && hasMaybe) || (hasDecline && hasMaybe);
+}
+
+function lockIconBox(el: HTMLElement | SVGElement, sizePx: number) {
+  el.style.setProperty("width", `${sizePx}px`, "important");
+  el.style.setProperty("height", `${sizePx}px`, "important");
+  el.style.setProperty("max-width", `${sizePx}px`, "important");
+  el.style.setProperty("max-height", `${sizePx}px`, "important");
+  el.style.setProperty("object-fit", "contain", "important");
+  el.style.setProperty("vertical-align", "middle", "important");
+  el.style.setProperty("display", "inline-block", "important");
+  // Apple templates often set width:100% on these assets
+  el.removeAttribute("width");
+  el.removeAttribute("height");
+}
+
+/**
+ * Find the Accept · Decline · Maybe action row/cells.
+ * Icons and labels are often in separate nested spans/links, so we key off the
+ * row (or the parent that holds icon + label) — not a span that only wraps the image.
+ */
+function findRsvpActionContainers(root: ParentNode): Element[] {
+  const containers: Element[] = [];
+  const seen = new Set<Element>();
+
+  const add = (el: Element | null | undefined) => {
+    if (!el || seen.has(el)) return;
+    seen.add(el);
+    containers.push(el);
+  };
+
+  const isActionClusterText = (text: string) => {
+    const t = text.toLowerCase();
+    const hasAccept = t.includes("accept");
+    const hasDecline = t.includes("decline");
+    const hasMaybe = t.includes("maybe");
+    return (
+      (hasAccept && hasDecline) ||
+      (hasAccept && hasMaybe) ||
+      (hasDecline && hasMaybe)
+    );
+  };
+
+  // Prefer the tightest action row (avoid the outer table that wraps the whole email).
+  root.querySelectorAll("tr").forEach((tr) => {
+    const text = (tr.textContent || "").replace(/\s+/g, " ").trim();
+    if (!text || text.length > 160) return;
+    if (!isActionClusterText(text)) return;
+
+    add(tr);
+
+    // Icons sometimes sit in the previous/next row with little/no label text.
+    for (const sibling of [tr.previousElementSibling, tr.nextElementSibling]) {
+      if (!sibling || sibling.tagName !== "TR") continue;
+      const siblingText = (sibling.textContent || "").replace(/\s+/g, " ").trim();
+      const hasIcons = sibling.querySelector("img, svg");
+      if (hasIcons && siblingText.length <= 24) {
+        add(sibling);
+      }
+    }
+  });
+
+  if (containers.length > 0) return containers;
+
+  // Fallback for div-based layouts: label link/cell + neighboring icon wrapper.
+  root.querySelectorAll("td, th, a, span, div, p").forEach((el) => {
+    const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (!RSVP_ACTION_HINT.test(text) || text.length > 64) return;
+
+    add(el);
+
+    const prev = el.previousElementSibling;
+    if (
+      prev &&
+      prev.querySelector("img, svg") &&
+      (prev.textContent || "").replace(/\s+/g, "").length <= 4
+    ) {
+      add(prev);
+    }
+
+    const parent = el.parentElement;
+    if (parent) {
+      const parentText = (parent.textContent || "").replace(/\s+/g, " ").trim();
+      if (parentText.length <= 160 && (isActionClusterText(parentText) || RSVP_ACTION_HINT.test(parentText))) {
+        add(parent);
+      }
+    }
+  });
+
+  return containers;
+}
+
+/**
+ * Apple iCloud calendar invites ship hi-res Accept/Decline/Maybe assets that
+ * render oversized when template CSS sizing does not apply in the shadow DOM.
+ */
+function constrainCalendarInviteActionIcons(root: ParentNode) {
+  if (!looksLikeCalendarInviteActions(root)) return;
+
+  const containers = findRsvpActionContainers(root);
+  if (containers.length === 0) return;
+
+  containers.forEach((container) => {
+    container.querySelectorAll("img").forEach((node) => {
+      lockIconBox(node as HTMLImageElement, RSVP_ACTION_ICON_PX);
+    });
+    container.querySelectorAll("svg").forEach((node) => {
+      const svg = node as SVGElement;
+      lockIconBox(svg, RSVP_ACTION_ICON_PX);
+      svg.setAttribute("width", String(RSVP_ACTION_ICON_PX));
+      svg.setAttribute("height", String(RSVP_ACTION_ICON_PX));
+    });
+  });
+}
+
 function EmailBody({ html, searchTerm, attachments }: EmailBodyProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const attachmentsKey = (attachments || [])
@@ -108,6 +252,8 @@ function EmailBody({ html, searchTerm, attachments }: EmailBodyProps) {
 
     // Preserve width/height/style; lock small HTML pixel sizes (signature icons).
     honorHtmlImgPixelSizes(container);
+    // Apple iCloud invites: keep Accept / Decline / Maybe icons at a sane size.
+    constrainCalendarInviteActionIcons(container);
 
     container.querySelectorAll("a[href]").forEach((anchor) => {
       const resolvedHref = resolveExternalLinkUrl(anchor.getAttribute("href"));
@@ -161,6 +307,18 @@ function EmailBody({ html, searchTerm, attachments }: EmailBodyProps) {
     });
 
     shadowRoot.appendChild(container);
+
+    // Re-apply after layout/cid images settle — Apple assets often report size late.
+    constrainCalendarInviteActionIcons(container);
+    container.querySelectorAll("img").forEach((node) => {
+      const img = node as HTMLImageElement;
+      if (img.complete) return;
+      img.addEventListener(
+        "load",
+        () => constrainCalendarInviteActionIcons(container),
+        { once: true },
+      );
+    });
 
     const clickHandler = (e: Event) => {
       const target = e.composedPath()[0] as HTMLElement;

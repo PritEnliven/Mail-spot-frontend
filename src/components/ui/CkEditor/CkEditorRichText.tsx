@@ -204,29 +204,19 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
           editor.ui.view.editable.element
         );
 
-        // Your existing HTML support configuration
+        // HTML support configuration
+        // NOTE: the full allow-list for pasted email HTML lives in
+        // ckeditor.config.ts (htmlSupport.allow) — that's what governs what
+        // GHS accepts at all. This runtime block only trims a couple of
+        // attributes we never want editable, regardless of source.
+        // Disallow rules always win over allow rules in GHS, regardless of
+        // registration order or which of the two (config vs. runtime
+        // dataFilter) added them — so keep this list short and deliberate.
         const htmlSupport = editor.plugins.get('GeneralHtmlSupport');
         if (htmlSupport?.dataFilter) {
-          htmlSupport.dataFilter.disallowElement('figure');
-
           htmlSupport.dataFilter.disallowAttributes({
             name: /^.*$/,
-            classes: []
-          });
-
-          htmlSupport.dataFilter.disallowAttributes({
-            name: /^.*$/,
-            attributes: ['contenteditable', 'tabindex', 'valign']
-          });
-
-          // Allow email-friendly elements
-          ['table', 'thead', 'tbody', 'tr', 'td', 'th', 'img', 'a', 'span', 'div'].forEach(tag => {
-            htmlSupport.dataFilter.allowElement(tag);
-          });
-
-          htmlSupport.dataFilter.allowAttributes({
-            name: /^.*$/,
-            attributes: ['width', 'height', 'border', 'cellpadding', 'cellspacing', 'bgcolor', 'align', 'valign', 'style', 'class', 'href', 'target', 'src', 'alt']
+            attributes: ['contenteditable', 'tabindex']
           });
         }
 

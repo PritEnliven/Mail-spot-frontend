@@ -323,8 +323,15 @@ const ckEditorConfig: any = {
         ] as any
     },
     htmlSupport: {
+        // Broad allow-list so pasted HTML email templates aren't unwrapped
+        // before GHS's runtime dataFilter (see onReady in CkEditorRichText)
+        // ever gets a chance to run. Emails commonly use 'center' (legacy but
+        // still the most Outlook-safe centering wrapper), 'figure' for image
+        // blocks, 'colgroup'/'col' for column widths, plain lists/headings,
+        // and legacy 'font'/'u'/'b'/'i' tags — any tag NOT on this list gets
+        // unwrapped on paste, and its style/class/attributes are lost with it.
         allow: [{
-            name: /^(table|thead|tbody|tr|td|th|img|a|span|div|p|br|strong|em)$/,
+            name: /^(table|thead|tbody|tfoot|tr|td|th|colgroup|col|img|a|span|div|p|br|strong|em|b|i|u|s|font|center|figure|figcaption|ul|ol|li|h1|h2|h3|h4|h5|h6|hr|blockquote|pre|code)$/,
             attributes: true,
             classes: true,
             styles: true

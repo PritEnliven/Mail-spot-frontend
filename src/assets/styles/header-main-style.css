@@ -4669,6 +4669,21 @@ body .flatpickr-day.today {
   border-radius: 4px !important;
 }
 
+/* When From is after today, To picker's today must look/act disabled like other minDate-blocked days */
+body .flatpickr-day.flatpickr-disabled,
+body .flatpickr-day.flatpickr-disabled:hover,
+body .flatpickr-day.flatpickr-disabled:focus,
+body .flatpickr-day.today.flatpickr-disabled,
+body .flatpickr-day.today.flatpickr-disabled:hover,
+body .flatpickr-day.today.flatpickr-disabled:active,
+body .flatpickr-day.today.flatpickr-disabled:focus {
+  color: rgba(0, 0, 0, 0.25) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
 body .flatpickr-day.selected,
 body .flatpickr-day.startRange,
 body .flatpickr-day.endRange,

@@ -4,6 +4,7 @@ import { useCalendar } from '@context/CalendarContext';
 import { useMailUI } from '@context/MailUIContext';
 import type { UserCalendar } from '@models/CalendarModels';
 import { deleteCalendar } from '@services/calendar/calendarsService';
+import plusIconWhite from '@images/plus-icon-white.svg';
 import { useState } from 'react';
 
 function CalendarList() {
@@ -102,7 +103,8 @@ function CalendarList() {
                 className="calendar-list-create-btn"
                 onClick={openCreateModal}
             >
-                Create calendar
+                <img src={plusIconWhite} alt="" width={16} height={16} aria-hidden="true" />
+                Create new calendar
             </button>
         </div>
     );

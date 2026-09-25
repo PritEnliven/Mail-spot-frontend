@@ -3,6 +3,17 @@ import { getActiveAccountId } from "@services/apiService";
 import { useAccount } from "@context/AccountContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/** Two blank lines above the signature so the caret can start the message there. */
+export const SIGNATURE_SPACER = '<p><br></p><p><br></p>';
+
+const SIGNATURE_BLOCK_PATTERN =
+    /(?:(?:<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>|<br\s*\/?>)\s*){0,4}<div[^>]*id="email-signature"[^>]*>[\s\S]*?<\/div>/i;
+
+export function buildSignatureHtml(body: string, signatureId?: string): string {
+    const idAttr = signatureId ? ` data-signature-id="${signatureId}"` : '';
+    return `${SIGNATURE_SPACER}<div id="email-signature"${idAttr}>${body}</div>`;
+}
+
 export interface Signature {
     _id: string;
     signatureName: string;
@@ -60,16 +71,11 @@ export const useSignatureManager = () => {
 
         const body = getCurrentBody() || "";
 
-        // Remove existing signature
-        const cleanedBody = body.replace(
-            /<div[^>]*id="email-signature"[^>]*>[\s\S]*?<\/div>/i,
-            ""
-        );
+        // Remove existing signature and the blank lines that sit directly above it.
+        const cleanedBody = body.replace(SIGNATURE_BLOCK_PATTERN, "");
 
         const newSignature = signature.body
-            ? `<div id="email-signature" data-signature-id="${signature._id}">
-                ${signature.body}
-               </div>`
+            ? buildSignatureHtml(signature.body, signature._id)
             : "";
 
         // Find smart reply, quoted message, and forwarded message start

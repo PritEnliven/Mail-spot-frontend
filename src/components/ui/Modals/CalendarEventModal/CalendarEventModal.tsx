@@ -248,7 +248,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
                 eventTimeZone: 'Asia/Kolkata',
             });
         } else {
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatDate(new Date(), TimeFormat.YYYYMMDD) as string;
             reset({
                 title: '',
                 eventColor: '',
@@ -286,15 +286,13 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         }
     };
 
+    /** Date-only YYYY-MM-DD from local calendar fields — never UTC (avoids off-by-one). */
     const formatDateForCalendarEvent = (date: string | Date | undefined) => {
         if (!date) return '';
-
-        if (date instanceof Date) {
-            return date.toISOString().split('T')[0];
+        if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return date;
         }
-
-        const dateObj = new Date(date);
-        return isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[0];
+        return (formatDate(date, TimeFormat.YYYYMMDD) as string) || '';
     };
 
     const onSubmit = async (data: CalendarEventModalFormValues) => {
@@ -304,10 +302,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         const payload = {
             title: data.title,
             startDate: formatDateForCalendarEvent(data.eventStartDate),
-            endDate: (() => {
-                const date = new Date(data.eventEndDate);
-                return formatDateForCalendarEvent(date);
-            })(),
+            endDate: formatDateForCalendarEvent(data.eventEndDate),
             startTime: formatTime24HrFrom12HrString(data.eventStartTime),
             endTime: formatTime24HrFrom12HrString(data.eventEndTime),
             allDayCheckbox: data.allDayCheckbox,
@@ -434,14 +429,22 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
     const mountMonthDropdown = useFlatpickrMonthDropdown(startFromMonth);
     const startDateOnChangeRef = useRef<(value: string) => void>(() => {});
     const endDateOnChangeRef = useRef<(value: string) => void>(() => {});
+    const syncEndDateAfterStartRef = useRef<(startYmd: string) => void>(() => {});
+
+    syncEndDateAfterStartRef.current = (startYmd: string) => {
+        const currentEnd = getValues('eventEndDate');
+        if (!currentEnd || currentEnd < startYmd) {
+            setValue('eventEndDate', startYmd, { shouldDirty: true });
+        }
+    };
 
     const minEndDate = useMemo(() => {
         if (!eventStartDate) return undefined;
-        const [year, month, day] = eventStartDate.split('-').map(Number);
-        const localStart = new Date(year, month - 1, day);
-        localStart.setHours(0, 0, 0, 0);
-        return localStart;
+        return parseDateForFlatpickr(eventStartDate);
     }, [eventStartDate]);
+
+    const formatFlatpickrLocalYmd = (date: Date) =>
+        formatDate(date, TimeFormat.YYYYMMDD) as string;
 
     const startFlatpickrOptions = useMemo(() => ({
         mode: 'single' as const,
@@ -452,7 +455,10 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         onChange: (dates: Date[]) => {
             const date = dates[0];
             if (date) {
-                startDateOnChangeRef.current(date.toISOString().split('T')[0]);
+                const ymd = formatFlatpickrLocalYmd(date);
+                startDateOnChangeRef.current(ymd);
+                // Keep To date valid so its calendar opens on the same month as From
+                syncEndDateAfterStartRef.current(ymd);
             } else {
                 startDateOnChangeRef.current('');
             }
@@ -465,14 +471,24 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         allowInput: false,
         minDate: minEndDate,
         disableMobile: true,
-        onReady: (_dates: Date[], _str: string, instance: any) => mountMonthDropdown(instance),
+        onReady: (_dates: Date[], _str: string, instance: any) => {
+            mountMonthDropdown(instance);
+            // Ensure calendar opens on the selected / min month (not a stale prior month)
+            const jumpTo = instance.selectedDates?.[0] || minEndDate;
+            if (jumpTo) {
+                instance.jumpToDate(jumpTo, true);
+            }
+        },
+        onOpen: (_dates: Date[], _str: string, instance: any) => {
+            const jumpTo = instance.selectedDates?.[0] || minEndDate;
+            if (jumpTo) {
+                instance.jumpToDate(jumpTo, true);
+            }
+        },
         onChange: (dates: Date[]) => {
             const date = dates[0];
             if (date) {
-                const localYear = date.getFullYear();
-                const localMonth = String(date.getMonth() + 1).padStart(2, '0');
-                const localDay = String(date.getDate()).padStart(2, '0');
-                endDateOnChangeRef.current(`${localYear}-${localMonth}-${localDay}`);
+                endDateOnChangeRef.current(formatFlatpickrLocalYmd(date));
             } else {
                 endDateOnChangeRef.current('');
             }

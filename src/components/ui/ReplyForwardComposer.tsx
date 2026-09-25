@@ -10,7 +10,7 @@ import { useCcBccToggle } from "@hooks/useCcBccToggle";
 import { useComposeForm } from "@hooks/useComposeForm";
 import type { ReplyForwardType } from "@hooks/useReplyForward";
 import { useReplyForward } from "@hooks/useReplyForward";
-import { useSignatureManager } from '@hooks/useSignatureManager';
+import { buildSignatureHtml, useSignatureManager } from '@hooks/useSignatureManager';
 import attachmentStrokeRoundedIconHover from '@images/attachment-stroke-rounded-icon-hover.svg';
 import attachmentStrokeRoundedIcon from '@images/attachment-stroke-rounded-icon.svg';
 import generateAiIcon from '@images/generate-ai-icon.svg';
@@ -78,7 +78,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
         trigger,
         formState: { errors }
     } = useComposeForm();
-    const { isCcOpen, isBccOpen, toggleCc, toggleBcc } = useCcBccToggle();
+    const { isCcOpen, isBccOpen, toggleBcc } = useCcBccToggle();
     const { attachments, error, removeFile, handleFileChange } = useAttachmentManager();
     const { getRecipients, getSubject, getBody } = useReplyForward();
     const [isGenerateEmailCardOpen, setIsGenerateEmailCardOpen] = useState(false);
@@ -188,11 +188,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
 
         const currentBody = getValues("body") || "";
 
-        const signatureHtml = `
-                <div id="email-signature">
-                ${defaultSignature}
-                </div>
-                `;
+        const signatureHtml = buildSignatureHtml(defaultSignature);
 
         const quotedIndex = currentBody.indexOf('id="quoted-message"');
 
@@ -396,7 +392,10 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                             </div>
                         </div>
                         <div className="d-flex align-items-center">
-                            <a type="button" className={`fs-12 me-2 link-ap ${isCcOpen ? 'active-cc-bcc' : ''}`} onClick={toggleCc}>CC</a>
+                            {/* DO NOT REMOVE BELOW COMMENTED CODE LINE AT ANY CONDITION/SITUATION
+                                @Note: Before updating/removing ask Raj Vasoya
+                            */}
+                            {/* <a type="button" className={`fs-12 me-2 link-ap ${isCcOpen ? 'active-cc-bcc' : ''}`} onClick={toggleCc}>CC</a> */}
                             <a type="button" className={`fs-12 link-ap ${isBccOpen ? 'active-cc-bcc' : ''}`} onClick={toggleBcc}>BCC</a>
                         </div>
                     </div>
@@ -404,7 +403,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                         <div className="invalid-feedback d-block mb-2">{errors.to.message}</div>
                     )}
                     <Collapse in={isCcOpen} timeout={200}>
-                        <div id="composeCcSection">
+                        <div id="composeCcSection" className="collapse show">
                             <div className="new-input-group new-input-group-border profile-cc-add">
                                 <div className="form-group form-row select2-profile">
                                     <label className="control-label"><span className="control-label-span">CC</span></label>
