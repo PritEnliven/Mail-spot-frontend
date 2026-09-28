@@ -18,6 +18,8 @@ import greenDarkColorIcon from "@images/folder-green-dark-icon.svg";
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import folderIcon from "@images/plus-icon.svg";
 import folderIconHover from "@images/plus-icon-hover.svg";
+import refreshIcon from "@images/refresh-icon.svg";
+import refreshIconHover from "@images/refresh-icon-hover.svg";
 // import arrowSubFolderIcon from "@images/arrow-sub-folder-icon-16.svg";
 // import arrowSubFolderHoverIcon from "@images/arrow-sub-folder-hover-icon-16.svg"
 import FolderActionsDropdown from '@components/ui/sidebar/FolderActionsDropdown';
@@ -40,6 +42,8 @@ interface CustomFolderSectionProps {
   onEditFolder?: (boxId: string) => void;
   onDeleteFolder?: (boxId: string, folderName: string) => void;
   onCreateFolder?: () => void;
+  onRefreshFolders?: () => void | Promise<void>;
+  isRefreshingFolders?: boolean;
 }
 
 export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
@@ -48,7 +52,9 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   onChangeBox,
   onEditFolder,
   onDeleteFolder,
-  onCreateFolder
+  onCreateFolder,
+  onRefreshFolders,
+  isRefreshingFolders = false,
 }) => {
   const { isSidebarOpen } = useMailUI();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -146,28 +152,62 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   return (
     <div className="create-folder-sec" id="customFolderSection">
       <div className="sidebar-create-folder-box-main">
-        <span
-          className="add-folder-btn tooltips-ds"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (onCreateFolder) {
-              onCreateFolder();
-            }
-          }}
-          style={{ cursor: 'pointer' }}
-        >
-          <InteractiveIcon
-            defaultIcon={folderIcon}
-            hoverIcon={folderIconHover}
-            activeIcon=""
-            isActive={false}
-            alt=""
-            className="interactive-icon hover-image"
-            renderAs="img"
-            tooltip={isSidebarOpen ? '' : 'Add Folder'}
-          />
-        </span>
+        <div className="folder-header-actions">
+          <span
+            className={`refresh-folder-btn tooltips-ds${isRefreshingFolders ? ' is-loading' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isRefreshingFolders && onRefreshFolders) {
+                onRefreshFolders();
+              }
+            }}
+            style={{ cursor: isRefreshingFolders ? 'default' : 'pointer' }}
+            aria-label="Refresh folders"
+            aria-busy={isRefreshingFolders}
+          >
+            {isRefreshingFolders ? (
+              <span
+                className="spinner-border spinner-border-sm text-primary"
+                style={{ width: 14, height: 14, borderWidth: 2 }}
+                role="status"
+              />
+            ) : (
+              <InteractiveIcon
+                defaultIcon={refreshIcon}
+                hoverIcon={refreshIconHover}
+                activeIcon=""
+                isActive={false}
+                alt=""
+                className="interactive-icon hover-image"
+                renderAs="img"
+                tooltip="Refresh folders"
+              />
+            )}
+          </span>
+          <span
+            className="add-folder-btn tooltips-ds"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onCreateFolder) {
+                onCreateFolder();
+              }
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            <InteractiveIcon
+              defaultIcon={folderIcon}
+              hoverIcon={folderIconHover}
+              activeIcon=""
+              isActive={false}
+              alt=""
+              className="interactive-icon hover-image"
+              renderAs="img"
+              tooltip={isSidebarOpen ? '' : 'Add Folder'}
+            />
+          </span>
+        </div>
         <a
           className="sidebar-create-folder-box tooltips-ds open-folder-box"
           onClick={(e) => {

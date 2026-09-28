@@ -42,16 +42,8 @@ export const useReplyForward = () => {
             sourceEmail: email,
             targetId: targetId || null
         });
-
-        // Auto-scroll to the target element if provided
-        if (targetId) {
-            setTimeout(() => {
-                const element = document.getElementById(targetId);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
-        }
+        // Scroll into view is handled by ReplyForwardComposer on mount so it
+        // waits for the lazy-loaded composer (long threads / tall mail bodies).
     }, [fetchContacts, refreshUserPermissions]);
 
     const closeReplyForward = useCallback(() => {

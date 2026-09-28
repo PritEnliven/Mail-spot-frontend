@@ -5507,13 +5507,24 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   padding: 0 8px;
 }
 
+.folder-header-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 1;
+}
+
 .sidebar-create-folder-box {
   padding: 4px 6px;
   font-size: 12px;
   font-weight: 600;
   border-radius: 5px;
   margin: 0 0 13px 0;
-  width: calc(100% - 32px);
+  width: calc(100% - 72px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5526,9 +5537,9 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   font-weight: 500;
 }
 
-.add-folder-btn {
+.add-folder-btn,
+.refresh-folder-btn {
   cursor: pointer;
-  position: absolute;
   width: 32px;
   height: 24px;
   border-radius: 5px;
@@ -5536,9 +5547,16 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   display: flex;
   align-items: center;
   justify-content: center;
-  top: 50%;
-  right: 8px;
-  transform: translate(0, -50%);
+}
+
+.refresh-folder-btn.is-loading {
+  pointer-events: none;
+}
+
+.refresh-folder-btn .interactive-icon,
+.refresh-folder-btn img {
+  width: 14px;
+  height: 14px;
 }
 
 .create-folder-sec::after {
@@ -5933,12 +5951,17 @@ nav#navbarList.nav-collepse::after {
   display: none;
 }
 
-.nav-collepse .add-folder-btn {
+.nav-collepse .folder-header-actions {
+  position: unset;
+  transform: unset;
+  margin: 0 0 8px 0;
+}
+
+.nav-collepse .add-folder-btn,
+.nav-collepse .refresh-folder-btn {
   width: 30px;
   height: 30px;
-  position: unset;
-  margin: 0 4px 8px 0;
-  transform: unset;
+  margin: 0;
 }
 
 .nav-collepse .create-folder-sec .m-link:hover .nav-link-before-collapse {

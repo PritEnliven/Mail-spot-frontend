@@ -86,8 +86,74 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     const [isInitialized, setIsInitialized] = useState(false);
     const [signatureInserted, setSignatureInserted] = useState(false);
     const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => { });
+    const composerRef = useRef<HTMLDivElement>(null);
     const instanceId = useId();
     const { isComposeActionsCompact, isMobile } = useScreen();
+
+    // Bring the reply/forward composer into view when it opens below a long
+    // message or deep in a thread (scrolls the mail-details pane, not the page).
+    useEffect(() => {
+        const el = composerRef.current;
+        if (!el) return;
+
+        let cancelled = false;
+        let timeoutId = 0;
+        let raf2 = 0;
+
+        const scrollComposerIntoView = () => {
+            if (cancelled) return;
+            const scrollContainer = el.closest('.mail-details-box') as HTMLElement | null;
+            if (scrollContainer) {
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                // Skip if the composer top is already in view (user can see the reply box).
+                const topInView =
+                    elRect.top >= containerRect.top + 4 &&
+                    elRect.top <= containerRect.bottom - 80;
+                if (topInView) return;
+
+                const nextTop = elRect.top - containerRect.top + scrollContainer.scrollTop - 12;
+                scrollContainer.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+                return;
+            }
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        const raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => {
+                scrollComposerIntoView();
+                // Retry after layout settles (CKEditor / recipients grow height).
+                timeoutId = window.setTimeout(scrollComposerIntoView, 280);
+            });
+        });
+
+        return () => {
+            cancelled = true;
+            cancelAnimationFrame(raf1);
+            cancelAnimationFrame(raf2);
+            if (timeoutId) window.clearTimeout(timeoutId);
+        };
+    }, []);
+
+    // Forward needs a recipient — focus To. Reply/Reply all focus the editor (via CkEditor autoFocus).
+    useEffect(() => {
+        if (type !== 'forward') return;
+
+        let cancelled = false;
+        const focusToInput = () => {
+            if (cancelled || !composerRef.current) return;
+            const input = composerRef.current.querySelector(
+                '.new-input-group .select2-profile input'
+            ) as HTMLInputElement | null;
+            input?.focus();
+        };
+
+        const timeoutId = window.setTimeout(focusToInput, 120);
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timeoutId);
+        };
+    }, [type]);
 
     const normalizeRecipients = (recipients: any[]): string[] => {
         if (!recipients?.length) return [];
@@ -358,7 +424,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     };
 
     return (
-        <div className="reply-forward-inside-section colllapse reply-forward-main-section" id="reply-mail-btn">
+        <div
+            ref={composerRef}
+            className="reply-forward-inside-section colllapse reply-forward-main-section"
+            id="reply-mail-btn"
+        >
             <div className="reply-mail-box pb-0">
                 <div className="compose-modal-body pb-0">
                     <div className="new-input-group new-input-group-border">
@@ -525,6 +595,7 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                 isGenerateEmailOpen={isGenerateEmailCardOpen}
                                 onGenerateEmailClose={() => setIsGenerateEmailCardOpen(false)}
                                 emailContent={email.body || ''}
+                                autoFocus={type !== 'forward'}
                             />
                         )}
                     />

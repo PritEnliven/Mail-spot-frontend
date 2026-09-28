@@ -1,4 +1,4 @@
-import { getData } from '../apiService';
+import { getData, postData } from '../apiService';
 
 async function getBoxes() {
     try {
@@ -9,6 +9,16 @@ async function getBoxes() {
     }
 }
 
+async function refreshFolders() {
+    try {
+        const response = await postData('email/refresh-folders', {});
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 export {
-    getBoxes
+    getBoxes,
+    refreshFolders
 };

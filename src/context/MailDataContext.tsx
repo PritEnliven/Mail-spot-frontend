@@ -3,7 +3,7 @@ import { buildSearchFilterPayload } from '@utils/filterUtil';
 import type { Email } from '@models/Email';
 import type { Pagination } from '@models/Pagination';
 import { getCounts, getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
-import { getBoxes } from '@services/mailbox/mailboxService';
+import { getBoxes, refreshFolders } from '@services/mailbox/mailboxService';
 import { getUserPermissions } from '@services/settings/settingsService';
 import { buildParentFolderOptions, ensureContactInOtherMenu, resolveAllSidebarItems, verifyBoxName } from '@utils/emailUtil';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -32,12 +32,13 @@ export interface SidebarStateProps {
     boxCounts: Record<string, BoxCount>;
     parentFolderOptions: any[];
     delimiter: string | null;
+    folderMapping?: Record<string, string> | null;
 }
 
 export type SidebarApiResult = Pick<
     SidebarStateProps,
     'boxes' | 'customBoxes' | 'otherMenu' | 'boxCounts'
-> & { delimiter?: string | null };
+> & { delimiter?: string | null; folderMapping?: Record<string, string> | null; refreshed?: boolean };
 
 type SidebarItemType = {
     color: any;
@@ -73,6 +74,7 @@ interface MailDataType {
     sidebarState: SidebarStateProps;
     setSidebarState: (state: SidebarStateProps) => void;
     setSidebarStateFromAPI: (boxNameOverride?: string) => Promise<SidebarApiResult>;
+    refreshSidebarFolders: () => Promise<SidebarApiResult>;
     sidebarItems: SidebarItemType[];
     setSidebarItems: (items: SidebarItemType[]) => void;
     socketId: string | null;
@@ -190,6 +192,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         boxCounts: {},
         parentFolderOptions: [],
         delimiter: null,
+        folderMapping: null,
     });
 
     const [sidebarItems, setSidebarItems] = useState<SidebarItemType[]>([]);
@@ -788,7 +791,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     response.boxes,
                     response.customBoxes
                 ),
-                delimiter: response.delimiter
+                delimiter: response.delimiter,
+                folderMapping: response.folderMapping ?? null,
             });
 
             setIsSidebarDataReady(true);
@@ -800,6 +804,78 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             setIsSidebarLoading(false);
         }
     };
+
+    const applySidebarFoldersResponse = useCallback((
+        response: any,
+        previous: Pick<SidebarStateProps, 'otherMenu' | 'boxCounts'>
+    ): SidebarApiResult => {
+        const otherMenu = ensureContactInOtherMenu(response.otherMenu ?? previous.otherMenu ?? []);
+        const boxes = response.boxes ?? [];
+        const customBoxes = response.customBoxes ?? [];
+        const boxCounts: Record<string, BoxCount> = { ...previous.boxCounts };
+
+        [...boxes, ...customBoxes].forEach((box) => {
+            if (box.value) {
+                const existing = boxCounts[box.value];
+                boxCounts[box.value] = {
+                    isTotal: box.isTotal ?? existing?.isTotal ?? false,
+                    unreadCount: box.count ?? existing?.unreadCount ?? 0,
+                    totalCount: box.totalCount ?? box.count ?? existing?.totalCount ?? 0,
+                };
+            }
+        });
+
+        otherMenu.forEach((box) => {
+            if (box.value && !boxCounts[box.value]) {
+                boxCounts[box.value] = {
+                    isTotal: box.isTotal,
+                    unreadCount: box.count ?? 0,
+                    totalCount: box.totalCount ?? box.count ?? 0,
+                };
+            }
+        });
+
+        setSidebarItems(resolveAllSidebarItems(boxes, customBoxes, otherMenu, boxCounts));
+
+        setSidebarState({
+            boxes,
+            customBoxes,
+            otherMenu,
+            boxCounts,
+            parentFolderOptions: buildParentFolderOptions(boxes, customBoxes),
+            delimiter: response.delimiter ?? null,
+            folderMapping: response.folderMapping ?? null,
+        });
+
+        setIsSidebarDataReady(true);
+
+        return {
+            boxes,
+            customBoxes,
+            otherMenu,
+            boxCounts,
+            delimiter: response.delimiter ?? null,
+            folderMapping: response.folderMapping ?? null,
+            refreshed: response.refreshed,
+        };
+    }, []);
+
+    const refreshSidebarFolders = useCallback(async (): Promise<SidebarApiResult> => {
+        const response = await refreshFolders();
+        if (response?.statusCode !== 200) {
+            const message =
+                response?.message ||
+                response?.error ||
+                'Failed to refresh folders';
+            throw new Error(typeof message === 'string' ? message : 'Failed to refresh folders');
+        }
+
+        const folderData = response.data ?? response;
+        return applySidebarFoldersResponse(folderData, {
+            otherMenu: sidebarState.otherMenu,
+            boxCounts: sidebarState.boxCounts,
+        });
+    }, [applySidebarFoldersResponse, sidebarState.otherMenu, sidebarState.boxCounts]);
 
     /** Clear all mailbox UI for previous account, then load INBOX for the new active account */
     const reloadForAccountSwitch = useCallback(async () => {
@@ -825,6 +901,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             boxCounts: {},
             parentFolderOptions: [],
             delimiter: null,
+            folderMapping: null,
         });
 
         setBoxName('INBOX');
@@ -1003,6 +1080,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         clearMailSearch,
         mailSearchResetKey,
         setSidebarStateFromAPI,
+        refreshSidebarFolders,
         sidebarState,
         setSidebarState,
         sidebarItems,

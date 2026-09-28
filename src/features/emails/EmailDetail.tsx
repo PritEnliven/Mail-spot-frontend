@@ -566,7 +566,7 @@ const EmailDetail = ({ email }: Props) => {
                                 <div className="application-btn-multi" id="emailActionsBtn" onClick={(e) => e.stopPropagation()}>
                                     <ul>
                                         <li>
-                                            <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("reply", email, "reply-forward-bottom-box"); }}>
+                                            <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("reply", email, "replyForwardSection"); }}>
                                                 <InteractiveIcon
                                                     defaultIcon={replyIcon}
                                                     hoverIcon={replyIconHover}
@@ -580,7 +580,7 @@ const EmailDetail = ({ email }: Props) => {
                                             </a>
                                         </li>
                                         <li>
-                                            <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("replyAll", email, "reply-forward-bottom-box"); }}>
+                                            <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("replyAll", email, "replyForwardSection"); }}>
                                                 <InteractiveIcon
                                                     defaultIcon={replyAllIcon}
                                                     hoverIcon={replyAllIconHover}
@@ -594,7 +594,7 @@ const EmailDetail = ({ email }: Props) => {
                                             </a>
                                         </li>
                                         <li>
-                                            <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("forward", email, "reply-forward-bottom-box"); }}>
+                                            <a href="" className="hover-link icon-hover-effect" onClick={(e) => { e.preventDefault(); openReplyForward("forward", email, "replyForwardSection"); }}>
                                                 <InteractiveIcon
                                                     defaultIcon={forwardIcon}
                                                     hoverIcon={forwardIconHover}
@@ -622,7 +622,7 @@ const EmailDetail = ({ email }: Props) => {
                     isSchedule={!!isScheduleBox}
                     email={email}
                     searchTerm={highlightTerm}
-                    onReplyForwardAction={(action) => openReplyForward(action as any, email, "reply-forward-bottom-box")}
+                    onReplyForwardAction={(action) => openReplyForward(action as any, email, "replyForwardSection")}
                 />)
             )}
 
@@ -708,7 +708,7 @@ const EmailDetail = ({ email }: Props) => {
                 <div className="application-btn-multi" id="replyForwardActionButtons">
                     <ul>
                         <li>
-                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("reply", email, 'reply-forward-bottom-box'); }}
+                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("reply", email, 'replyForwardSection'); }}
                                 className="hover-link"
                                 data-tooltip-id="my-tooltip"
                                 data-tooltip-content="Reply"
@@ -728,7 +728,7 @@ const EmailDetail = ({ email }: Props) => {
                             </a>
                         </li>
                         <li>
-                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("replyAll", email, 'reply-forward-bottom-box'); }}
+                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("replyAll", email, 'replyForwardSection'); }}
                                 className="hover-link"
                                 data-tooltip-id="my-tooltip"
                                 data-tooltip-content="Reply all"
@@ -748,7 +748,7 @@ const EmailDetail = ({ email }: Props) => {
                             </a>
                         </li>
                         <li>
-                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("forward", email, 'reply-forward-bottom-box'); }}
+                            <a href="" onClick={(e) => { e.preventDefault(); openReplyForward("forward", email, 'replyForwardSection'); }}
                                 className="hover-link"
                                 data-tooltip-id="my-tooltip"
                                 data-tooltip-content="Forward"

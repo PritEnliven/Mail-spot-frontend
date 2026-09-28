@@ -5,7 +5,7 @@ import navCollapseIcon from '@images/nav-collepse-icon.svg';
 import navExpandIconHover from '@images/nav-collepse-icon-hover.svg';
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import menuIcon from "@images/menu-icon.svg";
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import SidebarItem from '../../features/emails/SidebarItem';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMailData, useMailUI, useContacts, useCalendar } from '../../context/index';
@@ -60,10 +60,12 @@ const LeftPanel = () => {
         allSearchResult,
         setAllSearchResult,
         setSidebarStateFromAPI,
+        refreshSidebarFolders,
         clearMailSearch } = useMailData();
     const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, activeBoxId, setActiveBoxId } = useMailUI();
     const { fetchContacts } = useContacts();
     const { isMobile } = useScreen();
+    const [isRefreshingFolders, setIsRefreshingFolders] = useState(false);
 
     const customFolders = useMemo(() => {
         const items = sidebarItems.filter(item => item.category === 'customBoxes');
@@ -241,6 +243,18 @@ const LeftPanel = () => {
             if (isMobile) {
                 setIsSidebarExpandedMobile(false);
             }
+        }
+    };
+
+    const handleRefreshFolders = async () => {
+        if (isRefreshingFolders) return;
+        setIsRefreshingFolders(true);
+        try {
+            await refreshSidebarFolders();
+        } catch (error: any) {
+            showError(error?.message || 'Failed to refresh folders');
+        } finally {
+            setIsRefreshingFolders(false);
         }
     };
 
@@ -502,6 +516,8 @@ const LeftPanel = () => {
                             handleDeleteFolder(boxId, folderName);
                         }}
                         onCreateFolder={openCreateFolderModal}
+                        onRefreshFolders={handleRefreshFolders}
+                        isRefreshingFolders={isRefreshingFolders}
                     />
 
                     {/* Other Menu Items */}

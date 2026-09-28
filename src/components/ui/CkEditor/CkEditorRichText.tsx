@@ -16,6 +16,8 @@ interface CkEditorRichTextProps {
   onGenerateEmailClose?: () => void;
   onGenerateEmailInsert?: (subject: string) => void;
   emailContent?: string; // For smart replies
+  /** Focus the editable area once the editor is ready. */
+  autoFocus?: boolean;
 }
 
 function setupCustomFontColorMarker(editor: any) {
@@ -46,7 +48,7 @@ function setupCustomFontColorMarker(editor: any) {
 
 // ────────────────────────────────────────────────
 // Main React Component
-function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSmartReplyEnable, onGenerateEmailClose, onGenerateEmailInsert, emailContent }: CkEditorRichTextProps) {
+function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSmartReplyEnable, onGenerateEmailClose, onGenerateEmailInsert, emailContent, autoFocus = false }: CkEditorRichTextProps) {
   const editorConfig = useMemo(() => ckEditorConfig, []);
   const aiRootRef = useRef<Root | null>(null);
   const smartRepliesRootRef = useRef<Root | null>(null);
@@ -225,6 +227,15 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
         const cleanupFontColor = setupCustomFontColorMarker(editor);
 
         removeCKColorTooltips();
+
+        if (autoFocus) {
+          // Place caret at the start so the user types above the quoted mail.
+          editor.model.change((writer: any) => {
+            const root = editor.model.document.getRoot();
+            if (root) writer.setSelection(root, 0);
+          });
+          editor.editing.view.focus();
+        }
 
         // Optional: cleanup on editor destroy
         editor.on('destroy', () => {
