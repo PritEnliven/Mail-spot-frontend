@@ -31,6 +31,7 @@ import {
     ImageBlock,
     ImageEditing,
     ImageInline,
+    ImageStyle,
     ImageToolbar,
     ImageResize,
     ImageUpload,
@@ -48,6 +49,18 @@ import {
 } from 'ckeditor5';
 import { config } from "./config"
 
+/**
+ * Clipboard screenshots usually arrive as a File with a generic browser name
+ * (e.g. "image.png"). Real inserts/pastes of files keep the original name
+ * (e.g. "Vacation.jpg"), which the backend needs via data-filename.
+ */
+function getOriginalImageFilename(file: File | undefined): string | undefined {
+    const name = file?.name?.trim();
+    if (!name) return undefined;
+    if (/^image\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(name)) return undefined;
+    return name;
+}
+
 // Base64 Upload Adapter Plugin
 function createBase64UploadAdapter(loader: any) {
     return {
@@ -56,7 +69,12 @@ function createBase64UploadAdapter(loader: any) {
                 return new Promise(function (resolve, reject) {
                     var reader = new FileReader();
                     reader.onload = function () {
-                        resolve({ default: reader.result });
+                        const response: Record<string, unknown> = { default: reader.result };
+                        const filename = getOriginalImageFilename(file);
+                        if (filename) {
+                            response.filename = filename;
+                        }
+                        resolve(response);
                     };
                     reader.onerror = function (err) {
                         reject(err);
@@ -75,6 +93,73 @@ function Base64UploadAdapterPlugin(editor: any) {
     editor.plugins.get('FileRepository').createUploadAdapter = function (loader: any) {
         return createBase64UploadAdapter(loader);
     };
+}
+
+/**
+ * Keeps original file names on inserted/pasted images as data-filename so the
+ * backend can recover names like Vacation.jpg from compose HTML (base64 alone
+ * has no filename; nameless clipboard screenshots are left without the attr).
+ */
+function ImageFilenamePlugin(editor: any) {
+    const IMAGE_TYPES = ['imageInline', 'imageBlock'] as const;
+
+    for (const imageType of IMAGE_TYPES) {
+        if (editor.model.schema.isRegistered(imageType)) {
+            editor.model.schema.extend(imageType, {
+                allowAttributes: ['dataFilename'],
+            });
+        }
+    }
+
+    editor.conversion.for('upcast').attributeToAttribute({
+        view: {
+            name: 'img',
+            key: 'data-filename',
+        },
+        model: 'dataFilename',
+    });
+
+    editor.conversion.for('downcast').add((dispatcher: any) => {
+        for (const imageType of IMAGE_TYPES) {
+            dispatcher.on(
+                `attribute:dataFilename:${imageType}`,
+                (evt: any, data: any, conversionApi: any) => {
+                    if (!conversionApi.consumable.consume(data.item, evt.name)) {
+                        return;
+                    }
+
+                    const viewElement = conversionApi.mapper.toViewElement(data.item);
+                    if (!viewElement) return;
+
+                    const imageUtils = editor.plugins.get('ImageUtils');
+                    const img = imageUtils?.findViewImgElement(viewElement);
+                    if (!img) return;
+
+                    if (data.attributeNewValue != null && data.attributeNewValue !== '') {
+                        conversionApi.writer.setAttribute(
+                            'data-filename',
+                            data.attributeNewValue,
+                            img
+                        );
+                    } else {
+                        conversionApi.writer.removeAttribute('data-filename', img);
+                    }
+                }
+            );
+        }
+    });
+
+    const imageUploadEditing = editor.plugins.get('ImageUploadEditing');
+    if (!imageUploadEditing) return;
+
+    imageUploadEditing.on('uploadComplete', (_evt: any, { data, imageElement }: any) => {
+        const filename = typeof data?.filename === 'string' ? data.filename.trim() : '';
+        if (!filename) return;
+
+        editor.model.change((writer: any) => {
+            writer.setAttribute('dataFilename', filename, imageElement);
+        });
+    });
 }
 
 const COPY_LINK_ICON =
@@ -203,6 +288,76 @@ function EnhancedLinkPlugin(editor: any) {
     });
 }
 
+// Gmail-like image size / remove options shown when an image is clicked
+function GmailImageOptionsPlugin(editor: any) {
+    const sizeOptions: Array<{ name: string; label: string; width: string | null }> = [
+        { name: 'imageSizeSmall', label: 'Small', width: '25%' },
+        { name: 'imageSizeBestFit', label: 'Best fit', width: '100%' },
+        { name: 'imageSizeOriginal', label: 'Original size', width: null },
+    ];
+
+    for (const option of sizeOptions) {
+        editor.ui.componentFactory.add(option.name, (locale: any) => {
+            const view = new ButtonView(locale);
+            const resizeCommand = editor.commands.get('resizeImage');
+
+            view.set({
+                label: option.label,
+                withText: true,
+                tooltip: false,
+                isToggleable: true,
+                class: 'ck-gmail-image-option',
+            });
+
+            if (resizeCommand) {
+                view.bind('isEnabled').to(resizeCommand, 'isEnabled');
+                view.bind('isOn').to(resizeCommand, 'value', (value: any) => {
+                    const currentWidth = value?.width ?? null;
+                    return currentWidth === option.width;
+                });
+            }
+
+            view.on('execute', () => {
+                editor.execute('resizeImage', { width: option.width });
+                editor.editing.view.focus();
+            });
+
+            return view;
+        });
+    }
+
+    editor.ui.componentFactory.add('imageRemove', (locale: any) => {
+        const view = new ButtonView(locale);
+        const resizeCommand = editor.commands.get('resizeImage');
+        const imageUtils = editor.plugins.get('ImageUtils');
+
+        view.set({
+            label: 'Remove',
+            withText: true,
+            tooltip: false,
+            class: 'ck-gmail-image-option ck-gmail-image-remove',
+        });
+
+        if (resizeCommand) {
+            view.bind('isEnabled').to(resizeCommand, 'isEnabled');
+        }
+
+        view.on('execute', () => {
+            const imageElement = imageUtils?.getClosestSelectedImageElement(
+                editor.model.document.selection
+            );
+            if (!imageElement) return;
+
+            editor.model.change((writer: any) => {
+                writer.remove(imageElement);
+            });
+            editor.editing.view.focus();
+        });
+
+        return view;
+    });
+}
+
 const ckEditorConfig: any = {
     licenseKey: config.CKEDITOR_LICENSE_KEY,
     fontColor: {
@@ -232,7 +387,7 @@ const ckEditorConfig: any = {
         shouldNotGroupWhenFull: false,
         removePlugins: ['ToolbarItemsTexts']
     },
-    extraPlugins: [Base64UploadAdapterPlugin, EnhancedLinkPlugin],
+    extraPlugins: [Base64UploadAdapterPlugin, ImageFilenamePlugin, EnhancedLinkPlugin, GmailImageOptionsPlugin],
 
     plugins: [
         Essentials, Paragraph, Autoformat, AutoLink, Autosave,
@@ -241,14 +396,15 @@ const ckEditorConfig: any = {
         Heading, Highlight, HorizontalLine,
         Alignment, List,
         Link,LinkUI, LinkEditing, ContextualBalloon,
-        ImageBlock, ImageEditing, ImageInline, ImageToolbar, ImageResize, ImageUpload, ImageUtils,
+        ImageBlock, ImageEditing, ImageInline, ImageStyle, ImageToolbar, ImageResize, ImageUpload, ImageUtils,
         // MediaEmbed,
         Indent, IndentBlock,
         Table, TableToolbar, TableColumnResize, PlainTableOutput, TableProperties, TableCellProperties,
         PasteFromMarkdownExperimental, PasteFromOffice,
         ShowBlocks, SourceEditing,
         GeneralHtmlSupport,
-        EnhancedLinkPlugin
+        EnhancedLinkPlugin,
+        GmailImageOptionsPlugin
     ],
     language: 'en',
     fontFamily: {
@@ -338,10 +494,22 @@ const ckEditorConfig: any = {
         }] as any
     },
     image: {
+        // Paste / upload as inline so multiple images can sit side-by-side like Gmail
+        insert: {
+            type: 'inline'
+        },
+        resizeUnit: '%',
+        resizeOptions: [
+            { name: 'resizeImage:small', value: '25', label: 'Small', icon: 'small' },
+            { name: 'resizeImage:bestFit', value: '100', label: 'Best fit', icon: 'large' },
+            { name: 'resizeImage:original', value: null, label: 'Original size', icon: 'original' },
+        ],
         toolbar: [
-            'imageStyle:inline', 'imageStyle:block', 'imageStyle:side', '|',
-            'toggleImageCaption', 'imageTextAlternative', '|',
-            'resizeImage:25', 'resizeImage:50', 'resizeImage:75', 'resizeImage:original'
+            'imageSizeSmall',
+            'imageSizeBestFit',
+            'imageSizeOriginal',
+            '|',
+            'imageRemove'
         ]
     },
     placeholder: 'Type or paste your content here!',

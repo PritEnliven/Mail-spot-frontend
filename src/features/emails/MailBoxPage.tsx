@@ -1,10 +1,11 @@
 import NoEmailList from '@components/ui/email/NoEmailList';
+import MailListGroupHeader from '@components/ui/email/MailListGroupHeader';
 import EmailSkeletonLoader from '@components/ui/EmailSkeletonLoader';
 import { useScreen } from '@context/ScreenContext';
 import { useEmailAction } from '@hooks/useEmailAction';
 import { useSwipeGesture, type SwipeDirection } from '@hooks/useSwipeGesture';
 import { handleEmailDeletion, verifyBoxName } from '@utils/emailUtil';
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
 import EmailRow from '../../features/emails/EmailRow';
@@ -21,7 +22,7 @@ const EmailDetail = lazy(() => import('../../features/emails/EmailDetail'));
 const MailBoxPage = () => {
     const emailScrollRef = useRef<HTMLDivElement | null>(null);
     // const { boxName } = useParams<{ boxName: string }>();
-    const { boxName, sidebarState, sidebarItems, setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, isSidebarDataReady, isSidebarLoading, readUnreadFilter, setReadUnreadFilter, boxTitle } = useMailData();
+    const { boxName, sidebarState, sidebarItems, setBoxName, fetchEmails, emails, emailDetailSelected, setEmailDetailSelected, activeEmailMessageId, setActiveEmailMessageId, isSidebarDataReady, isSidebarLoading, readUnreadFilter, setReadUnreadFilter, boxTitle, arrangeBy, mailListPage } = useMailData();
     const isSearchOrFilterMailList = boxTitle === 'Search Results';
     const { selectedEmails } = useMailSelection();
     const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
@@ -32,6 +33,7 @@ const MailBoxPage = () => {
     const isDraftBox = boxName ? verifyBoxName(boxName, 'draft') : false;
     const simpleBarRef = useRef<any>(null);
     const [isEmailDetailLoading, setIsEmailDetailLoading] = useState(false);
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
     const navigate = useNavigate();
 
     useShortcutAction('new_compose', () => openModal('compose'));
@@ -46,6 +48,13 @@ const MailBoxPage = () => {
             scrollEl.scrollTop = 0;
         }
     }, []);
+
+    // After pagination (and other page loads), reset SimpleBar scroll once content is ready
+    useEffect(() => {
+        if (isLoading || isSidebarLoading) return;
+        const timeoutId = window.setTimeout(scrollMailListToTop, 0);
+        return () => window.clearTimeout(timeoutId);
+    }, [mailListPage, isLoading, isSidebarLoading, scrollMailListToTop]);
 
     useEffect(() => {
         if (!boxName || !isSidebarDataReady) return;
@@ -417,6 +426,28 @@ const MailBoxPage = () => {
         }
     };
 
+    // Expand all groups when arrange mode, folder, or page changes
+    useEffect(() => {
+        setCollapsedGroups(new Set());
+    }, [arrangeBy, boxName, mailListPage]);
+
+    const toggleGroup = useCallback((groupKey: string) => {
+        setCollapsedGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(groupKey)) {
+                next.delete(groupKey);
+            } else {
+                next.add(groupKey);
+            }
+            return next;
+        });
+    }, []);
+
+    const listHasGroups = useMemo(
+        () => Boolean(arrangeBy) && emails.some((email: any) => email?.isGroupStart && email?.groupLabel),
+        [arrangeBy, emails],
+    );
+
     return (
         <>
             {/* START:: Mail received box */}
@@ -459,18 +490,36 @@ const MailBoxPage = () => {
                                             emails.map((email: any, index: number) => {
                                                 const isRead = email.isSeen;
                                                 const isSelected = selectedEmails.has(email.messageId);
+                                                const rowKey = email._id ?? email.messageId;
+                                                const groupKey = email.groupKey || email.groupLabel || '';
+                                                const isGroupCollapsed =
+                                                    listHasGroups &&
+                                                    Boolean(groupKey) &&
+                                                    collapsedGroups.has(groupKey);
+
                                                 return (
-                                                    <EmailRow
-                                                        key={email._id ?? email.messageId}
-                                                        email={email}
-                                                        isRead={isRead}
-                                                        isSelected={isSelected}
-                                                        isSearch={false}
-                                                        index={index}
-                                                        emails={emails as any}
-                                                        onOpenEmail={(uid: number, messageId: string, isSearch: boolean) => openEmailDetailHandler(currentActiveBox, uid, messageId, isSearch)}
-                                                        onMarkReadUnread={markAsReadUnreadEmailHandler}
-                                                        onDelete={setupDeleteConfirmation} isActive={email.messageId === activeEmailMessageId} boxName={''} onToggleSelection={() => undefined} />
+                                                    <Fragment key={rowKey}>
+                                                        {email.isGroupStart && email.groupLabel && (
+                                                            <MailListGroupHeader
+                                                                label={email.groupLabel}
+                                                                groupKey={groupKey || email.groupLabel}
+                                                                expanded={!collapsedGroups.has(groupKey || email.groupLabel)}
+                                                                onToggle={toggleGroup}
+                                                            />
+                                                        )}
+                                                        {!isGroupCollapsed && (
+                                                            <EmailRow
+                                                                email={email}
+                                                                isRead={isRead}
+                                                                isSelected={isSelected}
+                                                                isSearch={false}
+                                                                index={index}
+                                                                emails={emails as any}
+                                                                onOpenEmail={(uid: number, messageId: string, isSearch: boolean) => openEmailDetailHandler(currentActiveBox, uid, messageId, isSearch)}
+                                                                onMarkReadUnread={markAsReadUnreadEmailHandler}
+                                                                onDelete={setupDeleteConfirmation} isActive={email.messageId === activeEmailMessageId} boxName={''} onToggleSelection={() => undefined} />
+                                                        )}
+                                                    </Fragment>
                                                 );
                                             })
                                         ) : (

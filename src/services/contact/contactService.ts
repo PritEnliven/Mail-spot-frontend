@@ -8,6 +8,17 @@ export interface GetContactsParams {
     sort?: ContactSortField;
 }
 
+export type ContactExportFormat = 'csv' | 'vcf';
+
+export type ContactExportResult =
+    | { success: true; blob: Blob; filename: string }
+    | { success: false; message: string; statusCode?: number };
+
+const EXPORT_FILENAME: Record<ContactExportFormat, string> = {
+    csv: 'contacts.csv',
+    vcf: 'contacts.vcf',
+};
+
 function buildContactPayload(payload: ContactFormValues) {
     const emails = (payload.emails?.length
         ? payload.emails
@@ -37,6 +48,16 @@ function buildContactPayload(payload: ContactFormValues) {
         address: payload.address?.trim() || undefined,
         birthdate: payload.birthdate?.trim() || undefined,
     };
+}
+
+async function parseExportErrorBlob(blob: Blob, fallback: string) {
+    try {
+        const text = await blob.text();
+        const parsed = JSON.parse(text) as { message?: string };
+        return parsed?.message || fallback;
+    } catch {
+        return fallback;
+    }
 }
 
 async function getContactsList(params: GetContactsParams = {}) {
@@ -103,6 +124,59 @@ async function deleteContact(contactId: string) {
     }
 }
 
+async function exportContacts(format: ContactExportFormat): Promise<ContactExportResult> {
+    const fallbackMessage = 'Failed to export contacts';
+    try {
+        const data = await getData('contact/export', {
+            params: { format },
+            responseType: 'blob',
+        });
+
+        if (!(data instanceof Blob)) {
+            return { success: false, message: fallbackMessage, statusCode: 500 };
+        }
+
+        // Error payloads can arrive as JSON blobs when responseType is blob.
+        if (data.type.includes('application/json') || data.type.includes('text/json')) {
+            return {
+                success: false,
+                message: await parseExportErrorBlob(data, fallbackMessage),
+                statusCode: 400,
+            };
+        }
+
+        return {
+            success: true,
+            blob: data,
+            filename: EXPORT_FILENAME[format],
+        };
+    } catch (error: any) {
+        if (error instanceof Blob) {
+            return {
+                success: false,
+                message: await parseExportErrorBlob(error, fallbackMessage),
+                statusCode: 500,
+            };
+        }
+        return {
+            success: false,
+            message: error?.message || fallbackMessage,
+            statusCode: error?.statusCode || 500,
+        };
+    }
+}
+
+function downloadBlobFile(blob: Blob, filename: string) {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}
+
 /** @deprecated Use getContactsList or searchContacts */
 async function getAllContacts() {
     return getContactsList({ limit: 100 });
@@ -117,7 +191,9 @@ export {
     addContact,
     addContacts,
     deleteContact,
+    downloadBlobFile,
     editContact,
+    exportContacts,
     getAllContacts,
     getContactById,
     getContactsList,

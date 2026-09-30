@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { lazyWithRetry } from '@utils/lazyWithRetry';
 import AppLoader from '@components/layout/AppLoader';
+import AuthLayout from '@components/layout/AuthLayout';
 import ProtectedRoute from '@components/auth/ProtectedRoute';
 
 // Lazy loaded components (retry + one-shot full reload on stale Firebase chunks)
@@ -40,10 +41,12 @@ const AppRoutes = () => {
     <Suspense fallback={<AppLoader />}>
       <Routes>
 
-        {/* public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot" element={<ForgotPage />} />
+        {/* public auth routes — shared left panel stays mounted across login/register/forgot */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot" element={<ForgotPage />} />
+        </Route>
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

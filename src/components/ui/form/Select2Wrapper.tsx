@@ -2083,7 +2083,7 @@ const MultiSelect = ({
                 <span className="email">{email}</span>
               )}
               {context === 'menu' && showSuggestionBadge && option.isSuggestion && (
-                <span className="badge bg-light text-muted ms-1" style={{ fontSize: '10px' }}>
+                <span className="badge suggested-mail-badge" style={{ fontSize: '10px' }}>
                   Suggested
                 </span>
               )}
@@ -2120,7 +2120,7 @@ const renderSingleSelect = ({
       options={options}
       value={selectedOption}
       placeholder={placeholder}
-      classNamePrefix="react-select"
+      classNamePrefix="react-select"      
       isDisabled={isDisabled}
       menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
       menuPosition="fixed"

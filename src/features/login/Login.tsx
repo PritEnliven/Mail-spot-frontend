@@ -13,7 +13,6 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { loginSchema, type LoginFormValues } from "./login.schema";
-import { pageStyles, usePageStylesheet } from "@hooks/usePageStyleSheet";
 
 export const AUTH_STORAGE_KEYS = ["email", "token", "username", "id"] as const;
 
@@ -23,7 +22,6 @@ export const getAuthStorage = (): Storage =>
 
 const LoginPage = () => {
     const navigate = useNavigate();
-    const cssLoaded = usePageStylesheet([pageStyles.headerCss, pageStyles.signInCss]);
     const [showPassword, setShowPassword] = useState(true);
 
     const redirectToRegister = () => {
@@ -110,148 +108,131 @@ const LoginPage = () => {
 
     };
 
-    if (!cssLoaded) {
-        return null;
-    }
-
     return (
-        <div className="login-main">
-            <div className="row m-0">
-                <div className="col-md-6 p-0 d-md-block d-none">
-                    <div className="login-main-gradiant">
-                        <div className="login-left"></div>
-                        <div className="login-right"></div>
-                        <div className="login-main-content-section">
-                            <span className="login-title">Your inbox, supercharged. Your team, unstoppable.</span>
+        <div className="col-md-6 p-0">
+            <div className="login-main-right-section h-100vh overflow-auto h-100vh align-items-center">
+                <div className="login-box-main mt-0">
+                    <a className="brand-logo-login">
+                        <img src={mailSpotLogo} alt="" />
+                    </a>
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                        }}
+                    >
+                        <div className="form-group">
+                            <label className="control-label required">Email</label>
+                            <div className="input-group2 icon-left2">
+                                <div className="input-control">
+                                    <div className="input-icon-add">
+                                        <Controller
+                                            name="email"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <input type="text" id="email"
+                                                    className="form-control"
+                                                    placeholder="Enter your email"
+                                                    {...field} />
+                                            )}
+                                        />
+                                        <img src={mailIcon} alt="" className="input-icon-1" />
+                                    </div>
+                                </div>
+                            </div>
+                            {errors.email &&
+                                <span className="invalid-feedback" style={{ display: 'block' }}>
+                                    {errors.email.message}
+                                </span>
+                            }
                         </div>
-                    </div>
-                </div>
-                <div className="col-md-6 p-0">
-                    <div className="login-main-right-section h-100vh overflow-auto h-100vh align-items-center">
-                        <div className="login-box-main mt-0">
-                            <a className="brand-logo-login">
-                                <img src={mailSpotLogo} alt="" />
-                            </a>
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                }}
-                            >
-                                <div className="form-group">
-                                    <label className="control-label required">Email</label>
-                                    <div className="input-group2 icon-left2">
-                                        <div className="input-control">
-                                            <div className="input-icon-add">
-                                                <Controller
-                                                    name="email"
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <input type="text" id="email"
-                                                            className="form-control"
-                                                            placeholder="Enter your email"
-                                                            {...field} />
-                                                    )}
-                                                />
-                                                <img src={mailIcon} alt="" className="input-icon-1" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {errors.email &&
-                                        <span className="invalid-feedback" style={{ display: 'block' }}>
-                                            {errors.email.message}
-                                        </span>
-                                    }
-                                </div>
-                                <div className="form-group">
-                                    <div className="d-flex align-items-center justify-content-between">
-                                        <label className="control-label required">Password</label>
-                                        <a href="#"
-                                            className="link-ap"
-                                            onClick={redirectToForgot}
-                                            tabIndex={-1}
-                                        >Forgot?</a>
-                                    </div>
-                                    <div className="input-group2 icon-left2 icon-right2 password-show-hide">
-                                        <div className="input-control">
-                                            <div className="input-icon-add">
-                                                <Controller
-                                                    name="password"
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <input type={showPassword ? "password" : "text"} id="password"
-                                                            className="form-control"
-                                                            placeholder="Enter your password"
-                                                            {...field} />
-                                                    )}
-                                                />
-                                                <img src={lockIcon} alt="" className="input-icon-1" />
-                                                <img src={showPassword ? passwordHideIcon : passwordShowIcon}
-                                                    alt={showPassword ? "Hide Password" : "Show Password"}
-                                                    className="input-icon-2" id="togglePassword" style={{ cursor: "pointer" }}
-                                                    onClick={togglePasswordVisibility} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {errors.password &&
-                                        <span className="invalid-feedback" style={{ display: 'block' }}>
-                                            {errors.password.message}
-                                        </span>
-                                    }
-                                </div>
-                                <div className="form-group d-flex align-items-center">
-                                    <div className="mail-received-check-btn me-2">
-                                        <div className="checkbox-custom table-check">
-                                            <Controller
-                                                name="rememberMe"
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <input type="checkbox" id="rememberMe"
-                                                        className="form-control"
-                                                        checked={field.value}
-                                                        onChange={field.onChange}
-                                                        onBlur={field.onBlur}
-                                                        ref={field.ref} />
-                                                )}
-                                            />
-                                            <label htmlFor="rememberMe" className="label-text"></label>
-                                        </div>
-                                    </div>
-                                    <label htmlFor="rememberMe" className="control-label m-0 all-day-chaeck">
-                                        Remember me
-                                    </label>
-                                </div>
-                                <div className="successfully-error-box error d-none" id="loginError-box">
-                                    <div className="status-message">
-                                        <img src={successfullyIcon} alt="" className="me-2" />
-                                        <span id="loginError"></span>
-                                    </div>
-                                </div>
-                                <div className="login-btn">
-                                    <SubmitButton
-                                        type="submit"
-                                        className="btn-new w-100 loading-spinner"
-                                        onClick={handleSubmit(onSubmit)}
-                                    >
-                                        Login
-                                    </SubmitButton>
-                                </div>
-                            </form>
-                            <hr />
+                        <div className="form-group">
                             <div className="d-flex align-items-center justify-content-between">
-                                <p className="mb-0">Don't have an account?</p>
-                                <a href="#" className="link-ap" onClick={redirectToRegister}>Register</a>
+                                <label className="control-label required">Password</label>
+                                <a href="#"
+                                    className="link-ap"
+                                    onClick={redirectToForgot}
+                                    tabIndex={-1}
+                                >Forgot?</a>
+                            </div>
+                            <div className="input-group2 icon-left2 icon-right2 password-show-hide">
+                                <div className="input-control">
+                                    <div className="input-icon-add">
+                                        <Controller
+                                            name="password"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <input type={showPassword ? "password" : "text"} id="password"
+                                                    className="form-control"
+                                                    placeholder="Enter your password"
+                                                    {...field} />
+                                            )}
+                                        />
+                                        <img src={lockIcon} alt="" className="input-icon-1" />
+                                        <img src={showPassword ? passwordHideIcon : passwordShowIcon}
+                                            alt={showPassword ? "Hide Password" : "Show Password"}
+                                            className="input-icon-2" id="togglePassword" style={{ cursor: "pointer" }}
+                                            onClick={togglePasswordVisibility} />
+                                    </div>
+                                </div>
+                            </div>
+                            {errors.password &&
+                                <span className="invalid-feedback" style={{ display: 'block' }}>
+                                    {errors.password.message}
+                                </span>
+                            }
+                        </div>
+                        <div className="form-group d-flex align-items-center">
+                            <div className="mail-received-check-btn me-2">
+                                <div className="checkbox-custom table-check">
+                                    <Controller
+                                        name="rememberMe"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input type="checkbox" id="rememberMe"
+                                                className="form-control"
+                                                checked={field.value}
+                                                onChange={field.onChange}
+                                                onBlur={field.onBlur}
+                                                ref={field.ref} />
+                                        )}
+                                    />
+                                    <label htmlFor="rememberMe" className="label-text"></label>
+                                </div>
+                            </div>
+                            <label htmlFor="rememberMe" className="control-label m-0 all-day-chaeck">
+                                Remember me
+                            </label>
+                        </div>
+                        <div className="successfully-error-box error d-none" id="loginError-box">
+                            <div className="status-message">
+                                <img src={successfullyIcon} alt="" className="me-2" />
+                                <span id="loginError"></span>
                             </div>
                         </div>
-                    </div>
-                    <div className="power-by-box">
-                        <span className="powered-sec">
-                            Powered by
-                            <a href="#" className="ms-2">
-                                <img src={enlivenLogo} alt="" />
-                            </a>
-                        </span>
+                        <div className="login-btn">
+                            <SubmitButton
+                                type="submit"
+                                className="btn-new w-100 loading-spinner"
+                                onClick={handleSubmit(onSubmit)}
+                            >
+                                Login
+                            </SubmitButton>
+                        </div>
+                    </form>
+                    <hr />
+                    <div className="d-flex align-items-center justify-content-between">
+                        <p className="mb-0">Don't have an account?</p>
+                        <a href="#" className="link-ap" onClick={redirectToRegister}>Register</a>
                     </div>
                 </div>
+            </div>
+            <div className="power-by-box">
+                <span className="powered-sec">
+                    Powered by
+                    <a href="#" className="ms-2">
+                        <img src={enlivenLogo} alt="" />
+                    </a>
+                </span>
             </div>
         </div>
     );

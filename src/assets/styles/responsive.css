@@ -111,7 +111,86 @@
   /* -------------------- Calendar Page: Left Side -------------------- */
   .calendar-body-box { display: flex; flex-direction: column; height: calc(100dvh - 115px); min-height: unset !important; overflow: hidden; }
   .calendar-ready-wrap { flex-direction: column; height: 100%; min-height: 0; flex: 1; }
-  .Calendar-main .left-side-calendar-box { position: relative; min-width: 100% !important; width: 100% !important; height: auto !important; border-radius: 0 !important; flex: 0 0 auto; transition: all 0.3s ease; padding: 16px 12px; overflow-x: hidden; box-sizing: border-box; }
+  .Calendar-main .left-side-calendar-box { position: relative; min-width: 100% !important; width: 100% !important; height: auto !important; border-radius: 0 !important; flex: 0 0 auto; transition: all 0.3s ease; padding: 12px 12px 10px; overflow-x: hidden; box-sizing: border-box; }
+  .Calendar-main .right-side-calendar-box {
+    flex: 1 1 auto;
+    min-height: 220px;
+    height: auto !important;
+    overflow: hidden;
+  }
+  .Calendar-main .right-side-calendar-box.is-fullscreen {
+    flex: 1 1 100%;
+    min-height: 0;
+  }
+  .Calendar-main .right-side-calendar-box .calendar-main-view,
+  .Calendar-main .right-side-calendar-box .fc,
+  .Calendar-main .right-side-calendar-box .fc-view-harness {
+    height: 100% !important;
+  }
+  .Calendar-main .calendar-panel-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 0 0 auto;
+    width: 100%;
+    margin: 0;
+    padding: 6px 12px 8px;
+    border: 0;
+    border-top: 1px solid #e8eef2;
+    border-bottom: 1px solid #e8eef2;
+    background: #fff;
+    color: #717d84;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .Calendar-main .calendar-panel-toggle__bar {
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: #bbc0c4;
+  }
+  .Calendar-main .calendar-panel-toggle__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    line-height: 0;
+  }
+  .Calendar-main .calendar-panel-toggle__icon img,
+  .Calendar-main .calendar-panel-toggle__icon .interactive-icon {
+    width: 16px;
+    height: 16px;
+  }
+  .Calendar-main .calendar-panel-toggle__label {
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.2;
+    color: #717d84;
+  }
+  .Calendar-main .calendar-panel-toggle:hover,
+  .Calendar-main .calendar-panel-toggle:focus-visible {
+    background: #f5f7f8;
+    color: #212121;
+  }
+  .Calendar-main .calendar-panel-toggle:hover .calendar-panel-toggle__bar,
+  .Calendar-main .calendar-panel-toggle:focus-visible .calendar-panel-toggle__bar {
+    background: #717d84;
+  }
+  .Calendar-main .calendar-panel-toggle:hover .calendar-panel-toggle__label,
+  .Calendar-main .calendar-panel-toggle:focus-visible .calendar-panel-toggle__label {
+    color: #212121;
+  }
+  .Calendar-main .calendar-panel-toggle:focus-visible {
+    outline: 2px solid #0097ef;
+    outline-offset: -2px;
+  }
+  .Calendar-main .calendar-panel-toggle.is-collapsed {
+    border-top: 0;
+  }
   /*
       Fluid sidebar month grid (320–992):
       Same 7-column grid for weekday labels AND date cells so they stay aligned.
@@ -127,8 +206,22 @@
   .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-week-number { left: calc(var(--week-gutter) * -1); min-width: var(--week-gutter) !important; max-width: var(--week-gutter) !important; width: var(--week-gutter) !important; box-sizing: border-box; padding: 4px 0 !important; justify-content: center; }
   .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-body::after { left: var(--week-gutter); }
   .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type { border: 0 !important; }
+  /* My calendars: compact mobile layout */
+  .Calendar-main .calendar-list-section { margin-top: 10px; }
+  .Calendar-main .calendar-list-heading-main { margin-bottom: 4px; gap: 2px; }
+  .Calendar-main .calendar-list-heading { font-size: 14px; gap: 6px; padding: 2px 0; max-width: calc(100% - 26px); }
+  .Calendar-main .calendar-list-arrow,
+  .Calendar-main .calendar-list-arrow img { width: 14px; height: 14px; }
+  .Calendar-main .calendar-list-add-btn { width: 22px; height: 22px; }
+  .Calendar-main .calendar-list-add-btn img,
+  .Calendar-main .calendar-list-add-btn .interactive-icon { width: 14px; height: 14px; }
+  .Calendar-main .calendar-list { max-height: calc(3 * 28px); }
+  .Calendar-main .calendar-list-row { min-height: 28px; padding: 3px 2px; gap: 6px; }
+  .Calendar-main .calendar-list-name { font-size: 13px; }
+  .Calendar-main .calendar-list-actions { opacity: 1; }
   .Calendar-main .fc .fc-scroller-liquid-absolute { height: 100% !important; border-radius: 0 0 0 8px; }
-  .Calendar-main #calendar .fc-dayGridMonth-view .fc-scrollgrid-sync-table { height: calc(100vh - 110px) !important; }
+  .Calendar-main #calendar .fc-dayGridMonth-view .fc-scrollgrid-sync-table { height: 100% !important; }
+  .Calendar-main #calendar.is-fullscreen .fc-dayGridMonth-view .fc-scrollgrid-sync-table { height: 100% !important; }
   .fc .fc-scrollgrid-liquid { border: 0; }
 }
 /* Extra-narrow phones: shrink week gutter so 7 day columns fit */

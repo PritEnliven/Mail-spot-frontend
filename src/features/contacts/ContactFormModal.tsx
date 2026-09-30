@@ -4,9 +4,14 @@ import { lazy, Suspense, useMemo, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import BaseModal from '@components/ui/BaseModal';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
+import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import SubmitButton from '@components/ui/form/SubmitButton';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useFlatpickrMonthDropdown } from '@components/ui/useFlatpickrMonthDropdown';
+import {
+    DEFAULT_PHONE_COUNTRY_CODE,
+    PHONE_COUNTRY_CODE_OPTIONS,
+} from '@constants/phoneCountryCodes';
 import { useMailUI } from '@context/MailUIContext';
 import arrowPointingOutIcon from '@images/arrows-pointing-out-icon.svg';
 import arrowPointingOutIconHover from '@images/arrows-pointing-out-icon-hover.svg';
@@ -24,12 +29,14 @@ import { addContact, editContact } from '@services/contact/contactService';
 import { formatDate, parseDateForFlatpickr, TimeFormat } from '@utils/dateUtil';
 import {
     CONTACT_MAX_EMAILS,
-    CONTACT_MAX_PHONE_LENGTH,
     CONTACT_MAX_PHONES,
     contactFormSchema,
+    mergePhoneParts,
     sanitizePhoneInput,
+    toPhoneFormValues,
     type ContactFormSchemaValues,
 } from './contactForm.schema';
+import { formatPhoneCountryOptionLabel } from './formatPhoneCountryOptionLabel';
 
 const Flatpickr = lazy(() => import('react-flatpickr'));
 
@@ -52,6 +59,9 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
     const {
         control,
         handleSubmit,
+        watch,
+        setValue,
+        getValues,
         formState: { errors },
         reset,
     } = useForm<ContactFormSchemaValues>({
@@ -60,7 +70,7 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
         defaultValues: {
             name: contact?.name ?? '',
             emails: (defaultEmails.length > 0 ? defaultEmails : ['']).map((value) => ({ value })),
-            phones: (defaultPhones.length > 0 ? defaultPhones : ['']).map((value) => ({ value })),
+            phones: toPhoneFormValues(defaultPhones),
             notes: contact?.notes ?? '',
             address: contact?.address ?? '',
             birthdate: contact?.birthdate ?? '',
@@ -122,12 +132,14 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
             showError(`Maximum ${CONTACT_MAX_PHONES} phones allowed`);
             return;
         }
-        appendPhone({ value: '' });
+        appendPhone({ countryCode: DEFAULT_PHONE_COUNTRY_CODE, value: '' });
     };
 
     const onSubmit = async (data: ContactFormSchemaValues) => {
         const emails = data.emails.map((e) => e.value.trim()).filter(Boolean);
-        const phones = (data.phones ?? []).map((p) => p.value.trim()).filter(Boolean);
+        const phones = (data.phones ?? [])
+            .map((p) => mergePhoneParts(p.countryCode, p.value))
+            .filter(Boolean);
 
         if (emails.length > CONTACT_MAX_EMAILS) {
             showError(`Maximum ${CONTACT_MAX_EMAILS} emails allowed`);
@@ -321,10 +333,39 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
                                     <div className="form-group mb-3 w-100">
                                         <label className="control-label">Phone</label>
                                         {phoneFields.map((item, index) => {
-                                            const fieldError = errors.phones?.[index]?.value?.message;
+                                            const fieldError =
+                                                errors.phones?.[index]?.value?.message
+                                                ?? errors.phones?.[index]?.countryCode?.message;
                                             return (
                                                 <div className="mb-2" key={item.id}>
                                                     <div className="contact-field-row">
+                                                        <div className="contact-phone-dial-select">
+                                                            <Controller
+                                                                name={`phones.${index}.countryCode`}
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <Select2Wrapper
+                                                                        value={field.value || null}
+                                                                        onChange={(val) => {
+                                                                            const nextCode = val || DEFAULT_PHONE_COUNTRY_CODE;
+                                                                            field.onChange(nextCode);
+                                                                            const currentNational = getValues(`phones.${index}.value`) ?? '';
+                                                                            setValue(
+                                                                                `phones.${index}.value`,
+                                                                                sanitizePhoneInput(currentNational, nextCode),
+                                                                                { shouldValidate: false },
+                                                                            );
+                                                                        }}
+                                                                        options={PHONE_COUNTRY_CODE_OPTIONS}
+                                                                        isMulti={false}
+                                                                        typeable={true}
+                                                                        isModal={true}
+                                                                        placeholder="Code"
+                                                                        formatOptionLabel={formatPhoneCountryOptionLabel}
+                                                                    />
+                                                                )}
+                                                            />
+                                                        </div>
                                                         <Controller
                                                             name={`phones.${index}.value`}
                                                             control={control}
@@ -334,12 +375,16 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
                                                                     id={index === 0 ? 'contactPhone' : `contactPhone-${index}`}
                                                                     type="tel"
                                                                     inputMode="tel"
-                                                                    maxLength={CONTACT_MAX_PHONE_LENGTH}
                                                                     className={`form-control${fieldError ? ' is-invalid' : ''}`}
                                                                     placeholder="Phone"
                                                                     autoComplete="tel"
                                                                     onChange={(event) => {
-                                                                        field.onChange(sanitizePhoneInput(event.target.value));
+                                                                        field.onChange(
+                                                                            sanitizePhoneInput(
+                                                                                event.target.value,
+                                                                                watch(`phones.${index}.countryCode`),
+                                                                            ),
+                                                                        );
                                                                     }}
                                                                 />
                                                             )}

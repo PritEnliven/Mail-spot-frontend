@@ -11,6 +11,8 @@ import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
 import { getActiveAccountId, LINKED_ACCOUNT_SIGNED_OUT_EVENT, type LinkedAccountSignedOutEventDetail } from '@services/apiService';
 import { showWarning } from '@components/ui/toast/toastNotification';
+import { DEFAULT_SORT_ORDER, type ArrangeBy, type SortOrder } from '@constants/arrangeBy';
+import { mergeIntoArrangedList } from '@utils/arrangeEmailUtil';
 
 type EventCallback = (...args: any[]) => void;
 
@@ -48,13 +50,30 @@ export const useSocketEvent = (event: string, callback: EventCallback): void => 
 
 export const useMailSocket = () => {
     const navigate = useNavigate();
-    const { emails, setEmails, boxName, pagination, updateEmailReadState, setPagination, updateBoxCount, addNewEmail, updateEmail, deleteEmail, updateEmailAttachment, activeEmailMessageId } = useMailData();
+    const {
+        emails,
+        setEmails,
+        boxName,
+        pagination,
+        updateEmailReadState,
+        setPagination,
+        updateBoxCount,
+        addNewEmail,
+        updateEmail,
+        deleteEmail,
+        updateEmailAttachment,
+        activeEmailMessageId,
+        arrangeBy,
+        sortOrder,
+    } = useMailData();
     const emailsRef = useRef(emails);
     const boxNameRef = useRef(boxName);
     const setEmailsRef = useRef(setEmails);
     const addEmailRef = useRef(addNewEmail);
     const updateRef = useRef(updateEmail);
     const deleteRef = useRef(deleteEmail);
+    const arrangeByRef = useRef<ArrangeBy | null>(arrangeBy);
+    const sortOrderRef = useRef<SortOrder | null>(sortOrder);
 
     const paginationRef = useRef(pagination);
     const activeEmailMessageIdRef = useRef(activeEmailMessageId);
@@ -62,6 +81,8 @@ export const useMailSocket = () => {
 
     activeEmailMessageIdRef.current = activeEmailMessageId;
     updateEmailAttachmentRef.current = updateEmailAttachment;
+    arrangeByRef.current = arrangeBy;
+    sortOrderRef.current = sortOrder;
 
     useEffect(() => {
         paginationRef.current = pagination;
@@ -84,6 +105,7 @@ export const useMailSocket = () => {
         // Shared ingest for inbound mail — used by both 'newEmail' and 'threadReply'.
         // Upsert by messageId (root-shaped payload) or threadId (reply-shaped), then move
         // the row to top. Only prepend when the thread isn't already on the list.
+        // When Arrange by is active: insert under the correct group label instead of forcing top.
         const ingestInboundEmails = (rawEmails: Email[]) => {
             const boxLower = boxNameRef.current.toLowerCase().trim();
             const isInbox = boxLower === 'inbox' || boxLower.endsWith('/inbox') || boxLower.endsWith('.inbox');
@@ -100,6 +122,49 @@ export const useMailSocket = () => {
                 });
 
             if (!incoming.length) return;
+
+            const currentArrange = arrangeByRef.current;
+            if (currentArrange) {
+                const order = sortOrderRef.current ?? DEFAULT_SORT_ORDER[currentArrange];
+                const prev = emailsRef.current;
+                const existingIds = new Set(prev.map((e) => e.messageId));
+                let addedRows = 0;
+                let unreadDelta = 0;
+                const notifications: Email[] = [];
+
+                for (const email of incoming) {
+                    const exists = existingIds.has(email.messageId);
+                    if (!exists) {
+                        addedRows += 1;
+                        if (!email.isSeen) unreadDelta += 1;
+                    } else {
+                        const existing = prev.find((e) => e.messageId === email.messageId);
+                        if (existing?.isSeen && !email.isSeen) unreadDelta += 1;
+                    }
+                    notifications.push(email);
+                }
+
+                const next = mergeIntoArrangedList(prev, incoming, currentArrange, order);
+
+                if (addedRows > 0) {
+                    const currentPagination = paginationRef.current;
+                    if (currentPagination) {
+                        setPagination({
+                            ...currentPagination,
+                            totalEmails: currentPagination.totalEmails + addedRows,
+                            endCount: currentPagination.endCount + addedRows,
+                        });
+                    }
+                }
+                if (unreadDelta !== 0 || addedRows > 0) {
+                    updateBoxCount(boxNameRef.current, unreadDelta, addedRows);
+                }
+
+                emailsRef.current = next;
+                setEmailsRef.current(next);
+                notifications.forEach((e) => notificationManager.showNewEmailNotification(e));
+                return;
+            }
 
             let next = [...emailsRef.current];
             let addedRows = 0;
@@ -246,6 +311,15 @@ export const useMailSocket = () => {
             }
 
             setEmailsRef.current((prev: Email[]) => {
+                const currentArrange = arrangeByRef.current;
+                if (currentArrange) {
+                    return mergeIntoArrangedList(
+                        prev,
+                        normalized,
+                        currentArrange,
+                        sortOrderRef.current ?? DEFAULT_SORT_ORDER[currentArrange],
+                    );
+                }
                 let next = [...prev];
                 for (const email of normalized) {
                     if (next.some((e) => e.messageId === email.messageId)) continue;

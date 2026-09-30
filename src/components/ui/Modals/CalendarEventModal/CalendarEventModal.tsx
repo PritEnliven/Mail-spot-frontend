@@ -501,6 +501,7 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
             onClose={onClose}
             zIndex={zIndex}
             className=""
+            showBackdrop={true}
             closeOnBackdrop={true}
             closeOnEsc={true}
             draggable={true}

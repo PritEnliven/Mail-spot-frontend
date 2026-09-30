@@ -6,6 +6,9 @@ interface GetEmailsPayload {
     lastMailId: string;
     firstMailId: string;
     totalCount: number | null;
+    mailAction?: string;
+    arrangeBy?: 'date' | 'from' | 'to' | 'subject' | 'size';
+    sortOrder?: 'asc' | 'desc';
 }
 
 export interface GetSingleEmailPayload {

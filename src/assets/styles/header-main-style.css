@@ -246,6 +246,15 @@ p {
   line-height: 100%;
 }
 
+.suggested-mail-badge {
+    background-color: #fafafa;
+    border: 1px solid #B0BCC1;
+    margin-left: 8px;
+    color: #212121;
+    letter-spacing: 0.3px;
+    font-weight: 400;
+}
+
 .m-link.active .badge {
   display: block;
   background-color: #f0f0f0;
@@ -1169,6 +1178,46 @@ span.copied-text.me-1 {
   color: gray;
 }
 
+/* Gmail-like image size / remove options in the image balloon toolbar */
+.ck.ck-button.ck-gmail-image-option {
+  padding: 4px 8px;
+  min-width: auto;
+  min-height: 28px;
+}
+
+.ck.ck-button.ck-gmail-image-option .ck-button__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.ck.ck-button.ck-gmail-image-option.ck-on .ck-button__label,
+.ck.ck-button.ck-gmail-image-option:hover .ck-button__label {
+  color: #0073b6;
+}
+
+.ck.ck-button.ck-gmail-image-remove .ck-button__label {
+  color: #d93025;
+}
+
+.ck.ck-button.ck-gmail-image-remove:hover .ck-button__label {
+  color: #b3261e;
+}
+
+/* Side-by-side inline images in the compose body */
+.ck-content .image-inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 4px 4px 0;
+  vertical-align: middle;
+}
+
+.ck-content .image-inline img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
 /* ================================================================
    SECTION:: TOAST NOTIFICATIONS
    ================================================================ */
@@ -1398,6 +1447,9 @@ input::-webkit-search-cancel-button {
   height: 54px;
   border-radius: 10px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-fade-loader div {
@@ -1406,7 +1458,6 @@ input::-webkit-search-cancel-button {
   background: rgb(128, 128, 128);
   position: absolute;
   left: 50%;
-  top: 30%;
   opacity: 0;
   border-radius: 50px;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
@@ -2088,6 +2139,8 @@ input::-webkit-search-cancel-button {
   text-overflow: ellipsis;
   max-width: 100%;
   overflow: hidden;
+  display: flex;
+  align-items: center;
 }
 
 /* Start Email Tags */
@@ -5555,8 +5608,24 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
 
 .refresh-folder-btn .interactive-icon,
 .refresh-folder-btn img {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
+}
+
+.refresh-loader {
+  pointer-events: none;
+}
+
+.refresh-loader img,
+.refresh-loader .interactive-icon,
+.refresh-loader .hover-image {
+  display: block;
+  transform-origin: 50% 50%;
+  animation: refresh-loader-spin 0.8s linear infinite;
+}
+
+@keyframes refresh-loader-spin {
+  to { transform: rotate(360deg); }
 }
 
 .create-folder-sec::after {
@@ -6422,3 +6491,7 @@ nav#navbarList.nav-collepse::after {
       max-height: 156px;
     overflow: auto;
 }
+
+
+
+

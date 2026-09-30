@@ -1,5 +1,6 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import { clearAllToasts, showSuccess } from "@components/ui/toast/toastNotification";
+import ArrangeByControl from "@components/ui/email/ArrangeByControl";
+import { showSuccess } from "@components/ui/toast/toastNotification";
 import { useScreen } from "@context/ScreenContext";
 import { useEmailAction } from "@hooks/useEmailAction";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
@@ -20,8 +21,10 @@ import deleteIconHover from "@images/trash-icon-hover.svg";
 import deleteIcon from "@images/trash-icon.svg";
 import type { Email } from "@models/Email";
 import { moveToFolder, refreshMailBox } from "@services/emailAction/emailActionService";
+import { DEFAULT_SORT_ORDER } from "@constants/arrangeBy";
+import { mergeIntoArrangedList } from "@utils/arrangeEmailUtil";
 import { handleEmailDeletion, verifyBoxName } from "@utils/emailUtil";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import SimpleBar from 'simplebar-react';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
@@ -66,13 +69,16 @@ function normalizeIncomingEmail(email: Email): Email {
 
 const ToolbarBox = () => {
     const { pagination, boxName, sidebarState, mailListPage, fetchEmails, readUnreadFilter, fetchSearchEmails, allSearchResult, emailDetailSelected, emails,
-        setEmails, setPagination, setTotalEmailBadge, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId } = useMailData();
+        setEmails, setPagination, setTotalEmailBadge, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId, boxTitle, arrangeBy, sortOrder } = useMailData();
     const { selectAllEmails, selectedEmails, clearEmailSelection } = useMailSelection();
     const { toolbarState, activeEmailMessageId, setToolbarState, openModal, setIsMailListOpen, setIsLoading } = useMailUI();
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
     const [moveToFolderOptions, setMoveToFolderOptions] = useState<any>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
     const { isDesktop, isMobile } = useScreen();
+    const isSchedule = boxName?.toLocaleLowerCase().includes('schedule');
+    const isSearchOrFilterMailList = allSearchResult || boxTitle === 'Search Results';
+    const showArrangeBy = !isSearchOrFilterMailList && !isSchedule;
 
     // Hide pagination when mailbox is empty (all counts are 0)
     // const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
@@ -120,35 +126,52 @@ const ToolbarBox = () => {
         }
     };
 
+    const scrollMailListToTop = () => {
+        const scrollEl = document.querySelector(
+            '.mailReceivedTableNewsSimpleBar .simplebar-content-wrapper'
+        ) as HTMLElement | null;
+        if (scrollEl) {
+            scrollEl.scrollTop = 0;
+        }
+        const emailListRef = document.getElementById('email-list');
+        if (emailListRef) {
+            emailListRef.scrollTop = 0;
+        }
+    };
+
     const handlePagination = async (isPrevious: boolean) => {
         setIsLoading(true);
         try {
             if (allSearchResult) {
                 await fetchSearchEmails(isPrevious);
-            } 
+            }
             else {
                 const newPage = isPrevious ? mailListPage - 1 : mailListPage + 1;
                 await fetchEmails(newPage, boxName, isPrevious, readUnreadFilter);
             }
-        } 
+        }
         finally {
             setIsLoading(false);
-            // Scroll to the top of the email list
-            const emailListRef = document.getElementById('email-list') as HTMLDivElement | null;
-            if (emailListRef) {                                                
-                emailListRef.scrollTop = 0;                                                
-            }
+            // Wait for list re-render (incl. arrange group headers) before resetting scroll
+            setTimeout(scrollMailListToTop, 0);
+            requestAnimationFrame(() => {
+                scrollMailListToTop();
+                requestAnimationFrame(scrollMailListToTop);
+            });
         }
     };
 
-    const refreshMailBoxHandler = async () => {
-        // Clear any existing toast notifications immediately
-        clearAllToasts();
+    const refreshMailBoxHandler = async (e?: React.MouseEvent) => {
+        e?.preventDefault();
+        e?.stopPropagation();
 
         // Prevent multiple clicks if already refreshing
         if (isRefreshing) return;
 
         setIsRefreshing(true);
+        // Match refresh-loader-spin (0.8s) so at least one full rotation always shows
+        const minSpinMs = 800;
+        const spinStartedAt = Date.now();
 
         try {
             const newest = emails[0];
@@ -174,7 +197,15 @@ const ToolbarBox = () => {
                     const fresh = newer
                         .filter((email) => email.messageId && !seen.has(email.messageId))
                         .map(normalizeIncomingEmail);
-                    const merged = [...fresh, ...emails];
+
+                    const merged = arrangeBy
+                        ? mergeIntoArrangedList(
+                            emails,
+                            fresh,
+                            arrangeBy,
+                            sortOrder ?? DEFAULT_SORT_ORDER[arrangeBy],
+                        )
+                        : [...fresh, ...emails];
                     const trimmed = pageSize > 0 ? merged.slice(0, pageSize) : merged;
                     setEmails(trimmed);
 
@@ -210,11 +241,14 @@ const ToolbarBox = () => {
                     });
                 }
 
-                showSuccess("Loading new emails...")
             }
         } catch (error) {
             console.error('Refresh failed:', error);
         } finally {
+            const remainingSpinMs = minSpinMs - (Date.now() - spinStartedAt);
+            if (remainingSpinMs > 0) {
+                await new Promise((resolve) => setTimeout(resolve, remainingSpinMs));
+            }
             setIsRefreshing(false);
         }
     }
@@ -416,9 +450,11 @@ const ToolbarBox = () => {
                         <a
                             href="#"
                             id="refreshEmailBtn"
-                            className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showRefresh ? '' : 'd-none'} ${isRefreshing ? 'disabled' : ''}`}
+                            className={`hover-link d-flex align-items-center icon-hover-effect ${toolbarState.showRefresh ? '' : 'd-none'}${isRefreshing ? ' refresh-loader' : ''}`}
                             onClick={refreshMailBoxHandler}
-                            style={{ opacity: isRefreshing ? 0.5 : 1, pointerEvents: isRefreshing ? 'none' : 'auto' }}
+                            style={{ cursor: isRefreshing ? 'default' : 'pointer' }}
+                            aria-label="Refresh"
+                            aria-busy={isRefreshing}
                         >
                             <InteractiveIcon
                                 defaultIcon={refreshIcon}
@@ -431,6 +467,12 @@ const ToolbarBox = () => {
                                 tooltip="Refresh"
                             />
                         </a>
+
+                        {showArrangeBy && (
+                            <div className="arrange-by-toolbar">
+                                <ArrangeByControl />
+                            </div>
+                        )}
 
                         {hasEmails && (
                             <div id="actionButtons" className="d-flex align-items-center action-buttons">

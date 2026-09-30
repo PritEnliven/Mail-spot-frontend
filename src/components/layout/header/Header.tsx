@@ -179,6 +179,15 @@ const Header = () => {
         setIsFilterPanelOpen(isFilterDropdownOpen || isCreateRuleModalOpen);
     }, [isFilterDropdownOpen, isCreateRuleModalOpen]);
 
+    // Reset filter panel scroll so reopening always starts at the top
+    useEffect(() => {
+        if (!isFilterDropdownOpen) return;
+        const filterBody = document.querySelector('#filterEmailFormSection .filter-body');
+        if (filterBody instanceof HTMLElement) {
+            filterBody.scrollTop = 0;
+        }
+    }, [isFilterDropdownOpen]);
+
     useEffect(() => () => setIsFilterPanelOpen(false), []);
 
     const handleLogout = async () => {
@@ -508,14 +517,15 @@ const Header = () => {
             showError('Please set at least one filter condition before creating a rule');
             return;
         }
-        setIsFilterDropdownOpen(false);
+        // Swap filter panel for create-rule panel (sibling menus; keep create-rule visible)
         setIsSearchResultDropdownOpen(false);
+        setIsFilterDropdownOpen(false);
         setIsCreateRuleModalOpen(true);
     };
 
     const handleCreateRuleModalReset = () => {
-        setIsCreateRuleModalOpen(false);                                                 
-        setIsFilterDropdownOpen(true); 
+        setIsCreateRuleModalOpen(false);
+        setIsFilterDropdownOpen(true);
     };
 
     const executeSearchFromQuery = async () => {
@@ -714,6 +724,12 @@ const Header = () => {
     const { totalEmailBadge, readUnreadFilter } = useMailData();
 
     const toggleFilterDropdown = () => {
+        if (isCreateRuleModalOpen) {
+            setIsCreateRuleModalOpen(false);
+            setIsFilterDropdownOpen(false);
+            return;
+        }
+
         if (isFilterDropdownOpen) {
             setIsFilterDropdownOpen(false);
             return;
@@ -727,17 +743,33 @@ const Header = () => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Element;
             const headerComponent = target.closest('.mail-details-header');
-            const flatpickrCalendar = target.closest('.flatpickr-calendar');
+            // Portaled overlays — don't treat as outside the open filter panels
+            const isPortaledOverlay = !!(
+                target.closest('.flatpickr-calendar') ||
+                target.closest('.react-select__menu') ||
+                target.closest('.react-select__menu-portal') ||
+                target.closest('.modal') ||
+                target.closest('.modal-backdrop') ||
+                target.closest('#modal-root')
+            );
+
+            if (isPortaledOverlay) return;
 
             const filterDropdown = document.getElementById('filterEmailFormSection');
             const isInsideFilterDropdown = !!filterDropdown && filterDropdown.contains(target);
+            const filterToggleBtn = target.closest('.t-filter-btn, .search-d-Btn-cm');
+
+            const createRuleDropdown = document.getElementById('createRuleFormSection');
+            const isInsideCreateRuleDropdown = !!createRuleDropdown && createRuleDropdown.contains(target);
 
             const searchDropdown = document.getElementById('searchEmailDropdown1');
             const isInsideSearchDropdown = !!searchDropdown && searchDropdown.contains(target);
 
-            if (flatpickrCalendar) return;
+            if (isCreateRuleModalOpen && !isInsideCreateRuleDropdown && !filterToggleBtn) {
+                setIsCreateRuleModalOpen(false);
+            }
 
-            if (isFilterDropdownOpen && !isInsideFilterDropdown) {
+            if (isFilterDropdownOpen && !isInsideFilterDropdown && !filterToggleBtn) {
                 setIsFilterDropdownOpen(false);
             }
 
@@ -750,7 +782,7 @@ const Header = () => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isFilterDropdownOpen, isSearchResultDropdownOpen]);
+    }, [isFilterDropdownOpen, isSearchResultDropdownOpen, isCreateRuleModalOpen]);
 
     // Clear header search UI when search is reset (e.g. switching mailbox tabs).
     useEffect(() => {
@@ -1227,8 +1259,17 @@ const Header = () => {
                                                     <div className="filter-footer">
                                                         <button type="button" className="btn-new " onClick={handleReset}>Reset</button>
                                                         <div className="d-flex align-items-center">
-                                                            <button type="button" className="btn-new search-create-filter me-2"
-                                                                id="createRuleBtn" onClick={handleCreateRuleModal}>Create Filter
+                                                            <button
+                                                                type="button"
+                                                                className="btn-new search-create-filter me-2"
+                                                                id="createRuleBtn"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    handleCreateRuleModal();
+                                                                }}
+                                                            >
+                                                                Create Filter
                                                             </button>
                                                             <button type="button" className="btn-new btn-new-bg searchBtn-cm" onClick={handleSubmit((data) => onSubmit(data),
                                                                 (errors) => {
@@ -1242,7 +1283,11 @@ const Header = () => {
 
                                             {/*Create Rule Form */}
                                             <Suspense fallback={null}>
-                                                <CreateRuleForm isModalOpen={isCreateRuleModalOpen} onReset={handleCreateRuleModalReset} submitForm={(data) => handleOnSubmitForCreateRule(data)} />
+                                                <CreateRuleForm
+                                                    isModalOpen={isCreateRuleModalOpen}
+                                                    onReset={handleCreateRuleModalReset}
+                                                    submitForm={(data) => handleOnSubmitForCreateRule(data)}
+                                                />
                                             </Suspense>
                                         </div>
                                     </div>

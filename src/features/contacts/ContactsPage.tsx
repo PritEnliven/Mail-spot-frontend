@@ -1,6 +1,7 @@
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import ContactList, { ContactEmptyState } from '@features/contacts/ContactList';
+import ContactsExportMenu from '@features/contacts/ContactsExportMenu';
 import {
     CONTACT_PAGE_LIMIT_OPTIONS,
     CONTACTS_LIST_REFRESH_EVENT,
@@ -147,7 +148,9 @@ function ContactsPage() {
     const hasActiveSearch = searchInput.trim().length > 0;
     const showSearch = isLoading || total > 0 || hasActiveSearch;
     const showPagination = total > 0;
-    const showToolbar = showSearch || !isMobile;
+    // Keep toolbar visible so Export stays available for empty lists (incl. mobile).
+    const showToolbar = true;
+    const exportCompact = isMobilebig || isMobile;
 
     return (
         <div id="contactsContainer" className="contacts-page">
@@ -180,9 +183,8 @@ function ContactsPage() {
                         </div>
                     </div>
                     )}
-                    {!isMobile && (
-                        <div className="contacts-toolbar-actions">
-                            {showSearch && !isMobilebig && (
+                    <div className="contacts-toolbar-actions">
+                            {showSearch && !isMobile && !isMobilebig && (
                             <div className="contacts-filter-field contacts-sort-field">
                                 <div className="form-group form-row mb-0">
                                     <div className="input-control">
@@ -198,7 +200,7 @@ function ContactsPage() {
                                 </div>
                             </div>
                             )}
-                            {showSearch && (
+                            {showSearch && !isMobile && (
                             <div className="contacts-filter-field contacts-page-limit-field">
                                 <div className="form-group form-row mb-0">
                                     <div className="input-control">
@@ -214,45 +216,47 @@ function ContactsPage() {
                                 </div>
                             </div>
                             )}
-                            {isMobilebig ? (
-                                <button
-                                    type="button"
-                                    className="btn-new btn-new-bg hover-link contacts-add-contact-icon-btn"
-                                    onClick={handleAddContact}
-                                    aria-label="Add contact"
-                                >
-                                    <InteractiveIcon
-                                        defaultIcon={plusIconWhite}
-                                        hoverIcon={plusIconWhite}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip="Add contact"
-                                    />
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="btn-new btn-new-bg hover-link contacts-add-contact-btn"
-                                    onClick={handleAddContact}
-                                >
-                                    <InteractiveIcon
-                                        defaultIcon={plusIconWhite}
-                                        hoverIcon={plusIconWhite}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip=""
-                                    />
-                                    <span>Add contact</span>
-                                </button>
+                            <ContactsExportMenu compact={exportCompact} />
+                            {!isMobile && (
+                                isMobilebig ? (
+                                    <button
+                                        type="button"
+                                        className="btn-new btn-new-bg hover-link contacts-add-contact-icon-btn"
+                                        onClick={handleAddContact}
+                                        aria-label="Add contact"
+                                    >
+                                        <InteractiveIcon
+                                            defaultIcon={plusIconWhite}
+                                            hoverIcon={plusIconWhite}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip="Add contact"
+                                        />
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="btn-new btn-new-bg hover-link contacts-add-contact-btn"
+                                        onClick={handleAddContact}
+                                    >
+                                        <InteractiveIcon
+                                            defaultIcon={plusIconWhite}
+                                            hoverIcon={plusIconWhite}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip=""
+                                        />
+                                        <span>Add contact</span>
+                                    </button>
+                                )
                             )}
                         </div>
-                    )}
                 </div>
             </div>
             )}

@@ -63,7 +63,15 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
     };
 
     useEffect(() => {
-        loadAllLabels();
+        if (isModalOpen) {
+            loadAllLabels();
+            const filterBody = document.querySelector('#createRuleFormSection .filter-body');
+            if (filterBody instanceof HTMLElement) {
+                filterBody.scrollTop = 0;
+            }
+        } else {
+            reset();
+        }
     }, [isModalOpen]);
 
     const onForwardEmailSubmit = (data: any) => {
@@ -92,7 +100,10 @@ const CreateRuleForm = ({ isModalOpen, onReset, submitForm }: CreateRuleFormProp
     };
 
     return (
-        <div className={`dropdown-menu dropdown-menu-end t-filter-dropdown-menu more-list search-create-filter-cmt ${isModalOpen ? 'show' : ''}`}>
+        <div
+            id="createRuleFormSection"
+            className={`dropdown-menu dropdown-menu-end t-filter-dropdown-menu more-list search-create-filter-cmt ${isModalOpen ? 'show' : ''}`}
+        >
             <div className="filter-body">
                 <CreateRuleActionsFields
                     control={control}

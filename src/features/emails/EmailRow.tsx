@@ -14,6 +14,7 @@ import { getParticipantsLabel, getSenderLabel, verifyBoxName } from "@utils/emai
 import { useSettings } from "@context/SettingsContext";
 import { useMailData, useMailSelection } from "../../context/index";
 import type { CalendarInvite } from "@models/Email";
+import { ARRANGE_BY } from "@constants/arrangeBy";
 
 interface EmailRowProps {
     email: EmailDetail;
@@ -69,7 +70,7 @@ const EmailRow = memo(({
     onDelete,
     onToggleSelection: _onToggleSelection,
 }: EmailRowProps) => {
-    const { boxName } = useMailData();
+    const { boxName, arrangeBy } = useMailData();
     const { settings } = useSettings();
     let emailNameOrEmail = getSenderLabel(email.from) || "Unknown";
     if (verifyBoxName(boxName, 'draft') || verifyBoxName(boxName, 'sent')) {
@@ -86,6 +87,7 @@ const EmailRow = memo(({
         : [];
     const showThreadCount =
         settings.threadView &&
+        (!arrangeBy || arrangeBy === ARRANGE_BY.SUBJECT) &&
         !verifyBoxName(boxName, 'trash') &&
         email.threadCount > 1;
 

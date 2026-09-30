@@ -1,14 +1,20 @@
 import CalendarAllEventList from '@components/ui/calendar/CalendarAllEventList'
 import CalendarList from '@components/ui/calendar/CalendarList'
+import InteractiveIcon from '@components/ui/InteractiveIcon'
 import { useCalendar, type CalendarView } from '@context/CalendarContext'
 import { useMailData } from '@context/MailDataContext'
 import { useMailUI } from '@context/MailUIContext'
+import { useScreen } from '@context/ScreenContext'
 import type { DatesSetArg } from '@fullcalendar/core'
 import FullCalendar from '@fullcalendar/react'
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet'
 import { useSocketEvent } from '@hooks/useSocket'
 import { getEventById } from '@services/calendar/calendarService'
 import { focusDate, focusEvent, normalizeEventForModal } from '@utils/calendarUtil'
+import chevronDownIcon from '@images/chevron-down-icon.svg'
+import chevronDownIconHover from '@images/chevron-down-icon-hover.svg'
+import chevronUpIcon from '@images/chevron-up-icon.svg'
+import chevronUpIconHover from '@images/chevron-up-icon-hover.svg'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createMainCalendarConfig, createSidebarCalendarConfig } from '../../config/fullCalendar.config'
 
@@ -29,14 +35,28 @@ function CalendarPage() {
         isCalendarAllSearchActive,
         setSelectedEvent,
         isSidebarCalendarOpen,
+        setIsSidebarCalendarOpen,
         exitCalendarAllSearch,
     } = useCalendar()
     const { openModal } = useMailUI()
+    const { isMobilebig } = useScreen()
     const titleRef = useRef<HTMLDivElement | null>(null);
     const popoverObserverRef = useRef<MutationObserver | null>(null)
     const lastClickedDateRef = useRef<string | null>(null)
     const [currentDateRange, setCurrentDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' })
     const [isCalendarReady, setIsCalendarReady] = useState(false)
+
+    const toggleCalendarFullscreen = useCallback(() => {
+        if (!isMobilebig) return
+        setIsSidebarCalendarOpen(!isSidebarCalendarOpen)
+    }, [isMobilebig, isSidebarCalendarOpen, setIsSidebarCalendarOpen])
+
+    useEffect(() => {
+        if (!isMobilebig || !isCalendarReady) return
+        requestAnimationFrame(() => {
+            mainCalendarRef.current?.getApi()?.updateSize()
+        })
+    }, [isSidebarCalendarOpen, isMobilebig, isCalendarReady, mainCalendarRef])
 
     const setupMorePopoverObserver = () => {
         if (popoverObserverRef.current) return;
@@ -372,7 +392,46 @@ function CalendarPage() {
                         <CalendarList />
                     </div>
 
-                    <div className="right-side-calendar-box" id="calendar">
+                    {isMobilebig && (
+                        <button
+                            type="button"
+                            className={`calendar-panel-toggle${isSidebarCalendarOpen ? '' : ' is-collapsed'}`}
+                            onClick={toggleCalendarFullscreen}
+                            aria-expanded={isSidebarCalendarOpen}
+                            aria-label={
+                                isSidebarCalendarOpen
+                                    ? 'Expand calendar to full screen'
+                                    : 'Show month picker and calendars'
+                            }
+                            title={
+                                isSidebarCalendarOpen
+                                    ? 'Expand calendar to full screen'
+                                    : 'Show month picker and calendars'
+                            }
+                        >
+                            <span className="calendar-panel-toggle__bar" aria-hidden="true" />
+                            <span className="calendar-panel-toggle__icon">
+                                <InteractiveIcon
+                                    defaultIcon={isSidebarCalendarOpen ? chevronUpIcon : chevronDownIcon}
+                                    hoverIcon={isSidebarCalendarOpen ? chevronUpIconHover : chevronDownIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="interactive-icon hover-image"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                            </span>
+                            <span className="calendar-panel-toggle__label">
+                                {isSidebarCalendarOpen ? 'Full calendar' : 'Month & calendars'}
+                            </span>
+                        </button>
+                    )}
+
+                    <div
+                        className={`right-side-calendar-box${!isSidebarCalendarOpen && isMobilebig ? ' is-fullscreen' : ''}`}
+                        id="calendar"
+                    >
                         <div
                             className="calendar-main-view"
                             style={{

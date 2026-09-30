@@ -2,9 +2,17 @@ import type { FilterEmailFormValues } from '@components/layout/header/filterEmai
 import { buildSearchFilterPayload } from '@utils/filterUtil';
 import type { Email } from '@models/Email';
 import type { Pagination } from '@models/Pagination';
+import {
+    DEFAULT_SORT_ORDER,
+    isArrangeBy,
+    isSortOrder,
+    type ArrangeBy,
+    type SortOrder,
+} from '@constants/arrangeBy';
 import { getCounts, getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
 import { getBoxes, refreshFolders } from '@services/mailbox/mailboxService';
 import { getUserPermissions } from '@services/settings/settingsService';
+import { mergeIntoArrangedList } from '@utils/arrangeEmailUtil';
 import { buildParentFolderOptions, ensureContactInOtherMenu, resolveAllSidebarItems, verifyBoxName } from '@utils/emailUtil';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
@@ -126,6 +134,13 @@ interface MailDataType {
     readUnreadFilter: string;
     setReadUnreadFilter: (filter: string) => void;
 
+    /* Arrange by / Sort (Outlook-style flat listing when set) */
+    arrangeBy: ArrangeBy | null;
+    sortOrder: SortOrder | null;
+    setArrangeBy: (arrangeBy: ArrangeBy | null) => void;
+    setSortOrder: (sortOrder: SortOrder | null) => void;
+    setArrangeSort: (arrangeBy: ArrangeBy | null, sortOrder?: SortOrder | null) => void;
+
     /* Sidebar loading state */
     isSidebarLoading: boolean;
     setIsSidebarLoading: (loading: boolean) => void;
@@ -180,6 +195,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [userPermissions, setUserPermissions] = useState<AdminSettingsPermissions | null>(null);
     const [permissionsLoaded, setPermissionsLoaded] = useState(false);
     const [readUnreadFilter, setReadUnreadFilter] = useState<string>('all');
+    const [arrangeBy, setArrangeByState] = useState<ArrangeBy | null>(null);
+    const [sortOrder, setSortOrderState] = useState<SortOrder | null>(null);
     const [isSidebarLoading, setIsSidebarLoading] = useState<boolean>(false);
     const [isSidebarCountLoading, setIsSidebarCountLoading] = useState<boolean>(false);
     const [isTotalCountLoading, setIsTotalCountLoading] = useState<boolean>(false);
@@ -205,6 +222,82 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     searchTermRef.current = searchTerm;
     const filterFormRef = useRef(filterForm);
     filterFormRef.current = filterForm;
+    const arrangeByRef = useRef<ArrangeBy | null>(arrangeBy);
+    arrangeByRef.current = arrangeBy;
+    const sortOrderRef = useRef<SortOrder | null>(sortOrder);
+    sortOrderRef.current = sortOrder;
+
+    const setArrangeBy = useCallback((next: ArrangeBy | null) => {
+        setArrangeByState(next);
+        arrangeByRef.current = next;
+    }, []);
+
+    const setSortOrder = useCallback((next: SortOrder | null) => {
+        setSortOrderState(next);
+        sortOrderRef.current = next;
+    }, []);
+
+    const setArrangeSort = useCallback((nextArrange: ArrangeBy | null, nextSort?: SortOrder | null) => {
+        const resolvedSort =
+            nextArrange == null
+                ? null
+                : (nextSort ?? DEFAULT_SORT_ORDER[nextArrange]);
+        setArrangeByState(nextArrange);
+        setSortOrderState(resolvedSort);
+        arrangeByRef.current = nextArrange;
+        sortOrderRef.current = resolvedSort;
+    }, []);
+
+    const syncArrangeFromResponse = useCallback((data: { arrangeBy?: unknown; sortOrder?: unknown } | undefined) => {
+        if (!data) return;
+        if (isArrangeBy(data.arrangeBy)) {
+            setArrangeByState(data.arrangeBy);
+            arrangeByRef.current = data.arrangeBy;
+            const echoedSort = isSortOrder(data.sortOrder)
+                ? data.sortOrder
+                : DEFAULT_SORT_ORDER[data.arrangeBy];
+            setSortOrderState(echoedSort);
+            sortOrderRef.current = echoedSort;
+        }
+    }, []);
+
+    const buildGetEmailsPayload = useCallback((
+        activeBox: string,
+        page: number,
+        isPrevious: boolean | undefined,
+        mailAction: string,
+    ) => {
+        const payload: {
+            current_active_box: string;
+            vPage: number;
+            lastMailId: string;
+            firstMailId: string;
+            totalCount: number | null;
+            mailAction: string;
+            arrangeBy?: ArrangeBy;
+            sortOrder?: SortOrder;
+        } = {
+            current_active_box: activeBox,
+            vPage: page,
+            lastMailId: page === 1 ? '' : isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
+            firstMailId: page === 1 ? '' : isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
+            totalCount: page === 1 ? null : (paginationRef.current?.totalEmails ?? 0),
+            mailAction,
+        };
+
+        if (page === 1) {
+            payload.lastMailId = '';
+            payload.firstMailId = '';
+        }
+
+        const currentArrange = arrangeByRef.current;
+        if (currentArrange) {
+            payload.arrangeBy = currentArrange;
+            payload.sortOrder = sortOrderRef.current ?? DEFAULT_SORT_ORDER[currentArrange];
+        }
+
+        return payload;
+    }, []);
 
     const refreshUserPermissions = useCallback(async () => {
         try {
@@ -264,20 +357,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
                 if (mailAction === 'all') {
                     const activeBox = boxNameParam || boxName;
-                    const payload = {
-                        current_active_box: activeBox,
-                        vPage: page,
-                        lastMailId: page === 1 ? '' : isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
-                        firstMailId: page === 1 ? '' : isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
-                        totalCount: page === 1 ? null : (paginationRef.current?.totalEmails ?? 0),
-                        mailAction,
-                    };
-
-                    if (page === 1) {
-                        payload.lastMailId = '';
-                        payload.firstMailId = '';
-                    }
-
+                    const payload = buildGetEmailsPayload(activeBox, page, isPrevious, mailAction);
 
                     const response = await getEmailsService(payload);
                     if (response.statusCode !== 200) {
@@ -285,6 +365,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     } else {
                         emailList = response.data.emailList ?? [];
                         paginationData = response.data.pagination;
+                        syncArrangeFromResponse(response.data);
                     }
 
                     if (boxNameParam && page === 1) {
@@ -332,24 +413,13 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     setMailListPage(page);
 
                 } else {
-                    let payload = {
-                        current_active_box: boxNameParam,
-                        vPage: page,
-                        lastMailId: isPrevious ? '' : paginationRef.current?.lastMailId ?? '',
-                        firstMailId: isPrevious ? paginationRef.current?.firstMailId ?? '' : '',
-                        totalCount: page === 1 ? null : (paginationRef.current?.totalEmails ?? 0),
-                        mailAction: mailAction,
-                    };
-
-                    if (page === 1) {
-                        payload.lastMailId = "";
-                        payload.firstMailId = "";
-                    }
+                    const payload = buildGetEmailsPayload(boxNameParam!, page, isPrevious, mailAction);
 
                     const response = await getEmailsService(payload);
                     if (response.statusCode === 200) {
                         const emailList = response.data.emailList || [];
                         const paginationData = response.data.pagination;
+                        syncArrangeFromResponse(response.data);
 
                         setEmails(emailList);
                         setPagination(paginationData);
@@ -398,7 +468,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                             });
                         }
 
-                        // Update sidebar box unread count when mailAction is read/unread
+                        // Update sidebar box unread count when mailAction is unread
                         if (mailAction === 'unread') {
                             setSidebarState(prev => ({
                                 ...prev,
@@ -419,7 +489,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             }
         },
         // [mailListPage, readUnreadFilter, userId, boxName]
-        [userId, boxName]
+        [userId, boxName, buildGetEmailsPayload, syncArrangeFromResponse]
     );
 
     const receiveOutsideRef = useRef<boolean | undefined>(undefined);
@@ -662,6 +732,16 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 });
             }
 
+            const currentArrange = arrangeByRef.current;
+            if (currentArrange) {
+                return mergeIntoArrangedList(
+                    prev,
+                    toAdd as Email[],
+                    currentArrange,
+                    sortOrderRef.current ?? DEFAULT_SORT_ORDER[currentArrange],
+                );
+            }
+
             return [...toAdd, ...prev];
         });
     };
@@ -890,6 +970,10 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setAllSearchResult(false);
         setMailListPage(1);
         setReadUnreadFilter('all');
+        setArrangeByState(null);
+        setSortOrderState(null);
+        arrangeByRef.current = null;
+        sortOrderRef.current = null;
         setTotalEmailBadge(0);
         setMailSearchResetKey((key) => key + 1);
         setIsSidebarDataReady(false);
@@ -1093,6 +1177,11 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setIsSidebarDataReady,
         readUnreadFilter,
         setReadUnreadFilter,
+        arrangeBy,
+        sortOrder,
+        setArrangeBy,
+        setSortOrder,
+        setArrangeSort,
         isSidebarLoading,
         setIsSidebarLoading,
         isSidebarCountLoading,

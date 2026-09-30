@@ -115,21 +115,50 @@ function Schedule({ modalId, zIndex }: ScheduleProps) {
     const mountMonthDropdown = useFlatpickrMonthDropdown(startFromMonth);
     const scheduleDateTimeOnChangeRef = useRef<(value: string) => void>(() => {});
 
-    const flatpickrOptions = useMemo(() => ({
-        dateFormat: 'd-m-Y H:i',
-        enableTime: true,
-        time_24hr: true,
-        allowInput: false,
-        closeOnSelect: false,
-        minDate: 'today' as const,
-        minTime: new Date().toTimeString().slice(0, 5),
-        disableMobile: true,
-        onReady: (_: Date[], __: string, instance: any) => mountMonthDropdown(instance),
-        onClose: (dates: Date[]) => {
-            const date = dates?.[0];
-            scheduleDateTimeOnChangeRef.current(date ? date.toISOString() : '');
-        },
-    }), [mountMonthDropdown]);
+    const flatpickrOptions = useMemo(() => {
+        const isSameCalendarDay = (a: Date, b: Date) =>
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate();
+
+        // Flatpickr applies minTime to ALL dates when set. Only constrain "today"
+        // so AM/PM can be toggled freely on future dates.
+        const applyMinTimeForDate = (
+            instance: { set: (key: string, value: string) => void; selectedDates?: Date[] },
+            selectedDate?: Date,
+        ) => {
+            const now = new Date();
+            const date = selectedDate ?? instance.selectedDates?.[0] ?? now;
+            instance.set(
+                'minTime',
+                isSameCalendarDay(date, now) ? now.toTimeString().slice(0, 5) : '00:00',
+            );
+        };
+
+        return {
+            dateFormat: 'd-m-Y h:i K',
+            enableTime: true,
+            time_24hr: false,
+            allowInput: false,
+            closeOnSelect: false,
+            minDate: 'today' as const,
+            disableMobile: true,
+            onReady: (_: Date[], __: string, instance: any) => {
+                mountMonthDropdown(instance);
+                applyMinTimeForDate(instance);
+            },
+            onChange: (dates: Date[], __: string, instance: any) => {
+                applyMinTimeForDate(instance, dates?.[0]);
+            },
+            onOpen: (_: Date[], __: string, instance: any) => {
+                applyMinTimeForDate(instance);
+            },
+            onClose: (dates: Date[]) => {
+                const date = dates?.[0];
+                scheduleDateTimeOnChangeRef.current(date ? date.toISOString() : '');
+            },
+        };
+    }, [mountMonthDropdown]);
 
     return (
 

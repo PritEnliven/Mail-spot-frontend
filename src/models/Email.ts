@@ -56,6 +56,12 @@ export interface Email {
     isSchedule?: boolean;
     isSearchEmail?: boolean;
     calendarInvite?: CalendarInvite | null;
+    /** Present when list is arranged (flat message view). */
+    groupKey?: string;
+    groupLabel?: string;
+    isGroupStart?: boolean;
+    /** Bytes when arrangeBy is size (or otherwise provided). */
+    size?: number;
 }
 
 export interface EmailAddress {

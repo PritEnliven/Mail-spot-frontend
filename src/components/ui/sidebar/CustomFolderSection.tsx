@@ -153,7 +153,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
     <div className="create-folder-sec" id="customFolderSection">
       <div className="sidebar-create-folder-box-main">
         <div className="folder-header-actions">
-          <span
+          {/* <span
             className={`refresh-folder-btn tooltips-ds${isRefreshingFolders ? ' is-loading' : ''}`}
             onClick={(e) => {
               e.preventDefault();
@@ -169,7 +169,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
             {isRefreshingFolders ? (
               <span
                 className="spinner-border spinner-border-sm text-primary"
-                style={{ width: 14, height: 14, borderWidth: 2 }}
+                style={{ width: 16, height: 16, borderWidth: 2 }}
                 role="status"
               />
             ) : (
@@ -184,6 +184,30 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                 tooltip="Refresh folders"
               />
             )}
+          </span> */}
+          <span
+            className={`refresh-folder-btn tooltips-ds${isRefreshingFolders ? ' refresh-loader' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isRefreshingFolders && onRefreshFolders) {
+                onRefreshFolders();
+              }
+            }}
+            style={{ cursor: isRefreshingFolders ? 'default' : 'pointer' }}
+            aria-label="Refresh folders"
+            aria-busy={isRefreshingFolders}
+          >
+            <InteractiveIcon
+              defaultIcon={refreshIcon}
+              hoverIcon={refreshIconHover}
+              activeIcon=""
+              isActive={false}
+              alt=""
+              className="interactive-icon hover-image"
+              renderAs="img"
+              tooltip="Refresh folders"
+            />
           </span>
           <span
             className="add-folder-btn tooltips-ds"

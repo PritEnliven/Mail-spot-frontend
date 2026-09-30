@@ -16,7 +16,6 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { ForgotPageSchema, type ForgotPageFormValues } from "./ForgotPage.schema";
-import { pageStyles, usePageStylesheet } from "@hooks/usePageStyleSheet";
 
 const STEPS = {
   EMAIL: 1,
@@ -34,7 +33,6 @@ const stepTitles: Record<Step, string> = {
 
 const ForgotPage = () => {
   const naviate = useNavigate();
-  const cssLoaded = usePageStylesheet([pageStyles.headerCss, pageStyles.signInCss]);
   const [currentStep, setCurrentStep] = useState<Step>(STEPS.EMAIL);
   const [showPassword, setShowPassword] = useState(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
@@ -167,25 +165,8 @@ const ForgotPage = () => {
     document.getElementById(`otp-${focusIndex}`)?.focus();
   };
 
-  if (!cssLoaded) {
-    return null;
-  }
-
   return (
-    <div className="login-main register">
-      <div className="row m-0">
-        {/* Left gradient side - unchanged */}
-        <div className="col-md-6 p-0 d-md-block d-none">
-          <div className="login-main-gradiant">
-            <div className="login-left"></div>
-            <div className="login-right"></div>
-            <div className="login-main-content-section">
-              <span className="login-title">Your inbox, supercharged. Your team, unstoppable.</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6 p-0 position-relative overflow-auto power-add h-100vh">
+    <div className="col-md-6 p-0 position-relative overflow-auto power-add h-100vh">
           <div>
             <div className="progress-line-wrapper">
               <div className={`progress-segment ${getProgressClass(1)}`} id="step1"></div>
@@ -425,10 +406,7 @@ const ForgotPage = () => {
               <a href="#" className="ms-2"><img src={enlivenLogo} alt="" /></a>
             </span>
           </div>
-        </div>
-      </div>
     </div>
-
   );
 };
 

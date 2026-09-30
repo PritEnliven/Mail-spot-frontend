@@ -50,6 +50,145 @@
   color: #212121;
   box-shadow: 0px 1px 3px 0px #0000001f;
 }
+.checkbox-group-2 .arrange-by-toolbar {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 10px 0 0;
+}
+.checkbox-group-2 .arrange-by-toolbar .arrange-by-toggle,
+.checkbox-group-2 .arrange-by-toolbar .arrange-by-toggle.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  line-height: 0;
+}
+.checkbox-group-2 .arrange-by-toolbar .interactive-icon,
+.checkbox-group-2 .arrange-by-toolbar .hover-image {
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  object-fit: contain;
+  display: block;
+}
+.arrange-by-toggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  min-height: auto;
+  gap: 0;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.arrange-by-toggle:hover,
+.arrange-by-toggle:focus-visible,
+.arrange-by-toggle.show,
+.arrange-by-toggle--active {
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+.arrange-by-toggle:focus-visible {
+  outline: 2px solid #0097ef;
+  outline-offset: 1px;
+}
+.arrange-by-dropdown > .dropdown-toggle::after {
+  content: none;
+}
+.arrange-by-dropdown.react-dropdown .dropdown-menu.arrange-by-menu {
+  min-width: 160px;
+  padding: 7px 0;
+  z-index: 1080;
+}
+/* Override .react-dropdown .dropdown-item { max-width: 160px } so hover/selected fills full menu width */
+.arrange-by-dropdown.react-dropdown .arrange-by-menu .dropdown-item,
+.arrange-by-dropdown.react-dropdown .arrange-by-menu button.dropdown-item {
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  border-radius: 0;
+  padding: 7px 12px 7px 20px;
+  gap: 8px;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
+}
+.arrange-by-dropdown.react-dropdown .arrange-by-menu .dropdown-divider {
+  margin: 4px 0;
+}
+.arrange-by-menu__section-label {
+  padding: 4px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #717d84;
+}
+.arrange-by-menu__item--active {
+  background-color: rgba(229, 232, 234, 0.65);
+}
+.arrange-by-dropdown.react-dropdown .arrange-by-menu .dropdown-item:hover,
+.arrange-by-dropdown.react-dropdown .arrange-by-menu .dropdown-item:focus,
+.arrange-by-dropdown.react-dropdown .arrange-by-menu .dropdown-item:active,
+.arrange-by-dropdown.react-dropdown .arrange-by-menu .arrange-by-menu__item--active {
+  background-color: rgba(229, 232, 234, 1);
+  color: #212121;
+}
+.arrange-by-menu__check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+}
+
+/* Group section labels when list is arranged (Outlook-style) */
+.mail-list-group-header td {
+  padding: 0 !important;
+  border: none !important;
+}
+.mail-list-group-header__btn {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px 6px 8px;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid #d0d9de;
+  background-color: #f5f5f5;
+  color: #212121;
+  text-align: left;
+  cursor: pointer;
+}
+.mail-list-group-header__btn:hover,
+.mail-list-group-header__btn:focus-visible {
+  background-color: #e5e8ea;
+}
+.mail-list-group-header__btn:focus-visible {
+  outline: 2px solid #0097ef;
+  outline-offset: -2px;
+}
+.mail-list-group-header__chevron {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+.mail-list-group-header__label {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #212121;
+}
 
 /* ============================================================
    3. MAIL RECEIVED BOX (left mail list panel)
@@ -194,7 +333,7 @@
   display: block;
 }
 .mail-message-active {
-  background: rgba(227, 242, 251, 1);
+  background: rgba(227, 242, 251, 1) !important;
   border-bottom: 1px solid rgba(187, 192, 196, 1);
 }
 .mail-message-active::after {
