@@ -1,3 +1,556 @@
+// import {
+//     Essentials,
+//     Paragraph,
+//     Bold,
+//     Italic,
+//     Heading,
+//     FontColor,
+//     SourceEditing,
+//     FontSize,
+//     Underline,
+//     Table,
+//     TableProperties,
+//     TableCellProperties,
+//     TableToolbar,
+//     Link,
+//      LinkUI,
+//     LinkEditing,
+//     ContextualBalloon,
+//     Alignment,
+//     List,
+//     Strikethrough,
+//     Code,
+//     HorizontalLine,
+//     GeneralHtmlSupport,
+//     Autoformat,
+//     AutoLink,
+//     Autosave,
+//     CodeBlock,
+//     FontBackgroundColor,
+//     FontFamily,
+//     ImageBlock,
+//     ImageEditing,
+//     ImageInline,
+//     ImageStyle,
+//     ImageToolbar,
+//     ImageResize,
+//     ImageUpload,
+//     ImageUtils,
+//     // MediaEmbed,
+//     PasteFromMarkdownExperimental,
+//     PasteFromOffice,
+//     PlainTableOutput,
+//     TableColumnResize,
+//     ShowBlocks,
+//     Indent,
+//     IndentBlock,
+//     Highlight,
+//     ButtonView
+// } from 'ckeditor5';
+// import { config } from "./config"
+
+// /**
+//  * Clipboard screenshots usually arrive as a File with a generic browser name
+//  * (e.g. "image.png"). Real inserts/pastes of files keep the original name
+//  * (e.g. "Vacation.jpg"), which the backend needs via data-filename.
+//  */
+// function getOriginalImageFilename(file: File | undefined): string | undefined {
+//     const name = file?.name?.trim();
+//     if (!name) return undefined;
+//     if (/^image\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(name)) return undefined;
+//     return name;
+// }
+
+// // Base64 Upload Adapter Plugin
+// function createBase64UploadAdapter(loader: any) {
+//     return {
+//         upload: function () {
+//             return loader.file.then(function (file: File) {
+//                 return new Promise(function (resolve, reject) {
+//                     var reader = new FileReader();
+//                     reader.onload = function () {
+//                         const response: Record<string, unknown> = { default: reader.result };
+//                         const filename = getOriginalImageFilename(file);
+//                         if (filename) {
+//                             response.filename = filename;
+//                         }
+//                         resolve(response);
+//                     };
+//                     reader.onerror = function (err) {
+//                         reject(err);
+//                     };
+//                     reader.readAsDataURL(file);
+//                 });
+//             });
+//         },
+//         abort: function () {
+//             // Nothing to abort for Base64 uploads
+//         }
+//     };
+// }
+
+// function Base64UploadAdapterPlugin(editor: any) {
+//     editor.plugins.get('FileRepository').createUploadAdapter = function (loader: any) {
+//         return createBase64UploadAdapter(loader);
+//     };
+// }
+
+// /**
+//  * Keeps original file names on inserted/pasted images as data-filename so the
+//  * backend can recover names like Vacation.jpg from compose HTML (base64 alone
+//  * has no filename; nameless clipboard screenshots are left without the attr).
+//  */
+// function ImageFilenamePlugin(editor: any) {
+//     const IMAGE_TYPES = ['imageInline', 'imageBlock'] as const;
+
+//     for (const imageType of IMAGE_TYPES) {
+//         if (editor.model.schema.isRegistered(imageType)) {
+//             editor.model.schema.extend(imageType, {
+//                 allowAttributes: ['dataFilename'],
+//             });
+//         }
+//     }
+
+//     editor.conversion.for('upcast').attributeToAttribute({
+//         view: {
+//             name: 'img',
+//             key: 'data-filename',
+//         },
+//         model: 'dataFilename',
+//     });
+
+//     editor.conversion.for('downcast').add((dispatcher: any) => {
+//         for (const imageType of IMAGE_TYPES) {
+//             dispatcher.on(
+//                 `attribute:dataFilename:${imageType}`,
+//                 (evt: any, data: any, conversionApi: any) => {
+//                     if (!conversionApi.consumable.consume(data.item, evt.name)) {
+//                         return;
+//                     }
+
+//                     const viewElement = conversionApi.mapper.toViewElement(data.item);
+//                     if (!viewElement) return;
+
+//                     const imageUtils = editor.plugins.get('ImageUtils');
+//                     const img = imageUtils?.findViewImgElement(viewElement);
+//                     if (!img) return;
+
+//                     if (data.attributeNewValue != null && data.attributeNewValue !== '') {
+//                         conversionApi.writer.setAttribute(
+//                             'data-filename',
+//                             data.attributeNewValue,
+//                             img
+//                         );
+//                     } else {
+//                         conversionApi.writer.removeAttribute('data-filename', img);
+//                     }
+//                 }
+//             );
+//         }
+//     });
+
+//     const imageUploadEditing = editor.plugins.get('ImageUploadEditing');
+//     if (!imageUploadEditing) return;
+
+//     imageUploadEditing.on('uploadComplete', (_evt: any, { data, imageElement }: any) => {
+//         const filename = typeof data?.filename === 'string' ? data.filename.trim() : '';
+//         if (!filename) return;
+
+//         editor.model.change((writer: any) => {
+//             writer.setAttribute('dataFilename', filename, imageElement);
+//         });
+//     });
+// }
+
+// const COPY_LINK_ICON =
+//     '<svg viewBox="0 0 20 20" xmlns="http://www.w3.org"><path d="M7 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2M17 3H9a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>';
+// const COPIED_LINK_ICON =
+//     '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.16669 11.6667L7.08335 14.5833L15.8334 5.41667" stroke="#0073B6" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// function copyTextToClipboard(text: string) {
+//     const writeWithFallback = () => {
+//         const textarea = document.createElement('textarea');
+//         textarea.value = text;
+//         textarea.setAttribute('readonly', '');
+//         textarea.style.position = 'fixed';
+//         textarea.style.left = '-9999px';
+//         textarea.style.top = '0';
+//         textarea.style.opacity = '0';
+//         document.body.appendChild(textarea);
+//         textarea.focus();
+//         textarea.select();
+//         textarea.setSelectionRange(0, textarea.value.length);
+//         document.execCommand('copy');
+//         document.body.removeChild(textarea);
+//     };
+
+//     if (navigator?.clipboard?.writeText) {
+//         return navigator.clipboard.writeText(text).catch(writeWithFallback);
+//     }
+
+//     writeWithFallback();
+//     return Promise.resolve();
+// }
+
+// // Enhanced Link Plugin
+// function EnhancedLinkPlugin(editor: any) {
+//     editor.ui.componentFactory.add('copyLink', (locale: any) => {
+//         const view = new ButtonView(locale);
+//         const linkCommand = editor.commands.get('link');
+//         // Keep last known URL — balloon button clicks can clear selection before execute runs
+//         let lastLinkUrl = '';
+//         let copiedResetTimer: ReturnType<typeof setTimeout> | null = null;
+
+//         const resetCopyButton = () => {
+//             view.set({
+//                 icon: COPY_LINK_ICON,
+//                 label: 'Copy Link',
+//                 withText: false,
+//                 tooltip: true,
+//             });
+//             view.element?.classList.remove('ck-copy-link-copied');
+//         };
+
+//         const showCopiedFeedback = () => {
+//             if (copiedResetTimer) {
+//                 clearTimeout(copiedResetTimer);
+//             }
+
+//             view.set({
+//                 icon: COPIED_LINK_ICON,
+//                 label: 'Copied..',
+//                 withText: true,
+//                 tooltip: false,
+//             });
+//             view.element?.classList.add('ck-copy-link-copied');
+
+//             copiedResetTimer = setTimeout(() => {
+//                 resetCopyButton();
+//                 copiedResetTimer = null;
+//             }, 1000);
+//         };
+
+//         view.set({
+//             label: 'Copy Link',
+//             icon: COPY_LINK_ICON,
+//             tooltip: true,
+//             withText: false,
+//         });
+
+//         linkCommand.on('change:value', (_evt: any, _name: any, value: any) => {
+//             if (value) {
+//                 lastLinkUrl = typeof value === 'string' ? value : String(value);
+//             } else if (copiedResetTimer) {
+//                 // Balloon closed / left link — restore default copy state
+//                 clearTimeout(copiedResetTimer);
+//                 copiedResetTimer = null;
+//                 resetCopyButton();
+//             }
+//         });
+
+//         if (linkCommand.value) {
+//             lastLinkUrl = typeof linkCommand.value === 'string'
+//                 ? linkCommand.value
+//                 : String(linkCommand.value);
+//         }
+
+//         view.bind('isEnabled').to(linkCommand, 'value', (value: any) => !!value);
+
+//         // Keep selection/focus in the editor so linkCommand.value is not cleared on click
+//         view.on('render', () => {
+//             view.element?.addEventListener('mousedown', (evt: Event) => {
+//                 evt.preventDefault();
+//             });
+//         });
+
+//         view.on('execute', () => {
+//             const selectionUrl = editor.model.document.selection.getAttribute('linkHref');
+//             const previewEl = document.querySelector(
+//                 '.ck-link-toolbar a.ck-button, .ck-link-actions a.ck-button, a.ck-link-actions__preview'
+//             ) as HTMLAnchorElement | null;
+//             const previewUrl =
+//                 previewEl?.getAttribute('href') ||
+//                 previewEl?.textContent?.trim() ||
+//                 '';
+
+//             const url =
+//                 (typeof linkCommand.value === 'string' ? linkCommand.value : '') ||
+//                 selectionUrl ||
+//                 lastLinkUrl ||
+//                 previewUrl;
+
+//             if (!url) return;
+
+//             Promise.resolve(copyTextToClipboard(String(url))).then(showCopiedFeedback);
+//         });
+
+//         return view;
+//     });
+// }
+
+// // Gmail-like image size / remove options shown when an image is clicked
+// function GmailImageOptionsPlugin(editor: any) {
+//     const sizeOptions: Array<{ name: string; label: string; width: string | null }> = [
+//         { name: 'imageSizeSmall', label: 'Small', width: '25%' },
+//         { name: 'imageSizeBestFit', label: 'Best fit', width: '100%' },
+//         { name: 'imageSizeOriginal', label: 'Original size', width: null },
+//     ];
+
+//     for (const option of sizeOptions) {
+//         editor.ui.componentFactory.add(option.name, (locale: any) => {
+//             const view = new ButtonView(locale);
+//             const resizeCommand = editor.commands.get('resizeImage');
+
+//             view.set({
+//                 label: option.label,
+//                 withText: true,
+//                 tooltip: false,
+//                 isToggleable: true,
+//                 class: 'ck-gmail-image-option',
+//             });
+
+//             if (resizeCommand) {
+//                 view.bind('isEnabled').to(resizeCommand, 'isEnabled');
+//                 view.bind('isOn').to(resizeCommand, 'value', (value: any) => {
+//                     const currentWidth = value?.width ?? null;
+//                     return currentWidth === option.width;
+//                 });
+//             }
+
+//             view.on('execute', () => {
+//                 editor.execute('resizeImage', { width: option.width });
+//                 editor.editing.view.focus();
+//             });
+
+//             return view;
+//         });
+//     }
+
+//     editor.ui.componentFactory.add('imageRemove', (locale: any) => {
+//         const view = new ButtonView(locale);
+//         const resizeCommand = editor.commands.get('resizeImage');
+//         const imageUtils = editor.plugins.get('ImageUtils');
+
+//         view.set({
+//             label: 'Remove',
+//             withText: true,
+//             tooltip: false,
+//             class: 'ck-gmail-image-option ck-gmail-image-remove',
+//         });
+
+//         if (resizeCommand) {
+//             view.bind('isEnabled').to(resizeCommand, 'isEnabled');
+//         }
+
+//         view.on('execute', () => {
+//             const imageElement = imageUtils?.getClosestSelectedImageElement(
+//                 editor.model.document.selection
+//             );
+//             if (!imageElement) return;
+
+//             editor.model.change((writer: any) => {
+//                 writer.remove(imageElement);
+//             });
+//             editor.editing.view.focus();
+//         });
+
+//         return view;
+//     });
+// }
+
+// const ckEditorConfig: any = {
+//     licenseKey: config.CKEDITOR_LICENSE_KEY,
+//     fontColor: {
+//         colors: [
+//             { color: '#212121', label: ' ' },
+//             { color: '#EA3843', label: ' ' },
+//             { color: '#808080', label: ' ' },
+//             { color: '#FF8A00', label: ' ' },
+//             { color: '#FF5BA0', label: ' ' },
+//             { color: '#FFB800', label: ' ' },
+//             { color: '#263DB8', label: ' ' },
+//             { color: '#49BA14', label: ' ' },
+//             { color: '#00A3EF', label: ' ' },
+//             { color: '#398415', label: ' ' },
+//         ],
+//         documentColors: 0
+//     },
+//     toolbar: {
+//         items: [
+//             'fontFamily', 'fontSize', 'fontColor', 'heading', 'SourceEditing', 'bold', 'italic', 'underline', 'insertTable', 'customMedia', 'link', 'alignment', 'bulletedList', 'numberedList', 'undo', 'redo', 'strikethrough', 'code', 'horizontalLine',
+//             {
+//                 label: 'More options',
+//                 icon: 'text',
+//                 items: []
+//             },
+//         ],
+//         shouldNotGroupWhenFull: false,
+//         removePlugins: ['ToolbarItemsTexts']
+//     },
+//     extraPlugins: [Base64UploadAdapterPlugin, ImageFilenamePlugin, EnhancedLinkPlugin, GmailImageOptionsPlugin],
+
+//     plugins: [
+//         Essentials, Paragraph, Autoformat, AutoLink, Autosave,
+//         Bold, Italic, Underline, Strikethrough, Code, CodeBlock,
+//         FontColor, FontBackgroundColor, FontFamily, FontSize,
+//         Heading, Highlight, HorizontalLine,
+//         Alignment, List,
+//         Link,LinkUI, LinkEditing, ContextualBalloon,
+//         ImageBlock, ImageEditing, ImageInline, ImageStyle, ImageToolbar, ImageResize, ImageUpload, ImageUtils,
+//         // MediaEmbed,
+//         Indent, IndentBlock,
+//         Table, TableToolbar, TableColumnResize, PlainTableOutput, TableProperties, TableCellProperties,
+//         PasteFromMarkdownExperimental, PasteFromOffice,
+//         ShowBlocks, SourceEditing,
+//         GeneralHtmlSupport,
+//         EnhancedLinkPlugin,
+//         GmailImageOptionsPlugin
+//     ],
+//     language: 'en',
+//     fontFamily: {
+//         options: [
+//             'default',
+//             { title: 'Sans Serif', model: 'Arial, Helvetica, sans-serif' },
+//             { title: 'Serif', model: 'Times New Roman, Times, serif' },
+//             { title: 'Fixed Width', model: 'Courier New, Courier, monospace' },
+//             { title: 'Wide', model: 'Arial Black, Gadget, sans-serif' },
+//             { title: 'Narrow', model: 'Arial Narrow, Arial, sans-serif' },
+//             { title: 'Comic Sans MS', model: 'Comic Sans MS, cursive' },
+//             { title: 'Garamond', model: 'Garamond, serif' },
+//             { title: 'Georgia', model: 'Georgia, serif' },
+//             { title: 'Tahoma', model: 'Tahoma, Geneva, sans-serif' },
+//             { title: 'Trebuchet MS', model: 'Trebuchet MS, Helvetica, sans-serif' },
+//             { title: 'Verdana', model: 'Verdana, Geneva, sans-serif' },
+//             { title: 'DM Sans', model: 'DM Sans, sans-serif' },
+//         ],
+//         supportAllValues: true,
+//     },
+//     fontSize: {
+//         options: [10, 12, 14, 'default', 18, 20, 22],
+//         supportAllValues: true
+//     },
+//     fullscreen: {
+//         onEnterCallback: (container: any) => {
+//             container.classList.add('editor-container', 'editor-container_classic-editor', 'editor-container_include-fullscreen', 'main-container');
+//         }
+//     },
+//     heading: {
+//         options: [{
+//             model: 'paragraph',
+//             title: 'Paragraph',
+//             class: 'ck-heading_paragraph'
+//         },
+//         {
+//             model: 'heading1',
+//             view: 'h1',
+//             title: 'Heading 1',
+//             class: 'ck-heading_heading1'
+//         },
+//         {
+//             model: 'heading2',
+//             view: 'h2',
+//             title: 'Heading 2',
+//             class: 'ck-heading_heading2'
+//         },
+//         {
+//             model: 'heading3',
+//             view: 'h3',
+//             title: 'Heading 3',
+//             class: 'ck-heading_heading3'
+//         },
+//         {
+//             model: 'heading4',
+//             view: 'h4',
+//             title: 'Heading 4',
+//             class: 'ck-heading_heading4'
+//         },
+//         {
+//             model: 'heading5',
+//             view: 'h5',
+//             title: 'Heading 5',
+//             class: 'ck-heading_heading5'
+//         },
+//         {
+//             model: 'heading6',
+//             view: 'h6',
+//             title: 'Heading 6',
+//             class: 'ck-heading_heading6'
+//         }
+//         ] as any
+//     },
+//     htmlSupport: {
+//         // Broad allow-list so pasted HTML email templates aren't unwrapped
+//         // before GHS's runtime dataFilter (see onReady in CkEditorRichText)
+//         // ever gets a chance to run. Emails commonly use 'center' (legacy but
+//         // still the most Outlook-safe centering wrapper), 'figure' for image
+//         // blocks, 'colgroup'/'col' for column widths, plain lists/headings,
+//         // and legacy 'font'/'u'/'b'/'i' tags — any tag NOT on this list gets
+//         // unwrapped on paste, and its style/class/attributes are lost with it.
+//         allow: [{
+//             name: /^(table|thead|tbody|tfoot|tr|td|th|colgroup|col|img|a|span|div|p|br|strong|em|b|i|u|s|font|center|figure|figcaption|ul|ol|li|h1|h2|h3|h4|h5|h6|hr|blockquote|pre|code)$/,
+//             attributes: true,
+//             classes: true,
+//             styles: true
+//         }] as any
+//     },
+//     image: {
+//         // Paste / upload as inline so multiple images can sit side-by-side like Gmail
+//         insert: {
+//             type: 'inline'
+//         },
+//         resizeUnit: '%',
+//         resizeOptions: [
+//             { name: 'resizeImage:small', value: '25', label: 'Small', icon: 'small' },
+//             { name: 'resizeImage:bestFit', value: '100', label: 'Best fit', icon: 'large' },
+//             { name: 'resizeImage:original', value: null, label: 'Original size', icon: 'original' },
+//         ],
+//         toolbar: [
+//             'imageSizeSmall',
+//             'imageSizeBestFit',
+//             'imageSizeOriginal',
+//             '|',
+//             'imageRemove'
+//         ]
+//     },
+//     placeholder: 'Type or paste your content here!',
+//     table: {
+//         contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties', 'tableC'],
+//         tableProperties: {
+//             defaultProperties: {
+//                 borderStyle: 'solid',
+//                 borderColor: '#BBC0C4',
+//                 borderWidth: '1px',
+//             },
+//         },
+//         tableCellProperties: {
+//             defaultProperties: {
+//                 borderStyle: 'solid',
+//                 borderColor: '#BBC0C4',
+//                 borderWidth: '1px',
+//                 padding: '4px',
+//             },
+//         },
+//     },
+//     link: {
+//         toolbar: ['linkPreview', '|', 'editLink', 'copyLink', 'unlink'],
+//         addTargetToExternalLinks: true,
+//         defaultProtocol: 'https://',
+//         decorators: {
+//             // Empty to remove downloadable option  
+//         }
+//     },
+//     ui: {
+//         Dialog: {
+//             Position: 'editor-center'
+//         }
+//     }
+// }
+
+// export default ckEditorConfig;
+
+
+
+
 import {
     Essentials,
     Paragraph,
@@ -377,15 +930,17 @@ const ckEditorConfig: any = {
     },
     toolbar: {
         items: [
-            'fontFamily', 'fontSize', 'fontColor', 'heading', 'SourceEditing', 'bold', 'italic', 'underline', 'insertTable', 'customMedia', 'link', 'alignment', 'bulletedList', 'numberedList', 'undo', 'redo', 'strikethrough', 'code', 'horizontalLine',
+            'fontColor', 'fontFamily', 'fontSize',  'link', 
             {
                 label: 'More options',
-                icon: 'text',
-                items: []
+                // icon: 'text',
+                items: [
+                    'SourceEditing', 'bold', 'italic', 'underline', 'insertTable', 'customMedia', 'alignment', 'bulletedList', 'numberedList', 'undo', 'redo', 'strikethrough', 'code', 'horizontalLine',
+                ]
             },
         ],
-        shouldNotGroupWhenFull: false,
-        removePlugins: ['ToolbarItemsTexts']
+        shouldNotGroupWhenFull: true,
+        // removePlugins: ['ToolbarItemsTexts']
     },
     extraPlugins: [Base64UploadAdapterPlugin, ImageFilenamePlugin, EnhancedLinkPlugin, GmailImageOptionsPlugin],
 
@@ -425,10 +980,15 @@ const ckEditorConfig: any = {
         ],
         supportAllValues: true,
     },
-    fontSize: {
-        options: [10, 12, 14, 'default', 18, 20, 22],
-        supportAllValues: true
-    },
+   fontSize: {
+    options: [
+        { title: 'Small', model: '10px', view: { name: 'span', styles: { 'font-size': '10px' } } },
+        'default',
+        { title: 'Large', model: '18px', view: { name: 'span', styles: { 'font-size': '18px' } } },
+        { title: 'Huge',  model: '32px', view: { name: 'span', styles: { 'font-size': '32px' } } },
+    ],
+    supportAllValues: true,
+},
     fullscreen: {
         onEnterCallback: (container: any) => {
             container.classList.add('editor-container', 'editor-container_classic-editor', 'editor-container_include-fullscreen', 'main-container');

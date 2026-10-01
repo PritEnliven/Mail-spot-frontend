@@ -2,7 +2,7 @@
 .calendar-body-box { position: relative; width: 100%; min-height: calc(100vh - 54px); }
 .calendar-ready-wrap { display: flex; width: 100%; flex: 1; min-height: 0; opacity: 0; }
 .calendar-ready-wrap.is-visible { opacity: 1; transition: opacity 0.15s ease; }
-.Calendar-main .left-side-calendar-box { position: relative; min-width: 340px; width: 340px; overflow: auto; height: calc(100vh - 54px); border-radius: 0 0 0 10px; z-index: 60; padding:22px; background: linear-gradient(360deg, #EA3843 8.65%, #FF8A00 31.25%, #FFC400 52.4% 52.4%, #49BA14 71.63%, #0097EF 89.42%), linear-gradient(90deg, #1B234B 0%, rgba(27, 35, 75, 0.66) 100%); }
+.Calendar-main .left-side-calendar-box { position: relative; min-width: 340px; width: 340px; overflow: auto; height: calc(100vh - 54px); border-radius: 0 0 0 10px; z-index: 0; padding:22px; background: linear-gradient(360deg, #EA3843 8.65%, #FF8A00 31.25%, #FFC400 52.4% 52.4%, #49BA14 71.63%, #0097EF 89.42%), linear-gradient(90deg, #1B234B 0%, rgba(27, 35, 75, 0.66) 100%); }
 .Calendar-main .left-side-calendar-box::after { content: ""; width: 100%; height: 100%; display: block; position: absolute; top: 0; left: 0; z-index: -1; background: linear-gradient(90deg, #1B234B 0%, rgba(27, 35, 75, 0.66) 100%); }
 .Calendar-main .fc-theme-standard th { border-color: #D0D9DE; border: 0;}
 .Calendar-main .fc-theme-standard .fc-col-header-cell-cushion { font-size: 13px; font-weight: 500; font-family: 'DM Sans'; color: #717D84; padding: 18px 0; line-height: normal; }

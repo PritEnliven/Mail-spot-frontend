@@ -5,8 +5,8 @@ import {
     exportContacts,
     type ContactExportFormat,
 } from '@services/contact/contactService';
-import arrowDownTrayIcon from '@images/arrow-down-tray-icon.svg';
-import arrowDownTrayIconHover from '@images/arrow-down-tray-icon-hover.svg';
+import exportIcon from '@images/export-icon.svg';
+import exportIconHover from '@images/export-icon-hover.svg';
 import chevronDownIcon from '@images/chevron-down-icon.svg';
 import { useState } from 'react';
 import Dropdown from 'react-bootstrap/Dropdown';
@@ -14,9 +14,17 @@ import Dropdown from 'react-bootstrap/Dropdown';
 interface ContactsExportMenuProps {
     /** Icon-only trigger for compact / mobile toolbars */
     compact?: boolean;
+    /** Current list search string (same as `GET /contact/get?q=`). */
+    searchQuery?: string;
+    /** Selected contact `_id`s — preferred over search when non-empty. */
+    selectedIds?: string[];
 }
 
-function ContactsExportMenu({ compact = false }: ContactsExportMenuProps) {
+function ContactsExportMenu({
+    compact = false,
+    searchQuery = '',
+    selectedIds = [],
+}: ContactsExportMenuProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
@@ -25,7 +33,11 @@ function ContactsExportMenu({ compact = false }: ContactsExportMenuProps) {
         setMenuOpen(false);
         setIsExporting(true);
         try {
-            const result = await exportContacts(format);
+            const result = await exportContacts({
+                format,
+                q: searchQuery,
+                ids: selectedIds,
+            });
             if (!result.success) {
                 if (!result.statusCode || result.statusCode !== 401) {
                     showError(result.message || 'Failed to export contacts');
@@ -68,9 +80,9 @@ function ContactsExportMenu({ compact = false }: ContactsExportMenuProps) {
                     />
                 ) : (
                     <InteractiveIcon
-                        defaultIcon={arrowDownTrayIcon}
-                        hoverIcon={arrowDownTrayIconHover}
-                        activeIcon={arrowDownTrayIconHover}
+                        defaultIcon={exportIcon}
+                        hoverIcon={exportIconHover}
+                        activeIcon={exportIconHover}
                         isActive={menuOpen}
                         alt=""
                         className="interactive-icon hover-image"

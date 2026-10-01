@@ -20,7 +20,7 @@ import viewIcon from '@images/view-icon.svg';
 import viewIconHover from '@images/view-icon-hover.svg';
 
 const NOTE_PREVIEW_LENGTH = 40;
-const CONTACT_TABLE_COLSPAN = 8;
+const CONTACT_TABLE_COLSPAN = 9;
 const POPUP_GAP = 8;
 
 interface ContactListProps {
@@ -30,6 +30,8 @@ interface ContactListProps {
     onEdit: (contact: Contact) => void;
     onDelete: (contact: Contact) => void;
     layout?: 'table' | 'mobile';
+    selectedIds?: Set<string>;
+    onToggleSelect?: (contactId: string) => void;
 }
 
 interface PopupPosition {
@@ -535,12 +537,43 @@ function ContactFieldIcon({ src, label }: { src: string; label: string }) {
     );
 }
 
+function ContactSelectCheckbox({
+    contactId,
+    checked,
+    onToggle,
+    idPrefix = 'contactCheck',
+}: {
+    contactId: string;
+    checked: boolean;
+    onToggle?: (contactId: string) => void;
+    idPrefix?: string;
+}) {
+    const inputId = `${idPrefix}${contactId}`;
+    return (
+        <div className="checkbox-custom table-check contacts-select-checkbox">
+            <input
+                className="list-child"
+                type="checkbox"
+                id={inputId}
+                name="contact-checkbox"
+                checked={checked}
+                disabled={!onToggle}
+                onChange={() => onToggle?.(contactId)}
+                aria-label="Select contact"
+            />
+            <label htmlFor={inputId} className="label-text" />
+        </div>
+    );
+}
+
 function ContactMobileList({
     contacts,
     isLoading,
     startIndex,
     onEdit,
     onDelete,
+    selectedIds,
+    onToggleSelect,
 }: ContactListProps) {
     if (isLoading) {
         return (
@@ -570,15 +603,22 @@ function ContactMobileList({
                 const address = contact.address?.trim();
                 const notes = contact.notes?.trim();
                 const birthdate = formatBirthdate(contact.birthdate);
+                const isSelected = selectedIds?.has(contact._id) ?? false;
 
                 return (
                     <article
                         key={contact._id}
-                        className="contact-mobile-item"
+                        className={`contact-mobile-item${isSelected ? ' is-selected' : ''}`}
                         role="listitem"
                     >
                         <div className="contact-mobile-item__header">
                             <div className="contact-mobile-item__identity">
+                                <ContactSelectCheckbox
+                                    contactId={contact._id}
+                                    checked={isSelected}
+                                    onToggle={onToggleSelect}
+                                    idPrefix="contactMobileCheck"
+                                />
                                 <span className="contact-mobile-item__index">
                                     {startIndex + index}
                                 </span>
@@ -671,6 +711,8 @@ function ContactList({
     onEdit,
     onDelete,
     layout = 'table',
+    selectedIds,
+    onToggleSelect,
 }: ContactListProps) {
     if (layout === 'mobile') {
         return (
@@ -680,6 +722,8 @@ function ContactList({
                 startIndex={startIndex}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
             />
         );
     }
@@ -703,9 +747,17 @@ function ContactList({
             {contacts.map((contact, index) => {
                 const emails = getContactEmails(contact);
                 const phones = getContactPhones(contact);
+                const isSelected = selectedIds?.has(contact._id) ?? false;
 
                 return (
-                    <tr className="blue-line-aft" key={contact._id}>
+                    <tr className={`blue-line-aft${isSelected ? ' is-selected' : ''}`} key={contact._id}>
+                        <td className="contacts-table__select">
+                            <ContactSelectCheckbox
+                                contactId={contact._id}
+                                checked={isSelected}
+                                onToggle={onToggleSelect}
+                            />
+                        </td>
                         <td>{startIndex + index}</td>
                         <td>{contact.name}</td>
                         <td>

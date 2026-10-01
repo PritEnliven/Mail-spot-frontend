@@ -10,6 +10,14 @@ export interface GetContactsParams {
 
 export type ContactExportFormat = 'csv' | 'vcf';
 
+export interface ContactExportParams {
+    format: ContactExportFormat;
+    /** Same search string as list/search API (`q`). Ignored when `ids` is non-empty. */
+    q?: string;
+    /** Selected contact Mongo `_id`s. Preferred over `q` when both are present. */
+    ids?: string[];
+}
+
 export type ContactExportResult =
     | { success: true; blob: Blob; filename: string }
     | { success: false; message: string; statusCode?: number };
@@ -124,11 +132,75 @@ async function deleteContact(contactId: string) {
     }
 }
 
-async function exportContacts(format: ContactExportFormat): Promise<ContactExportResult> {
+export type DeleteContactsResult =
+    | { success: true; deletedIds: string[]; statusCode: number; message: string }
+    | { success: false; deletedIds: string[]; statusCode?: number; message: string };
+
+/** Bulk delete: `DELETE /contact/delete` with JSON body `{ ids: string[] }`. */
+async function deleteContacts(contactIds: string[]): Promise<DeleteContactsResult> {
+    const ids = [...new Set(contactIds.map((id) => id.trim()).filter(Boolean))];
+
+    if (ids.length === 0) {
+        return {
+            success: false,
+            deletedIds: [],
+            statusCode: 400,
+            message: 'No contacts selected',
+        };
+    }
+
+    try {
+        const response = await deleteData('contact/delete', { ids });
+        if (response?.statusCode === 200) {
+            return {
+                success: true,
+                deletedIds: ids,
+                statusCode: 200,
+                message:
+                    response?.message
+                    || (ids.length === 1
+                        ? 'Contact deleted successfully'
+                        : `${ids.length} contacts deleted successfully`),
+            };
+        }
+        return {
+            success: false,
+            deletedIds: [],
+            statusCode: response?.statusCode,
+            message: response?.message || 'Failed to delete contacts',
+        };
+    } catch (error: any) {
+        return {
+            success: false,
+            deletedIds: [],
+            statusCode: error?.statusCode,
+            message: error?.message || 'Failed to delete contacts',
+        };
+    }
+}
+
+function buildExportQueryParams(options: ContactExportParams) {
+    const params: Record<string, string> = { format: options.format };
+    const ids = (options.ids ?? []).map((id) => id.trim()).filter(Boolean);
+
+    // Selection wins over search (matches backend priority).
+    if (ids.length > 0) {
+        params.ids = ids.join(',');
+        return params;
+    }
+
+    const q = options.q?.trim();
+    if (q) {
+        params.q = q;
+    }
+    return params;
+}
+
+async function exportContacts(options: ContactExportParams): Promise<ContactExportResult> {
     const fallbackMessage = 'Failed to export contacts';
     try {
         const data = await getData('contact/export', {
-            params: { format },
+            params: buildExportQueryParams(options),
             responseType: 'blob',
         });
 
@@ -148,7 +220,7 @@ async function exportContacts(format: ContactExportFormat): Promise<ContactExpor
         return {
             success: true,
             blob: data,
-            filename: EXPORT_FILENAME[format],
+            filename: EXPORT_FILENAME[options.format],
         };
     } catch (error: any) {
         if (error instanceof Blob) {
@@ -191,6 +263,7 @@ export {
     addContact,
     addContacts,
     deleteContact,
+    deleteContacts,
     downloadBlobFile,
     editContact,
     exportContacts,

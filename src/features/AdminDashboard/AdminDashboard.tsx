@@ -277,7 +277,7 @@ const AdminDashboard = () => {
                     </li>
                 </ul>
             </div>
-            {!isMobile && (
+            {/* {!isMobile && ( */}
                 <div className="go-to-sec d-flex align-items-center">
                     <div className="form-group m-0 me-2">
                         <input
@@ -301,7 +301,7 @@ const AdminDashboard = () => {
                         Go
                     </button>
                 </div>
-            )}
+            {/* )} */}
         </div>
     );
 

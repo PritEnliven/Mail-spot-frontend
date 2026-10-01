@@ -35,7 +35,7 @@ const AppContent = () => {
                 <AdminRightPanel />
             </div>
 
-            {isMobile && <AdminBottomNav />}
+            {/* {isMobile && <AdminBottomNav />} */}
 
             <AdminModalRoot />
         </main>

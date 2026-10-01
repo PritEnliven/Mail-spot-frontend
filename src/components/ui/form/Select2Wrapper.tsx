@@ -1264,6 +1264,8 @@ export const getSelectStyles = (
       fontWeight: '400',
       fontFamily: "`DM Sans`, sans-serif",
       lineHeight: '14px',
+      display: 'flex',
+      alignItems: 'center',
       textAlign: moduleName === "datepickermodal" ? ('start' as const) : undefined,
     }),
 

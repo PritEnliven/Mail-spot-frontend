@@ -1,6 +1,52 @@
+/* ==========================================================================
+    START:: Global (non-media) mobile
+   ========================================================================== */
+/* Thread/email date: below From/To only on ≤768; inline on larger screens */
+.thread-mail-date-meta--below { display: none; }
+/* -------------------- Mobile Sidebar Backdrop -------------------- */
+.mobile-sidebar-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999; /* below sidebar, above rest of content */ }
+/* -------------------- Mobile Compose Floating Button -------------------- */
+.mobile-compose-fab { position: fixed; right: 16px; bottom: 16px; width: 52px; height: 52px; padding: 0; display: none; align-items: center; justify-content: center; border: 0; border-radius: 50%; background-color: #0097ef; box-shadow: 0px 3px 8px 0px #00000033; z-index: 1; }
+.flatpickr-calendar.open, .flatpickr-calendar.inline { max-height: 1000px !important; }
+.mobile-compose-fab:active { background-color: #067bc8; }
+.mobile-compose-fab img { width: 22px; height: 22px; }
+.Calendar-main .mobile-compose-fab { background: linear-gradient(9deg, #1a2852, #124981); }
+/* -------------------- Thread email -------------------- */
+.thread-email-react-dropdown-replay-btn .dropdown-toggle { padding: 2px !important; }
+.show-on-mobile-thread-email-only { display: none !important; }
+.thread-email-react-dropdown-replay-btnyyyy.dropdown-menu.show { margin: 4px -5px 0 0; }
+/* -------------------- Move to folder sheet -------------------- */
+@keyframes moveToSheetFadeUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.move-to-folder-sheet { background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0px -6px 20px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column; max-height: min(88dvh, 720px); overflow: hidden; }
+.move-to-folder-sheet__handle { width: 36px; height: 4px; border-radius: 100px; background: #d0d9de; margin: 4px auto 8px; flex-shrink: 0; }
+.move-to-folder-sheet__header { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 12px; flex-shrink: 0; }
+.move-to-folder-sheet__title { margin: 0; font-size: 22px; font-weight: 600; color: #212121; line-height: 1.2; }
+.move-to-folder-sheet__close { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; flex-shrink: 0; }
+.move-to-folder-sheet__body { flex: 1 1 auto; min-height: 0; max-height: calc(88dvh - 90px); padding: 0 4px 8px; }
+.move-to-folder-sheet__section { padding: 4px 0 8px; }
+.move-to-folder-sheet__section+.move-to-folder-sheet__section { border-top: 1px solid #e5e8ea; margin-top: 4px; padding-top: 12px; }
+.move-to-folder-sheet__section-label { font-size: 12px; font-weight: 500; color: #717d84; padding: 4px 16px 8px; }
+.move-to-folder-sheet__list { list-style: none; margin: 0; padding: 0; }
+.move-to-folder-sheet__item { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: transparent; padding: 12px 16px; text-align: left; font-size: 15px; font-weight: 400; color: #212121; line-height: 1.3; }
+.move-to-folder-sheet__item img { width: 20px; height: 20px; flex-shrink: 0; object-fit: contain; }
+.move-to-folder-sheet__item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-to-folder-sheet__item:hover, .move-to-folder-sheet__item:focus-visible { background: #f2f4f5; outline: none; }
+.move-to-folder-sheet__item:disabled { opacity: 0.6; }
+.move-to-folder-sheet__empty { padding: 24px 16px; text-align: center; color: #717d84; font-size: 14px; }
+/* ==========================================================================
+    END:: Global (non-media) mobile
+   ========================================================================== */
+
+
+
+
+
 
 /* ==========================================================================
-   1. Breakpoint: max-width 1500px
+   Breakpoint: 1500px
    ========================================================================== */
 @media screen and (max-width: 1500px) {
   /* Calendar header: icon only (hide name & email) */
@@ -9,7 +55,7 @@
   .mail-details-header.is-calendar-header .mail-profile-dropdown .mail-profile-label, .Calendar-main .mail-profile-dropdown .mail-profile-label { margin-right: 0; }
 }
 /* ==========================================================================
-   1. Breakpoint: max-width 1467px
+   Breakpoint: 1467px
    ========================================================================== */
 @media screen and (max-width: 1467px) {
   /* -------------------- Settings -------------------- */
@@ -19,7 +65,7 @@
   .setting-features .ck.ck-reset.ck-editor.ck-rounded-corners { border: 0; height: auto !important; }
 }
 /* ==========================================================================
-   2. Breakpoint: max-width 1200px
+   Breakpoint: 1200px
    ========================================================================== */
 @media screen and (max-width: 1200px) {
   /* -------------------- Mail Details Header -------------------- */
@@ -34,11 +80,9 @@
   .Calendar-main .mail-details-header>.two-sc-in.justify-content-end, .mail-details-header.is-calendar-header>.two-sc-in.justify-content-end { flex-shrink: 0; min-width: max-content; }
 }
 /* ==========================================================================
-   3. Breakpoint: max-width 992px
+   Breakpoint: 992px
    ========================================================================== */
 @media screen and (max-width: 992px) {
-  /* -------------------- Header -------------------- */
-  /* .mail-details-header { padding: 6px 10px 6px 26px; } */
   /* -------------------- Top Search -------------------- */
   .Calendar-main .top-search { width: 100%; position: fixed; background: #f5f5f5; left: 0; top: 0; height: 100%; border-bottom: 1px solid #d0d9de; z-index: 9999; margin: 0; opacity: 0; visibility: hidden; }
   .Calendar-main .top-search .t-search-group .form-control { border-radius: 0 !important; height: 42px !important; box-shadow: none !important; border-width: 0 0 1px 0 !important; }
@@ -73,10 +117,6 @@
   .Calendar-main .calendar-mobile-header__nav { display: flex; align-items: center; justify-content: flex-start; gap: 4px; flex: 0 0 auto; width: auto; }
   .Calendar-main .calendar-mobile-header__nav .fc-icon-chevron-left { margin: 0; }
   .Calendar-main .calendar-mobile-header__view { width: 94px; margin: 0 0 0 auto !important; flex-shrink: 0; }
-  .Calendar-main .calendar-mobile-header__view .react-select__control { /* border-radius: 8px !important;
-        min-height: 32px !important;
-        box-shadow: none !important;
-        border-color: #BBC0C4 !important; */ }
   .Calendar-main .calendar-mobile-header__weekdays { display: grid; grid-template-columns: repeat(7, 1fr); align-items: center; padding: 10px 8px 12px; text-align: center; border-top: 1px solid #e8eef2; }
   .Calendar-main .calendar-mobile-header__weekdays span { font-size: 12px; font-weight: 500; color: #9aa6ad; font-family: "DM Sans", sans-serif; line-height: 1; }
   /* Keep profile avatar in the top-right of the mobile calendar header card */
@@ -93,11 +133,10 @@
   .Tool-bar-box .pagination-cus { display: none; }
   /* -------------------- Right Sidebar -------------------- */
   main { justify-content: end; }
-  
   .mail-message-box { width: 100%; height: calc(100vh - 106px);border-right: 0; }
   .mail-details-box { height: calc(100vh - 55px) !important; }
   .mail-details-box .box-title { font-size: 16px; }
-  .mail-message-box::after{content: none;}
+  .mail-message-box::after { content: none; }
   .mail-message-send--information-details-box-mobile .application-btn-multi { min-width: 68px; }
   .mail-message-send--information-details-box-mobile .react-dropdown .dropdown-menu { margin-top: 4px; margin-right: -5px; }
   /* From name/email: ellipsis so long text doesn't collide with reply/forward */
@@ -112,89 +151,20 @@
   .calendar-body-box { display: flex; flex-direction: column; height: calc(100dvh - 115px); min-height: unset !important; overflow: hidden; }
   .calendar-ready-wrap { flex-direction: column; height: 100%; min-height: 0; flex: 1; }
   .Calendar-main .left-side-calendar-box { position: relative; min-width: 100% !important; width: 100% !important; height: auto !important; border-radius: 0 !important; flex: 0 0 auto; transition: all 0.3s ease; padding: 12px 12px 10px; overflow-x: hidden; box-sizing: border-box; }
-  .Calendar-main .right-side-calendar-box {
-    flex: 1 1 auto;
-    min-height: 220px;
-    height: auto !important;
-    overflow: hidden;
-  }
-  .Calendar-main .right-side-calendar-box.is-fullscreen {
-    flex: 1 1 100%;
-    min-height: 0;
-  }
-  .Calendar-main .right-side-calendar-box .calendar-main-view,
-  .Calendar-main .right-side-calendar-box .fc,
-  .Calendar-main .right-side-calendar-box .fc-view-harness {
-    height: 100% !important;
-  }
-  .Calendar-main .calendar-panel-toggle {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    flex: 0 0 auto;
-    width: 100%;
-    margin: 0;
-    padding: 6px 12px 8px;
-    border: 0;
-    border-top: 1px solid #e8eef2;
-    border-bottom: 1px solid #e8eef2;
-    background: #fff;
-    color: #717d84;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .Calendar-main .calendar-panel-toggle__bar {
-    width: 36px;
-    height: 4px;
-    border-radius: 999px;
-    background: #bbc0c4;
-  }
-  .Calendar-main .calendar-panel-toggle__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    line-height: 0;
-  }
-  .Calendar-main .calendar-panel-toggle__icon img,
-  .Calendar-main .calendar-panel-toggle__icon .interactive-icon {
-    width: 16px;
-    height: 16px;
-  }
-  .Calendar-main .calendar-panel-toggle__label {
-    font-size: 12px;
-    font-weight: 500;
-    font-family: 'DM Sans', sans-serif;
-    line-height: 1.2;
-    color: #717d84;
-  }
-  .Calendar-main .calendar-panel-toggle:hover,
-  .Calendar-main .calendar-panel-toggle:focus-visible {
-    background: #f5f7f8;
-    color: #212121;
-  }
-  .Calendar-main .calendar-panel-toggle:hover .calendar-panel-toggle__bar,
-  .Calendar-main .calendar-panel-toggle:focus-visible .calendar-panel-toggle__bar {
-    background: #717d84;
-  }
-  .Calendar-main .calendar-panel-toggle:hover .calendar-panel-toggle__label,
-  .Calendar-main .calendar-panel-toggle:focus-visible .calendar-panel-toggle__label {
-    color: #212121;
-  }
-  .Calendar-main .calendar-panel-toggle:focus-visible {
-    outline: 2px solid #0097ef;
-    outline-offset: -2px;
-  }
-  .Calendar-main .calendar-panel-toggle.is-collapsed {
-    border-top: 0;
-  }
-  /*
-      Fluid sidebar month grid (320–992):
-      Same 7-column grid for weekday labels AND date cells so they stay aligned.
-    */
+  .Calendar-main .right-side-calendar-box { flex: 1 1 auto; min-height: 220px; height: auto !important; overflow: hidden; }
+  .Calendar-main .right-side-calendar-box.is-fullscreen { flex: 1 1 100%; min-height: 0; }
+  .Calendar-main .right-side-calendar-box .calendar-main-view, .Calendar-main .right-side-calendar-box .fc, .Calendar-main .right-side-calendar-box .fc-view-harness { height: 100% !important; }
+  .Calendar-main .calendar-panel-toggle { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 0 0 auto; width: 100%; margin: 0; padding: 6px 12px 8px; border: 0; border-top: 1px solid #e8eef2; border-bottom: 1px solid #e8eef2; background: #fff; color: #717d84; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .Calendar-main .calendar-panel-toggle__bar { width: 36px; height: 4px; border-radius: 999px; background: #bbc0c4; }
+  .Calendar-main .calendar-panel-toggle__icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; line-height: 0; }
+  .Calendar-main .calendar-panel-toggle__icon img, .Calendar-main .calendar-panel-toggle__icon .interactive-icon { width: 16px; height: 16px; }
+  .Calendar-main .calendar-panel-toggle__label { font-size: 12px; font-weight: 500; font-family: 'DM Sans', sans-serif; line-height: 1.2; color: #717d84; }
+  .Calendar-main .calendar-panel-toggle:hover, .Calendar-main .calendar-panel-toggle:focus-visible { background: #f5f7f8; color: #212121; }
+  .Calendar-main .calendar-panel-toggle:hover .calendar-panel-toggle__bar, .Calendar-main .calendar-panel-toggle:focus-visible .calendar-panel-toggle__bar { background: #717d84; }
+  .Calendar-main .calendar-panel-toggle:hover .calendar-panel-toggle__label, .Calendar-main .calendar-panel-toggle:focus-visible .calendar-panel-toggle__label { color: #212121; }
+  .Calendar-main .calendar-panel-toggle:focus-visible { outline: 2px solid #0097ef; outline-offset: -2px; }
+  .Calendar-main .calendar-panel-toggle.is-collapsed { border-top: 0; }
+  /*  Fluid sidebar month grid   */
   .Calendar-main .left-side-calendar-box #sidebar-calendar { --week-gutter: 32px; width: 100%; max-width: 100%; box-sizing: border-box; }
   .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-view-harness, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-view, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scrollgrid, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scroller, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scroller-harness { width: 100% !important; max-width: 100%; overflow: visible !important; box-sizing: border-box; }
   .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-scrollgrid-sync-table { width: calc(100% - var(--week-gutter)) !important; max-width: none !important; margin-left: var(--week-gutter) !important; table-layout: fixed !important; border-collapse: collapse; box-sizing: border-box; }
@@ -208,13 +178,11 @@
   .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-col-header-cell:not(.fc-week-number):first-of-type { border: 0 !important; }
   /* My calendars: compact mobile layout */
   .Calendar-main .calendar-list-section { margin-top: 10px; }
-  .Calendar-main .calendar-list-heading-main { margin-bottom: 4px; gap: 2px; }
+  .Calendar-main .calendar-list-heading-main {gap: 2px; }
   .Calendar-main .calendar-list-heading { font-size: 14px; gap: 6px; padding: 2px 0; max-width: calc(100% - 26px); }
-  .Calendar-main .calendar-list-arrow,
-  .Calendar-main .calendar-list-arrow img { width: 14px; height: 14px; }
+  .Calendar-main .calendar-list-arrow, .Calendar-main .calendar-list-arrow img { width: 14px; height: 14px; }
   .Calendar-main .calendar-list-add-btn { width: 22px; height: 22px; }
-  .Calendar-main .calendar-list-add-btn img,
-  .Calendar-main .calendar-list-add-btn .interactive-icon { width: 14px; height: 14px; }
+  .Calendar-main .calendar-list-add-btn img, .Calendar-main .calendar-list-add-btn .interactive-icon { width: 14px; height: 14px; }
   .Calendar-main .calendar-list { max-height: calc(3 * 28px); }
   .Calendar-main .calendar-list-row { min-height: 28px; padding: 3px 2px; gap: 6px; }
   .Calendar-main .calendar-list-name { font-size: 13px; }
@@ -224,17 +192,18 @@
   .Calendar-main #calendar.is-fullscreen .fc-dayGridMonth-view .fc-scrollgrid-sync-table { height: 100% !important; }
   .fc .fc-scrollgrid-liquid { border: 0; }
 }
-/* Extra-narrow phones: shrink week gutter so 7 day columns fit */
-@media screen and (max-width: 380px) {
-  .Calendar-main .left-side-calendar-box { padding: 14px 8px; }
-  .Calendar-main .left-side-calendar-box #sidebar-calendar { --week-gutter: 26px; }
-  .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day .fc-daygrid-day-number, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { width: 22px; height: 22px; font-size: 13px; }
+/* ==========================================================================
+   Breakpoint: 775px 
+   ========================================================================== */
+@media screen and (max-width: 775px) {
+  .thread-email .thread-mail-to-row { flex-direction: column; align-items: flex-start !important; gap: 8px; }
+  .thread-email .thread-mail-date-meta--to-side { width: 100%; margin-left: 0 !important; text-align: left; }
+  .thread-email .thread-mail-date-meta--to-side .info-received-details { text-align: left; }
+  .thread-email .thread-mail-date-meta--to-side .hover-link { justify-content: flex-start !important; }
 }
 /* ==========================================================================
-   4. Breakpoint: max-width 768px
+   Breakpoint: 768px 
    ========================================================================== */
-/* Thread/email date: below From/To only on ≤768; inline on larger screens */
-.thread-mail-date-meta--below { display: none; }
 @media screen and (max-width: 768px) {
   /* -------------------- Compose Attachments -------------------- */
   .compose-mail-attachments .compose-mail-attachments-list li, .compose-email-modal .modal-expand .compose-mail-attachments .compose-mail-attachments-list li { width: 50%; }
@@ -265,11 +234,15 @@
   .Calendar-main #calendar .fc-timeGridWeek-view .fc-day-today .fc-col-header-cell-cushion { min-width: unset !important; padding: 3px; width: auto !important; }
   #my-tooltip { display: none !important; }
   /* Contact */
-  .contacts-pagination-summary{display: none;}
-  .contacts-page-pagination{grid-template-columns: auto;justify-content: center;gap: 0;}
+  .contacts-pagination-summary { display: none; }
+  .contacts-page-pagination { grid-template-columns: auto;justify-content: center;gap: 0; }
+  /* -------------------- Thread email -------------------- */
+  .thread-email-hide-on-mobile { display: none !important; }
+  .show-on-mobile-thread-email-only { display: flex !important; }
+  .thread-email .accordion-item .mail-profile-name, .thread-email .accordion-item .mail-profile-id { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 /* ==========================================================================
-   5. Breakpoint: max-width 575px
+   Breakpoint: 575px
    ========================================================================== */
 @media screen and (max-width: 575px) {
   /* -------------------- Buttons -------------------- */
@@ -308,63 +281,20 @@
   .sidebar-mobile-backdrop { display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1050; }
   .single-navbar-collapse-sec button { display: none; }
   /* Keep mailbox + Contact/Calendar/Settings fixed; only Folder list scrolls */
-  .left-side-bar-main nav#navbarList > .nav-custom-scroll-content {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    height: 100%;
-  }
-  .left-side-bar-main #sidebarMainMenu,
-  .left-side-bar-main #sidebarOtherMenu {
-    flex: 0 0 auto;
-  }
-  .left-side-bar-main #sidebarOtherMenu {
-    flex-shrink: 0;
-    /* background: #fff; */
-  }
-  /* Cap folder section so Contact/Calendar/Settings stay visible below it */
-  .left-side-bar-main .create-folder-sec:has(.add-floder-single-box.show) {
-    flex: 0 1 auto;
-    min-height: 0;
-    max-height: min(160px, 32vh);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .left-side-bar-main .create-folder-sec .sidebar-create-folder-box-main {
-    flex: 0 0 auto;
-  }
-  .left-side-bar-main .create-folder-sec .add-floder-single-box.show {
-    display: flex !important;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .left-side-bar-main .create-folder-sec .add-floder-single-box > div {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .left-side-bar-main .create-folder-sec .nav-custom-scroll-wrapper {
-    flex: 1 1 auto;
-    min-height: 0;
-    height: auto !important;
-  }
-  .left-side-bar-main .create-new-folder-sec {
-    max-height: min(120px, 22vh) !important;
-    height: auto !important;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-  .left-side-bar-main nav#navbarList > .nav-custom-scroll-scrollbar {
-    display: none;
-  }
+  .left-side-bar-main nav#navbarList > .nav-custom-scroll-content { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
+  .left-side-bar-main #sidebarMainMenu, .left-side-bar-main #sidebarOtherMenu { flex: 0 0 auto; }
+  .left-side-bar-main #sidebarOtherMenu { flex-shrink: 0; }
+  /* Cap folder section so Contact/Calendar/Settings  */
+  .left-side-bar-main .create-folder-sec:has(.add-floder-single-box.show) { flex: 0 1 auto; min-height: 0; max-height: min(160px, 32vh); display: flex; flex-direction: column; overflow: hidden; }
+  .left-side-bar-main .create-folder-sec .sidebar-create-folder-box-main { flex: 0 0 auto; }
+  .left-side-bar-main .create-folder-sec .add-floder-single-box.show { display: flex !important; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .left-side-bar-main .create-folder-sec .add-floder-single-box > div { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .left-side-bar-main .create-folder-sec .nav-custom-scroll-wrapper { flex: 1 1 auto; min-height: 0; height: auto !important; }
+  .left-side-bar-main .create-new-folder-sec { max-height: min(120px, 22vh) !important; height: auto !important; overflow-y: auto; overflow-x: hidden; }
+  .left-side-bar-main nav#navbarList > .nav-custom-scroll-scrollbar { display: none; }
   /* -------------------- Right Sidebar -------------------- */
   .right-side-bar-main { width: calc(100% - 0px); border-radius: 0 !important; box-shadow: none !important; border: 0; }
-  .mail-message-box { border-radius: 0; /* height: calc(100vh - 97px); */ }
+  .mail-message-box { border-radius: 0; }
   /* -------------------- General Modal -------------------- */
   .modal-header { background-color: transparent; border-bottom: 0; }
   .modal-content { background-color: #ffff; border: 0; border-radius: 18px 18px 0 0; box-shadow: 0px -6px 12px 0px rgba(0, 0, 0, 0.1); }
@@ -381,7 +311,6 @@
   .compose-email-modal { height: 100%; display: flex; flex-direction: column; animation: fadeDown 0.3s ease-out forwards !important; }
   .compose-email-modal .modal-dialog, .compose-email-modal .modal-dialog-scrollable { margin: 0 !important; height: 100% !important; max-height: 100% !important; display: flex; flex-direction: column; }
   .compose-email-modal .modal-header { background-color: transparent; border-bottom: 0; flex-shrink: 0; }
-  /* .compose-email-modal .modal-header .drag-handle-btn { display: none; } */
   .compose-email-modal .modal-content { border: 0; box-shadow: none !important; background-color: #fff; border-radius: 0; height: 100% !important; max-height: 100% !important; display: flex; flex-direction: column; overflow: hidden; }
   .compose-email-modal .modal-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .ComposeModalSimpleBar { max-height: none !important; height: 100%; min-height: 0; }
@@ -389,7 +318,6 @@
   .compose-email-modal .compose-modal-footer { flex-shrink: 0; position: relative; z-index: 5; background-color: #fff; border-top: 1px solid #d0d9de; padding-bottom: env(safe-area-inset-bottom, 0px); }
   /* -------------------- Compose Attachments -------------------- */
   .compose-mail-attachments .compose-mail-attachments-list li, .compose-email-modal .modal-expand .compose-mail-attachments .compose-mail-attachments-list li, .reply-mail-box .compose-mail-attachments-list li { width: 100%; max-width: none; }
-  /* Without this the flex row refuses to shrink and the ellipsis never kicks in. */
   .compose-mail-attachments .attachments-box .file-name { min-width: 0; flex: 1 1 auto; }
   .compose-email-modal .compose-btn-box, .INBOX-main .compose-email-modal .compose-btn-box { position: relative; bottom: 0 !important; padding: 8px 12px; border-radius: 0; width: 100%; }
   .compose-email-modal .compose-btn-box>.d-flex.align-items-center { flex-wrap: nowrap; min-width: 0; gap: 4px; }
@@ -400,13 +328,11 @@
     to { opacity: 1; transform: translatex(0); }
   }
   .compose-email-modal .modal-header .modal-title-center { left: 13px; transform: unset !important; }
-  /* .compose-email-modal .btn-close, .modal-title { display: none; } */
   /* -------------------- CC BCC to info -------------------- */
   .cc-bcc-to-info { flex-direction: column !important; align-items: start !important; gap: 16px; }
   /* -------------------- Schedule -------------------- */
   .modal-schedule-box .modal-dialog { max-width: 100%; }
   /* -------------------- Create Event: date/time row -------------------- */
-  /* Dates share row 1; times share row 2 (each field 50% width). */
   .Calendar-main .calendar-event-modal-body .event-datetime-fields>.event-date-field { order: 1; flex: 0 0 50%; max-width: 50%; width: 50%; }
   .Calendar-main .calendar-event-modal-body .event-datetime-fields>.event-time-field { order: 2; flex: 0 0 50%; max-width: 50%; width: 50%; }
   /* -------------------- Flatpickr Calendar -------------------- */
@@ -421,14 +347,8 @@
   /* -------------------- Contacts -------------------- */
   .contacts-table { max-height: none; min-height: 0; }
   .contacts-table.is-empty { overflow: hidden; }
-  .contacts-page-pagination {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 8px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  }
-  .contacts-pagination-summary,
-  .contacts-pagination-controls { justify-self: center; }
+  .contacts-page-pagination { grid-template-columns: 1fr; justify-items: center; gap: 8px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .contacts-pagination-summary, .contacts-pagination-controls { justify-self: center; }
   .contacts-pagination-spacer { display: none; }
   .contacts-toolbar-row { flex-wrap: wrap; }
   .contacts-filters-row { width: 100%; }
@@ -436,7 +356,6 @@
   .contacts-page-limit-field { flex: 0 0 72px; }
   .contacts-page-main { padding: 12px !important; }
   .contacts-mobile-list { gap: 8px; }
-
   .contact-mobile-item__field { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; }
   .contact-hover-popup { max-width: min(280px, calc(100vw - 24px)); }
   .contact-field-row { gap: 6px; }
@@ -446,14 +365,19 @@
   /* Calender Event Modal */
   .CalendarModalSimpleBar { max-height: calc(100dvh - 100px); min-height: 200px; }
   .eventInfoModalSimpleBar { max-height: calc(100dvh - 100px); min-height: 200px; }
-  .Calendar-main .modal-title { font-size: 14px;}
+  .Calendar-main .modal-title { font-size: 14px; }
   /* Edit Rule modal */
   .edit-rule-modal-simple-scroll-bar-body { max-height: calc(100dvh - 100px); min-height: 200px; }
   /* ---------------------------Scheduled---------------------------- */
   .schedule-info-box-details { display: inline-flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 4px; }
+  /* -------------------- Mobile Compose Floating Button -------------------- */
+  .mobile-compose-fab { display: flex; }
+  /* -------------------- Move to folder  -------------------- */
+  .move-to-folder-modal .modal-content-shadow { top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; min-width: 100% !important; height: auto !important; max-height: min(88dvh, 720px); }
+  .move-to-folder-modal .modal-content-shadow.modal-show-open>div { animation: moveToSheetFadeUp 0.28s ease-out forwards; }
 }
 /* ==========================================================================
-   6. Breakpoint: max-width 425px
+  Breakpoint: 425px
    ========================================================================== */
 @media screen and (max-width: 425px) {
   /* -------------------- Attachment -------------------- */
@@ -463,17 +387,20 @@
   .add-floder-single-box .dropdown-menu { top: 21px !important; margin: 0 !important; left: -180px !important; }
 }
 /* ==========================================================================
-   7. Breakpoint: max-width 320px
+   Breakpoint: 380px
+   ========================================================================== */
+@media screen and (max-width: 380px) {
+  .Calendar-main .left-side-calendar-box { padding: 14px 8px; }
+  .Calendar-main .left-side-calendar-box #sidebar-calendar { --week-gutter: 26px; }
+  .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day .fc-daygrid-day-number, .Calendar-main .left-side-calendar-box #sidebar-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { width: 22px; height: 22px; font-size: 13px; }
+}
+/* ==========================================================================
+   Breakpoint: 320px
    ========================================================================== */
 @media screen and (max-width: 320px) {
-  .compose-email-modal .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content, .reply-mail-box .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content, .forward-it-modal .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { padding: 2px; width: 100%; max-width: 100%; overflow: hidden; }
+  .compose-email-modal .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content, .reply-mail-box .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content, .forward-it-modal .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { padding: 2px; width: 100%; max-width: 100%; }
   .compose-email-modal .ck.ck-toolbar, .reply-mail-box .ck.ck-toolbar, .forward-it-modal .ck.ck-toolbar { width: 100%; max-width: 100%; }
-  /* Tighter gaps so more icons fit before three-dots */
-  .compose-email-modal .ck.ck-toolbar>.ck-toolbar__items>*:not(.ck-toolbar__line-break), .compose-email-modal .ck.ck-toolbar>.ck.ck-toolbar__grouped-dropdown, .reply-mail-box .ck.ck-toolbar>.ck-toolbar__items>*:not(.ck-toolbar__line-break), .reply-mail-box .ck.ck-toolbar>.ck.ck-toolbar__grouped-dropdown, .forward-it-modal .ck.ck-toolbar>.ck-toolbar__items>*:not(.ck-toolbar__line-break), .forward-it-modal .ck.ck-toolbar>.ck.ck-toolbar__grouped-dropdown { margin: 0 2px 0 0; }
-  .compose-email-modal .ck.ck-button, .compose-email-modal a.ck.ck-button, .reply-mail-box .ck.ck-button, .reply-mail-box a.ck.ck-button, .forward-it-modal .ck.ck-button, .forward-it-modal a.ck.ck-button { padding: 2px !important; }
-  /* Shrink text labels (heading / font size) so icon buttons remain visible */
   .compose-email-modal .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label, .reply-mail-box .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label, .forward-it-modal .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label, .compose-email-modal .ck.ck-dropdown.ck-font-size-dropdown .ck-dropdown__button .ck-button__label, .reply-mail-box .ck.ck-dropdown.ck-font-size-dropdown .ck-dropdown__button .ck-button__label, .forward-it-modal .ck.ck-dropdown.ck-font-size-dropdown .ck-dropdown__button .ck-button__label { max-width: 3.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* Keep three-dots overflow menu visible and tappable */
   .compose-email-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown, .reply-mail-box .ck.ck-dropdown.ck-toolbar__grouped-dropdown, .forward-it-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown { flex-shrink: 0; margin: 0 !important; }
   .compose-email-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown .ck.ck-icon.ck-icon_inherit-color :not([fill]), .reply-mail-box .ck.ck-dropdown.ck-toolbar__grouped-dropdown .ck.ck-icon.ck-icon_inherit-color :not([fill]), .forward-it-modal .ck.ck-dropdown.ck-toolbar__grouped-dropdown .ck.ck-icon.ck-icon_inherit-color :not([fill]) { fill: #e2e2e2; }
   /* -------------------- Toast -------------------- */
@@ -482,63 +409,3 @@
   .Toastify__toast-container--bottom-left, .Toastify__toast-container--bottom-center, .Toastify__toast-container--bottom-right { bottom: 16px !important; }
   .Toastify__toast { width: 100%; max-width: 100%; margin: 0 0 6px; border-radius: 8px; box-sizing: border-box; }
 }
-/* ==========================================================================
-   8. Global :: Mobile Sidebar Backdrop
-   ========================================================================== */
-.mobile-sidebar-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999; /* below sidebar, above rest of content */ }
-/* ==========================================================================
-   9. Global :: Mobile Compose Floating Button
-   ========================================================================== */
-.mobile-compose-fab { position: fixed; right: 16px; bottom: 16px; width: 52px; height: 52px; padding: 0; display: none; align-items: center; justify-content: center; border: 0; border-radius: 50%; background-color: #0097ef; box-shadow: 0px 3px 8px 0px #00000033; z-index: 1; }
-@media screen and (max-width: 575px) {
-  .mobile-compose-fab { display: flex; }
-}
-.flatpickr-calendar.open, .flatpickr-calendar.inline { max-height: 1000px !important; }
-.mobile-compose-fab:active { background-color: #067bc8; }
-.mobile-compose-fab img { width: 22px; height: 22px; }
-.Calendar-main .mobile-compose-fab { background: linear-gradient(9deg, #1a2852, #124981); }
-/* ==========================================================================
-   End :: General Responsive CSS
-   ========================================================================== */
-.thread-email-react-dropdown-replay-btn .dropdown-toggle { padding: 2px !important; }
-.show-on-mobile-thread-email-only { display: none !important; }
-.thread-email-react-dropdown-replay-btnyyyy.dropdown-menu.show { margin: 4px -5px 0 0; }
-/* Thread date: below To only at ≤775; beside To on 776–992 */
-@media screen and (max-width: 775px) {
-  .thread-email .thread-mail-to-row { flex-direction: column; align-items: flex-start !important; gap: 8px; }
-  .thread-email .thread-mail-date-meta--to-side { width: 100%; margin-left: 0 !important; text-align: left; }
-  .thread-email .thread-mail-date-meta--to-side .info-received-details { text-align: left; }
-  .thread-email .thread-mail-date-meta--to-side .hover-link { justify-content: flex-start !important; }
-}
-@media (max-width: 768px) {
-  .thread-email-hide-on-mobile { display: none !important; }
-  .show-on-mobile-thread-email-only { display: flex !important; }
-  .thread-email .accordion-item .mail-profile-name, .thread-email .accordion-item .mail-profile-id { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-}
-/* ==========================================================================
-   Move to folder — full-width bottom sheet (opened only at ≤575px)
-  ========================================================================== */
-@media screen and (max-width: 575px) {
-  .move-to-folder-modal .modal-content-shadow { top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; min-width: 100% !important; height: auto !important; max-height: min(88dvh, 720px); }
-  .move-to-folder-modal .modal-content-shadow.modal-show-open>div { animation: moveToSheetFadeUp 0.28s ease-out forwards; }
-}
-@keyframes moveToSheetFadeUp {
-  from { opacity: 0; transform: translateY(100%); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.move-to-folder-sheet { background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0px -6px 20px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column; max-height: min(88dvh, 720px); overflow: hidden; }
-.move-to-folder-sheet__handle { width: 36px; height: 4px; border-radius: 100px; background: #d0d9de; margin: 4px auto 8px; flex-shrink: 0; }
-.move-to-folder-sheet__header { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 12px; flex-shrink: 0; }
-.move-to-folder-sheet__title { margin: 0; font-size: 22px; font-weight: 600; color: #212121; line-height: 1.2; }
-.move-to-folder-sheet__close { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; flex-shrink: 0; }
-.move-to-folder-sheet__body { flex: 1 1 auto; min-height: 0; max-height: calc(88dvh - 90px); padding: 0 4px 8px; }
-.move-to-folder-sheet__section { padding: 4px 0 8px; }
-.move-to-folder-sheet__section+.move-to-folder-sheet__section { border-top: 1px solid #e5e8ea; margin-top: 4px; padding-top: 12px; }
-.move-to-folder-sheet__section-label { font-size: 12px; font-weight: 500; color: #717d84; padding: 4px 16px 8px; }
-.move-to-folder-sheet__list { list-style: none; margin: 0; padding: 0; }
-.move-to-folder-sheet__item { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: transparent; padding: 12px 16px; text-align: left; font-size: 15px; font-weight: 400; color: #212121; line-height: 1.3; }
-.move-to-folder-sheet__item img { width: 20px; height: 20px; flex-shrink: 0; object-fit: contain; }
-.move-to-folder-sheet__item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.move-to-folder-sheet__item:hover, .move-to-folder-sheet__item:focus-visible { background: #f2f4f5; outline: none; }
-.move-to-folder-sheet__item:disabled { opacity: 0.6; }
-.move-to-folder-sheet__empty { padding: 24px 16px; text-align: center; color: #717d84; font-size: 14px; }

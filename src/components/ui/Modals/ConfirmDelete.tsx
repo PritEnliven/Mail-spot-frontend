@@ -68,6 +68,8 @@ function ConfirmDelete({
             closeOnBackdrop={true}
             closeOnEsc={true}
             draggable={true}
+            showBackdrop={true}
+            backdropClassName="modal-backdrop-transparent"
             dragHandleSelector=".drag-handle"
             width="min(100vw, 498px)"
         >

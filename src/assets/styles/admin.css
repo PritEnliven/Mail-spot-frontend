@@ -3258,9 +3258,9 @@ body
 }
 
 .top-search {
-  width: 100%;
   max-width: 480px;
   position: relative;
+  margin: 0 !important;
 }
 
 .two-sc-in {
@@ -4057,8 +4057,6 @@ hr {
     max-height: 100dvh;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    background-color: #f5f5f5;
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     -webkit-overflow-scrolling: touch;
   }
 
@@ -4094,7 +4092,7 @@ hr {
 
   .admin-data-tabl-box--mobile {
     padding: 16px;
-    padding-bottom: 16px;
+    padding-bottom: 4px;
   }
 
   .admin-data-tabl-box--mobile .Tool-bar-box {
