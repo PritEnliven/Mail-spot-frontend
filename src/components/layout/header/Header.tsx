@@ -615,6 +615,13 @@ const Header = () => {
             let data = await getSingleEmailService(payload);
             // Service returns the error object on failure (e.g. 403) instead of throwing.
             if (!data?.emailList) {
+                if (data?.statusCode === 409) {
+                    showError(
+                        data?.message ||
+                        'This email is stored locally and is not available on the mail server.'
+                    );
+                    return;
+                }
                 throw new Error(
                     data?.message || `Failed to fetch email detail (status ${data?.statusCode ?? 'unknown'})`
                 );
@@ -688,12 +695,18 @@ const Header = () => {
             value: typeof box.value === 'object' ? (box.value?.value ?? box.value) : box.value,
         }));
 
+        const localFolders = (sidebarState.localFolders || []).map((folder: any) => ({
+            label: folder.displayName || folder.key,
+            value: folder.value || folder.key,
+        }));
+
         return [
             { label: 'All mailboxes', value: '' },
             ...defaultFolders,
             ...customFolders,
+            ...localFolders,
         ];
-    }, [sidebarState.boxes, sidebarState.customBoxes]);
+    }, [sidebarState.boxes, sidebarState.customBoxes, sidebarState.localFolders]);
 
     const openChangeImapSmtpPasswordModal = async () => {
         const response = await getUserDetail(profileEmail);

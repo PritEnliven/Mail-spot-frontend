@@ -73,6 +73,7 @@ const dispatchLinkedAccountSignedOut = (accountId: string | null) => {
 const MAILBOX_SCOPED_PREFIXES = [
   'email/',
   'customBox/',
+  'localFolder/',
   'event/',
   'calendar/',
   'rule/',

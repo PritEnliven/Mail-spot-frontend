@@ -1,5 +1,6 @@
 import { Slide, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./movingEmailToast.css";
 import closeIcon from "@images/close-icon.svg";
 import successIcon from "@images/checkmark-badge-icon.svg";
 import errorIcon from "@images/multiplication-sign-icon.svg";

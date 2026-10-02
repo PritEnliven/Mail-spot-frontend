@@ -79,16 +79,16 @@ const sidebarConfig = {
             activeIcon: starredIconActive
         },
         {
-            id: 'contact',
-            label: 'Contact',
-            originalIcon: contactIcon,
-            activeIcon: contactIconActive
-        },
-        {
             id: 'calendar',
             label: 'Calendar',
             originalIcon: calendarIcon,
             activeIcon: calendarIconActive
+        },
+        {
+            id: 'contact',
+            label: 'Contact',
+            originalIcon: contactIcon,
+            activeIcon: contactIconActive
         },
         {
             id: 'settings',

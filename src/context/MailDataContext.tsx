@@ -36,6 +36,7 @@ export interface AdminSettingsPermissions {
 export interface SidebarStateProps {
     boxes: any[];
     customBoxes: any[];
+    localFolders: any[];
     otherMenu: any[];
     boxCounts: Record<string, BoxCount>;
     parentFolderOptions: any[];
@@ -45,7 +46,7 @@ export interface SidebarStateProps {
 
 export type SidebarApiResult = Pick<
     SidebarStateProps,
-    'boxes' | 'customBoxes' | 'otherMenu' | 'boxCounts'
+    'boxes' | 'customBoxes' | 'localFolders' | 'otherMenu' | 'boxCounts'
 > & { delimiter?: string | null; folderMapping?: Record<string, string> | null; refreshed?: boolean };
 
 type SidebarItemType = {
@@ -57,7 +58,8 @@ type SidebarItemType = {
     activeIcon: string;
     boxKey: string;
     unreadCount?: number;
-    category: 'boxes' | 'customBoxes' | 'otherMenu';
+    folderId?: string;
+    category: 'boxes' | 'customBoxes' | 'otherMenu' | 'localFolders';
 };
 
 interface MailDataType {
@@ -205,6 +207,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [sidebarState, setSidebarState] = useState<SidebarStateProps>({
         boxes: [],
         customBoxes: [],
+        localFolders: [],
         otherMenu: [],
         boxCounts: {},
         parentFolderOptions: [],
@@ -369,6 +372,12 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     }
 
                     if (boxNameParam && page === 1) {
+                        // Local folders are DB-only — do not run IMAP getCounts bootstrap
+                        if (String(boxNameParam).toLowerCase().startsWith('local::')) {
+                            if (paginationData?.totalEmails != null) {
+                                setTotalEmailBadge(Number(paginationData.totalEmails) || 0);
+                            }
+                        } else {
                         setIsTotalCountLoading(true);
 
                         getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
@@ -407,6 +416,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         }).finally(() => {
                             setIsTotalCountLoading(false);
                         });
+                        }
                     }
                     setEmails(emailList);
                     setPagination(paginationData);
@@ -428,6 +438,11 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         // If it's page 1, we should also update the counts from the API response if available
                         // or trigger getCounts for the sidebar
                         if (page === 1 && boxNameParam) {
+                            if (String(boxNameParam).toLowerCase().startsWith('local::')) {
+                                if (paginationData?.totalEmails != null) {
+                                    setTotalEmailBadge(Number(paginationData.totalEmails) || 0);
+                                }
+                            } else {
                             setIsTotalCountLoading(true);
 
                             // Determine isReadTotal based on mailAction
@@ -466,6 +481,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                             }).finally(() => {
                                 setIsTotalCountLoading(false);
                             });
+                            }
                         }
 
                         // Update sidebar box unread count when mailAction is unread
@@ -814,6 +830,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         try {
             const response = await getBoxes()
             response.otherMenu = ensureContactInOtherMenu(response.otherMenu ?? []);
+            const localFolders = response.localFolders ?? [];
             const boxCounts: Record<string, BoxCount> = {};
 
             [...response.boxes, ...response.customBoxes, ...response.otherMenu].forEach(
@@ -828,9 +845,20 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 }
             );
 
+            localFolders.forEach((folder: any) => {
+                const key = folder.value || folder.key;
+                if (!key) return;
+                boxCounts[key] = {
+                    isTotal: false,
+                    unreadCount: folder.unreadCount ?? folder.count ?? 0,
+                    totalCount: folder.count ?? folder.unreadCount ?? 0,
+                };
+            });
+
             // Fire getCounts without blocking - update counts when response arrives
+            // Skip for local folders (DB-only; no IMAP count sync)
             const countBox = boxNameOverride || boxName;
-            if (countBox) {
+            if (countBox && !String(countBox).toLowerCase().startsWith('local::')) {
                 setIsSidebarCountLoading(true);
                 getCounts(countBox, true, null).then((boxCountResponse) => {
                     if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
@@ -852,12 +880,14 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             }
 
             response.boxCounts = boxCounts;
+            response.localFolders = localFolders;
 
             const sidebarItems = resolveAllSidebarItems(
                 response.boxes,
                 response.customBoxes,
                 response.otherMenu,
-                boxCounts
+                boxCounts,
+                localFolders
             );
 
             setSidebarItems(sidebarItems);
@@ -865,6 +895,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             setSidebarState({
                 boxes: response.boxes,
                 customBoxes: response.customBoxes,
+                localFolders,
                 otherMenu: response.otherMenu,
                 boxCounts,
                 parentFolderOptions: buildParentFolderOptions(
@@ -892,6 +923,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         const otherMenu = ensureContactInOtherMenu(response.otherMenu ?? previous.otherMenu ?? []);
         const boxes = response.boxes ?? [];
         const customBoxes = response.customBoxes ?? [];
+        const localFolders = response.localFolders ?? [];
         const boxCounts: Record<string, BoxCount> = { ...previous.boxCounts };
 
         [...boxes, ...customBoxes].forEach((box) => {
@@ -905,6 +937,17 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             }
         });
 
+        localFolders.forEach((folder: any) => {
+            const key = folder.value || folder.key;
+            if (!key) return;
+            const existing = boxCounts[key];
+            boxCounts[key] = {
+                isTotal: false,
+                unreadCount: folder.unreadCount ?? folder.count ?? existing?.unreadCount ?? 0,
+                totalCount: folder.count ?? existing?.totalCount ?? 0,
+            };
+        });
+
         otherMenu.forEach((box) => {
             if (box.value && !boxCounts[box.value]) {
                 boxCounts[box.value] = {
@@ -915,11 +958,12 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             }
         });
 
-        setSidebarItems(resolveAllSidebarItems(boxes, customBoxes, otherMenu, boxCounts));
+        setSidebarItems(resolveAllSidebarItems(boxes, customBoxes, otherMenu, boxCounts, localFolders));
 
         setSidebarState({
             boxes,
             customBoxes,
+            localFolders,
             otherMenu,
             boxCounts,
             parentFolderOptions: buildParentFolderOptions(boxes, customBoxes),
@@ -932,6 +976,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         return {
             boxes,
             customBoxes,
+            localFolders,
             otherMenu,
             boxCounts,
             delimiter: response.delimiter ?? null,
@@ -981,6 +1026,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setSidebarState({
             boxes: [],
             customBoxes: [],
+            localFolders: [],
             otherMenu: [],
             boxCounts: {},
             parentFolderOptions: [],

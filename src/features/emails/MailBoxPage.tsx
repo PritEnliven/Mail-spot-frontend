@@ -1,6 +1,7 @@
 import NoEmailList from '@components/ui/email/NoEmailList';
 import MailListGroupHeader from '@components/ui/email/MailListGroupHeader';
 import EmailSkeletonLoader from '@components/ui/EmailSkeletonLoader';
+import { showError } from '@components/ui/toast/toastNotification';
 import { useScreen } from '@context/ScreenContext';
 import { useEmailAction } from '@hooks/useEmailAction';
 import { useSwipeGesture, type SwipeDirection } from '@hooks/useSwipeGesture';
@@ -217,6 +218,13 @@ const MailBoxPage = () => {
             let data = await getSingleEmailService(payload);
             // Service returns the error object on failure (e.g. 403) instead of throwing.
             if (!data?.emailList) {
+                if (data?.statusCode === 409) {
+                    showError(
+                        data?.message ||
+                        'This email is stored locally and is not available on the mail server.'
+                    );
+                    return;
+                }
                 throw new Error(
                     data?.message || `Failed to fetch email detail (status ${data?.statusCode ?? 'unknown'})`
                 );
@@ -292,8 +300,16 @@ const MailBoxPage = () => {
                 }, delay * 1000);
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to fetch email detail', error);
+            if (error?.statusCode === 409) {
+                showError(
+                    error?.message ||
+                    'This email is stored locally and is not available on the mail server.'
+                );
+            } else if (error?.message) {
+                showError(error.message);
+            }
         } finally {
             if (loaderTimeout !== null) {
                 clearTimeout(loaderTimeout);

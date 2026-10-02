@@ -56,6 +56,9 @@ export interface Email {
     isSchedule?: boolean;
     isSearchEmail?: boolean;
     calendarInvite?: CalendarInvite | null;
+    /** True when the email lives only in a local (DB) folder — not on IMAP. */
+    isLocalOnly?: boolean;
+    localFolderId?: string | null;
     /** Present when list is arranged (flat message view). */
     groupKey?: string;
     groupLabel?: string;

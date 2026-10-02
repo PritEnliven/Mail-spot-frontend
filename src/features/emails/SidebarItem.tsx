@@ -29,10 +29,11 @@ const Sidebar = ({ items, boxCounts, activeBoxId, onChangeBox, isLoading = false
                 items.map(item => {
                     const isActive = activeBoxId === item.id;
                     const specificBoxCount = boxCounts[item.boxName];
+                    const isSettings = item.boxName?.toLowerCase() === 'settings' || item.id === 'settings';
                     return (
                         <li
                             key={item.id}
-                            className="m-item"
+                            className={`m-item${isSettings ? ' m-item--divider-above' : ''}`}
                             id={item.boxName}
                             onClick={() => onChangeBox(item.boxName, item.id, item.label)}
                         >

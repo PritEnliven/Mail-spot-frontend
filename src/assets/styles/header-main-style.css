@@ -189,6 +189,15 @@ p {
   margin-bottom: 0;
 }
 
+.left-side-manu-link-list .m-item.m-item--divider-above::before {
+  content: "";
+  width: calc(100% - -16px);
+  height: 1px;
+  background-color: #d0d9de;
+  display: block;
+  margin: 5px 0 13px -8px;
+}
+
 .left-side-manu-link-list .m-item:last-child .m-link {
   margin: 0;
 }
@@ -2689,22 +2698,22 @@ input::-webkit-search-cancel-button {
 .ck.ck-dropdown.ck-color-ui-dropdown svg.ck.ck-icon.ck-reset_all-excluded.ck-icon_inherit-color.ck-button__icon { display: none; }
 .ck.ck-fontColor-dropdown .ck-color-ui-dropdown__color-marker { display: none !important; }
 .ck.ck-dropdown.ck-color-ui-dropdown button.ck-dropdown__button::before { content: ""; width: 16px; height: 16px; border-radius: 50px; }
-.ck.ck-button:not(.ck-disabled):hover, a.ck.ck-button:not(.ck-disabled):hover { background: #fff; }
+.ck.ck-button:not(.ck-disabled):hover, a.ck.ck-button:not(.ck-disabled):hover { background: #e5e8ea; }
 .ck.ck-button:not(.ck-disabled):hover .ck.ck-icon.ck-icon_inherit-color :not([fill]), a.ck.ck-button:not(.ck-disabled):hover .ck.ck-icon.ck-icon_inherit-color :not([fill]) { fill: #212121; }
 .ck.ck-dropdown.ck-heading-dropdown:hover .ck-dropdown__button .ck-button__label { color: #212121 !important; }
 .ck.ck-button.ck-on:not(.ck-disabled):hover, a.ck.ck-button.ck-on:not(.ck-disabled):hover { background: #fff; }
 .ck.ck-button:active, .ck.ck-button:focus, a.ck.ck-button:active, a.ck.ck-button:focus, .ck.ck-dropdown .ck-button.ck-dropdown__button.ck-off:active:focus, .ck.ck-dropdown .ck-button.ck-dropdown__button.ck-on:active:focus { border: none !important; box-shadow: none !important; outline: none !important; }
 .ck.ck-icon { font-size: 10px !important; }
-.ck.ck-button, a.ck.ck-button { border: 0 !important; min-height: auto; }
+.ck.ck-button, a.ck.ck-button { border: 0 !important; min-height: auto;padding: 2px !important; height: 24px; border-radius: 3px !important; cursor: pointer !important; }
 .ck .ck-dropdown { padding: 0 !important; }
-.ck.ck-button.ck-on.ck-button_with-text.ck-dropdown__button, .ck.ck-dropdown.ck-heading-dropdown button.ck.ck-button.ck-on.ck-button_with-text.ck-dropdown__button, .ck-on.ck-dropdown__button { background: #fff !important; }
+.ck.ck-button.ck-on.ck-button_with-text.ck-dropdown__button, .ck.ck-dropdown.ck-heading-dropdown button.ck.ck-button.ck-on.ck-button_with-text.ck-dropdown__button, .ck-on.ck-dropdown__button { background: #e5e8ea !important; }
 .ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color, a.ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color, .ck-on.ck-dropdown__button .ck.ck-icon.ck-icon_inherit-color, .ck-on.ck-dropdown__button .ck.ck-icon.ck-icon_inherit-color * { color: #fff !important; }
 .ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color :not([fill]), a.ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color :not([fill]) { fill: #212121; }
 .ck.ck-color-ui-dropdown__color-marker { display: none !important; }
 .ck.ck-dropdown.ck-color-ui-dropdown button.ck-dropdown__button::before, .ck.ck-dropdown.ck-color-ui-dropdown button.ck-dropdown__button:focus::before, .ck.ck-dropdown.ck-color-ui-dropdown.ck-open button.ck-dropdown__button::before, .ck.ck-dropdown.ck-color-ui-dropdown.ck-button_active button.ck-dropdown__button::before { background-color: var(--ck-color-font-color-marker) !important; filter: none !important; opacity: 1 !important; border: 2px solid #fff !important; }
 body .ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color :not([fill]), body a.ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color :not([fill]) { color: rgb(255, 255, 255) !important; }
 body .ck-on.ck-dropdown__button .ck.ck-icon.ck-icon_inherit-color, body .ck-on.ck-dropdown__button .ck.ck-icon.ck-icon_inherit-color * { color: rgb(0, 0, 0) !important; }
-body .ck.ck-icon.ck-icon_inherit-color, body .ck.ck-icon.ck-icon_inherit-color * { color: rgba(163, 163, 163, 1) !important; }
+body .ck.ck-icon.ck-icon_inherit-color, body .ck.ck-icon.ck-icon_inherit-color * { color: #717D84 !important; }
 .ck.ck-button.ck-on.ck-button_with-text .ck-button__label { color: #212121; }
 .ck.ck-dropdown .ck-button.ck-dropdown__button.ck-on { border-radius: 3px; }
 .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_s, .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se, .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sme, .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_smw, .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sw { bottom: auto; top: 30px; border-radius: 4px !important; box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.16); border: 1px solid #bbc0c4; overflow: auto; }
@@ -2744,12 +2753,19 @@ body .ck.ck-icon.ck-icon_inherit-color, body .ck.ck-icon.ck-icon_inherit-color *
 .ck-balloon-panel.ck-balloon-panel_arrow_se { transform: translate(-16px, 0px) !important; }
 .ck-balloon-panel_with-arrow.ck-balloon-panel::before, .ck-balloon-panel_with-arrow.ck-balloon-panel::after { display: none !important; }
 .ck-reset_all :not(.ck-reset_all-excluded *), .ck.ck-reset_all { font-family: "DM Sans", sans-serif !important; }
-.ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { border: 1px solid #212121; border-radius: 5px !important; background-color: #212121; padding: 3px; }
+.ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { border: 1px solid transparent !important; border-radius: 5px !important; background-color: transparent; padding: 0; }
 .ck.ck-toolbar > .ck-toolbar__items { margin: 0 !important; border: 0; border-radius: 0; background-color: transparent !important; padding: 0; }
-.ck.ck-button, a.ck.ck-button { padding: 4px !important; border-radius: 3px !important; cursor: pointer !important; }
-.ck.ck-toolbar > .ck-toolbar__items > :not(.ck-toolbar__line-break), .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown { margin: 0 8px 0 0; }
+
+.ck.ck-toolbar > .ck-toolbar__items > :not(.ck-toolbar__line-break), .ck.ck-toolbar > .ck.ck-toolbar__grouped-dropdown { margin: 0 16px 0 0; }
 .ck.ck-toolbar .ck.ck-toolbar__separator { display: none; }
-.ck.ck-icon.ck-icon_inherit-color :not([fill]) { fill: #e2e2e2; }
+.compose-email-modal .ck .ck-sticky-panel__content {
+  background: rgba(33, 33, 33, 1);
+  box-shadow:0;
+  border: 0 !important;
+  padding: 3px 4px;
+  border-radius: 5px !important;
+}
+.ck.ck-icon.ck-icon_inherit-color :not([fill]) { fill: #717D84; }
 .ck.ck-color-grid__tile { border: 0; height: 16px; min-height: 16px; min-width: 16px; padding: 0; width: 16px; border-radius: 50px !important; }
 .ck.ck-button.ck-button_with-text .ck-button__label, a.ck.ck-button.ck-button_with-text .ck-button__label { font-family: "DM Sans", sans-serif; }
 [dir="ltr"] .ck.ck-list-item-button .ck-list-item-button__check-holder { display: none; }
@@ -2766,7 +2782,7 @@ body .ck.ck-icon.ck-icon_inherit-color, body .ck.ck-icon.ck-icon_inherit-color *
 .ck-editor .ck-button.ck-source-editing-button .ck-button__label { display: none !important; }
 .ck-editor .ck-button.ck-source-editing-button { display: flex; align-items: center; justify-content: center; }
 [dir="ltr"] .ck.ck-dropdown .ck-dropdown__arrow { width: 10px; }
-.ck.ck-icon.ck-icon_inherit-color, .ck.ck-icon.ck-icon_inherit-color * { width: 16px; height: 16px; }
+.ck.ck-icon.ck-icon_inherit-color, .ck.ck-icon.ck-icon_inherit-color * { width: 18px; height: 18px; }
 [dir="ltr"] .ck.ck-button.ck-button_with-text .ck-button__icon, [dir="ltr"] a.ck.ck-button.ck-button_with-text .ck-button__icon { margin-right: 0; }
 .ck-rounded-corners .ck-source-editing-area textarea, .ck-source-editing-area textarea.ck-rounded-corners { border: 0; height: 100%; }
 .ck-source-editing-area textarea:not([readonly]):focus { border: 0; box-shadow: none; }
@@ -2838,7 +2854,7 @@ body .ck.ck-icon.ck-icon_inherit-color, body .ck.ck-icon.ck-icon_inherit-color *
 .ck-toolbar__items .ck-button[data-cke-tooltip-text="Unlink"] { background-image: url(../images/unlink-icon.svg); background-repeat: no-repeat; background-size: contain; }
 .ck-toolbar__items .ck-button[data-cke-tooltip-text="Unlink"]:hover { background: url(../images/unlink-icon-hover.svg); background-repeat: no-repeat; background-size: contain; }
 .ck.ck-balloon-panel:has(.ck-link-toolbar) button svg { display: none; }
-.ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content .ck-toolbar { border: 1px solid transparent !important; }
+.ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content .ck-toolbar { border: 0 !important; }
 .ck.ck-editor__top .ck-sticky-panel__content:not(.ck-sticky-panel__content_sticky), .ck.ck-editor__top .ck-sticky-panel__content .ck-toolbar:not(.ck-dropdown__panel .ck-toolbar) { position: relative; }
 .ck.ck-editor__top .ck-sticky-panel__content .ck-toolbar:not(.ck-dropdown__panel .ck-toolbar) > .ck-toolbar__items { flex-wrap: nowrap !important; }
 .ck.ck-toolbar > .ck-toolbar__items > .ck-dropdown:has(> .ck-dropdown__button[data-cke-tooltip-text="More options"]) { margin: 0 0 0 auto !important; position: static !important; }
@@ -4311,6 +4327,44 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   background-color: #0097ef;
 }
 
+.moving-email-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.moving-email-toast__logo {
+  position: relative;
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.moving-email-toast__icon {
+  width: 25px;
+  height: 25px;
+  display: block;
+  border-radius: 50%;
+  animation: movingEmailLogoBounce 0.9s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes movingEmailLogoBounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-4px) scale(1.08);
+  }
+  60% {
+    transform: translateY(-2px) scale(1.03);
+  }
+}
+
 /* END:: toaster React*/
 .blue.checkbox-custom label:after {
   background-image: url(../images/checkbox-check-box-blue.svg) !important;
@@ -4700,6 +4754,12 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   color: #212121;
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Local Folders (and any section with only the + action): give the title more room */
+.create-folder-sec--single-action .sidebar-create-folder-box {
+  width: calc(100% - 40px);
 }
 
 .add-folder-btn,
@@ -4869,6 +4929,11 @@ nav#navbarList.nav-collepse::after {
 .nav-collepse .left-side-manu-link-list::after {
   width: 64px;
   margin: 0 0 0 -18px;
+}
+
+.nav-collepse .left-side-manu-link-list .m-item.m-item--divider-above::before {
+  width: 64px;
+  margin: 5px 0 13px -18px;
 }
 
 .create-folder-scroll-up,
@@ -5609,3 +5674,98 @@ nav#navbarList.nav-collepse::after {
 
 
 
+
+
+
+/* Toolbar ne niche slot ma mukya pachi */
+.compose-email-modal .compose-editor-toolbar-slot {
+    /* static so "More options" panel positions against the full footer, not this narrow slot */
+    position: static;
+    z-index: 5;              /* dropdown panels body upar dekhay */
+    flex: 0 0 auto;
+    padding:0;
+}
+.compose-email-modal .compose-editor-toolbar-slot:empty {
+    display: none;
+    padding: 0;
+}
+
+/* Toolbar move thay pachi editor ni upar ni khali jagya chhupavo */
+.compose-email-modal .ck-toolbar-at-bottom .ck-editor__top {
+    display: none;
+}
+
+
+
+/* "More options" panel: footer / btn-box ni full width */
+.compose-modal-footer {
+    position: relative;               /* panel aa footer ne reference banave */
+    overflow: visible;
+}
+.compose-modal-footer .compose-btn-box {
+    overflow: visible;
+}
+
+/*
+ * Only the OUTER toolbar chain is static so More options can span the footer.
+ * Do NOT force static on nested toolbars/dropdowns inside the panel (alignment, table, etc.).
+ */
+.compose-modal-footer .compose-editor-toolbar-slot,
+.compose-modal-footer .ck.ck-editor__top,
+.compose-modal-footer .ck-sticky-panel,
+.compose-modal-footer .ck-sticky-panel__content,
+.compose-modal-footer .ck-sticky-panel__content > .ck.ck-toolbar,
+.compose-modal-footer .ck-sticky-panel__content > .ck.ck-toolbar > .ck-toolbar__items,
+.compose-modal-footer .ck.ck-toolbar > .ck-toolbar__items > .ck-dropdown:has(> .ck-dropdown__button[data-cke-tooltip-text="More options"]) {
+    position: static !important;
+}
+
+.compose-modal-footer .ck.ck-toolbar > .ck-toolbar__items > .ck-dropdown:has(> .ck-dropdown__button[data-cke-tooltip-text="More options"]) > .ck-dropdown__panel {
+    top: auto !important;
+    bottom: calc(100% + 0px) !important;   
+    left: 0 !important;
+    right: 0 !important;
+    width: calc(100% - 40px) !important;
+    max-width: none !important;
+    box-sizing: border-box;
+    margin: auto;
+    overflow: visible !important;
+}
+
+/* Panel ni andar na icons ek row ma full width par */
+.compose-modal-footer .ck.ck-toolbar > .ck-toolbar__items > .ck-dropdown:has(> .ck-dropdown__button[data-cke-tooltip-text="More options"]) > .ck-dropdown__panel > .ck-toolbar > .ck-toolbar__items {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    padding:0 !important;
+    width: 100%;
+}
+
+/*
+ * Menus inside More options: only prevent full-width stretch.
+ * Do not set left/right/top/bottom — CKEditor positions panels on the trigger.
+ */
+.compose-modal-footer .ck.ck-toolbar > .ck-toolbar__items > .ck-dropdown:has(> .ck-dropdown__button[data-cke-tooltip-text="More options"]) > .ck-dropdown__panel .ck-dropdown > .ck-dropdown__panel {
+    width: max-content !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 16px);
+}
+
+/* Bottom compose toolbar: open submenus upward (global rules use top: 30px downward) */
+.compose-modal-footer .ck.ck-dropdown > .ck-dropdown__panel.ck-dropdown__panel_n,
+.compose-modal-footer .ck.ck-dropdown > .ck-dropdown__panel.ck-dropdown__panel_ne,
+.compose-modal-footer .ck.ck-dropdown > .ck-dropdown__panel.ck-dropdown__panel_nw,
+.compose-modal-footer .ck.ck-dropdown > .ck-dropdown__panel.ck-dropdown__panel_nme,
+.compose-modal-footer .ck.ck-dropdown > .ck-dropdown__panel.ck-dropdown__panel_nmw {
+    bottom: calc(100% + 4px) !important;
+    top: auto !important;
+        bottom: auto;
+    top: 30px;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 3px #00000029;
+    border: 1px solid #bbc0c4;
+    overflow: auto;
+}

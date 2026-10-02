@@ -38,7 +38,8 @@ export function useSidebarFadeScrollbar(): UseSidebarFadeScrollbarReturn {
         const visibleHeight = el.clientHeight;
         const barHeight = bar.clientHeight;
 
-        if (contentHeight <= visibleHeight) {
+        // 1px covers subpixel rounding after a section collapses.
+        if (contentHeight - visibleHeight <= 1) {
             bar.classList.remove('visible');
             handle.style.height = '100%';
             handle.style.top = '0px';
@@ -111,11 +112,26 @@ export function useSidebarFadeScrollbar(): UseSidebarFadeScrollbarReturn {
         const resizeObserver = new ResizeObserver(syncAll);
         resizeObserver.observe(el);
 
-        const mutationObserver = new MutationObserver(syncAll);
+        const observeSectionSizes = () => {
+            el.querySelectorAll('.create-folder-sec, .add-floder-single-box').forEach((node) => {
+                resizeObserver.observe(node);
+            });
+        };
+        observeSectionSizes();
+
+        // Folder open/close only toggles the Bootstrap `show` class.
+        // That does not change this box's size or its child list, so the
+        // scrollbar stayed visible after both sections were collapsed.
+        const mutationObserver = new MutationObserver(() => {
+            observeSectionSizes();
+            syncAll();
+        });
         mutationObserver.observe(el, {
             childList: true,
             subtree: true,
             characterData: true,
+            attributes: true,
+            attributeFilter: ['class'],
         });
 
         syncAll();

@@ -62,7 +62,7 @@ function getDefaultFolderIcon(labelOrValue: string) {
     return folderGrayIcon;
 }
 
-function getCustomFolderIcon(color?: string) {
+function getCustomFolderIcon(color?: string | null) {
     if (!color) return folderOrangeIcon;
     return CUSTOM_FOLDER_COLOR_MAP[color] || folderOrangeIcon;
 }
@@ -97,6 +97,15 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
             icon: getCustomFolderIcon(box.value?.color),
         }));
 
+    const localFolders: FolderOption[] = (sidebarState.localFolders || [])
+        .filter((folder: any) => (folder.value || folder.key) !== boxName)
+        .map((folder: any) => ({
+            id: folder.folderId || folder.value || folder.key,
+            label: folder.displayName || folder.key,
+            value: folder.value || folder.key,
+            icon: getCustomFolderIcon(folder.color),
+        }));
+
     const handleSelect = async (folderValue: string) => {
         if (isMoving) return;
         setIsMoving(true);
@@ -110,7 +119,7 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
         }
     };
 
-    const hasResults = defaultFolders.length > 0 || customFolders.length > 0;
+    const hasResults = defaultFolders.length > 0 || customFolders.length > 0 || localFolders.length > 0;
 
     return (
         <BaseModal
@@ -127,7 +136,6 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
             minWidth="100%"
         >
             <div className="move-to-folder-sheet">
-                {/* <div className="move-to-folder-sheet__handle" aria-hidden="true" /> */}
                 <div className="modal-header justify-content-end">
                     <h5 className="modal-title modal-title-center">Move to</h5>
                     <button
@@ -140,7 +148,7 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
                             defaultIcon={closeIcon}
                             hoverIcon={closeIconHover}
                             activeIcon=""
-                            isActive={false}                                            
+                            isActive={false}
                             alt="Close"
                             className="interactive-icon hover-image"
                             renderAs="img"
@@ -184,6 +192,27 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
                             <div className="move-to-folder-sheet__section-label">Your folders</div>
                             <ul className="move-to-folder-sheet__list">
                                 {customFolders.map((folder) => (
+                                    <li key={folder.id}>
+                                        <button
+                                            type="button"
+                                            className="move-to-folder-sheet__item"
+                                            disabled={isMoving}
+                                            onClick={() => handleSelect(folder.value)}
+                                        >
+                                            <img src={folder.icon} alt="" />
+                                            <span>{folder.label}</span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    )}
+
+                    {localFolders.length > 0 && (
+                        <section className="move-to-folder-sheet__section">
+                            <div className="move-to-folder-sheet__section-label">Local Folders</div>
+                            <ul className="move-to-folder-sheet__list">
+                                {localFolders.map((folder) => (
                                     <li key={folder.id}>
                                         <button
                                             type="button"

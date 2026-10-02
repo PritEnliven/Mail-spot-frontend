@@ -163,16 +163,6 @@ const AccountSwitcher = ({ onAccountSwitch, onNestedOverlayChange }: AccountSwit
       <div className="add-account-section">
         <p className="add-account-label">Accounts</p>
 
-        {isSwitchingAccount && (
-          <div className="d-flex align-items-center gap-2 mb-2 px-1">
-            <span
-              className="spinner-border spinner-border-sm text-primary"
-              style={{ width: 14, height: 14 }}
-            />
-            <span className="small text-muted">Switching account…</span>
-          </div>
-        )}
-
         {/* Primary row — shown only when primary is not the active account */}
         <div className="add-account-item-wrapper">
         {showPrimary && (

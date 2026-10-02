@@ -1,0 +1,37 @@
+.moving-email-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.moving-email-toast__logo {
+  position: relative;
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.moving-email-toast__icon {
+  width: 25px;
+  height: 25px;
+  display: block;
+  border-radius: 50%;
+  animation: movingEmailLogoBounce 0.9s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes movingEmailLogoBounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-4px) scale(1.08);
+  }
+  60% {
+    transform: translateY(-2px) scale(1.03);
+  }
+}

@@ -1,5 +1,8 @@
+import { createElement } from 'react';
 import { toast } from 'react-toastify';
 import type { ToastOptions } from 'react-toastify';
+import mailspotIcon from '@images/mailspot-fevicon.svg';
+import './movingEmailToast.css';
 
 const baseOptions: ToastOptions = {
     position: 'bottom-left',
@@ -31,8 +34,45 @@ const showError = (message: string, options?: ToastOptions) => {
 };
 
 const showInfo = (message: string, options?: ToastOptions) => {
-    if (toastsSuppressed) return;
-    toast.info(message, { ...baseOptions, ...options });
+    if (toastsSuppressed) return undefined;
+    return toast.info(message, { ...baseOptions, ...options });
+};
+
+/** Persistent progress toast with bouncing MailSpot logo (draft save, folder moves, etc.). */
+const showProgressToast = (message: string) => {
+    if (toastsSuppressed) return undefined;
+    return toast.info(
+        createElement(
+            'div',
+            { className: 'moving-email-toast' },
+            createElement(
+                'div',
+                { className: 'moving-email-toast__logo', 'aria-hidden': true },
+                createElement('img', {
+                    src: mailspotIcon,
+                    alt: '',
+                    className: 'moving-email-toast__icon',
+                })
+            ),
+            createElement('span', null, message)
+        ),
+        {
+            ...baseOptions,
+            autoClose: false,
+            closeOnClick: false,
+            icon: false,
+            className: 'moving-email-toast-container',
+        }
+    );
+};
+
+/** Persistent progress toast shown while mail is moving between IMAP and local folders. */
+const showMovingEmailToast = (folderDisplayName: string) =>
+    showProgressToast(`Moving to ${folderDisplayName}...`);
+
+const dismissToast = (toastId?: string | number) => {
+    if (toastId == null) return;
+    toast.dismiss(toastId);
 };
 
 const showWarning = (message: string, options?: ToastOptions) => {
@@ -44,4 +84,14 @@ const clearAllToasts = () => {
     toast.dismiss();
 };
 
-export { showSuccess, showError, showInfo, showWarning, clearAllToasts, suppressAllToasts };
+export {
+    showSuccess,
+    showError,
+    showInfo,
+    showWarning,
+    showProgressToast,
+    showMovingEmailToast,
+    dismissToast,
+    clearAllToasts,
+    suppressAllToasts,
+};

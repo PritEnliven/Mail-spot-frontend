@@ -1218,6 +1218,8 @@ export const getSelectStyles = (
       '.input-icon-add &': {
         paddingLeft: '28px !important',
       },
+   
+      
 
     }),
 

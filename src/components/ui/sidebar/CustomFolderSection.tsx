@@ -44,6 +44,13 @@ interface CustomFolderSectionProps {
   onCreateFolder?: () => void;
   onRefreshFolders?: () => void | Promise<void>;
   isRefreshingFolders?: boolean;
+  /** Section header label — defaults to "Folder" */
+  sectionTitle?: string;
+  /** DOM id for the section root */
+  sectionId?: string;
+  /** Show the IMAP refresh control (hide for local folders) */
+  showRefresh?: boolean;
+  createTooltip?: string;
 }
 
 export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
@@ -55,6 +62,10 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   onCreateFolder,
   onRefreshFolders,
   isRefreshingFolders = false,
+  sectionTitle = 'Folder',
+  sectionId = 'customFolderSection',
+  showRefresh = true,
+  createTooltip = 'Add Folder',
 }) => {
   const { isSidebarOpen } = useMailUI();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -150,41 +161,10 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   }, [isSidebarOpen]);
 
   return (
-    <div className="create-folder-sec" id="customFolderSection">
+    <div className={`create-folder-sec${!showRefresh ? ' create-folder-sec--single-action' : ''}`} id={sectionId}>
       <div className="sidebar-create-folder-box-main">
         <div className="folder-header-actions">
-          {/* <span
-            className={`refresh-folder-btn tooltips-ds${isRefreshingFolders ? ' is-loading' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (!isRefreshingFolders && onRefreshFolders) {
-                onRefreshFolders();
-              }
-            }}
-            style={{ cursor: isRefreshingFolders ? 'default' : 'pointer' }}
-            aria-label="Refresh folders"
-            aria-busy={isRefreshingFolders}
-          >
-            {isRefreshingFolders ? (
-              <span
-                className="spinner-border spinner-border-sm text-primary"
-                style={{ width: 16, height: 16, borderWidth: 2 }}
-                role="status"
-              />
-            ) : (
-              <InteractiveIcon
-                defaultIcon={refreshIcon}
-                hoverIcon={refreshIconHover}
-                activeIcon=""
-                isActive={false}
-                alt=""
-                className="interactive-icon hover-image"
-                renderAs="img"
-                tooltip="Refresh folders"
-              />
-            )}
-          </span> */}
+          {showRefresh && (
           <span
             className={`refresh-folder-btn tooltips-ds${isRefreshingFolders ? ' refresh-loader' : ''}`}
             onClick={(e) => {
@@ -209,6 +189,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
               tooltip="Refresh folders"
             />
           </span>
+          )}
           <span
             className="add-folder-btn tooltips-ds"
             onClick={(e) => {
@@ -228,7 +209,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
               alt=""
               className="interactive-icon hover-image"
               renderAs="img"
-              tooltip={isSidebarOpen ? '' : 'Add Folder'}
+              tooltip={isSidebarOpen ? '' : createTooltip}
             />
           </span>
         </div>
@@ -264,7 +245,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                 />
               }
             </span>
-            <span className="label-text ms-2">Folder</span>
+            <span className="label-text ms-2">{sectionTitle}</span>
           </div>
         </a>
       </div>

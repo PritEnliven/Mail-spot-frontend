@@ -119,6 +119,19 @@ function getBoxNameFromSidebar(sidebarState: any, boxName: string): string {
     return box.value || box.label;
 }
 
+/** Local folders use boxName `local::<folderId>` and are never IMAP mailboxes. */
+function isLocalBoxName(boxName?: string | null): boolean {
+    if (!boxName) return false;
+    return decodeURIComponent(boxName).toLowerCase().startsWith('local::');
+}
+
+function getLocalFolderIdFromBoxName(boxName?: string | null): string | null {
+    if (!boxName || !isLocalBoxName(boxName)) return null;
+    const decoded = decodeURIComponent(boxName);
+    const parts = decoded.split('::');
+    return parts[1] || null;
+}
+
 function verifyBoxName(boxName: string, boxValue: string) {
     if (!boxName || !boxValue) return false;
     const normalized = normalizeBoxName(boxName).toLowerCase();
@@ -376,7 +389,24 @@ const isCustomFolderDepthAllowed = (
     return !match.isDisabled;
 };
 
-function resolveSidebarItem(box: any, category: 'boxes' | 'customBoxes' | 'otherMenu', boxCounts: Record<string, BoxCount>): any {
+function resolveSidebarItem(box: any, category: 'boxes' | 'customBoxes' | 'otherMenu' | 'localFolders', boxCounts: Record<string, BoxCount>): any {
+    if (category === 'localFolders') {
+        const boxName = box.key || box.value;
+        const dynamicCount = boxCounts[boxName];
+        return {
+            id: `local-${box.folderId}`,
+            boxName,
+            label: box.displayName || box.key,
+            icon: inboxIcon,
+            activeIcon: inboxIconActive,
+            boxKey: box.key,
+            color: box.color ?? null,
+            folderId: box.folderId,
+            unreadCount: dynamicCount?.unreadCount ?? box.unreadCount ?? box.count ?? 0,
+            category,
+        };
+    }
+
     const key = box.key.toLowerCase();
 
     const matched = sidebarConfig.menuItems.find(
@@ -416,29 +446,48 @@ const CONTACT_OTHER_MENU_ITEM = {
     totalCount: 0,
 };
 
-/** Backend get-boxes may omit Contact; inject it so the sidebar nav matches sidebar.config. */
+const OTHER_MENU_ORDER = ['calendar', 'contact', 'settings'] as const;
+
+function getOtherMenuItemId(box: any): string {
+    const key = String(box?.key ?? '').toLowerCase();
+    const value = String(box?.value ?? '').toLowerCase();
+
+    if (key.includes('contact') || value === 'contact') return 'contact';
+    if (key.includes('settings') || value === 'settings') return 'settings';
+    if (key.includes('calendar') || value === 'calendar') return 'calendar';
+    return value || key;
+}
+
+/**
+ * Backend get-boxes may omit Contact; inject it and keep other-menu order
+ * aligned with sidebar.config (Calendar → Contact → Settings).
+ */
 function ensureContactInOtherMenu(otherMenu: any[]): any[] {
-    const hasContact = otherMenu.some((box) => {
-        const key = String(box?.key ?? '').toLowerCase();
-        const value = String(box?.value ?? '').toLowerCase();
-        return key.includes('contact') || value === 'contact';
-    });
+    const items = [...(otherMenu ?? [])];
+    const hasContact = items.some((box) => getOtherMenuItemId(box) === 'contact');
 
-    if (hasContact) return otherMenu;
-
-    const calendarIndex = otherMenu.findIndex((box) => {
-        const key = String(box?.key ?? '').toLowerCase();
-        const value = String(box?.value ?? '').toLowerCase();
-        return key.includes('calendar') || value === 'calendar';
-    });
-
-    const next = [...otherMenu];
-    if (calendarIndex >= 0) {
-        next.splice(calendarIndex, 0, CONTACT_OTHER_MENU_ITEM);
-    } else {
-        next.unshift(CONTACT_OTHER_MENU_ITEM);
+    if (!hasContact) {
+        items.push(CONTACT_OTHER_MENU_ITEM);
     }
-    return next;
+
+    const ordered: any[] = [];
+    const used = new Set<any>();
+
+    for (const id of OTHER_MENU_ORDER) {
+        const match = items.find((box) => getOtherMenuItemId(box) === id);
+        if (match) {
+            ordered.push(match);
+            used.add(match);
+        }
+    }
+
+    for (const box of items) {
+        if (!used.has(box)) {
+            ordered.push(box);
+        }
+    }
+
+    return ordered;
 }
 
 // Add this function in emailUtil.ts, after the existing resolveSidebarItem function
@@ -446,11 +495,13 @@ const resolveAllSidebarItems = (
     boxes: any[],
     customBoxes: any[],
     otherMenu: any[],
-    boxCounts: Record<string, BoxCount>
+    boxCounts: Record<string, BoxCount>,
+    localFolders: any[] = []
 ) => {
     return [
         ...boxes.map((box) => resolveSidebarItem(box, 'boxes', boxCounts)),
         ...customBoxes.map((box) => resolveSidebarItem(box, 'customBoxes', boxCounts)),
+        ...localFolders.map((box) => resolveSidebarItem(box, 'localFolders', boxCounts)),
         ...otherMenu.map((box) => resolveSidebarItem(box, 'otherMenu', boxCounts)),
     ];
 };
@@ -506,6 +557,15 @@ const openEmailDetail = async (
 
     const data = await getSingleEmailService(payload);
     if (!data?.emailList) {
+        if (data?.statusCode === 409) {
+            throw Object.assign(
+                new Error(
+                    data?.message ||
+                    'This email is stored locally and is not available on the mail server.'
+                ),
+                { statusCode: 409 }
+            );
+        }
         throw new Error(
             data?.message || `Failed to fetch email detail (status ${data?.statusCode ?? 'unknown'})`
         );
@@ -603,4 +663,4 @@ const getEmailPreviewText = (email: {
     return withoutQuote || email.subject || "";
 };
 
-export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, ensureContactInOtherMenu, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText, isCustomFolderDepthAllowed, getParentFolderDepth, wouldExceedCustomFolderDepth };
+export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, ensureContactInOtherMenu, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText, isCustomFolderDepthAllowed, getParentFolderDepth, wouldExceedCustomFolderDepth, isLocalBoxName, getLocalFolderIdFromBoxName };

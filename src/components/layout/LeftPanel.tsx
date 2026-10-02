@@ -12,8 +12,9 @@ import { useMailData, useMailUI, useContacts, useCalendar } from '../../context/
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { CustomFolderSection } from '../ui/sidebar/CustomFolderSection';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
-import { resolveSidebarItem, verifyBoxName, buildCustomFolderTree, resolveAllSidebarItems } from '@utils/emailUtil';
+import { verifyBoxName, buildCustomFolderTree, resolveAllSidebarItems, getLocalFolderIdFromBoxName, isLocalBoxName } from '@utils/emailUtil';
 import { deleteCustomBox } from '@services/customBox/customBoxService';
+import { deleteLocalFolder } from '@services/localFolder/localFolderService';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
 import eventIcon from '@images/calendar-event-icon-white.svg';
@@ -72,6 +73,10 @@ const LeftPanel = () => {
         return buildCustomFolderTree(items);
     }, [sidebarItems]);
 
+    const localFolders = useMemo(() => {
+        return sidebarItems.filter(item => item.category === 'localFolders');
+    }, [sidebarItems]);
+
     const sidebarActiveBoxId = allSearchResult ? '' : activeBoxId;
 
 
@@ -128,14 +133,16 @@ const LeftPanel = () => {
 
                 if (!updatedSidebar?.boxes?.length) return;
 
-                const { boxes, customBoxes, otherMenu, boxCounts } = updatedSidebar;
+                const { boxes, customBoxes, localFolders: apiLocalFolders = [], otherMenu, boxCounts } = updatedSidebar;
 
                 // Map to sidebarItems
-                const resolvedItems = [
-                    ...boxes.map((box: any) => resolveSidebarItem(box, 'boxes', boxCounts)),
-                    ...customBoxes.map((box: any) => resolveSidebarItem(box, 'customBoxes', boxCounts)),
-                    ...otherMenu.map((box: any) => resolveSidebarItem(box, 'otherMenu', boxCounts)),
-                ];
+                const resolvedItems = resolveAllSidebarItems(
+                    boxes,
+                    customBoxes,
+                    otherMenu,
+                    boxCounts,
+                    apiLocalFolders
+                );
                 setSidebarItems(resolvedItems);
 
                 let activeItem = getActiveSidebarItem(location.pathname, resolvedItems);
@@ -246,6 +253,13 @@ const LeftPanel = () => {
         }
     };
 
+    const openCreateLocalFolderModal = () => {
+        openModal('createLocalFolder');
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
+    };
+
     const handleRefreshFolders = async () => {
         if (isRefreshingFolders) return;
         setIsRefreshingFolders(true);
@@ -273,6 +287,28 @@ const LeftPanel = () => {
         }
     }
 
+    const handleEditLocalFolder = (boxNameOrId: string) => {
+        const folder =
+            sidebarState.localFolders.find((f: any) => f.value === boxNameOrId || f.key === boxNameOrId) ||
+            sidebarState.localFolders.find((f: any) => f.folderId === boxNameOrId) ||
+            sidebarItems.find(item => item.category === 'localFolders' && (item.boxName === boxNameOrId || item.folderId === boxNameOrId));
+
+        const folderId =
+            (folder as any)?.folderId ||
+            getLocalFolderIdFromBoxName(boxNameOrId) ||
+            boxNameOrId;
+
+        openModal('createLocalFolder', {
+            folderName: (folder as any)?.displayName || (folder as any)?.label || '',
+            folderIconColor: (folder as any)?.color || undefined,
+            folderId,
+            isEdit: true,
+        });
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
+    };
+
     const handleDeleteFolder = (folderId: string, folderName: string) => {
         openModal('confirmDelete', {
             onConfirm: () => deleteFolder(folderId, folderName)
@@ -281,6 +317,25 @@ const LeftPanel = () => {
             setIsSidebarExpandedMobile(false);
         }
     }
+
+    const handleDeleteLocalFolder = (boxNameOrId: string, folderName: string) => {
+        const folderId =
+            getLocalFolderIdFromBoxName(boxNameOrId) ||
+            sidebarState.localFolders.find((f: any) => f.value === boxNameOrId || f.key === boxNameOrId)?.folderId ||
+            boxNameOrId;
+
+        openModal('confirmDelete', {
+            title: 'Delete Local Folder',
+            message:
+                'Emails in this local folder will be permanently deleted.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            onConfirm: () => deleteLocalFolderHandler(folderId, folderName, boxNameOrId),
+        });
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
+    };
 
     const redirectToInbox = (updatedSidebar?: Awaited<ReturnType<typeof setSidebarStateFromAPI>>) => {
         clearMailSearch({ restoreMailbox: false });
@@ -309,7 +364,8 @@ const LeftPanel = () => {
                 updatedSidebar.boxes,
                 updatedSidebar.customBoxes,
                 updatedSidebar.otherMenu,
-                boxCounts
+                boxCounts,
+                updatedSidebar.localFolders ?? []
             )
             : sidebarItems;
 
@@ -346,6 +402,50 @@ const LeftPanel = () => {
 
         showError(`Folder ${folderName} deleted failed`);
         return false;
+    }
+
+    const deleteLocalFolderHandler = async (folderId: string, folderName: string, boxNameKey: string) => {
+        const isDeletingActiveFolder =
+            isLocalBoxName(boxName) &&
+            (boxName === boxNameKey ||
+                getLocalFolderIdFromBoxName(boxName) === folderId);
+
+        const response: any = await deleteLocalFolder({ folderId });
+
+        if (response.statusCode === 200 || response.restoredCount != null || response.deletedCount != null) {
+            const deletedCount = response.deletedCount ?? response.restoredCount ?? 0;
+            showSuccess(
+                response.message ||
+                `Local folder "${folderName}" deleted${deletedCount ? `. ${deletedCount} email(s) permanently deleted` : ''}.`
+            );
+            const updatedSidebar = await setSidebarStateFromAPI();
+            if (isDeletingActiveFolder) {
+                redirectToInbox(updatedSidebar);
+            }
+            return true;
+        }
+
+        // 502 partial failure — folder kept; show failed emails if provided
+        const failed = response?.failed;
+        if (Array.isArray(failed) && failed.length > 0) {
+            const preview = failed
+                .slice(0, 3)
+                .map((f: any) => f.reason || f.messageId)
+                .join('; ');
+            showError(
+                response?.error ||
+                response?.message ||
+                `Could not delete local folder. ${failed.length} email(s) failed to delete${preview ? `: ${preview}` : ''}. Please retry.`
+            );
+        } else {
+            showError(
+                response?.error ||
+                response?.message ||
+                `Failed to delete local folder "${folderName}"`
+            );
+        }
+        // Keep modal open for retry
+        throw new Error(response?.error || response?.message || 'Delete local folder failed');
     }
 
     const openCalendarModal = () => {
@@ -518,6 +618,35 @@ const LeftPanel = () => {
                         onCreateFolder={openCreateFolderModal}
                         onRefreshFolders={handleRefreshFolders}
                         isRefreshingFolders={isRefreshingFolders}
+                    />
+
+                    <CustomFolderSection
+                        sectionId="localFolderSection"
+                        sectionTitle="Archive Mail"
+                        showRefresh={false}
+                        createTooltip="Add Local Folder"
+                        folders={localFolders.map(item => ({
+                            id: item.id,
+                            name: item.label,
+                            color: item.color || '#FF8A00',
+                            icon: item.icon,
+                            value: item.boxName,
+                            depth: 0,
+                        }))}
+                        activeBoxId={sidebarActiveBoxId}
+                        onChangeBox={(nextBoxName) => {
+                            const item = sidebarItems.find(si => si.boxName === nextBoxName);
+                            if (item) {
+                                changeBox(nextBoxName, item.id, item.label);
+                            }
+                        }}
+                        onEditFolder={(boxId) => {
+                            handleEditLocalFolder(boxId);
+                        }}
+                        onDeleteFolder={(boxId, folderName) => {
+                            handleDeleteLocalFolder(boxId, folderName);
+                        }}
+                        onCreateFolder={openCreateLocalFolderModal}
                     />
 
                     {/* Other Menu Items */}

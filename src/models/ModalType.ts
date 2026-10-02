@@ -8,6 +8,7 @@ export type ModalType =
     'recurrenceModal' |
     'customRecurrence' |
     'createCustomFolder' |
+    'createLocalFolder' |
     'changeImapSmtpPassword' |
     'changePassword' |
     'createSignature' |

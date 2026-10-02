@@ -1,6 +1,6 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import ArrangeByControl from "@components/ui/email/ArrangeByControl";
-import { showSuccess } from "@components/ui/toast/toastNotification";
+import { dismissToast, showError, showMovingEmailToast, showSuccess } from "@components/ui/toast/toastNotification.ts";
 import { useScreen } from "@context/ScreenContext";
 import { useEmailAction } from "@hooks/useEmailAction";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
@@ -21,9 +21,10 @@ import deleteIconHover from "@images/trash-icon-hover.svg";
 import deleteIcon from "@images/trash-icon.svg";
 import type { Email } from "@models/Email";
 import { moveToFolder, refreshMailBox } from "@services/emailAction/emailActionService";
+import { moveToImap, moveToLocalFolder } from "@services/localFolder/localFolderService";
 import { DEFAULT_SORT_ORDER } from "@constants/arrangeBy";
 import { mergeIntoArrangedList } from "@utils/arrangeEmailUtil";
-import { handleEmailDeletion, verifyBoxName } from "@utils/emailUtil";
+import { getLocalFolderIdFromBoxName, handleEmailDeletion, isLocalBoxName, verifyBoxName } from "@utils/emailUtil";
 import React, { useEffect, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import SimpleBar from 'simplebar-react';
@@ -69,7 +70,7 @@ function normalizeIncomingEmail(email: Email): Email {
 
 const ToolbarBox = () => {
     const { pagination, boxName, sidebarState, mailListPage, fetchEmails, readUnreadFilter, fetchSearchEmails, allSearchResult, emailDetailSelected, emails,
-        setEmails, setPagination, setTotalEmailBadge, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId, boxTitle, arrangeBy, sortOrder } = useMailData();
+        setEmails, setPagination, setTotalEmailBadge, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId, boxTitle, arrangeBy, sortOrder, setSidebarStateFromAPI } = useMailData();
     const { selectAllEmails, selectedEmails, clearEmailSelection } = useMailSelection();
     const { toolbarState, activeEmailMessageId, setToolbarState, openModal, setIsMailListOpen, setIsLoading } = useMailUI();
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
@@ -77,6 +78,7 @@ const ToolbarBox = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const { isDesktop, isMobile } = useScreen();
     const isSchedule = boxName?.toLocaleLowerCase().includes('schedule');
+    const isLocalFolderView = isLocalBoxName(boxName);
     const isSearchOrFilterMailList = allSearchResult || boxTitle === 'Search Results';
     const showArrangeBy = !isSearchOrFilterMailList && !isSchedule;
 
@@ -90,11 +92,20 @@ const ToolbarBox = () => {
     //create moveTo folder options list from sidebarSteate
 
     useEffect(() => {
-        const originalBoxes = sidebarState.boxes.filter((box) => box.value !== boxName && !verifyBoxName(box.value, 'draft') && !verifyBoxName(box.value, 'scheduled'));
-        const customBoxes = sidebarState.customBoxes.filter((box) => box.value !== boxName);
+        // From a local folder, IMAP destinations are allowed via /localFolder/moveToImap
+        const originalBoxes = sidebarState.boxes.filter(
+            (box) => box.value !== boxName && !verifyBoxName(box.value, 'draft') && !verifyBoxName(box.value, 'scheduled')
+        );
+        const customBoxes = sidebarState.customBoxes.filter(
+            (box) => box.value !== boxName && box.value?.value !== boxName
+        );
+        const localFolders = (sidebarState.localFolders || []).filter(
+            (folder: any) => (folder.value || folder.key) !== boxName
+        );
         setMoveToFolderOptions({
             boxes: originalBoxes,
-            customBoxes: customBoxes
+            customBoxes: customBoxes,
+            localFolders,
         })
         if (selectedEmails.size === 0) {
             const checkboxAll = document.getElementById('checkboxAll') as HTMLInputElement | null;
@@ -167,6 +178,20 @@ const ToolbarBox = () => {
 
         // Prevent multiple clicks if already refreshing
         if (isRefreshing) return;
+
+        // Local folders are DB-only — re-fetch the list instead of IMAP refresh
+        if (isLocalFolderView) {
+            setIsRefreshing(true);
+            try {
+                await fetchEmails(mailListPage || 1, boxName);
+                showSuccess('Local folder refreshed');
+            } catch (error: any) {
+                showError(error?.message || 'Failed to refresh local folder');
+            } finally {
+                setIsRefreshing(false);
+            }
+            return;
+        }
 
         setIsRefreshing(true);
         // Match refresh-loader-spin (0.8s) so at least one full rotation always shows
@@ -342,10 +367,165 @@ const ToolbarBox = () => {
         });
     }
 
+    const applyMovedEmailsToUi = async (movedEmailIds: string[], targetFolderKey: string) => {
+        if (movedEmailIds.length === 0) return;
+
+        const movedEmails = emails.filter(email => movedEmailIds.includes(email.messageId));
+
+        if (verifyBoxName(targetFolderKey, 'trash') || verifyBoxName(targetFolderKey, 'junk')) {
+            updateBoxCount(targetFolderKey, 0, movedEmails.length);
+        } else {
+            const unreadMovedCount = movedEmails.filter(email => !email.isSeen).length;
+            updateBoxCount(targetFolderKey, unreadMovedCount, movedEmails.length);
+        }
+
+        const unreadRemovedCount = movedEmails.filter(email => !email.isSeen).length;
+        updateBoxCount(boxName, -unreadRemovedCount, -movedEmails.length);
+
+        const remainingEmails = emails.filter(email => !movedEmailIds.includes(email.messageId));
+        deleteEmailState(movedEmailIds, true);
+
+        if (activeEmailMessageId && movedEmailIds.includes(activeEmailMessageId)) {
+            setEmailDetailSelected(null);
+            setActiveEmailMessageId(null);
+        }
+
+        clearEmailSelection();
+
+        const checkboxAll = document.getElementById('checkboxAll') as HTMLInputElement | null;
+        if (checkboxAll) {
+            checkboxAll.checked = false;
+        }
+
+        if (remainingEmails.length === 0) {
+            const targetPage = mailListPage > 1 ? mailListPage - 1 : 1;
+            await fetchEmails(targetPage, boxName);
+        }
+    };
+
     const moveToFolderHandler = async (folderName: string) => {
         const messageIds = selectedEmails.size > 0
             ? Array.from(selectedEmails)
             : (activeEmailMessageId ? [activeEmailMessageId] : []);
+
+        if (messageIds.length === 0) return;
+
+        const applyPartialMoveResult = async (
+            response: any,
+            targetKey: string,
+            successFallback: string,
+            failureFallback: string
+        ) => {
+            const resultBody =
+                response?.data &&
+                (Array.isArray(response.data.moved) || Array.isArray(response.data.failed))
+                    ? response.data
+                    : response;
+
+            const moved: string[] = Array.isArray(resultBody?.moved) ? resultBody.moved : [];
+            const failed: Array<{ messageId: string; reason?: string }> = Array.isArray(resultBody?.failed)
+                ? resultBody.failed
+                : [];
+            const resultMessage =
+                (typeof resultBody?.message === 'string' ? resultBody.message : undefined) ||
+                (typeof response?.message === 'string' ? response.message : undefined);
+
+            if (moved.length > 0) {
+                showSuccess(resultMessage || successFallback.replace('{n}', String(moved.length)));
+                await applyMovedEmailsToUi(moved, targetKey);
+                setSidebarStateFromAPI().catch(() => {});
+            }
+
+            if (failed.length > 0) {
+                const preview = failed
+                    .slice(0, 3)
+                    .map((f) => f.reason || f.messageId)
+                    .join('; ');
+                showError(
+                    `${failed.length} email(s) could not be moved${preview ? `: ${preview}` : ''}`
+                );
+            }
+
+            if (moved.length === 0 && failed.length === 0) {
+                const message = resultMessage || response?.error || failureFallback;
+                showError(typeof message === 'string' ? message : failureFallback);
+            }
+
+            // Treat HTTP 200 with moved ids (or legacy full-success status) as success for callers
+            return moved.length > 0 || response?.statusCode === 200;
+        };
+
+        // Move into a local folder
+        if (isLocalBoxName(folderName)) {
+            const folderId = getLocalFolderIdFromBoxName(folderName);
+            if (!folderId) {
+                showError('Invalid local folder');
+                return;
+            }
+
+            const localFolder = (sidebarState.localFolders || []).find(
+                (folder: any) =>
+                    folder.folderId === folderId ||
+                    (folder.value || folder.key) === folderName
+            );
+            const folderDisplayName =
+                localFolder?.displayName || localFolder?.key || 'local folder';
+            const movingToastId = showMovingEmailToast(`${folderDisplayName} (Local)`);
+
+            try {
+                const response: any = await moveToLocalFolder({
+                    messageIds: messageIds as string[],
+                    folderId,
+                });
+
+                dismissToast(movingToastId);
+                await applyPartialMoveResult(
+                    response,
+                    folderName,
+                    '{n} email(s) moved to local folder',
+                    'Failed to move emails to local folder'
+                );
+            } catch (error) {
+                dismissToast(movingToastId);
+                throw error;
+            }
+            return;
+        }
+
+        // From a local folder (or local-only emails): restore to IMAP via dedicated API
+        const selectedList = emails.filter(e => messageIds.includes(e.messageId));
+        const hasLocalOnly = selectedList.some(e => e.isLocalOnly) || isLocalFolderView;
+        if (hasLocalOnly) {
+            const sourceFolderId = getLocalFolderIdFromBoxName(boxName) || undefined;
+            const imapFolder =
+                sidebarState.boxes.find((box: any) => box.value === folderName) ||
+                sidebarState.customBoxes.find(
+                    (box: any) => box.value === folderName || box.value?.value === folderName
+                );
+            const folderDisplayName =
+                imapFolder?.displayName || imapFolder?.key || folderName;
+            const movingToastId = showMovingEmailToast(folderDisplayName);
+
+            try {
+                const response: any = await moveToImap({
+                    messageIds: messageIds as string[],
+                    destinationFolder: folderName,
+                    folderId: sourceFolderId,
+                });
+
+                dismissToast(movingToastId);
+                await applyPartialMoveResult(
+                    response,
+                    folderName,
+                    '{n} email(s) moved to mailbox',
+                    'Failed to move emails to mailbox'
+                );
+            } catch (error) {
+                dismissToast(movingToastId);
+                throw error;
+            }
+            return;
+        }
 
         const payload = {
             messageIds: messageIds as string[],
@@ -353,58 +533,20 @@ const ToolbarBox = () => {
             folder: folderName
         }
 
-        // const response = await markedAsLabel(payload);
         const response = await moveToFolder(payload);
 
         if (response.statusCode === 200) {
             showSuccess("Email moved successfully");
-
-            // now after moving update count to that specific box update it's sidebar unread count if trash then don't read/unread just set that total selectedEmail count in trash increase it. and then remove that emails from list and clear email selection.
-            const movedEmailIds = messageIds as string[];
-            const movedEmails = emails.filter(email => movedEmailIds.includes(email.messageId));
-
-            // Update counts for the target folder
-            if (verifyBoxName(folderName, 'trash') || verifyBoxName(folderName, 'junk')) {
-                // For trash: increase total count by number of moved emails
-                updateBoxCount(folderName, 0, movedEmails.length);
-            }
-
-            else {
-                // For other folders: update unread count based on read/unread status of moved emails
-                const unreadMovedCount = movedEmails.filter(email => !email.isSeen).length;
-                updateBoxCount(folderName, unreadMovedCount, movedEmails.length);
-            }
-
-            // Update counts for the source folder (current box)
-            const unreadRemovedCount = movedEmails.filter(email => !email.isSeen).length;
-            updateBoxCount(boxName, -unreadRemovedCount, -movedEmails.length);
-
-            const remainingEmails = emails.filter(email => !movedEmailIds.includes(email.messageId));
-            deleteEmailState(movedEmailIds, true);
-
-            if (activeEmailMessageId && movedEmailIds.includes(activeEmailMessageId)) {
-                setEmailDetailSelected(null);
-                setActiveEmailMessageId(null);
-            }
-
-            clearEmailSelection();
-
-            // Visually uncheck the master checkbox without firing its click handler
-            const checkboxAll = document.getElementById('checkboxAll') as HTMLInputElement | null;
-            if (checkboxAll) {
-                checkboxAll.checked = false;
-            }
-
-            if (remainingEmails.length === 0) {
-                const targetPage = mailListPage > 1 ? mailListPage - 1 : 1;
-                await fetchEmails(targetPage, boxName);
-            }
-
+            await applyMovedEmailsToUi(messageIds as string[], folderName);
         }
     }
 
     const createFolderHandler = () => {
         openModal('createCustomFolder');
+    }
+
+    const createLocalFolderHandler = () => {
+        openModal('createLocalFolder');
     }
 
     const openMoveToFolderSheet = () => {
@@ -596,10 +738,30 @@ const ToolbarBox = () => {
                                                             </>
                                                         )}
 
+                                                        {moveToFolderOptions.localFolders?.length > 0 && (
+                                                            <>
+                                                                <Dropdown.Divider />
+                                                                <Dropdown.Header>Local Folders</Dropdown.Header>
+                                                                {moveToFolderOptions.localFolders.map((folder: any) => (
+                                                                    <Dropdown.Item
+                                                                        key={folder.folderId || folder.value || folder.key}
+                                                                        onClick={() => moveToFolderHandler(folder.value || folder.key)}
+                                                                    >
+                                                                        {folder.displayName || folder.key}
+                                                                    </Dropdown.Item>
+                                                                ))}
+                                                            </>
+                                                        )}
+
                                                         <Dropdown.Divider />
 
-                                                        <Dropdown.Item onClick={() => createFolderHandler()}>
-                                                            Create folder
+                                                        {!isLocalFolderView && (
+                                                            <Dropdown.Item onClick={() => createFolderHandler()}>
+                                                                Create folder
+                                                            </Dropdown.Item>
+                                                        )}
+                                                        <Dropdown.Item onClick={() => createLocalFolderHandler()}>
+                                                            Create local folder
                                                         </Dropdown.Item>
                                                     </SimpleBar>
                                                 </Dropdown.Menu>
