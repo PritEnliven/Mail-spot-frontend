@@ -955,6 +955,8 @@ import generateAiIcon from '@images/generate-ai-icon.svg';
 import scheduledIcon from '@images/scheduled-icon.svg';
 import signatureIconHover from '@images/signature-icon-hover.svg';
 import signatureIcon from "@images/signature-icon.svg";
+import moreActionIcon from "@images/ellipsis-vertical-icon.svg";
+import moreActionIconHover from "@images/ellipsis-vertical-icon-hover.svg";
 import smartMessageIcon from '@images/smart-message-icon.svg';
 import trashIconHover from '@images/trash-icon-hover.svg';
 import trashIcon from '@images/trash-icon.svg';
@@ -984,6 +986,7 @@ import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
 // import AttachmentPreview from '@components/ui/AttachmentPreview';
 import SubmitButton from '@components/ui/form/SubmitButton';
 import { useShortcutAction } from '@hooks/useShortcutAction';
+import { useComposeActionsOverflow } from '@hooks/useComposeActionsOverflow';
 import { useScreen } from '@context/ScreenContext';
 
 interface ComposeEmailModalProps {
@@ -1028,6 +1031,13 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
     const onSubmitRef = useRef<(data: ComposeFormValues, scheduleAt?: string) => Promise<void>>(async () => { });
     const instanceId = useId()
     const attachmentsEndRef = useRef<HTMLDivElement>(null);
+    const composeFooterActionsRef = useRef<HTMLDivElement>(null);
+    const composeActionsMeasureRef = useRef<HTMLDivElement>(null);
+    const isComposeActionsCompact = useComposeActionsOverflow(
+        composeFooterActionsRef,
+        composeActionsMeasureRef,
+        [userPermissions?.aiFeatures, isComposeExpanded],
+    );
 
     useShortcutAction(
         'send_email',
@@ -1743,8 +1753,14 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
                         <div className="compose-modal-footer">
 
-                            <div className="compose-btn-box d-flex align-items-center justify-content-between">
-                                <a href="#" className="hover-link icon-hover-effect"
+                            <div
+                                className="compose-btn-box d-flex align-items-center justify-content-between"
+                                ref={composeFooterActionsRef}
+                            >
+                                <a
+                                    href="#"
+                                    className="hover-link icon-hover-effect"
+                                    data-compose-discard
                                     onClick={onClose}
                                 >
                                     <InteractiveIcon
@@ -1758,117 +1774,325 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                         tooltip="Discard"
                                     />
                                 </a>
-                                <div className="d-flex align-items-center">
+                                <div className="super-action-single-group-box">
                                     {/* CKEditor toolbar ahiya niche aavse (ToolbarAtBottomPlugin move kare chhe) */}
                                     <div className="compose-editor-toolbar-slot" />
 
-                                    <Dropdown drop="up" align="end"
-                                        className={`more-actions-dropdown react-dropdown signature-dropdown ms-3`}
+                                    {/* Off-screen measure of expanded actions — drives overflow → More menu */}
+                                    <div
+                                        ref={composeActionsMeasureRef}
+                                        className="compose-actions-measure"
+                                        aria-hidden="true"
                                     >
-                                        <Dropdown.Toggle
-                                            as="a"
-                                            className="hover-link d-flex align-items-center icon-hover-effect"
-                                        >
-                                            <InteractiveIcon
-                                                defaultIcon={signatureIcon}
-                                                hoverIcon={signatureIconHover}
-                                                activeIcon=""
-                                                isActive={false}
-                                                alt=""
-                                                className="interactive-icon hover-image"
-                                                renderAs="img"
-                                                tooltip="Insert signature"
-                                            />
-                                        </Dropdown.Toggle>
+                                        <img src={attachmentStrokeRoundedIcon} alt="" width={20} height={20} />
+                                        <img src={signatureIcon} alt="" width={20} height={20} />
+                                        <span className="super-action-icon-brack-line" />
+                                        {userPermissions?.aiFeatures && (
+                                            <img src={generateAiIcon} alt="" width={20} height={20} />
+                                        )}
+                                        <img src={scheduledIcon} alt="" width={20} height={20} />
+                                    </div>
 
-                                        <Dropdown.Menu>
-                                            {/* Manage Signature Option */}
-                                            <Dropdown.Item
-                                                as="div"
-                                                className="dropdown-item d-flex justify-content-between align-items-center"
-                                                onClick={handleManageSignatures}
-                                            >
-                                                Manage Signature
-                                            </Dropdown.Item>
+                                    {!isComposeActionsCompact ? (
+                                        <>
+                                            <div className="super-action-single-group-items">
+                                                <div className="custom-file-mail icon-hover-effect hover-link">
+                                                    <div className="custom-file">
+                                                        {/* Input must stay here: label is absolute and sized by this 20×20 control */}
+                                                        <input
+                                                            type="file"
+                                                            id={`composeFileAttachments-${instanceId}`}
+                                                            multiple
+                                                            className="custom-file-input addAttachmentBtn"
+                                                            onChange={handleFileChange}
+                                                        />
+                                                        <label
+                                                            className="custom-file-label"
+                                                            htmlFor={`composeFileAttachments-${instanceId}`}
+                                                        >
+                                                            <span className="file-name">
+                                                                <InteractiveIcon
+                                                                    defaultIcon={attachmentStrokeRoundedIcon}
+                                                                    hoverIcon={attachmentStrokeRoundedIconHover}
+                                                                    activeIcon=""
+                                                                    isActive={false}
+                                                                    alt=""
+                                                                    className="interactive-icon hover-image"
+                                                                    renderAs="img"
+                                                                    tooltip="Attachment"
+                                                                />
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                </div>
 
-                                            {signatures.length > 0 && <Dropdown.Divider />}
-
-                                            {/* Dynamic Signatures */}
-                                            {signatures.map((signature) => (
-                                                <SimpleBar style={{ maxHeight: 100, scrollBehavior: 'smooth' }}
-                                                    autoHide={false}
-                                                    forceVisible="y"
-                                                    scrollableNodeProps={{
-                                                        style: { scrollBehavior: 'smooth' }
-                                                    }}>
-                                                    <Dropdown.Item
-                                                        key={signature._id}
-                                                        as="div"
-                                                        className={`dropdown-item d-flex justify-content-between align-items-center ${selectedSignatureId === signature._id ? 'active-line-t' : ''
-                                                            }`}
-                                                        onClick={() => handleSignatureSelect(signature, (value: string) => setValue('body', value), () => getValues('body') || '')}
-                                                    >
-                                                        {signature.name || 'Untitled Signature'}
-                                                    </Dropdown.Item>
-                                                </SimpleBar>
-                                            ))}
-
-                                            {signatures.length === 0 && (
-                                                <Dropdown.Item
-                                                    as="div"
-                                                    className="dropdown-item disabled"
-                                                    disabled
+                                                <Dropdown
+                                                    drop="up"
+                                                    align="end"
+                                                    className="more-actions-dropdown react-dropdown signature-dropdown"
                                                 >
-                                                    No signatures available
-                                                </Dropdown.Item>
-                                            )}
-                                        </Dropdown.Menu>
-                                    </Dropdown>
+                                                    <Dropdown.Toggle
+                                                        as="a"
+                                                        className="hover-link d-flex align-items-center icon-hover-effect"
+                                                    >
+                                                        <InteractiveIcon
+                                                            defaultIcon={signatureIcon}
+                                                            hoverIcon={signatureIconHover}
+                                                            activeIcon=""
+                                                            isActive={false}
+                                                            alt=""
+                                                            className="interactive-icon hover-image"
+                                                            renderAs="img"
+                                                            tooltip="Insert signature"
+                                                        />
+                                                    </Dropdown.Toggle>
 
-                                    <div className="custom-file-mail icon-hover-effect hover-link ms-3">
-                                        <div className="custom-file">
-                                            <input
-                                                type="file"
-                                                id={`composeFileAttachments-${instanceId}`}
-                                                multiple
-                                                className="custom-file-input addAttachmentBtn"
-                                                onChange={handleFileChange}
-                                            />
-                                            <label className="custom-file-label" htmlFor={`composeFileAttachments-${instanceId}`}>
-                                                <span className="file-name">
+                                                    <Dropdown.Menu>
+                                                        <Dropdown.Item
+                                                            as="div"
+                                                            className="dropdown-item d-flex justify-content-between align-items-center"
+                                                            onClick={handleManageSignatures}
+                                                        >
+                                                            Manage Signature
+                                                        </Dropdown.Item>
+
+                                                        {signatures.length > 0 && <Dropdown.Divider />}
+
+                                                        {signatures.map((signature) => (
+                                                            <SimpleBar
+                                                                key={signature._id}
+                                                                style={{ maxHeight: 100, scrollBehavior: 'smooth' }}
+                                                                autoHide={false}
+                                                                forceVisible="y"
+                                                                scrollableNodeProps={{
+                                                                    style: { scrollBehavior: 'smooth' },
+                                                                }}
+                                                            >
+                                                                <Dropdown.Item
+                                                                    as="div"
+                                                                    className={`dropdown-item d-flex justify-content-between align-items-center ${
+                                                                        selectedSignatureId === signature._id
+                                                                            ? 'active-line-t'
+                                                                            : ''
+                                                                    }`}
+                                                                    onClick={() =>
+                                                                        handleSignatureSelect(
+                                                                            signature,
+                                                                            (value: string) => setValue('body', value),
+                                                                            () => getValues('body') || '',
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {signature.name || 'Untitled Signature'}
+                                                                </Dropdown.Item>
+                                                            </SimpleBar>
+                                                        ))}
+
+                                                        {signatures.length === 0 && (
+                                                            <Dropdown.Item
+                                                                as="div"
+                                                                className="dropdown-item disabled"
+                                                                disabled
+                                                            >
+                                                                No signatures available
+                                                            </Dropdown.Item>
+                                                        )}
+                                                    </Dropdown.Menu>
+                                                </Dropdown>
+                                            </div>
+
+                                            <span className="super-action-icon-brack-line" />
+
+                                            <div className="super-action-single-group-items">
+                                                {userPermissions?.aiFeatures && (
+                                                    <button
+                                                        className="btn hover-link icon-hover-effect"
+                                                        id="generateEmailButton"
+                                                        onClick={toggleGenerateEmailCard}
+                                                    >
+                                                        <InteractiveIcon
+                                                            defaultIcon={generateAiIcon}
+                                                            hoverIcon={generateAiIcon}
+                                                            activeIcon=""
+                                                            isActive={false}
+                                                            alt=""
+                                                            className="interactive-icon hover-image"
+                                                            renderAs="img"
+                                                            tooltip="Generate Email"
+                                                        />
+                                                    </button>
+                                                )}
+
+                                                <button
+                                                    className="btn hover-link icon-hover-effect"
+                                                    onClick={openScheduleModal}
+                                                >
                                                     <InteractiveIcon
-                                                        defaultIcon={attachmentStrokeRoundedIcon}
-                                                        hoverIcon={attachmentStrokeRoundedIconHover}
+                                                        defaultIcon={scheduledIcon}
+                                                        hoverIcon={scheduledIcon}
                                                         activeIcon=""
                                                         isActive={false}
                                                         alt=""
                                                         className="interactive-icon hover-image"
                                                         renderAs="img"
-                                                        tooltip="Attachment"
+                                                        tooltip="Schedule"
                                                     />
-                                                </span>
-                                            </label>
-                                        </div>
-                                    </div>
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="super-action-single-group-items">
+                                            <input
+                                                type="file"
+                                                id={`composeFileAttachments-${instanceId}`}
+                                                multiple
+                                                className="d-none"
+                                                onChange={handleFileChange}
+                                            />
+                                            <Dropdown
+                                                drop="up"
+                                                align="end"
+                                                className="more-actions-dropdown react-dropdown compose-overflow-more-dropdown"
+                                            >
+                                                <Dropdown.Toggle
+                                                    as="a"
+                                                    className="hover-link d-flex align-items-center icon-hover-effect"
+                                                >
+                                                    <InteractiveIcon
+                                                        defaultIcon={moreActionIcon}
+                                                        hoverIcon={moreActionIconHover}
+                                                        activeIcon=""
+                                                        isActive={false}
+                                                        alt=""
+                                                        className="interactive-icon hover-image"
+                                                        renderAs="img"
+                                                        tooltip="More"
+                                                    />
+                                                </Dropdown.Toggle>
 
-                                    {userPermissions?.aiFeatures && (
-                                        <button className="btn hover-link icon-hover-effect ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
-                                            <img src={generateAiIcon} />
-                                            {/* <span className="d-flex align-items-center">Generate Email</span> */}
-                                        </button>
+                                                <Dropdown.Menu>
+                                                    <Dropdown.Item
+                                                        as="div"
+                                                        className="dropdown-item d-flex align-items-center"
+                                                        onClick={() =>
+                                                            document
+                                                                .getElementById(
+                                                                    `composeFileAttachments-${instanceId}`,
+                                                                )
+                                                                ?.click()
+                                                        }
+                                                    >
+                                                        <img
+                                                            className="me-2"
+                                                            src={attachmentStrokeRoundedIcon}
+                                                            alt=""
+                                                            width={16}
+                                                            height={16}
+                                                        />
+                                                        Attachment
+                                                    </Dropdown.Item>
+
+                                                    <Dropdown.Divider />
+
+                                                    <Dropdown.Item
+                                                        as="div"
+                                                        className="dropdown-item d-flex align-items-center"
+                                                        onClick={handleManageSignatures}
+                                                    >
+                                                        <img
+                                                            className="me-2"
+                                                            src={signatureIcon}
+                                                            alt=""
+                                                            width={16}
+                                                            height={16}
+                                                        />
+                                                        Manage Signature
+                                                    </Dropdown.Item>
+
+                                                    {signatures.map((signature) => (
+                                                        <Dropdown.Item
+                                                            key={signature._id}
+                                                            as="div"
+                                                            className={`dropdown-item d-flex align-items-center ${
+                                                                selectedSignatureId === signature._id
+                                                                    ? 'active-line-t'
+                                                                    : ''
+                                                            }`}
+                                                            onClick={() =>
+                                                                handleSignatureSelect(
+                                                                    signature,
+                                                                    (value: string) => setValue('body', value),
+                                                                    () => getValues('body') || '',
+                                                                )
+                                                            }
+                                                        >
+                                                            <img
+                                                                className="me-2"
+                                                                src={signatureIcon}
+                                                                alt=""
+                                                                width={16}
+                                                                height={16}
+                                                            />
+                                                            {signature.name || 'Untitled Signature'}
+                                                        </Dropdown.Item>
+                                                    ))}
+
+                                                    {signatures.length === 0 && (
+                                                        <Dropdown.Item
+                                                            as="div"
+                                                            className="dropdown-item disabled"
+                                                            disabled
+                                                        >
+                                                            No signatures available
+                                                        </Dropdown.Item>
+                                                    )}
+
+                                                    <Dropdown.Divider />
+
+                                                    {userPermissions?.aiFeatures && (
+                                                        <Dropdown.Item
+                                                            as="div"
+                                                            className="dropdown-item d-flex align-items-center"
+                                                            onClick={toggleGenerateEmailCard}
+                                                        >
+                                                            <img
+                                                                className="me-2"
+                                                                src={generateAiIcon}
+                                                                alt=""
+                                                                width={16}
+                                                                height={16}
+                                                            />
+                                                            Generate Email
+                                                        </Dropdown.Item>
+                                                    )}
+
+                                                    <Dropdown.Item
+                                                        as="div"
+                                                        className="dropdown-item d-flex align-items-center"
+                                                        onClick={openScheduleModal}
+                                                    >
+                                                        <img
+                                                            className="me-2"
+                                                            src={scheduledIcon}
+                                                            alt=""
+                                                            width={16}
+                                                            height={16}
+                                                        />
+                                                        Schedule
+                                                    </Dropdown.Item>
+                                                </Dropdown.Menu>
+                                            </Dropdown>
+                                        </div>
                                     )}
 
-                                    <button className="btn hover-link icon-hover-effect ms-3" onClick={openScheduleModal}>
-                                        <img  src={scheduledIcon} />
-                                        {/* <span className='d-flex align-items-cnter'>Schedule</span> */}
-                                    </button>
                                     <span
+                                        data-compose-send
                                         data-tooltip-id="my-tooltip"
                                         data-tooltip-content="Ctrl + Enter"
                                         data-tooltip-place="top"
                                     >
                                         <SubmitButton
-                                            className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
+                                            className="btn-new send-btn d-flex align-items-center loading-spinner"
                                             onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
                                                 console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                                             })}

@@ -117,7 +117,7 @@ function CreateLocalFolderModal({
                                 />
                             </button>
                             <h5 className="modal-title modal-title-center" id="createLocalFolderModalLabel">
-                                {props.isEdit ? "Edit Local Folder" : "Create Local Folder"}
+                                {props.isEdit ? "Edit Archive Folder" : "Create Archive Folder"}
                             </h5>
                             <button type="button" className="btn-close hover-link btn icon-hover-effect" onClick={onClose}>
                                 <InteractiveIcon

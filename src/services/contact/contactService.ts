@@ -114,6 +114,23 @@ async function addContact(payload: ContactFormValues) {
     }
 }
 
+export interface CreateContactGroupPayload {
+    name: string;
+    memberIds?: string[];
+}
+
+async function createContactGroup(payload: CreateContactGroupPayload) {
+    try {
+        const response = await postData('contact/group/add', {
+            name: payload.name.trim(),
+            memberIds: (payload.memberIds ?? []).map((id) => id.trim()).filter(Boolean),
+        });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 async function editContact(contactId: string, payload: ContactFormValues) {
     try {
         const response = await putData(`contact/edit/${contactId}`, buildContactPayload(payload));
@@ -262,6 +279,7 @@ async function addContacts(payload: ContactFormValues) {
 export {
     addContact,
     addContacts,
+    createContactGroup,
     deleteContact,
     deleteContacts,
     downloadBlobFile,

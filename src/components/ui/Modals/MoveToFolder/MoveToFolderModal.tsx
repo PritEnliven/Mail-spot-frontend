@@ -210,7 +210,7 @@ function MoveToFolderModal({ modalId, zIndex, onSelectFolder }: MoveToFolderModa
 
                     {localFolders.length > 0 && (
                         <section className="move-to-folder-sheet__section">
-                            <div className="move-to-folder-sheet__section-label">Local Folders</div>
+                            <div className="move-to-folder-sheet__section-label">Archived Mail</div>
                             <ul className="move-to-folder-sheet__list">
                                 {localFolders.map((folder) => (
                                     <li key={folder.id}>

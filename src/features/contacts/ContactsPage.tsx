@@ -33,6 +33,8 @@ const SORT_OPTIONS = [
     { label: 'Recently updated', value: 'updatedAt' },
 ];
 
+type ContactsViewTab = 'contacts' | 'groups';
+
 function getVisiblePages(current: number, totalPages: number): Array<number | 'ellipsis'> {
     if (totalPages <= 7) {
         return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -77,8 +79,11 @@ function ContactsPage() {
     } = useContactsList();
 
     const [searchInput, setSearchInput] = useState('');
+    const [activeView, setActiveView] = useState<ContactsViewTab>('contacts');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
     const debouncedSearch = useDebounce(searchInput, 300);
+    const isContactsView = activeView === 'contacts';
+    const isGroupsView = activeView === 'groups';
     const visiblePages = useMemo(
         () => getVisiblePages(page, totalPages),
         [page, totalPages],
@@ -98,13 +103,15 @@ function ContactsPage() {
     }, [setBoxName, setBoxTitle]);
 
     useEffect(() => {
+        if (!isContactsView) return;
         setSearchQuery(debouncedSearch.trim());
         setPage(1);
-    }, [debouncedSearch, setSearchQuery, setPage]);
+    }, [debouncedSearch, isContactsView, setSearchQuery, setPage]);
 
     useEffect(() => {
         setSelectedIds(new Set());
         setSearchInput('');
+        setActiveView('contacts');
     }, [activeAccountId]);
 
     useEffect(() => {
@@ -116,6 +123,17 @@ function ContactsPage() {
             window.removeEventListener(CONTACTS_LIST_REFRESH_EVENT, handleRefresh);
         };
     }, [refresh]);
+
+    const handleViewChange = (view: ContactsViewTab) => {
+        if (view === activeView) return;
+        setActiveView(view);
+        setSearchInput('');
+        setSearchQuery('');
+        setSelectedIds(new Set());
+        if (view === 'contacts') {
+            setPage(1);
+        }
+    };
 
     const handleToggleSelect = useCallback((contactId: string) => {
         setSelectedIds((prev) => {
@@ -149,6 +167,14 @@ function ContactsPage() {
             onSuccess: () => {
                 refresh();
                 void fetchContacts();
+            },
+        });
+    };
+
+    const handleCreateGroup = () => {
+        openModal('createGroup', {
+            onSuccess: () => {
+                // Groups list refresh will plug in when groups API is wired.
             },
         });
     };
@@ -227,45 +253,74 @@ function ContactsPage() {
     };
 
     const hasActiveSearch = searchInput.trim().length > 0;
-    const showSearch = isLoading || total > 0 || hasActiveSearch;
-    const showPagination = total > 0;
+    const showSearch = isGroupsView || isLoading || total > 0 || hasActiveSearch;
+    const showPagination = isContactsView && total > 0;
     // Keep toolbar visible so Export stays available for empty lists (incl. mobile).
     const showToolbar = true;
-    const exportCompact = isMobilebig || isMobile;
 
     return (
         <div id="contactsContainer" className="contacts-page">
             {showToolbar && (
             <div className="pt-3 contacts-page-toolbar">
                 <div className="contacts-toolbar-row">
-                    {showSearch && (
-                    <div className="contacts-filters-row">
-                        <div className="contacts-filter-field">
-                            <div className="form-group form-row mb-0">
-                                <div className="input-control">
-                                    <div className='input-icon-add'>
-                                        <InteractiveIcon
-                                            defaultIcon={searchIcon}
-                                            alt=""
-                                            className="input-icon-1"
-                                        />
-                                        <input
-                                            id="contactSearch"
-                                            type="search"
-                                            className="form-control"
-                                            placeholder="Search by name or email"
-                                            value={searchInput}
-                                            onChange={(e) => setSearchInput(e.target.value)}
-                                            aria-label="Search contacts"
-                                        />
+                    <div className="contacts-toolbar-left">
+                        <div className="contacts-view-tabs" role="tablist" aria-label="Contacts views">
+                            <button
+                                type="button"
+                                role="tab"
+                                id="contacts-view-tab-contacts"
+                                aria-selected={isContactsView}
+                                aria-controls="contacts-view-panel"
+                                className={`contacts-view-tab${isContactsView ? ' is-active' : ''}`}
+                                onClick={() => handleViewChange('contacts')}
+                            >
+                                Contacts
+                            </button>
+                            <button
+                                type="button"
+                                role="tab"
+                                id="contacts-view-tab-groups"
+                                aria-selected={isGroupsView}
+                                aria-controls="contacts-view-panel"
+                                className={`contacts-view-tab${isGroupsView ? ' is-active' : ''}`}
+                                onClick={() => handleViewChange('groups')}
+                            >
+                                Groups
+                            </button>
+                        </div>
+                        {showSearch && (
+                        <div className="contacts-filters-row">
+                            <div className="contacts-filter-field">
+                                <div className="form-group form-row mb-0">
+                                    <div className="input-control">
+                                        <div className='input-icon-add'>
+                                            <InteractiveIcon
+                                                defaultIcon={searchIcon}
+                                                alt=""
+                                                className="input-icon-1"
+                                            />
+                                            <input
+                                                id="contactSearch"
+                                                type="search"
+                                                className="form-control"
+                                                placeholder={
+                                                    isGroupsView
+                                                        ? 'Search groups'
+                                                        : 'Search by name or email'
+                                                }
+                                                value={searchInput}
+                                                onChange={(e) => setSearchInput(e.target.value)}
+                                                aria-label={isGroupsView ? 'Search groups' : 'Search contacts'}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        )}
                     </div>
-                    )}
                     <div className="contacts-toolbar-actions">
-                            {showSearch && !isMobile && !isMobilebig && (
+                            {isContactsView && showSearch && !isMobile && !isMobilebig && (
                             <div className="contacts-filter-field contacts-sort-field">
                                 <div className="form-group form-row mb-0">
                                     <div className="input-control">
@@ -281,7 +336,7 @@ function ContactsPage() {
                                 </div>
                             </div>
                             )}
-                            {showSearch && !isMobile && (
+                            {isContactsView && showSearch && !isMobile && (
                             <div className="contacts-filter-field contacts-page-limit-field">
                                 <div className="form-group form-row mb-0">
                                     <div className="input-control">
@@ -297,14 +352,17 @@ function ContactsPage() {
                                 </div>
                             </div>
                             )}
+                            {isContactsView && (
                             <ContactsExportMenu
-                                compact={exportCompact}
+                                compact
                                 searchQuery={searchQuery}
                                 selectedIds={selectedIdsList}
                             />
+                            )}
+                            {isContactsView && (
                             <button
                                 type="button"
-                                className={`btn-new hover-link contacts-delete-selected-btn${exportCompact ? ' contacts-delete-selected-btn--compact' : ''}`}
+                                className="btn-new hover-link contacts-delete-selected-btn contacts-delete-selected-btn--compact"
                                 onClick={handleDeleteSelected}
                                 disabled={selectedIdsList.length === 0}
                                 aria-label={
@@ -323,16 +381,11 @@ function ContactsPage() {
                                     alt=""
                                     className="interactive-icon hover-image"
                                     renderAs="img"
-                                    tooltip={exportCompact ? 'Delete selected' : ''}
+                                    tooltip="Delete selected"
                                 />
-                                {!exportCompact && (
-                                    <span>
-                                        Delete
-                                        {selectedIdsList.length > 1 ? ` (${selectedIdsList.length})` : ''}
-                                    </span>
-                                )}
                             </button>
-                            {!isMobile && (
+                            )}
+                            {!isMobile && isContactsView && (
                                 isMobilebig ? (
                                     <button
                                         type="button"
@@ -371,6 +424,45 @@ function ContactsPage() {
                                     </button>
                                 )
                             )}
+                            {!isMobile && isGroupsView && (
+                                isMobilebig ? (
+                                    <button
+                                        type="button"
+                                        className="btn-new btn-new-bg hover-link contacts-add-contact-icon-btn"
+                                        onClick={handleCreateGroup}
+                                        aria-label="Create group"
+                                    >
+                                        <InteractiveIcon
+                                            defaultIcon={plusIconWhite}
+                                            hoverIcon={plusIconWhite}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip="Create group"
+                                        />
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="btn-new btn-new-bg hover-link contacts-add-contact-btn"
+                                        onClick={handleCreateGroup}
+                                    >
+                                        <InteractiveIcon
+                                            defaultIcon={plusIconWhite}
+                                            hoverIcon={plusIconWhite}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip=""
+                                        />
+                                        <span>Create group</span>
+                                    </button>
+                                )
+                            )}
                         </div>
                 </div>
             </div>
@@ -380,10 +472,27 @@ function ContactsPage() {
                 <div className="px-3 pt-2 text-danger fs-12-commom contacts-page-error">{error}</div>
             )}
 
-            <div className="pt-0 pb-0 pe-0 contacts-page-main">
+            <div
+                className="pt-0 pb-0 pe-0 contacts-page-main"
+                id="contacts-view-panel"
+                role="tabpanel"
+                aria-labelledby={
+                    isGroupsView ? 'contacts-view-tab-groups' : 'contacts-view-tab-contacts'
+                }
+            >
                 <div className="contacts-page-main-inner">
                     <div className="contacts-page-table-wrap">
-                        {isMobilebig ? (
+                        {isGroupsView ? (
+                            <div className="contacts-table is-empty">
+                                <div className="contacts-empty-state-wrap">
+                                    <div className="no-new-mail contacts-empty-state">
+                                        <div className="d-block text-center">
+                                            <h2 className="new-h2 mb-2">No groups yet</h2>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : isMobilebig ? (
                             <div className="contacts-mobile-wrap">
                                 <ContactList
                                     contacts={contacts}

@@ -36,6 +36,7 @@ import { useContacts, useMailData, useMailUI } from '../../context/index';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import { useSettings } from "@context/SettingsContext";
 import { useScreen } from '@context/ScreenContext';
+import { useComposeActionsOverflow } from '@hooks/useComposeActionsOverflow';
 
 const extractBodyHtml = (html: string): string => {
     try {
@@ -88,7 +89,14 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
     const onSubmitRef = useRef<(data: any, scheduleAt?: string) => Promise<void>>(async () => { });
     const composerRef = useRef<HTMLDivElement>(null);
     const instanceId = useId();
-    const { isComposeActionsCompact, isMobile } = useScreen();
+    const { isMobile } = useScreen();
+    const composeFooterActionsRef = useRef<HTMLDivElement>(null);
+    const composeActionsMeasureRef = useRef<HTMLDivElement>(null);
+    const isComposeActionsCompact = useComposeActionsOverflow(
+        composeFooterActionsRef,
+        composeActionsMeasureRef,
+        [userPermissions?.aiFeatures],
+    );
 
     // Bring the reply/forward composer into view when it opens below a long
     // message or deep in a thread (scrolls the mail-details pane, not the page).
@@ -97,41 +105,73 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
         if (!el) return;
 
         let cancelled = false;
-        let timeoutId = 0;
-        let raf2 = 0;
+        const timeoutIds: number[] = [];
+
+        const getScrollContainer = (): HTMLElement | null => {
+            const details = el.closest('.mail-details-box') as HTMLElement | null;
+            if (details) return details;
+
+            let node = el.parentElement;
+            while (node) {
+                const { overflowY } = getComputedStyle(node);
+                if (
+                    (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+                    node.scrollHeight > node.clientHeight + 1
+                ) {
+                    return node;
+                }
+                node = node.parentElement;
+            }
+            return null;
+        };
 
         const scrollComposerIntoView = () => {
             if (cancelled) return;
-            const scrollContainer = el.closest('.mail-details-box') as HTMLElement | null;
+
+            const scrollContainer = getScrollContainer();
             if (scrollContainer) {
                 const containerRect = scrollContainer.getBoundingClientRect();
                 const elRect = el.getBoundingClientRect();
-                // Skip if the composer top is already in view (user can see the reply box).
-                const topInView =
-                    elRect.top >= containerRect.top + 4 &&
-                    elRect.top <= containerRect.bottom - 80;
-                if (topInView) return;
+                const footer = el.querySelector('.compose-modal-footer') as HTMLElement | null;
+                const footerRect = footer?.getBoundingClientRect();
 
-                const nextTop = elRect.top - containerRect.top + scrollContainer.scrollTop - 12;
-                scrollContainer.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+                // Ideal: pin composer top near the top of the details pane so the
+                // reply form (and footer actions) are reachable without hunting below.
+                const idealTop = elRect.top - containerRect.top + scrollContainer.scrollTop - 12;
+                const alreadyNearTop =
+                    elRect.top >= containerRect.top - 2 &&
+                    elRect.top <= containerRect.top + 40;
+                const footerInView = footerRect
+                    ? footerRect.top < containerRect.bottom - 24
+                    : elRect.bottom <= containerRect.bottom - 24;
+
+                // Only skip when the composer is already pinned near the top AND
+                // the action footer isn't clipped below the fold.
+                if (alreadyNearTop && footerInView) return;
+
+                scrollContainer.scrollTo({
+                    top: Math.max(0, idealTop),
+                    behavior: 'smooth',
+                });
                 return;
             }
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
 
         const raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
                 scrollComposerIntoView();
-                // Retry after layout settles (CKEditor / recipients grow height).
-                timeoutId = window.setTimeout(scrollComposerIntoView, 280);
+                // Retry after CKEditor / toolbar-slot layout settles.
+                timeoutIds.push(window.setTimeout(scrollComposerIntoView, 280));
+                timeoutIds.push(window.setTimeout(scrollComposerIntoView, 600));
             });
         });
 
         return () => {
             cancelled = true;
             cancelAnimationFrame(raf1);
-            cancelAnimationFrame(raf2);
-            if (timeoutId) window.clearTimeout(timeoutId);
+            timeoutIds.forEach((id) => window.clearTimeout(id));
         };
     }, []);
 
@@ -607,8 +647,15 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                         </div>
                     )}
 
-                    <div className="compose-btn-box d-flex align-items-center justify-content-between px-0">
-                        <a className="hover-link icon-hover-effect" onClick={handleClose} >
+                    <div
+                        className="compose-btn-box d-flex align-items-center justify-content-between px-0"
+                        ref={composeFooterActionsRef}
+                    >
+                        <a
+                            className="hover-link icon-hover-effect"
+                            data-compose-discard
+                            onClick={handleClose}
+                        >
                             <InteractiveIcon
                                 defaultIcon={trashIcon}
                                 hoverIcon={trashIconHover}
@@ -620,114 +667,178 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                 tooltip="Discard"
                             />
                         </a>
-                        <div className="d-flex align-items-center">
-                            <Dropdown drop="up" align="end"
-                                className={`more-actions-dropdown react-dropdown signature-dropdown ms-3`}
+                        <div className="super-action-single-group-box">
+                            {/* CKEditor toolbar moves here via ToolbarAtBottomPlugin */}
+                            <div className="compose-editor-toolbar-slot" />
+
+                            {/* Off-screen measure of expanded actions — drives overflow → More menu */}
+                            <div
+                                ref={composeActionsMeasureRef}
+                                className="compose-actions-measure"
+                                aria-hidden="true"
                             >
-                                <Dropdown.Toggle
-                                    as="a"
-                                    className="hover-link d-flex align-items-center icon-hover-effect"
-                                >
-                                    <InteractiveIcon
-                                        defaultIcon={signatureIcon}
-                                        hoverIcon={signatureIconHover}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip="Insert signature"
-                                    />
-                                </Dropdown.Toggle>
+                                <img src={attachmentStrokeRoundedIcon} alt="" width={20} height={20} />
+                                <img src={signatureIcon} alt="" width={20} height={20} />
+                                <span className="super-action-icon-brack-line" />
+                                {userPermissions?.aiFeatures && (
+                                    <img src={generateAiIcon} alt="" width={20} height={20} />
+                                )}
+                                <img src={scheduledIcon} alt="" width={20} height={20} />
+                            </div>
 
-                                <Dropdown.Menu>
-                                    {/* Manage Signature Option */}
-                                    <Dropdown.Item
-                                        as="div"
-                                        className="dropdown-item d-flex justify-content-between align-items-center"
-                                        onClick={handleManageSignatures}
-                                    >
-                                        Manage Signature
-                                    </Dropdown.Item>
+                            {!isComposeActionsCompact ? (
+                                <>
+                                    <div className="super-action-single-group-items">
+                                        <div className="custom-file-mail icon-hover-effect hover-link" id="reply-forward-bottom-box">
+                                            <div className="custom-file">
+                                                <input
+                                                    type="file"
+                                                    id={`composeFileAttachments-${instanceId}`}
+                                                    multiple
+                                                    className="custom-file-input addAttachmentBtn"
+                                                    onChange={handleFileChange}
+                                                />
+                                                <label
+                                                    className="custom-file-label"
+                                                    htmlFor={`composeFileAttachments-${instanceId}`}
+                                                >
+                                                    <span className="file-name">
+                                                        <InteractiveIcon
+                                                            defaultIcon={attachmentStrokeRoundedIcon}
+                                                            hoverIcon={attachmentStrokeRoundedIconHover}
+                                                            activeIcon=""
+                                                            isActive={false}
+                                                            alt=""
+                                                            className="interactive-icon hover-image"
+                                                            renderAs="img"
+                                                            tooltip="Attachment"
+                                                        />
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
 
-                                    {signatures.length > 0 && <Dropdown.Divider />}
-
-                                    {/* Dynamic Signatures */}
-                                    {signatures.map((signature) => (
-                                        <SimpleBar style={{ maxHeight: 100, scrollBehavior: 'smooth' }}
-                                            autoHide={false}
-                                            forceVisible="y"
-                                            scrollableNodeProps={{
-                                                style: { scrollBehavior: 'smooth' }
-                                            }}>
-                                            <Dropdown.Item
-                                                key={signature._id}
-                                                as="div"
-                                                className={`dropdown-item d-flex justify-content-between align-items-center ${selectedSignatureId === signature._id ? 'active-line-t' : ''
-                                                    }`}
-                                                onClick={() => handleSignatureSelectWrapper(signature)}
-                                            >
-                                                {signature.name || 'Untitled Signature'}
-                                            </Dropdown.Item>
-                                        </SimpleBar>
-                                    ))}
-
-                                    {signatures.length === 0 && (
-                                        <Dropdown.Item
-                                            as="div"
-                                            className="dropdown-item disabled"
-                                            disabled
+                                        <Dropdown
+                                            drop="up"
+                                            align="end"
+                                            className="more-actions-dropdown react-dropdown signature-dropdown"
                                         >
-                                            No signatures available
-                                        </Dropdown.Item>
-                                    )}
-                                </Dropdown.Menu>
-                            </Dropdown>
-                            <div className="custom-file-mail icon-hover-effect hover-link ms-3" id="reply-forward-bottom-box">
-                                <div className="custom-file">
-                                    <input
-                                        type="file"
-                                        id={`composeFileAttachments-${instanceId}`}
-                                        multiple
-                                        className="custom-file-input addAttachmentBtn"
-                                        onChange={handleFileChange}
-                                    />
-                                    <label className="custom-file-label" htmlFor={`composeFileAttachments-${instanceId}`}>
-                                        <span className="file-name">
+                                            <Dropdown.Toggle
+                                                as="a"
+                                                className="hover-link d-flex align-items-center icon-hover-effect"
+                                            >
+                                                <InteractiveIcon
+                                                    defaultIcon={signatureIcon}
+                                                    hoverIcon={signatureIconHover}
+                                                    activeIcon=""
+                                                    isActive={false}
+                                                    alt=""
+                                                    className="interactive-icon hover-image"
+                                                    renderAs="img"
+                                                    tooltip="Insert signature"
+                                                />
+                                            </Dropdown.Toggle>
+
+                                            <Dropdown.Menu>
+                                                <Dropdown.Item
+                                                    as="div"
+                                                    className="dropdown-item d-flex justify-content-between align-items-center"
+                                                    onClick={handleManageSignatures}
+                                                >
+                                                    Manage Signature
+                                                </Dropdown.Item>
+
+                                                {signatures.length > 0 && <Dropdown.Divider />}
+
+                                                {signatures.map((signature) => (
+                                                    <SimpleBar
+                                                        key={signature._id}
+                                                        style={{ maxHeight: 100, scrollBehavior: 'smooth' }}
+                                                        autoHide={false}
+                                                        forceVisible="y"
+                                                        scrollableNodeProps={{
+                                                            style: { scrollBehavior: 'smooth' },
+                                                        }}
+                                                    >
+                                                        <Dropdown.Item
+                                                            as="div"
+                                                            className={`dropdown-item d-flex justify-content-between align-items-center ${
+                                                                selectedSignatureId === signature._id
+                                                                    ? 'active-line-t'
+                                                                    : ''
+                                                            }`}
+                                                            onClick={() => handleSignatureSelectWrapper(signature)}
+                                                        >
+                                                            {signature.name || 'Untitled Signature'}
+                                                        </Dropdown.Item>
+                                                    </SimpleBar>
+                                                ))}
+
+                                                {signatures.length === 0 && (
+                                                    <Dropdown.Item
+                                                        as="div"
+                                                        className="dropdown-item disabled"
+                                                        disabled
+                                                    >
+                                                        No signatures available
+                                                    </Dropdown.Item>
+                                                )}
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+                                    </div>
+
+                                    <span className="super-action-icon-brack-line" />
+
+                                    <div className="super-action-single-group-items">
+                                        {userPermissions?.aiFeatures && (
+                                            <button
+                                                className="btn hover-link icon-hover-effect"
+                                                id="generateEmailButton"
+                                                onClick={toggleGenerateEmailCard}
+                                            >
+                                                <InteractiveIcon
+                                                    defaultIcon={generateAiIcon}
+                                                    hoverIcon={generateAiIcon}
+                                                    activeIcon=""
+                                                    isActive={false}
+                                                    alt=""
+                                                    className="interactive-icon hover-image"
+                                                    renderAs="img"
+                                                    tooltip="Generate Email"
+                                                />
+                                            </button>
+                                        )}
+
+                                        <button
+                                            className="btn hover-link icon-hover-effect"
+                                            onClick={openScheduleModal}
+                                        >
                                             <InteractiveIcon
-                                                defaultIcon={attachmentStrokeRoundedIcon}
-                                                hoverIcon={attachmentStrokeRoundedIconHover}
+                                                defaultIcon={scheduledIcon}
+                                                hoverIcon={scheduledIcon}
                                                 activeIcon=""
                                                 isActive={false}
                                                 alt=""
                                                 className="interactive-icon hover-image"
                                                 renderAs="img"
-                                                tooltip="Attachment"
+                                                tooltip="Schedule"
                                             />
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {!isComposeActionsCompact ? (
-                                <>
-                                    {userPermissions?.aiFeatures && (
-                                        <button className="btn-new ms-3" id="generateEmailButton" onClick={toggleGenerateEmailCard}>
-                                            <img className="me-2" src={generateAiIcon} />
-                                            Generate Email
                                         </button>
-                                    )}
-
-                                    <button className="btn-new ms-3" onClick={openScheduleModal}>
-                                        <img className="me-2" src={scheduledIcon} />
-                                        Schedule
-                                    </button>
+                                    </div>
                                 </>
                             ) : (
-                                <>
-
-                                    <Dropdown drop="up" align="end"
-                                        className={`more-actions-dropdown react-dropdown signature-dropdown ms-3`}
+                                <div className="super-action-single-group-items">
+                                    <input
+                                        type="file"
+                                        id={`composeFileAttachments-${instanceId}`}
+                                        multiple
+                                        className="d-none"
+                                        onChange={handleFileChange}
+                                    />
+                                    <Dropdown
+                                        drop="up"
+                                        align="end"
+                                        className="more-actions-dropdown react-dropdown compose-overflow-more-dropdown"
                                     >
                                         <Dropdown.Toggle
                                             as="a"
@@ -746,41 +857,126 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                                         </Dropdown.Toggle>
 
                                         <Dropdown.Menu>
-                                            {/* Manage Signature Option */}
-                                            {userPermissions?.aiFeatures && (
                                             <Dropdown.Item
                                                 as="div"
-                                                className="dropdown-item d-flex  align-items-center"
-                                                onClick={toggleGenerateEmailCard}
+                                                className="dropdown-item d-flex align-items-center"
+                                                onClick={() =>
+                                                    document
+                                                        .getElementById(`composeFileAttachments-${instanceId}`)
+                                                        ?.click()
+                                                }
                                             >
-                                                <img className="me-2" src={generateAiIcon} />
-                                                Generate Email
+                                                <img
+                                                    className="me-2"
+                                                    src={attachmentStrokeRoundedIcon}
+                                                    alt=""
+                                                    width={16}
+                                                    height={16}
+                                                />
+                                                Attachment
                                             </Dropdown.Item>
-                                            )}
+
+                                            <Dropdown.Divider />
+
                                             <Dropdown.Item
                                                 as="div"
-                                                className="dropdown-item d-flex  align-items-center"
+                                                className="dropdown-item d-flex align-items-center"
+                                                onClick={handleManageSignatures}
+                                            >
+                                                <img
+                                                    className="me-2"
+                                                    src={signatureIcon}
+                                                    alt=""
+                                                    width={16}
+                                                    height={16}
+                                                />
+                                                Manage Signature
+                                            </Dropdown.Item>
+
+                                            {signatures.map((signature) => (
+                                                <Dropdown.Item
+                                                    key={signature._id}
+                                                    as="div"
+                                                    className={`dropdown-item d-flex align-items-center ${
+                                                        selectedSignatureId === signature._id
+                                                            ? 'active-line-t'
+                                                            : ''
+                                                    }`}
+                                                    onClick={() => handleSignatureSelectWrapper(signature)}
+                                                >
+                                                    <img
+                                                        className="me-2"
+                                                        src={signatureIcon}
+                                                        alt=""
+                                                        width={16}
+                                                        height={16}
+                                                    />
+                                                    {signature.name || 'Untitled Signature'}
+                                                </Dropdown.Item>
+                                            ))}
+
+                                            {signatures.length === 0 && (
+                                                <Dropdown.Item
+                                                    as="div"
+                                                    className="dropdown-item disabled"
+                                                    disabled
+                                                >
+                                                    No signatures available
+                                                </Dropdown.Item>
+                                            )}
+
+                                            <Dropdown.Divider />
+
+                                            {userPermissions?.aiFeatures && (
+                                                <Dropdown.Item
+                                                    as="div"
+                                                    className="dropdown-item d-flex align-items-center"
+                                                    onClick={toggleGenerateEmailCard}
+                                                >
+                                                    <img
+                                                        className="me-2"
+                                                        src={generateAiIcon}
+                                                        alt=""
+                                                        width={16}
+                                                        height={16}
+                                                    />
+                                                    Generate Email
+                                                </Dropdown.Item>
+                                            )}
+
+                                            <Dropdown.Item
+                                                as="div"
+                                                className="dropdown-item d-flex align-items-center"
                                                 onClick={openScheduleModal}
                                             >
-                                                <img className="me-2" src={scheduledIcon} />
+                                                <img
+                                                    className="me-2"
+                                                    src={scheduledIcon}
+                                                    alt=""
+                                                    width={16}
+                                                    height={16}
+                                                />
                                                 Schedule
                                             </Dropdown.Item>
-
-
-
                                         </Dropdown.Menu>
-                                    </Dropdown>                                    
-                                </>
+                                    </Dropdown>
+                                </div>
                             )}
 
-
-                            <SubmitButton
-                                className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
-                                onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
-                                    console.log('SUBMIT BLOCKED BY ERRORS:', errors);
-                                })}
-                            >Send
-                            </SubmitButton>
+                            <span
+                                data-compose-send
+                                data-tooltip-id="my-tooltip"
+                                data-tooltip-content="Ctrl + Enter"
+                                data-tooltip-place="top"
+                            >
+                                <SubmitButton
+                                    className="btn-new send-btn d-flex align-items-center loading-spinner"
+                                    onClick={handleSubmit((data) => onSubmit(data), (errors: any) => {
+                                        console.log('SUBMIT BLOCKED BY ERRORS:', errors);
+                                    })}
+                                >Send
+                                </SubmitButton>
+                            </span>
                         </div>
                     </div>
 

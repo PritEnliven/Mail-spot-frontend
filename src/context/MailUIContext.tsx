@@ -124,7 +124,7 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
             return {
                 showBack: !isMailListOpen,
                 showSelectAll: true,
-                showRefresh: false,
+                showRefresh: true,
                 showDelete: true,
                 showMarkAsRead: hasUnreadEmails,
                 showMarkAsUnread: hasReadEmails && !hasUnreadEmails,

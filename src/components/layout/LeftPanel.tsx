@@ -622,13 +622,13 @@ const LeftPanel = () => {
 
                     <CustomFolderSection
                         sectionId="localFolderSection"
-                        sectionTitle="Archive Mail"
+                        sectionTitle="Archived Mail"
                         showRefresh={false}
                         createTooltip="Add Local Folder"
                         folders={localFolders.map(item => ({
                             id: item.id,
                             name: item.label,
-                            color: item.color || '#FF8A00',
+                            color: item.color || '#49BA14',
                             icon: item.icon,
                             value: item.boxName,
                             depth: 0,

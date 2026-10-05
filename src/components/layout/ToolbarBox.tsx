@@ -1,6 +1,13 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
 import ArrangeByControl from "@components/ui/email/ArrangeByControl";
-import { dismissToast, showError, showMovingEmailToast, showSuccess } from "@components/ui/toast/toastNotification.ts";
+import {
+    dismissToast,
+    showError,
+    showMovingEmailToast,
+    showProgressToast,
+    showSuccess,
+    showWarning,
+} from "@components/ui/toast/toastNotification.ts";
 import { useScreen } from "@context/ScreenContext";
 import { useEmailAction } from "@hooks/useEmailAction";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
@@ -19,13 +26,24 @@ import refreshIconHover from "@images/refresh-icon-hover.svg";
 import refreshIcon from "@images/refresh-icon.svg";
 import deleteIconHover from "@images/trash-icon-hover.svg";
 import deleteIcon from "@images/trash-icon.svg";
+import exportIconHover from "@images/export-icon-hover.svg";
+import exportIcon from "@images/export-icon.svg";
+import uploadFileIconHover from "@images/upload-file-icon-hover.svg";
+import uploadFileIcon from "@images/upload-file-icon.svg";
 import type { Email } from "@models/Email";
 import { moveToFolder, refreshMailBox } from "@services/emailAction/emailActionService";
-import { moveToImap, moveToLocalFolder } from "@services/localFolder/localFolderService";
+import {
+    downloadBlobFile,
+    exportEml,
+    importEml,
+    moveToImap,
+    moveToLocalFolder,
+    validateEmlFilesForImport,
+} from "@services/localFolder/localFolderService";
 import { DEFAULT_SORT_ORDER } from "@constants/arrangeBy";
 import { mergeIntoArrangedList } from "@utils/arrangeEmailUtil";
 import { getLocalFolderIdFromBoxName, handleEmailDeletion, isLocalBoxName, verifyBoxName } from "@utils/emailUtil";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import SimpleBar from 'simplebar-react';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
@@ -76,11 +94,19 @@ const ToolbarBox = () => {
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
     const [moveToFolderOptions, setMoveToFolderOptions] = useState<any>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isImportingEml, setIsImportingEml] = useState(false);
+    const [isExportingEml, setIsExportingEml] = useState(false);
+    const importEmlInputRef = useRef<HTMLInputElement | null>(null);
     const { isDesktop, isMobile } = useScreen();
     const isSchedule = boxName?.toLocaleLowerCase().includes('schedule');
     const isLocalFolderView = isLocalBoxName(boxName);
     const isSearchOrFilterMailList = allSearchResult || boxTitle === 'Search Results';
     const showArrangeBy = !isSearchOrFilterMailList && !isSchedule;
+
+    const resolveSelectedMessageIds = () =>
+        selectedEmails.size > 0
+            ? Array.from(selectedEmails)
+            : (activeEmailMessageId ? [activeEmailMessageId] : []);
 
     // Hide pagination when mailbox is empty (all counts are 0)
     // const hasEmails = pagination?.startCount != null && pagination?.endCount != null && pagination?.totalEmails != null
@@ -277,6 +303,122 @@ const ToolbarBox = () => {
             setIsRefreshing(false);
         }
     }
+
+    const formatImportEmlSummary = (summary: {
+        imported: number;
+        alreadyExists: number;
+        failed: number;
+    }) =>
+        `Imported ${summary.imported} · Already existed ${summary.alreadyExists} · Failed ${summary.failed}`;
+
+    const openImportEmlPicker = (e?: React.MouseEvent) => {
+        e?.preventDefault();
+        e?.stopPropagation();
+        if (!isLocalFolderView || isImportingEml) return;
+        importEmlInputRef.current?.click();
+    };
+
+    const handleImportEmlFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Snapshot first — FileList is live; clearing value empties it.
+        const files = event.target.files ? Array.from(event.target.files) : [];
+        // Allow selecting the same file again later
+        event.target.value = '';
+
+        if (!isLocalFolderView || isImportingEml) return;
+
+        const folderId = getLocalFolderIdFromBoxName(boxName);
+        if (!folderId) {
+            showError('Invalid local folder');
+            return;
+        }
+
+        const validationError = validateEmlFilesForImport(files);
+        if (validationError) {
+            showError(validationError);
+            return;
+        }
+
+        setIsImportingEml(true);
+        const progressToastId = showProgressToast('Importing EML…');
+        try {
+            const result = await importEml(folderId, files);
+            dismissToast(progressToastId);
+
+            if (!result.success) {
+                if (result.statusCode !== 401) {
+                    showError(result.message || 'Failed to import EML');
+                }
+                return;
+            }
+
+            const { summary } = result;
+            const summaryText = formatImportEmlSummary(summary);
+
+            if (summary.imported > 0 || summary.alreadyExists > 0) {
+                await fetchEmails(mailListPage || 1, boxName);
+                setSidebarStateFromAPI().catch(() => {});
+            }
+
+            if (summary.failed > 0 && (summary.imported > 0 || summary.alreadyExists > 0)) {
+                showWarning(summaryText);
+            } else if (summary.failed > 0 && summary.imported === 0 && summary.alreadyExists === 0) {
+                showError(summaryText);
+            } else {
+                showSuccess(summaryText);
+            }
+        } catch (error: any) {
+            dismissToast(progressToastId);
+            showError(error?.message || 'Failed to import EML');
+        } finally {
+            setIsImportingEml(false);
+        }
+    };
+
+    const handleExportEml = async () => {
+        if (!isLocalFolderView || isExportingEml) return;
+
+        const messageIds = resolveSelectedMessageIds();
+        if (messageIds.length === 0) {
+            showError('No emails selected');
+            return;
+        }
+
+        setIsExportingEml(true);
+        const progressToastId =
+            messageIds.length > 1 ? showProgressToast('Exporting as EML…') : undefined;
+        try {
+            const result = await exportEml(messageIds);
+            dismissToast(progressToastId);
+
+            if (!result.success) {
+                if (result.statusCode !== 401) {
+                    const failedPreview = result.failed
+                        ?.slice(0, 3)
+                        .map((f) => f.reason || f.messageId)
+                        .filter(Boolean)
+                        .join('; ');
+                    showError(
+                        failedPreview
+                            ? `${result.message}: ${failedPreview}`
+                            : result.message || 'Failed to export as EML'
+                    );
+                }
+                return;
+            }
+
+            downloadBlobFile(result.blob, result.filename);
+            showSuccess(
+                messageIds.length === 1
+                    ? 'Email exported as EML'
+                    : `${messageIds.length} emails exported as EML`
+            );
+        } catch (error: any) {
+            dismissToast(progressToastId);
+            showError(error?.message || 'Failed to export as EML');
+        } finally {
+            setIsExportingEml(false);
+        }
+    };
 
     const markAsReadUnreadHandler = (isRead: boolean) => {
         let messageIds: string[] = Array.from(selectedEmails) as string[];
@@ -557,6 +699,7 @@ const ToolbarBox = () => {
 
     const isAllSelected = emails.length > 0 && selectedEmails.size === emails.length;
     const isIndeterminate = selectedEmails.size > 0 && selectedEmails.size < emails.length;
+    const canExportEml = isLocalFolderView && !isExportingEml && resolveSelectedMessageIds().length > 0;
 
     return (
         <>
@@ -609,6 +752,69 @@ const ToolbarBox = () => {
                                 tooltip="Refresh"
                             />
                         </a>
+
+                        {isLocalFolderView && (
+                            <>
+                                <input
+                                    ref={importEmlInputRef}
+                                    type="file"
+                                    accept=".eml,.zip,message/rfc822,application/zip"
+                                    multiple
+                                    className="d-none"
+                                    aria-hidden="true"
+                                    tabIndex={-1}
+                                    onChange={handleImportEmlFiles}
+                                />
+                                <a
+                                    href="#"
+                                    id="importEmlBtn"
+                                    className={`hover-link d-flex align-items-center icon-hover-effect${isImportingEml ? ' disabled' : ''}`}
+                                    onClick={openImportEmlPicker}
+                                    style={{ cursor: isImportingEml ? 'default' : 'pointer' }}
+                                    aria-label="Import EML"
+                                    aria-busy={isImportingEml}
+                                >
+                                    <InteractiveIcon
+                                        defaultIcon={uploadFileIcon}
+                                        hoverIcon={uploadFileIconHover}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip="Import EML / ZIP"
+                                    />
+                                </a>
+                                <a
+                                    href="#"
+                                    id="exportEmlBtn"
+                                    className={`hover-link d-flex align-items-center icon-hover-effect${!canExportEml ? ' disabled' : ''}`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        void handleExportEml();
+                                    }}
+                                    style={{
+                                        cursor: canExportEml ? 'pointer' : 'default',
+                                        opacity: canExportEml ? 1 : 0.45,
+                                    }}
+                                    aria-label="Export as EML"
+                                    aria-busy={isExportingEml}
+                                    aria-disabled={!canExportEml}
+                                >
+                                    <InteractiveIcon
+                                        defaultIcon={exportIcon}
+                                        hoverIcon={exportIconHover}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip="Export as EML"
+                                    />
+                                </a>
+                            </>
+                        )}
 
                         {showArrangeBy && (
                             <div className="arrange-by-toolbar">
@@ -741,7 +947,7 @@ const ToolbarBox = () => {
                                                         {moveToFolderOptions.localFolders?.length > 0 && (
                                                             <>
                                                                 <Dropdown.Divider />
-                                                                <Dropdown.Header>Local Folders</Dropdown.Header>
+                                                                <Dropdown.Header>Archived Mail</Dropdown.Header>
                                                                 {moveToFolderOptions.localFolders.map((folder: any) => (
                                                                     <Dropdown.Item
                                                                         key={folder.folderId || folder.value || folder.key}
@@ -761,11 +967,25 @@ const ToolbarBox = () => {
                                                             </Dropdown.Item>
                                                         )}
                                                         <Dropdown.Item onClick={() => createLocalFolderHandler()}>
-                                                            Create local folder
+                                                            Create archive folder
                                                         </Dropdown.Item>
                                                     </SimpleBar>
                                                 </Dropdown.Menu>
                                             </Dropdown>
+                                        )}
+
+                                        {isLocalFolderView && (
+                                            <>
+                                                <Dropdown.Divider />
+                                                <Dropdown.Item
+                                                    as="button"
+                                                    type="button"
+                                                    disabled={isExportingEml || resolveSelectedMessageIds().length === 0}
+                                                    onClick={() => void handleExportEml()}
+                                                >
+                                                    {isExportingEml ? 'Exporting…' : 'Export as EML'}
+                                                </Dropdown.Item>
+                                            </>
                                         )}
                                     </Dropdown.Menu>
                                 </Dropdown>

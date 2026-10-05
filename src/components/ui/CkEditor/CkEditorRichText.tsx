@@ -4,7 +4,7 @@ import SmartRepliesCard from '@components/ui/CkEditor/SmartRepliesCard';
 import { ClassicEditor } from 'ckeditor5';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import ckEditorConfig from '../../../config/ckeditor.config';
+import ckEditorConfig, { ckEditorSettingsConfig } from '../../../config/ckeditor.config';
 import { useScreen } from "@context/ScreenContext";
 
 interface CkEditorRichTextProps {
@@ -18,6 +18,8 @@ interface CkEditorRichTextProps {
   emailContent?: string; // For smart replies
   /** Focus the editable area once the editor is ready. */
   autoFocus?: boolean;
+  /** Settings signature editor uses a flat dark formatting toolbar. */
+  variant?: 'default' | 'settings';
 }
 
 function setupCustomFontColorMarker(editor: any) {
@@ -48,8 +50,11 @@ function setupCustomFontColorMarker(editor: any) {
 
 // ────────────────────────────────────────────────
 // Main React Component
-function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSmartReplyEnable, onGenerateEmailClose, onGenerateEmailInsert, emailContent, autoFocus = false }: CkEditorRichTextProps) {
-  const editorConfig = useMemo(() => ckEditorConfig, []);
+function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSmartReplyEnable, onGenerateEmailClose, onGenerateEmailInsert, emailContent, autoFocus = false, variant = 'default' }: CkEditorRichTextProps) {
+  const editorConfig = useMemo(
+    () => (variant === 'settings' ? ckEditorSettingsConfig : ckEditorConfig),
+    [variant],
+  );
   const aiRootRef = useRef<Root | null>(null);
   const smartRepliesRootRef = useRef<Root | null>(null);
   const editorRef = useRef<any>(null);
@@ -114,6 +119,8 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
   }, [isSmartReplyEnable, emailContent, id, smartRepliesContainerRef, editorRef, smartRepliesContainerRef.current]);
 
   const removeCKColorTooltips = useCallback(() => {
+    // Only strip tooltips from color-picker tiles — do not hide all .ck-tooltip
+    // elements (that was blocking Bold/Italic/etc. tooltips in settings & compose).
     document.querySelectorAll(`
       .ck-color-grid__tile,
       .ck-color-selector__remove-color,
@@ -121,10 +128,6 @@ function CkEditorRichText({ id, value = '', onChange, isGenerateEmailOpen, isSma
     `).forEach((el) => {
       el.removeAttribute('title');
       el.removeAttribute('data-cke-tooltip-text');
-    });
-
-    document.querySelectorAll('.ck-tooltip').forEach((el) => {
-      (el as HTMLElement).style.display = 'none';
     });
   }, []);
 

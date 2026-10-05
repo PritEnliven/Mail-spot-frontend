@@ -447,7 +447,7 @@ function SettingsPage() {
             <div className="single-header blue-line-aft">
                 <h2 className="box-title">Signature Settings</h2>
             </div>
-            <div className="setting-features pt-0 pb-0 pe-0 ">
+            <div className={`setting-features pt-0 pe-0 ${signatures.length > 0 ? 'pb-0' : ''}`}>
                 <div className="setting-features-sub-box">
                     <div className="setting-signature-box">
                         <div className="signature-table-new">
@@ -590,21 +590,24 @@ function SettingsPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="setting-quill w-100">
-                        <Controller
-                            name="body"
-                            control={control}
-                            render={({ field }) => (
-                                <Suspense fallback={<div className="form-control" style={{ height: '200px' }}>Loading editor...</div>}>
-                                    <CkEditorRichText
-                                        id="compose-email-body"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                    />
-                                </Suspense>
-                            )}
-                        />
-                    </div>
+                    {signatures.length > 0 && (
+                        <div className="setting-quill w-100">
+                            <Controller
+                                name="body"
+                                control={control}
+                                render={({ field }) => (
+                                    <Suspense fallback={<div className="form-control" style={{ height: '200px' }}>Loading editor...</div>}>
+                                        <CkEditorRichText
+                                            id="compose-email-body"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            variant="settings"
+                                        />
+                                    </Suspense>
+                                )}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
             {/* <div className="single-header blue-line-aft">

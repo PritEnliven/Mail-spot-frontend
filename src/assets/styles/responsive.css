@@ -61,7 +61,8 @@
   /* -------------------- Settings -------------------- */
   .setting-signature-box { max-width: 100% !important; }
   .setting-features { padding: 20px !important; }
-  .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { border-radius: 5px !important; margin-top: 0 !important; }
+  .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { border-radius: 5px !important; margin: 0 !important; padding: 4px 8px !important; background-color: #212121 !important; width: 100%;  }
+  .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel { display: flex; justify-content: center; }
   .setting-features .ck.ck-reset.ck-editor.ck-rounded-corners { border: 0; height: auto !important; }
 }
 /* ==========================================================================
@@ -351,7 +352,8 @@
   .contacts-pagination-summary, .contacts-pagination-controls { justify-self: center; }
   .contacts-pagination-spacer { display: none; }
   .contacts-toolbar-row { flex-wrap: wrap; }
-  .contacts-filters-row { width: 100%; }
+  .contacts-toolbar-left { width: 100%; flex-wrap: wrap; }
+  .contacts-filters-row { width: 100%; flex: 1 1 100%; }
   .contacts-toolbar-actions { width: 100%; justify-content: flex-end; }
   .contacts-page-limit-field { flex: 0 0 72px; }
   .contacts-page-main { padding: 12px !important; }
