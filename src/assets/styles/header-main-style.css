@@ -2704,7 +2704,7 @@ input::-webkit-search-cancel-button {
 .ck.ck-button.ck-on:not(.ck-disabled):hover, a.ck.ck-button.ck-on:not(.ck-disabled):hover { background: #fff; }
 .ck.ck-button:active, .ck.ck-button:focus, a.ck.ck-button:active, a.ck.ck-button:focus, .ck.ck-dropdown .ck-button.ck-dropdown__button.ck-off:active:focus, .ck.ck-dropdown .ck-button.ck-dropdown__button.ck-on:active:focus { border: none !important; box-shadow: none !important; outline: none !important; }
 .ck.ck-icon { font-size: 10px !important; }
-.ck.ck-button, a.ck.ck-button { border: 0 !important; min-height: auto;padding: 2px !important; height: 24px; border-radius: 3px !important; cursor: pointer !important; }
+.ck.ck-button, a.ck.ck-button { border: 0 !important; min-height: auto;padding: 2px !important; border-radius: 3px !important; cursor: pointer !important; }
 .ck .ck-dropdown { padding: 0 !important; }
 .ck.ck-button.ck-on.ck-button_with-text.ck-dropdown__button, .ck.ck-dropdown.ck-heading-dropdown button.ck.ck-button.ck-on.ck-button_with-text.ck-dropdown__button, .ck-on.ck-dropdown__button { background: #e5e8ea !important; }
 .ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color, a.ck.ck-button.ck-on .ck.ck-icon.ck-icon_inherit-color, .ck-on.ck-dropdown__button .ck.ck-icon.ck-icon_inherit-color, .ck-on.ck-dropdown__button .ck.ck-icon.ck-icon_inherit-color * { color: #fff !important; }
