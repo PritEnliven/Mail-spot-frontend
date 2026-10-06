@@ -139,7 +139,7 @@ function CalendarList() {
                             <li key={calendar._id} className="calendar-list-row">
                                 <span
                                     className="indicator-bage"
-                                    style={{ backgroundColor: calendar.color }}
+                                    style={{ backgroundColor: calendar.color, outline: "2px solid white" }}
                                 />
                                 <div className="mail-received-check-btn">
                                     <div className="checkbox-custom table-check">

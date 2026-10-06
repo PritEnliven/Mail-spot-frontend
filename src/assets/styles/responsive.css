@@ -59,11 +59,15 @@
    ========================================================================== */
 @media screen and (max-width: 1467px) {
   /* -------------------- Settings -------------------- */
-  .setting-signature-box { max-width: 100% !important; }
-  .setting-features { padding: 20px !important; }
-  .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { border-radius: 5px !important; margin: 0 !important; padding: 4px 8px !important; background-color: #212121 !important; width: 100%;  }
+  .Settings-main .setting-signature-box { width: 100% !important;padding-right: 16px; }
+  /* .setting-features { padding: 20px !important; } */
+   .setting-quill .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content { border-radius: 5px !important; margin: 0 !important; padding: 4px 8px !important; background-color: #212121 !important; width: 100%;  }
   .Settings-main .setting-quill .ck.ck-editor__top .ck-sticky-panel { display: flex; justify-content: center; }
-  .setting-features .ck.ck-reset.ck-editor.ck-rounded-corners { border: 0; height: auto !important; }
+  .setting-quill .ck.ck-reset.ck-editor.ck-rounded-corners { border: 0; height: auto !important; }
+  .setting-quill .setting-features-sub-box{
+    flex-direction: column;
+  }
+  .setting-quill .setting-quill{padding-right: 16px;}
 }
 /* ==========================================================================
    Breakpoint: 1200px
@@ -79,11 +83,21 @@
   .Calendar-main .mail-details-header>.d-flex.align-items-center.justify-content-between.w-100, .mail-details-header.is-calendar-header>.d-flex.align-items-center.justify-content-between.w-100 { min-width: 0; overflow: hidden; }
   .Calendar-main .top-search-container, .mail-details-header.is-calendar-header .top-search-container { min-width: 0; max-width: 100%; width: 100%; }
   .Calendar-main .mail-details-header>.two-sc-in.justify-content-end, .mail-details-header.is-calendar-header>.two-sc-in.justify-content-end { flex-shrink: 0; min-width: max-content; }
+
+  /* ------- Contact page ------- */
+  .contacts-toolbar-row {flex-wrap: wrap;row-gap: 12px;}    
+  .contacts-toolbar-row > .contacts-toolbar-left {display: contents;}
+  .contacts-toolbar-row .contacts-filters-row {order: 0;flex: 1 1 100%;width: 100%;}    
+  .contacts-toolbar-row .contacts-view-tabs {order: 1;}    
+  .contacts-toolbar-row > .contacts-toolbar-actions {order: 2;gap: 8px;min-width: 0;}    
+  .contacts-toolbar-row .contacts-sort-field {flex: 0 0 130px;width: 130px;min-width: 130px;}
+  .contacts-add-contact-btn span, .contacts-delete-selected-btn span, .contacts-export-btn span{display: none;}
 }
 /* ==========================================================================
    Breakpoint: 992px
    ========================================================================== */
 @media screen and (max-width: 992px) {
+  
   /* -------------------- Top Search -------------------- */
   .Calendar-main .top-search { width: 100%; position: fixed; background: #f5f5f5; left: 0; top: 0; height: 100%; border-bottom: 1px solid #d0d9de; z-index: 9999; margin: 0; opacity: 0; visibility: hidden; }
   .Calendar-main .top-search .t-search-group .form-control { border-radius: 0 !important; height: 42px !important; box-shadow: none !important; border-width: 0 0 1px 0 !important; }
@@ -344,6 +358,8 @@
   body .flatpickr-innerContainer { justify-content: center; }
   /* -------------------- Settings -------------------- */
   .setting-features { padding: 12px !important; }
+  .Settings-main .setting-signature-box{padding: 0;}
+  .Settings-main .setting-quill{padding: 0;}
   #my-tooltip { display: none !important; }
   /* -------------------- Contacts -------------------- */
   .contacts-table { max-height: none; min-height: 0; }
@@ -377,6 +393,10 @@
   /* -------------------- Move to folder  -------------------- */
   .move-to-folder-modal .modal-content-shadow { top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; min-width: 100% !important; height: auto !important; max-height: min(88dvh, 720px); }
   .move-to-folder-modal .modal-content-shadow.modal-show-open>div { animation: moveToSheetFadeUp 0.28s ease-out forwards; }
+
+
+  /* ---------- contact page --------- */
+    .contacts-toolbar-row > .contacts-toolbar-actions {flex: 1 1;justify-content: flex-end;}
 }
 /* ==========================================================================
   Breakpoint: 425px

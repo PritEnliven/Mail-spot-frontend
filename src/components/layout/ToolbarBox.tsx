@@ -28,6 +28,8 @@ import deleteIconHover from "@images/trash-icon-hover.svg";
 import deleteIcon from "@images/trash-icon.svg";
 import exportIconHover from "@images/export-icon-hover.svg";
 import exportIcon from "@images/export-icon.svg";
+import exportFolderIconHover from "@images/export-folder-icon-hover.svg";
+import exportFolderIcon from "@images/export-folder-icon.svg";
 import uploadFileIconHover from "@images/upload-file-icon-hover.svg";
 import uploadFileIcon from "@images/upload-file-icon.svg";
 import type { Email } from "@models/Email";
@@ -387,7 +389,7 @@ const ToolbarBox = () => {
         const progressToastId =
             messageIds.length > 1 ? showProgressToast('Exporting as EML…') : undefined;
         try {
-            const result = await exportEml(messageIds);
+            const result = await exportEml({ messageIds });
             dismissToast(progressToastId);
 
             if (!result.success) {
@@ -407,14 +409,51 @@ const ToolbarBox = () => {
             }
 
             downloadBlobFile(result.blob, result.filename);
+            const isZip = /\.zip$/i.test(result.filename);
             showSuccess(
-                messageIds.length === 1
-                    ? 'Email exported as EML'
-                    : `${messageIds.length} emails exported as EML`
+                isZip
+                    ? 'Thread exported as ZIP'
+                    : messageIds.length === 1
+                      ? 'Email exported as EML'
+                      : `${messageIds.length} emails exported as EML`
             );
         } catch (error: any) {
             dismissToast(progressToastId);
             showError(error?.message || 'Failed to export as EML');
+        } finally {
+            setIsExportingEml(false);
+        }
+    };
+
+    const handleExportFolder = async () => {
+        if (!isLocalFolderView || isExportingEml) return;
+
+        const folderId = getLocalFolderIdFromBoxName(boxName);
+        if (!folderId) {
+            showError('Folder not found');
+            return;
+        }
+
+        setIsExportingEml(true);
+        const progressToastId = showProgressToast('Exporting folder…');
+        try {
+            const result = await exportEml({ folderId });
+            dismissToast(progressToastId);
+
+            if (!result.success) {
+                if (result.statusCode !== 401) {
+                    showError(result.message || 'Failed to export folder');
+                }
+                return;
+            }
+
+            downloadBlobFile(result.blob, result.filename);
+            showSuccess(
+                /\.zip$/i.test(result.filename) ? 'Folder exported as ZIP' : 'Folder exported as EML'
+            );
+        } catch (error: any) {
+            dismissToast(progressToastId);
+            showError(error?.message || 'Failed to export folder');
         } finally {
             setIsExportingEml(false);
         }
@@ -700,6 +739,7 @@ const ToolbarBox = () => {
     const isAllSelected = emails.length > 0 && selectedEmails.size === emails.length;
     const isIndeterminate = selectedEmails.size > 0 && selectedEmails.size < emails.length;
     const canExportEml = isLocalFolderView && !isExportingEml && resolveSelectedMessageIds().length > 0;
+    const canExportFolder = isLocalFolderView && !isExportingEml && !!getLocalFolderIdFromBoxName(boxName);
 
     return (
         <>
@@ -813,6 +853,34 @@ const ToolbarBox = () => {
                                         tooltip="Export as EML"
                                     />
                                 </a>
+                                <a
+                                    href="#"
+                                    id="exportFolderBtn"
+                                    className={`hover-link d-flex align-items-center icon-hover-effect${!canExportFolder ? ' disabled' : ''}`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        void handleExportFolder();
+                                    }}
+                                    style={{
+                                        cursor: canExportFolder ? 'pointer' : 'default',
+                                        opacity: canExportFolder ? 1 : 0.45,
+                                    }}
+                                    aria-label="Export folder"
+                                    aria-busy={isExportingEml}
+                                    aria-disabled={!canExportFolder}
+                                >
+                                    <InteractiveIcon
+                                        defaultIcon={exportFolderIcon}
+                                        hoverIcon={exportFolderIconHover}
+                                        activeIcon=""
+                                        isActive={false}
+                                        alt=""
+                                        className="interactive-icon hover-image"
+                                        renderAs="img"
+                                        tooltip="Export folder"
+                                    />
+                                </a>
                             </>
                         )}
 
@@ -822,7 +890,7 @@ const ToolbarBox = () => {
                             </div>
                         )}
 
-                        {hasEmails && (
+                        { hasEmails && (
                             <div id="actionButtons" className="d-flex align-items-center action-buttons">
                                 <a
                                     href="#"

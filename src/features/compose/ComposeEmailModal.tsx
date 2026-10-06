@@ -1793,7 +1793,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                         <img src={scheduledIcon} alt="" width={20} height={20} />
                                     </div>
 
-                                    {!isComposeActionsCompact ? (
+                                    {!(isMobile || isComposeActionsCompact) ? (
                                         <>
                                             <div className="super-action-single-group-items">
                                                 <div className="custom-file-mail icon-hover-effect hover-link">
@@ -1989,7 +1989,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                             width={16}
                                                             height={16}
                                                         />
-                                                        Attachment
+                                                        Attachments
                                                     </Dropdown.Item>
 
                                                     <Dropdown.Divider />
@@ -2006,7 +2006,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                                                             width={16}
                                                             height={16}
                                                         />
-                                                        Manage Signature
+                                                        Insert Signature
                                                     </Dropdown.Item>
 
                                                     {signatures.map((signature) => (

@@ -78,7 +78,7 @@ export type ImportEmlResult =
 const MAX_IMPORT_FILES = 20;
 const MAX_EML_FILE_BYTES = 25 * 1024 * 1024;
 /** Same 25MB cap applies to uploaded zip archives. */
-const MAX_ZIP_FILE_BYTES = 25 * 1024 * 1024;
+const MAX_ZIP_FILE_BYTES = 500 * 1024 * 1024;
 /** @deprecated Use MAX_IMPORT_FILES */
 const MAX_EML_FILES = MAX_IMPORT_FILES;
 
@@ -160,23 +160,81 @@ async function moveToImap(payload: MoveToImapPayload) {
     }
 }
 
-/** POST /localFolder/exportEml — binary .eml (1) or .zip (2+). Local folders only. */
-async function exportEml(messageIds: string[]): Promise<ExportEmlResult> {
-    const fallbackMessage = 'Failed to export as EML';
-    const ids = [...new Set(messageIds.map((id) => id.trim()).filter(Boolean))];
+/** True when blob is a ZIP (PK..), even if the UI guessed .eml from selection count. */
+async function blobLooksLikeZip(blob: Blob): Promise<boolean> {
+    const type = String(blob.type || '').toLowerCase();
+    if (
+        type === 'application/zip' ||
+        type === 'application/x-zip-compressed' ||
+        type === 'multipart/x-zip'
+    ) {
+        return true;
+    }
+    try {
+        const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+        return header.length >= 2 && header[0] === 0x50 && header[1] === 0x4b; // "PK"
+    } catch {
+        return false;
+    }
+}
 
-    if (ids.length === 0) {
-        return { success: false, message: 'No emails selected', statusCode: 400 };
+function resolveExportFilename(isZip: boolean, selectedCount: number): string {
+    if (isZip) return `archived-mail-export-${Date.now()}.zip`;
+    return selectedCount === 1 ? 'email.eml' : 'emails-export.zip';
+}
+
+export type ExportEmlFormat = 'auto' | 'eml' | 'bundle' | 'zip';
+
+/** Exactly one of messageIds / folderId is required. */
+export type ExportEmlPayload =
+    | { messageIds: string[]; folderId?: never; format?: ExportEmlFormat }
+    | { folderId: string; messageIds?: never; format?: ExportEmlFormat };
+
+function resolveExportErrorMessage(
+    message: string | undefined,
+    statusCode: number | undefined,
+    mode: 'messages' | 'folder',
+    fallback: string
+): string {
+    const trimmed = message?.trim();
+    if (trimmed && trimmed !== 'Something went wrong') return trimmed;
+    if (mode === 'folder') {
+        if (statusCode === 404) return 'Folder not found';
+        if (statusCode === 400) return 'This folder has no emails to export';
+    }
+    return trimmed || fallback;
+}
+
+/** POST /localFolder/exportEml — binary .eml (1) or .zip (thread / multi / folder). Local folders only. */
+async function exportEml(payload: ExportEmlPayload): Promise<ExportEmlResult> {
+    const isFolderExport = 'folderId' in payload && typeof payload.folderId === 'string';
+    const fallbackMessage = isFolderExport ? 'Failed to export folder' : 'Failed to export as EML';
+    const format = payload.format;
+
+    let body: Record<string, unknown>;
+    let selectedCount = 0;
+
+    if (isFolderExport) {
+        const folderId = payload.folderId.trim();
+        if (!folderId) {
+            return { success: false, message: 'Invalid local folder', statusCode: 400 };
+        }
+        body = { folderId };
+        if (format) body.format = format;
+        // Unknown count; zip vs single .eml is decided from the response bytes.
+        selectedCount = 2;
+    } else {
+        const ids = [...new Set(payload.messageIds.map((id) => id.trim()).filter(Boolean))];
+        if (ids.length === 0) {
+            return { success: false, message: 'No emails selected', statusCode: 400 };
+        }
+        body = { messageIds: ids };
+        if (format) body.format = format;
+        selectedCount = ids.length;
     }
 
-    const filename = ids.length === 1 ? 'email.eml' : 'emails-export.zip';
-
     try {
-        const data = await postData(
-            'localFolder/exportEml',
-            { messageIds: ids },
-            { responseType: 'blob' }
-        );
+        const data = await postData('localFolder/exportEml', body, { responseType: 'blob' });
 
         if (!(data instanceof Blob)) {
             return { success: false, message: fallbackMessage, statusCode: 500 };
@@ -184,26 +242,69 @@ async function exportEml(messageIds: string[]): Promise<ExportEmlResult> {
 
         if (isJsonBlob(data)) {
             const { message, failed } = await parseExportErrorBlob(data, fallbackMessage);
-            return { success: false, message, statusCode: 400, failed };
+            return {
+                success: false,
+                message: resolveExportErrorMessage(message, 400, isFolderExport ? 'folder' : 'messages', fallbackMessage),
+                statusCode: 400,
+                failed,
+            };
         }
 
-        return { success: true, blob: data, filename };
+        // Backend expands a single selected thread into a ZIP. Never trust
+        // selection count alone for the download extension.
+        const isZip = await blobLooksLikeZip(data);
+        const filename = resolveExportFilename(
+            isZip,
+            isFolderExport ? (isZip ? 2 : 1) : selectedCount
+        );
+        const blob = isZip
+            ? new Blob([data], { type: 'application/zip' })
+            : new Blob([data], { type: data.type || 'message/rfc822' });
+
+        return { success: true, blob, filename };
     } catch (error: any) {
         if (error instanceof Blob) {
             const { message, failed } = await parseExportErrorBlob(error, fallbackMessage);
-            return { success: false, message, statusCode: 400, failed };
+            return {
+                success: false,
+                message: resolveExportErrorMessage(
+                    message,
+                    400,
+                    isFolderExport ? 'folder' : 'messages',
+                    fallbackMessage
+                ),
+                statusCode: 400,
+                failed,
+            };
         }
 
         // Axios interceptor may leave a Blob on error.response-shaped rejects
         if (error?.data instanceof Blob) {
+            const statusCode = error?.statusCode || 400;
             const { message, failed } = await parseExportErrorBlob(error.data, fallbackMessage);
-            return { success: false, message, statusCode: error?.statusCode || 400, failed };
+            return {
+                success: false,
+                message: resolveExportErrorMessage(
+                    message,
+                    statusCode,
+                    isFolderExport ? 'folder' : 'messages',
+                    fallbackMessage
+                ),
+                statusCode,
+                failed,
+            };
         }
 
+        const statusCode = error?.statusCode || 500;
         return {
             success: false,
-            message: error?.message || fallbackMessage,
-            statusCode: error?.statusCode || 500,
+            message: resolveExportErrorMessage(
+                error?.message,
+                statusCode,
+                isFolderExport ? 'folder' : 'messages',
+                fallbackMessage
+            ),
+            statusCode,
             failed: Array.isArray(error?.failed) ? error.failed : undefined,
         };
     }
@@ -233,9 +334,9 @@ function isAllowedImportFile(file: File): boolean {
 /** Client-side checks before calling importEml. Returns an error message or null. */
 function validateEmlFilesForImport(files: File[]): string | null {
     if (!files.length) return 'No files selected';
-    if (files.length > MAX_IMPORT_FILES) {
-        return `You can import at most ${MAX_IMPORT_FILES} files at a time`;
-    }
+    // if (files.length > MAX_IMPORT_FILES) {
+    //     return `You can import at most ${MAX_IMPORT_FILES} files at a time`;
+    // }
     for (const file of files) {
         if (!isAllowedImportFile(file)) {
             return `"${file.name}" must be an EML or ZIP file`;
