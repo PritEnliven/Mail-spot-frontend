@@ -25,13 +25,13 @@ export function useCustomFolderScrollbar() {
         topFade.style.opacity = Math.min(scrollTop / 60, 1).toString();
         bottomFade.style.opacity = Math.min((maxScroll - scrollTop) / 60, 1).toString();
 
-        // ── Scrollbar visibility
-        if (contentHeight <= visibleHeight) {
+        // ── Scrollbar visibility (1px covers subpixel rounding after collapse)
+        if (contentHeight - visibleHeight <= 1) {
             bar.classList.remove('visible');
             handle.style.height = '100%';
             handle.style.top = '0px';
             return;
-        }                
+        }
 
         bar.classList.add('visible');
 

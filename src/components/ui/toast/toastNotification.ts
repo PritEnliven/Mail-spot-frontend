@@ -1,4 +1,4 @@
-import { createElement } from 'react';
+import { createElement, type MouseEvent as ReactMouseEvent } from 'react';
 import { toast } from 'react-toastify';
 import type { ToastOptions } from 'react-toastify';
 import mailspotIcon from '@images/mailspot-fevicon.svg';
@@ -84,6 +84,53 @@ const clearAllToasts = () => {
     toast.dismiss();
 };
 
+export type OutboundSendFailedToastOptions = {
+    error: string;
+    permanent?: boolean;
+    onReconnect?: () => void;
+};
+
+/** Error toast for outbound SMTP failure; optional Reconnect CTA when permanent. */
+const showOutboundSendFailedToast = ({
+    error,
+    permanent,
+    onReconnect,
+}: OutboundSendFailedToastOptions) => {
+    if (toastsSuppressed) return;
+    const message = error?.trim() || 'Failed to send email. Please try again.';
+
+    if (!permanent || !onReconnect) {
+        showError(message, { autoClose: 6000 });
+        return;
+    }
+
+    toast.error(
+        createElement(
+            'div',
+            { className: 'outbound-send-failed-toast' },
+            createElement('div', { className: 'outbound-send-failed-toast__msg' }, message),
+            createElement(
+                'button',
+                {
+                    type: 'button',
+                    className: 'btn btn-new outbound-send-failed-toast__cta',
+                    onClick: (e: ReactMouseEvent<HTMLButtonElement>) => {
+                        e.stopPropagation();
+                        onReconnect();
+                        toast.dismiss();
+                    },
+                },
+                'Reconnect / Check account'
+            )
+        ),
+        {
+            ...baseOptions,
+            autoClose: 10000,
+            closeOnClick: false,
+        }
+    );
+};
+
 export {
     showSuccess,
     showError,
@@ -91,6 +138,7 @@ export {
     showWarning,
     showProgressToast,
     showMovingEmailToast,
+    showOutboundSendFailedToast,
     dismissToast,
     clearAllToasts,
     suppressAllToasts,

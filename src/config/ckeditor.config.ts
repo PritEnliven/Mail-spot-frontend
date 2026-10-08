@@ -1831,9 +1831,7 @@ function GmailImageOptionsPlugin(editor: any) {
         { name: 'imageSizeBestFit', label: 'Best fit', width: '100%' },
         { name: 'imageSizeOriginal', label: 'Original size', width: null },
     ];
- 
-    
- 
+  
     for (const option of sizeOptions) {
         editor.ui.componentFactory.add(option.name, (locale: any) => {
             const view = new ButtonView(locale);

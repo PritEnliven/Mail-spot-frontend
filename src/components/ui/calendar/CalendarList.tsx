@@ -57,7 +57,7 @@ function CalendarList() {
         setOpenDropdownId(null);
         openModal('confirmDelete', {
             title: 'Delete calendar',
-            message: 'Events on this calendar will be moved to My Calendar. This cannot be undone.',
+            message: 'Events on this calendar will be moved to My Calendar. .',
             onConfirm: () => handleDelete(calendar),
         });
     };

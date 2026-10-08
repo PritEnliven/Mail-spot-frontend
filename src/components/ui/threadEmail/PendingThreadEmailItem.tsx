@@ -69,7 +69,7 @@ const PendingThreadEmailItem = ({ reply, index }: PendingThreadEmailItemProps) =
                                         <span className={`pending-status-badge${isFailed ? ' pending-status-badge--failed' : ''}`}>
                                             {isFailed
                                                 ? (reply.errorMessage || 'Send failed')
-                                                : 'Pending'}
+                                                : 'Trying…'}
                                         </span>
                                     )}
                                 </div>
@@ -94,7 +94,7 @@ const PendingThreadEmailItem = ({ reply, index }: PendingThreadEmailItemProps) =
                                     <span className={`pending-status-badge${isFailed ? ' pending-status-badge--failed' : ''}`}>
                                         {isFailed
                                             ? (reply.errorMessage || 'Send failed')
-                                            : 'Pending'}
+                                            : 'Trying…'}
                                     </span>
                                 )}
                             </div>

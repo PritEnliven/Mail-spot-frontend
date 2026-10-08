@@ -17,6 +17,7 @@ const MoveToFolderModal = lazy(() => import('./Modals/MoveToFolder/MoveToFolderM
 const EditRuleModal = lazy(() => import('./Modals/EditRuleModal/EditRuleModal'));
 const ContactFormModal = lazy(() => import('@features/contacts/ContactFormModal'));
 const CreateGroupModal = lazy(() => import('@features/contacts/CreateGroupModal'));
+const GroupDetailModal = lazy(() => import('@features/contacts/GroupDetailModal'));
 const CalendarFormModal = lazy(() => import('./Modals/CalendarFormModal/CalendarFormModal'));
 
 const BASE_Z_INDEX = 1050;
@@ -196,6 +197,16 @@ function ModalRoot() {
                     case 'createGroup':
                         content = (
                             <CreateGroupModal
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+                        break;
+
+                    case 'groupDetail':
+                        content = (
+                            <GroupDetailModal
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}

@@ -21,18 +21,28 @@ interface ConfirmDeleteProps {
     showIcon?: boolean;
 }
 
+/** Prefix delete copy with "Are you sure you want to" when callers pass a plain action sentence. */
+function withAreYouSurePrefix(message: string, isDeleteDialog: boolean): string {
+    const trimmed = message.trim();
+    if (!trimmed) return 'Are you sure you want to to do this?';
+    if (/^are you sure\b/i.test(trimmed)) return trimmed;
+    if (!isDeleteDialog) return trimmed;
+    return `Are you sure you want to ${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
+}
+
 function ConfirmDelete({
     modalId,
     zIndex,
     onConfirm,
     onCancel,
     title = "Confirm to Delete",
-    message = "Are you sure to do this?",
+    message = "Are you sure you want to to do this?",
     confirmLabel = "Yes",
     cancelLabel = "No",
     showIcon = true,
 }: ConfirmDeleteProps) {
     const { closeModal } = useMailUI();
+    const displayMessage = withAreYouSurePrefix(message, showIcon);
 
     const handleConfirm = async () => {
         try {
@@ -110,7 +120,7 @@ function ConfirmDelete({
                         <div className="modal-body" data-simplebar data-simplebar-auto-hide="false">
                             <p className="text-center mb-4 d-flex align-items-center">
                                 {showIcon && <img src={trashIconDeleteBox} alt="" className="me-2" />}
-                                {message}
+                                {displayMessage}
                             </p>
                             <div className="d-flex align-items-center justify-content-between">
                                 <button className="btn-new me-3" type="button" onClick={handleCancel}>{cancelLabel}</button>

@@ -10,9 +10,33 @@ import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
 import { getActiveAccountId, LINKED_ACCOUNT_SIGNED_OUT_EVENT, type LinkedAccountSignedOutEventDetail } from '@services/apiService';
-import { showWarning } from '@components/ui/toast/toastNotification';
+import { showOutboundSendFailedToast, showWarning } from '@components/ui/toast/toastNotification';
 import { DEFAULT_SORT_ORDER, type ArrangeBy, type SortOrder } from '@constants/arrangeBy';
 import { mergeIntoArrangedList } from '@utils/arrangeEmailUtil';
+import { dispatchOpenAccountReauth } from '@services/accounts/accountService';
+import { resolvePendingOutboundSend } from '@services/socket/pendingOutboundSend';
+
+export type OutboundSendFailedPayload = {
+    clientMessageId?: string;
+    emailId?: string;
+    status?: string;
+    error?: string;
+    permanent?: boolean;
+    threadId?: string;
+    boxName?: string;
+    accountId?: string;
+    accountEmail?: string;
+    email?: string;
+};
+
+export type OutboundSendSentPayload = {
+    clientMessageId?: string;
+    emailId?: string;
+    status?: string;
+    threadId?: string;
+    boxName?: string;
+    accountId?: string;
+};
 
 type EventCallback = (...args: any[]) => void;
 
@@ -584,7 +608,43 @@ export const useLinkedAccountSignedOut = () => {
     }, [activeAccountId, commitActiveAccount, prepareMailboxForAccount, primaryAccount]);
 };
 
+/**
+ * Compose / new-mail SMTP outcome (async after HTTP 200 pending).
+ * Replies keep using outboundReplyFailed / outboundReplySent in EmailDetail.
+ */
+export const useOutboundSendSocket = () => {
+    const { linkedAccounts, primaryAccount } = useAccount();
 
+    const resolveAccountEmail = (payload: OutboundSendFailedPayload, pendingEmail?: string) => {
+        if (payload.accountEmail || payload.email || pendingEmail) {
+            return payload.accountEmail || payload.email || pendingEmail;
+        }
+        const accountId = payload.accountId;
+        if (!accountId) return undefined;
+        if (primaryAccount?.id === accountId) return primaryAccount.email;
+        return linkedAccounts.find((a) => a.id === accountId)?.email;
+    };
 
+    useSocketEvent('outboundSendSent', (payload: OutboundSendSentPayload) => {
+        resolvePendingOutboundSend(payload?.clientMessageId);
+    });
 
+    useSocketEvent('outboundSendFailed', (payload: OutboundSendFailedPayload) => {
+        const pending = resolvePendingOutboundSend(payload?.clientMessageId);
+        const error = payload?.error?.trim() || 'Failed to send email. Please try again.';
+        const permanent = payload?.permanent === true;
+        const email = resolveAccountEmail(payload ?? {}, pending?.accountEmail);
 
+        showOutboundSendFailedToast({
+            error,
+            permanent,
+            onReconnect: permanent
+                ? () =>
+                      dispatchOpenAccountReauth({
+                          accountId: payload?.accountId || pending?.accountId,
+                          email,
+                      })
+                : undefined,
+        });
+    });
+};

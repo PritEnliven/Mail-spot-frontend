@@ -81,7 +81,7 @@ function AdminConfirmDelete({ modalId, zIndex, onConfirm }: AdminConfirmDeletePr
                         <div className="modal-body" data-simplebar data-simplebar-auto-hide="false">
                             <p className="text-center mb-4 d-flex align-items-center">
                                 <img src={trashIconDeleteBox} alt="" className="me-2" />
-                                Are you sure you want to delete this user?
+                                Are you sure you want to you want to delete this user?
                             </p>
                             <div className="d-flex align-items-center justify-content-between">
                                 <button className="btn-new me-3" type="button" onClick={onClose}>No</button>

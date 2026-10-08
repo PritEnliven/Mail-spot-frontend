@@ -11,7 +11,11 @@ import {
   getAccountInitials,
   usePerformAccountSwitch,
 } from '@hooks/usePerformAccountSwitch';
-import { isLinkedAccountSignedOut } from '@services/accounts/accountService';
+import {
+  isLinkedAccountSignedOut,
+  OPEN_ACCOUNT_REAUTH_EVENT,
+  type OpenAccountReauthDetail,
+} from '@services/accounts/accountService';
 import moreActionIcon from '@images/ellipsis-vertical-icon.svg';
 import moreActionIconHover from '@images/ellipsis-vertical-icon-hover.svg';
 import trashIcon from '@images/trash-icon.svg';
@@ -111,6 +115,37 @@ const AccountSwitcher = ({ onAccountSwitch, onNestedOverlayChange }: AccountSwit
     onNestedOverlayChange?.(nestedOverlayOpen);
     return () => onNestedOverlayChange?.(false);
   }, [nestedOverlayOpen, onNestedOverlayChange]);
+
+  // Outbound send permanent failure → open re-auth / check account modal
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<OpenAccountReauthDetail>).detail || {};
+      const byId = detail.accountId
+        ? linkedAccounts.find((a) => a.id === detail.accountId)
+        : undefined;
+      const byEmail = detail.email
+        ? linkedAccounts.find(
+            (a) => a.email.toLowerCase() === detail.email!.toLowerCase()
+          )
+        : undefined;
+      const account = byId || byEmail;
+      const email =
+        account?.email ||
+        detail.email ||
+        (primaryAccount?.id === detail.accountId ? primaryAccount.email : undefined);
+
+      if (!email) {
+        setReauthEmail(null);
+        setAddModalOpen(true);
+        return;
+      }
+      setReauthEmail(email);
+      setAddModalOpen(true);
+    };
+
+    window.addEventListener(OPEN_ACCOUNT_REAUTH_EVENT, handler);
+    return () => window.removeEventListener(OPEN_ACCOUNT_REAUTH_EVENT, handler);
+  }, [linkedAccounts, primaryAccount]);
 
   const toggleMoreMenu = (accountId: string, event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();

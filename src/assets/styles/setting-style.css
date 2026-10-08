@@ -925,6 +925,22 @@ span.shortcut-name-text {
     padding: 0 !important;
 }
 
+.contacts-delete-selected-btn--compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: auto !important;
+    min-width: 32px !important;
+    padding: 0 6px 0 4px !important;
+}
+
+.contacts-delete-selected-count {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    color: #212121;
+}
+
 .contacts-delete-selected-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -1414,5 +1430,62 @@ span.shortcut-name-text {
 
 .contact-hover-popup__list-text {
     min-width: 0;
+    word-break: break-word;
+}
+
+/* Contact groups */
+.contacts-group-row {
+    cursor: pointer;
+}
+
+.contacts-group-open-btn {
+    display: inline;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+}
+
+.contacts-group-open-btn:hover {
+    text-decoration: underline;
+}
+
+button.contact-mobile-item__name.contacts-group-open-btn {
+    word-break: break-word;
+}
+
+.contacts-group-member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.contacts-group-member-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid #e5e8ea;
+    border-radius: 6px;
+}
+
+.contacts-group-member-list__name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #212121;
+    word-break: break-word;
+}
+
+.contacts-group-member-list__email {
+    font-size: 12px;
+    color: #516068;
     word-break: break-word;
 }

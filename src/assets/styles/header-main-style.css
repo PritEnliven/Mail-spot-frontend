@@ -102,8 +102,9 @@ p {
 .left-side-bar-main nav {
   /* height: calc(100vh - 131px); */
   height: calc(100vh - 119px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* Custom scrollbar lives on .nav-custom-scroll-content; keep nav itself
+     from also scrolling or two bars appear when folder sections collapse. */
+  overflow: hidden;
   padding-top: 8px;
   padding-bottom: 8px;
 }
@@ -4886,7 +4887,7 @@ hr {
   display: none;
 }
 
-.create-folder-sec:hover .nav-custom-scroll-scrollbar {
+.create-folder-sec:hover .add-floder-single-box.show .nav-custom-scroll-scrollbar.visible {
   display: block;
 }
 
@@ -6183,9 +6184,14 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
 
 .create-new-folder-sec {
   max-height: 202px;
-  overflow: auto;
+  overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: none;
   padding-bottom: 0;
+}
+
+.create-new-folder-sec::-webkit-scrollbar {
+  display: none;
 }
 
 .create-new-sab-folder-icon {

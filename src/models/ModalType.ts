@@ -17,5 +17,6 @@ export type ModalType =
     'editRule' |
     'contactForm' |
     'createGroup' |
+    'groupDetail' |
     'calendarForm' |
 null;

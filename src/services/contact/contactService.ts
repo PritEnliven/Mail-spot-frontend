@@ -1,4 +1,11 @@
-import type { ContactFormValues, ContactListResponse, ContactSortField } from '@models/Contact';
+import type {
+    ContactFormValues,
+    ContactGroupListResponse,
+    ContactGroupSortField,
+    ContactGroupSortOrder,
+    ContactListResponse,
+    ContactSortField,
+} from '@models/Contact';
 import { deleteData, getData, postData, putData } from '../apiService';
 
 export interface GetContactsParams {
@@ -6,6 +13,14 @@ export interface GetContactsParams {
     page?: number;
     limit?: number;
     sort?: ContactSortField;
+}
+
+export interface GetContactGroupsParams {
+    q?: string;
+    page?: number;
+    limit?: number;
+    sort?: ContactGroupSortField;
+    order?: ContactGroupSortOrder;
 }
 
 export type ContactExportFormat = 'csv' | 'vcf';
@@ -119,15 +134,115 @@ export interface CreateContactGroupPayload {
     memberIds?: string[];
 }
 
+export type EditContactGroupPayload = CreateContactGroupPayload;
+
+function buildContactGroupPayload(payload: CreateContactGroupPayload) {
+    return {
+        name: payload.name.trim(),
+        memberIds: (payload.memberIds ?? []).map((id) => id.trim()).filter(Boolean),
+    };
+}
+
 async function createContactGroup(payload: CreateContactGroupPayload) {
     try {
-        const response = await postData('contact/group/add', {
-            name: payload.name.trim(),
-            memberIds: (payload.memberIds ?? []).map((id) => id.trim()).filter(Boolean),
+        const response = await postData('contact/group/add', buildContactGroupPayload(payload));
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function editContactGroup(groupId: string, payload: EditContactGroupPayload) {
+    try {
+        const response = await putData(
+            `contact/group/edit/${groupId}`,
+            buildContactGroupPayload(payload),
+        );
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function getContactGroupsList(params: GetContactGroupsParams = {}) {
+    try {
+        const response = await getData('contact/group/get', {
+            params: {
+                q: params.q ?? '',
+                page: params.page ?? 1,
+                limit: params.limit ?? 50,
+                sort: params.sort ?? 'name',
+                order: params.order ?? 'asc',
+            },
         });
         return response;
     } catch (error: any) {
         return error;
+    }
+}
+
+async function getContactGroupById(groupId: string) {
+    try {
+        const response = await getData(`contact/group/get/${groupId}`);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function deleteContactGroup(groupId: string) {
+    try {
+        const response = await deleteData(`contact/group/delete/${groupId}`, {});
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+export type DeleteContactGroupsResult =
+    | { success: true; deletedIds: string[]; statusCode: number; message: string }
+    | { success: false; deletedIds: string[]; statusCode?: number; message: string };
+
+/** Bulk delete: `DELETE /contact/group/delete` with JSON body `{ ids: string[] }`. */
+async function deleteContactGroups(groupIds: string[]): Promise<DeleteContactGroupsResult> {
+    const ids = [...new Set(groupIds.map((id) => id.trim()).filter(Boolean))];
+
+    if (ids.length === 0) {
+        return {
+            success: false,
+            deletedIds: [],
+            statusCode: 400,
+            message: 'No groups selected',
+        };
+    }
+
+    try {
+        const response = await deleteData('contact/group/delete', { ids });
+        if (response?.statusCode === 200) {
+            return {
+                success: true,
+                deletedIds: ids,
+                statusCode: 200,
+                message:
+                    response?.message
+                    || (ids.length === 1
+                        ? 'Group deleted successfully'
+                        : `${ids.length} groups deleted successfully`),
+            };
+        }
+        return {
+            success: false,
+            deletedIds: [],
+            statusCode: response?.statusCode,
+            message: response?.message || 'Failed to delete groups',
+        };
+    } catch (error: any) {
+        return {
+            success: false,
+            deletedIds: [],
+            statusCode: error?.statusCode,
+            message: error?.message || 'Failed to delete groups',
+        };
     }
 }
 
@@ -281,14 +396,19 @@ export {
     addContacts,
     createContactGroup,
     deleteContact,
+    deleteContactGroup,
+    deleteContactGroups,
     deleteContacts,
     downloadBlobFile,
     editContact,
+    editContactGroup,
     exportContacts,
     getAllContacts,
     getContactById,
+    getContactGroupById,
+    getContactGroupsList,
     getContactsList,
     searchContacts,
 };
 
-export type { ContactListResponse };
+export type { ContactGroupListResponse, ContactListResponse };

@@ -125,6 +125,8 @@ export function useSidebarFadeScrollbar(): UseSidebarFadeScrollbarReturn {
         const mutationObserver = new MutationObserver(() => {
             observeSectionSizes();
             syncAll();
+            // Re-sync after Bootstrap collapse height transition finishes.
+            window.setTimeout(syncAll, 350);
         });
         mutationObserver.observe(el, {
             childList: true,

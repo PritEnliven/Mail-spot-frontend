@@ -1468,6 +1468,9 @@ export interface MultiOption {
   name?: string;
   email?: string;
   isSuggestion?: boolean;
+  isGroup?: boolean;
+  memberEmails?: string[];
+  memberCount?: number;
   __isNew__?: boolean;
 }
 
@@ -1873,8 +1876,15 @@ const mapMultiOptions = (
 
   const mapped = options
     .map(opt => {
-      const value = opt.email || opt.value || '';
-      const label = opt.name || opt.email || opt.label || '';
+      const isGroup = Boolean(opt.isGroup);
+      const value = isGroup
+        ? (opt.value || '')
+        : (opt.email || opt.value || '');
+      const memberCount = opt.memberCount
+        ?? (Array.isArray(opt.memberEmails) ? opt.memberEmails.length : 0);
+      const label = isGroup
+        ? (opt.label || (memberCount > 0 ? `${opt.name || 'Group'} (${memberCount})` : (opt.name || 'Group')))
+        : (opt.name || opt.email || opt.label || '');
       if (!value || !label) return null;
 
       if (cache) {
@@ -1885,7 +1895,9 @@ const mapMultiOptions = (
           prev.label === label &&
           prev.name === opt.name &&
           prev.email === opt.email &&
-          prev.isSuggestion === opt.isSuggestion;
+          prev.isSuggestion === opt.isSuggestion &&
+          prev.isGroup === opt.isGroup &&
+          prev.memberCount === opt.memberCount;
 
         if (unchanged) {
           nextCache!.set(value, prev!);
@@ -1893,7 +1905,7 @@ const mapMultiOptions = (
         }
       }
 
-      const mappedOpt: MappedOption = { ...opt, value, label };
+      const mappedOpt: MappedOption = { ...opt, value, label, isGroup, memberCount };
       nextCache?.set(value, mappedOpt);
       return mappedOpt;
     })
@@ -1960,10 +1972,6 @@ const MultiSelect = ({
   const optionsCacheRef = useRef<Map<string, MappedOption>>(new Map());
   const [isActiveSelect, setIsActiveSelect] = useState(false);
 
-  const handleChange = (selected: MultiValue<MappedOption>) => {
-    onChange(selected.map((opt) => opt.value));
-  };
-
   // Memoized (and identity-cached, see mapMultiOptions) so that unrelated
   // re-renders — or even a genuine new page of contacts loading in — don't
   // hand react-select a brand-new `options` array/objects unless the
@@ -1971,18 +1979,18 @@ const MultiSelect = ({
   // matters for keeping the scroll position stable while paginating.
   const transformedOptions = useMemo(() => {
     const mapped = mapMultiOptions(options, optionsCacheRef.current);
-    // Defense in depth: keep Suggested rows first even if the parent list is alphabetical.
-    const suggestions = mapped.filter((opt) => opt.isSuggestion);
-    if (suggestions.length === 0) return mapped;
-    const addressBook = mapped.filter((opt) => !opt.isSuggestion);
-    return [...suggestions, ...addressBook];
+    // Groups first, then suggestions, then address-book contacts.
+    const groups = mapped.filter((opt) => opt.isGroup);
+    const suggestions = mapped.filter((opt) => !opt.isGroup && opt.isSuggestion);
+    const addressBook = mapped.filter((opt) => !opt.isGroup && !opt.isSuggestion);
+    return [...groups, ...suggestions, ...addressBook];
   }, [options]);
 
   const createdOptions: MappedOption[] = useMemo(
     () =>
       value
         .filter((val): val is string => Boolean(val))
-        .filter(val => !transformedOptions.some(opt => opt.value === val))
+        .filter(val => !transformedOptions.some(opt => opt.value === val || opt.email === val))
         .map(val => ({
           value: val,
           label: val,
@@ -2011,6 +2019,31 @@ const MultiSelect = ({
     if (!isValidNewValue(inputValue)) return;
     if (value.includes(inputValue)) return;
     onChange([...value, inputValue]);
+  };
+
+  const handleChange = (selected: MultiValue<MappedOption>) => {
+    const next: string[] = [];
+    const seen = new Set<string>();
+
+    const pushEmail = (email: string) => {
+      const trimmed = email.trim();
+      const key = trimmed.toLowerCase();
+      if (!trimmed || key.startsWith('group:') || seen.has(key)) return;
+      seen.add(key);
+      next.push(trimmed);
+    };
+
+    for (const opt of selected) {
+      if (opt?.isGroup) {
+        for (const memberEmail of opt.memberEmails ?? []) {
+          pushEmail(memberEmail);
+        }
+        continue;
+      }
+      pushEmail(opt?.email || opt?.value || '');
+    }
+
+    onChange(next);
   };
 
   const handleOpen = () => {
@@ -2074,6 +2107,27 @@ const MultiSelect = ({
       }}
       createOptionPosition="first"
       formatOptionLabel={(option: MappedOption, { context }: { context: 'menu' | 'value' }) => {
+        if (option.isGroup) {
+          const groupName = option.name || option.label || 'Group';
+          const memberCount = option.memberCount
+            ?? (Array.isArray(option.memberEmails) ? option.memberEmails.length : 0);
+          const initial = groupName.charAt(0).toUpperCase() || 'G';
+
+          return (
+            <div className="profile-main">
+              <div className="profile">{initial}</div>
+              <div className="user-name">
+                <span className="name me-1">{groupName}</span>
+                {context === 'menu' && (
+                  <span className="email">
+                    {memberCount} {memberCount === 1 ? 'member' : 'members'}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        }
+
         const email = option.email || option.value || '';
         const displayName = option.name || option.label || email;
         const initial = displayName.charAt(0).toUpperCase();
@@ -2083,7 +2137,7 @@ const MultiSelect = ({
             <div className="profile">{initial}</div>
             <div className="user-name">
               <span className="name me-1">{displayName}</span>
-              {context === 'menu' && email && email !== displayName && (
+              {email && email !== displayName && (
                 <span className="email">{email}</span>
               )}
               {context === 'menu' && showSuggestionBadge && option.isSuggestion && (

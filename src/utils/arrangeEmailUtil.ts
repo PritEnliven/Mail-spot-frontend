@@ -177,6 +177,29 @@ export function recomputeGroupStarts(emails: Email[]): Email[] {
 }
 
 /**
+ * Append a server page onto an arranged list without re-sorting existing rows.
+ * Dedupes by messageId, then refreshes group-start flags across the boundary.
+ */
+export function appendArrangedPage(prev: Email[], nextPage: Email[]): Email[] {
+    if (!nextPage.length) return prev;
+
+    const seen = new Set<string>();
+    for (const email of prev) {
+        if (email?.messageId) seen.add(email.messageId);
+    }
+
+    const toAppend: Email[] = [];
+    for (const email of nextPage) {
+        if (!email?.messageId || seen.has(email.messageId)) continue;
+        seen.add(email.messageId);
+        toAppend.push(email);
+    }
+
+    if (toAppend.length === 0) return prev;
+    return recomputeGroupStarts([...prev, ...toAppend]);
+}
+
+/**
  * Upsert incoming emails into an arranged list: assign group labels, sort by
  * arrangeBy/sortOrder, and refresh isGroupStart flags.
  */

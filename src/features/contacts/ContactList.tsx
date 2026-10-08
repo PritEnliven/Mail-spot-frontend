@@ -384,7 +384,7 @@ function ContactPreviewCell({
     );
 }
 
-function MultiValueCell({ values, label }: { values: string[]; label: string }) {
+export function MultiValueCell({ values, label }: { values: string[]; label: string }) {
     const {
         open,
         triggerRef,

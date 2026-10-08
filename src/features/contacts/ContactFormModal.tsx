@@ -45,7 +45,20 @@ interface ContactFormModalProps {
     zIndex: number;
     isEdit?: boolean;
     contact?: Contact | null;
-    onSuccess?: () => void;
+    onSuccess?: (updated?: Contact) => void;
+}
+
+function extractUpdatedContact(data: unknown, fallbackId?: string): Contact | undefined {
+    if (!data || typeof data !== 'object') return undefined;
+    const payload = data as Record<string, unknown>;
+    const candidate = (payload.contact ?? payload) as Contact | undefined;
+    if (candidate && typeof candidate === 'object' && candidate._id) {
+        return candidate;
+    }
+    if (fallbackId && candidate && typeof candidate === 'object') {
+        return { ...(candidate as Contact), _id: fallbackId };
+    }
+    return undefined;
 }
 
 function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess }: ContactFormModalProps) {
@@ -165,14 +178,18 @@ function ContactFormModal({ modalId, zIndex, isEdit = false, contact, onSuccess 
             ? await editContact(contact._id, payload)
             : await addContact(payload);
 
-        if (response?.statusCode === 200) {
+        if (response?.statusCode === 200 || response?.statusCode === 201) {
             const message = response.message === 'Already exists'
                 ? 'Contact already exists'
                 : isEdit
                     ? 'Contact updated successfully'
                     : 'Contact added successfully';
             showSuccess(message);
-            onSuccess?.();
+            onSuccess?.(
+                isEdit
+                    ? extractUpdatedContact(response.data, contact?._id)
+                    : extractUpdatedContact(response.data),
+            );
             onClose();
             return;
         }

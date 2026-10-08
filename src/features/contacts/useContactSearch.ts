@@ -1,19 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ContactAutocompleteOption } from '@models/Contact';
 import { searchContacts as searchContactsApi } from '@services/contact/contactService';
+import {
+    extractContactSearchItems,
+    mapSearchItemsToAutocompleteOptions,
+} from '@utils/contactSearchUtil';
 
 const AUTOCOMPLETE_LIMIT = 150;
 const DEBOUNCE_MS = 300;
-
-function mapToAutocompleteOptions(items: any[]): ContactAutocompleteOption[] {
-    return (items ?? []).map((item) => ({
-        value: item.email || item._id,
-        name: item.name || item.email,
-        email: item.email,
-        label: item.name || item.email,
-        isSuggestion: Boolean(item.isSuggestion),
-    }));
-}
 
 export function useContactSearch() {
     const [options, setOptions] = useState<ContactAutocompleteOption[]>([]);
@@ -30,8 +24,8 @@ export function useContactSearch() {
             if (latestQueryRef.current !== query) return;
 
             if (response?.statusCode === 200) {
-                const list = Array.isArray(response.data) ? response.data : response.data?.contacts ?? [];
-                setOptions(mapToAutocompleteOptions(list));
+                const list = extractContactSearchItems(response.data, response);
+                setOptions(mapSearchItemsToAutocompleteOptions(list));
             } else {
                 setOptions([]);
             }

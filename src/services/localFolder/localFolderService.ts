@@ -1,5 +1,5 @@
 import { downloadBlobFile } from '../contact/contactService';
-import { getData, postData } from '../apiService';
+import { getData, postData, postDataRaw } from '../apiService';
 
 export interface LocalFolderItem {
     key: string;
@@ -183,6 +183,25 @@ function resolveExportFilename(isZip: boolean, selectedCount: number): string {
     return selectedCount === 1 ? 'email.eml' : 'emails-export.zip';
 }
 
+/** Prefer backend Content-Disposition; only fall back when the header is missing. */
+function parseContentDispositionFilename(header: unknown): string | null {
+    if (typeof header !== 'string' || !header.trim()) return null;
+
+    const utf8Match = /filename\*\s*=\s*(?:UTF-8''|utf-8'')([^;]+)/i.exec(header);
+    if (utf8Match?.[1]) {
+        try {
+            const decoded = decodeURIComponent(utf8Match[1].trim().replace(/^"|"$/g, ''));
+            if (decoded) return decoded;
+        } catch {
+            // fall through to plain filename=
+        }
+    }
+
+    const plainMatch = /filename\s*=\s*("?)([^";]+)\1/i.exec(header);
+    const plain = plainMatch?.[2]?.trim();
+    return plain || null;
+}
+
 export type ExportEmlFormat = 'auto' | 'eml' | 'bundle' | 'zip';
 
 /** Exactly one of messageIds / folderId is required. */
@@ -234,7 +253,8 @@ async function exportEml(payload: ExportEmlPayload): Promise<ExportEmlResult> {
     }
 
     try {
-        const data = await postData('localFolder/exportEml', body, { responseType: 'blob' });
+        const response = await postDataRaw('localFolder/exportEml', body, { responseType: 'blob' });
+        const data = response.data;
 
         if (!(data instanceof Blob)) {
             return { success: false, message: fallbackMessage, statusCode: 500 };
@@ -253,10 +273,15 @@ async function exportEml(payload: ExportEmlPayload): Promise<ExportEmlResult> {
         // Backend expands a single selected thread into a ZIP. Never trust
         // selection count alone for the download extension.
         const isZip = await blobLooksLikeZip(data);
-        const filename = resolveExportFilename(
-            isZip,
-            isFolderExport ? (isZip ? 2 : 1) : selectedCount
+        const headerFilename = parseContentDispositionFilename(
+            response.headers?.['content-disposition']
         );
+        const filename =
+            headerFilename ||
+            resolveExportFilename(
+                isZip,
+                isFolderExport ? (isZip ? 2 : 1) : selectedCount
+            );
         const blob = isZip
             ? new Blob([data], { type: 'application/zip' })
             : new Blob([data], { type: data.type || 'message/rfc822' });

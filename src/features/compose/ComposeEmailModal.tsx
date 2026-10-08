@@ -294,7 +294,7 @@
 //         const isBodyEmpty = !data.body || data.body.replace(/<[^>]*>/g, '').trim() === '';
 
 //         if (isSubjectEmpty && isBodyEmpty) {
-//             const shouldSend = window.confirm("Your message has no subject or body. Are you sure you want to send it?");
+//             const shouldSend = window.confirm("Your message has no subject or body. Are you sure you want to you want to send it?");
 //             if (!shouldSend) {
 //                 return;
 //             }
@@ -979,6 +979,8 @@ import { composeSchema, type ComposeFormValues } from './compose.schema';
 import { useDebounce } from '@hooks/useDebounce';
 import { dismissToast, showError, showProgressToast, showSuccess, showWarning } from '@components/ui/toast/toastNotification';
 import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
+import { getActiveAccountId } from '@services/apiService';
+import { registerPendingOutboundSend } from '@services/socket/pendingOutboundSend';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
 import BaseModal from '@components/ui/BaseModal';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
@@ -1232,6 +1234,15 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             }
         });
 
+        // Client id so socket outboundSendFailed / outboundSendSent can match this send
+        if (!isDraft) {
+            const clientMessageId =
+                typeof crypto?.randomUUID === 'function'
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+            formData.append('clientMessageId', clientMessageId);
+        }
+
         return formData;
     };
 
@@ -1243,7 +1254,7 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         const isBodyEmpty = !data.body || data.body.replace(/<[^>]*>/g, '').trim() === '';
 
         if (isSubjectEmpty && isBodyEmpty) {
-            const shouldSend = window.confirm("Your message has no subject or body. Are you sure you want to send it?");
+            const shouldSend = window.confirm("Your message has no subject or body. Are you sure you want to you want to send it?");
             if (!shouldSend) {
                 return;
             }
@@ -1356,6 +1367,20 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 }
                 if (!options?.skipClose) {
                     onClose();
+                }
+
+                // Async SMTP: "Trying…" until outboundSendSent / outboundSendFailed
+                const body = response.data ?? response;
+                const clientMessageId =
+                    body?.clientMessageId ||
+                    (typeof formData?.get === 'function' ? formData.get('clientMessageId') : null);
+                if (body?.status === 'pending' && clientMessageId) {
+                    const toastId = showProgressToast('Trying…');
+                    registerPendingOutboundSend({
+                        clientMessageId: String(clientMessageId),
+                        toastId,
+                        accountId: getActiveAccountId() || undefined,
+                    });
                 }
             } else if (response.statusCode === 429) {
                 showWarning('Too Many Emails Sent. Please try again later.');

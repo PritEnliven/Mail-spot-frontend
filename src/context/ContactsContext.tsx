@@ -1,6 +1,10 @@
 import type { ContactAutocompleteOption } from '@models/Contact';
 import { searchContacts as searchContactsApi } from '@services/contact/contactService';
 import { getActiveAccountId } from '@services/apiService';
+import {
+    extractContactSearchItems,
+    mapSearchItemsToAutocompleteOptions,
+} from '@utils/contactSearchUtil';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAccount } from '@context/AccountContext';
 
@@ -22,37 +26,11 @@ interface ContactsType {
 
 const ContactsContext = createContext<ContactsType | undefined>(undefined);
 
-function mapToAutocompleteOptions(items: any[]): ContactAutocompleteOption[] {
-    return (items ?? []).map((item) => {
-        const emails = Array.isArray(item.emails)
-            ? item.emails.map((e: string) => String(e).trim()).filter(Boolean)
-            : [];
-        const email = (item.email || emails[0] || '').trim();
-        return {
-            value: email || item._id,
-            name: item.name || email,
-            email,
-            label: item.name || email,
-            isSuggestion: Boolean(
-                item.isSuggestion ||
-                item.isSuggested ||
-                item.is_suggestion ||
-                item.suggested ||
-                item.type === 'suggestion',
-            ),
-        };
-    });
-}
-
 function optionKey(opt: ContactAutocompleteOption): string {
+    if (opt.isGroup) {
+        return (opt.value || opt.name || '').trim().toLowerCase();
+    }
     return (opt.email || opt.value || '').trim().toLowerCase();
-}
-
-function itemEmailKey(item: any): string {
-    const emails = Array.isArray(item?.emails) ? item.emails : [];
-    return String(item?.email || emails[0] || item?._id || '')
-        .trim()
-        .toLowerCase();
 }
 
 function mergeUnique(
@@ -69,91 +47,19 @@ function mergeUnique(
     return [...existing, ...added];
 }
 
-/** Suggested addresses first, then saved contacts. Order within each group is kept. */
-function withSuggestionsFirst(options: ContactAutocompleteOption[]): ContactAutocompleteOption[] {
+/** Groups first, then suggested addresses, then saved contacts. */
+function withSearchPriorityOrder(options: ContactAutocompleteOption[]): ContactAutocompleteOption[] {
+    const groups: ContactAutocompleteOption[] = [];
     const suggestions: ContactAutocompleteOption[] = [];
     const addressBook: ContactAutocompleteOption[] = [];
+
     for (const item of options) {
-        if (item.isSuggestion) suggestions.push(item);
+        if (item.isGroup) groups.push(item);
+        else if (item.isSuggestion) suggestions.push(item);
         else addressBook.push(item);
     }
-    if (suggestions.length === 0) return options;
-    return [...suggestions, ...addressBook];
-}
 
-function mergeSuggestionAndContactRows(suggestions: any[], contacts: any[]): any[] {
-    const suggestionItems = suggestions.map((item) =>
-        item && typeof item === 'object' ? { ...item, isSuggestion: true } : item,
-    );
-    const suggestionKeys = new Set(suggestionItems.map(itemEmailKey).filter(Boolean));
-    const contactItems = contacts.filter((item) => {
-        const key = itemEmailKey(item);
-        return !key || !suggestionKeys.has(key);
-    });
-    return [...suggestionItems, ...contactItems];
-}
-
-/**
- * Normalize contact/search payloads.
- * Backend may return:
- * - `{ suggestions, contacts, total }`
- * - `{ data: { suggestions, contacts } }`
- * - flat `contacts` array with `isSuggestion` on rows
- * - `suggestions` as a sibling of `data` on the root response
- */
-function extractContactList(data: unknown, responseRoot?: any): any[] {
-    const rootSuggestions = Array.isArray(responseRoot?.suggestions)
-        ? responseRoot.suggestions
-        : [];
-
-    if (Array.isArray(data)) {
-        return rootSuggestions.length > 0
-            ? mergeSuggestionAndContactRows(rootSuggestions, data)
-            : data;
-    }
-
-    if (!data || typeof data !== 'object') {
-        return rootSuggestions.length > 0
-            ? mergeSuggestionAndContactRows(rootSuggestions, [])
-            : [];
-    }
-
-    const record = data as Record<string, unknown>;
-
-    // Unwrap one nested `{ data: { suggestions, contacts } }` layer.
-    if (
-        record.data &&
-        typeof record.data === 'object' &&
-        !Array.isArray(record.data) &&
-        (
-            Array.isArray((record.data as any).contacts) ||
-            Array.isArray((record.data as any).suggestions) ||
-            Array.isArray((record.data as any).suggested) ||
-            Array.isArray((record.data as any).suggestedContacts)
-        )
-    ) {
-        return extractContactList(record.data, responseRoot);
-    }
-
-    const suggestions =
-        (Array.isArray(record.suggestions) && record.suggestions) ||
-        (Array.isArray(record.suggested) && record.suggested) ||
-        (Array.isArray(record.suggestedContacts) && record.suggestedContacts) ||
-        rootSuggestions;
-
-    const contacts = Array.isArray(record.contacts)
-        ? record.contacts
-        : Array.isArray(record.list)
-            ? record.list
-            : null;
-
-    if (suggestions.length === 0 && !contacts) return [];
-
-    if (!contacts) {
-        return mergeSuggestionAndContactRows(suggestions, []);
-    }
-
-    return mergeSuggestionAndContactRows(suggestions, contacts);
+    return [...groups, ...suggestions, ...addressBook];
 }
 
 function extractTotal(data: unknown): number | null {
@@ -220,17 +126,17 @@ export const ContactsProvider = ({ children }: { children: ReactNode }) => {
             if (accountIdAtStart !== getActiveAccountId()) return;
 
             if (response?.statusCode === 200) {
-                // Pass full response so suggestions living beside `data` are not dropped.
-                const rawList = extractContactList(response.data, response);
-                const mapped = mapToAutocompleteOptions(rawList);
+                const rawList = extractContactSearchItems(response.data, response);
+                const mapped = mapSearchItemsToAutocompleteOptions(rawList);
                 const total = extractTotal(response.data) ?? extractTotal(response);
 
                 const previous = contactsRef.current;
-                const next = withSuggestionsFirst(append ? mergeUnique(previous, mapped) : mapped);
+                const next = withSearchPriorityOrder(
+                    append ? mergeUnique(previous, mapped) : mapped,
+                );
                 const addedCount = append ? next.length - previous.length : mapped.length;
                 setContacts(next);
 
-                // A full page means more may exist. Use total only to stop when exhausted.
                 let hasMore = mapped.length >= PAGE_SIZE;
                 if (total != null) {
                     const loadedThrough = (page - 1) * PAGE_SIZE + mapped.length;
@@ -239,8 +145,6 @@ export const ContactsProvider = ({ children }: { children: ReactNode }) => {
                     }
                 }
 
-                // Stop if this page was empty, or append produced no new unique contacts
-                // (e.g. backend ignoring page and returning the same first page).
                 if (append && (mapped.length === 0 || addedCount === 0)) {
                     hasMore = false;
                 }
@@ -277,7 +181,6 @@ export const ContactsProvider = ({ children }: { children: ReactNode }) => {
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
         }
-        // Show loader as soon as the user types (before debounce fires).
         setIsLoadingContacts(true);
         setIsLoadingMoreContacts(false);
         debounceRef.current = setTimeout(() => {
@@ -288,7 +191,6 @@ export const ContactsProvider = ({ children }: { children: ReactNode }) => {
     }, [runSearch]);
 
     const fetchContacts = useCallback(async () => {
-        // Always restart from page 1 (dropdown open / reopen).
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
             debounceRef.current = null;
@@ -301,7 +203,6 @@ export const ContactsProvider = ({ children }: { children: ReactNode }) => {
     }, [runSearch]);
 
     const resetContactSuggestions = useCallback(() => {
-        // Dropdown closed — drop pagination so the next open starts from scratch.
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
             debounceRef.current = null;
@@ -324,7 +225,6 @@ export const ContactsProvider = ({ children }: { children: ReactNode }) => {
         void runSearch(queryRef.current, nextPage, true);
     }, [runSearch]);
 
-    // Drop previous account contacts immediately when the active mailbox changes.
     useEffect(() => {
         clearContacts();
         if (activeAccountId && localStorage.getItem('token')) {

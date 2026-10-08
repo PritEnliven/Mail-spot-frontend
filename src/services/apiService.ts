@@ -368,6 +368,11 @@ export const postData = async (endpoint: string, data: any, config = {}): Promis
   return response.data;
 };
 
+/** Like postData, but returns the full Axios response (for headers such as Content-Disposition). */
+export const postDataRaw = async (endpoint: string, data: any, config = {}) => {
+  return api.post(endpoint, data, config);
+};
+
 export const putData = async <T = any>(endpoint: string, data: any, config?: any): Promise<T> => {
   const response = await api.put(endpoint, data, config);
   return response.data;

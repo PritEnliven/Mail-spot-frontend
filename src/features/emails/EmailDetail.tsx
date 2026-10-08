@@ -4,7 +4,9 @@ import EmailBody from "@components/ui/email/EmailBody";
 import EmailDetailAttachmentPreview from "@components/ui/email/EmailDetailAttachmentPreview";
 import EmailRecipientList from "@components/ui/email/EmailRecipientList";
 import EmailSendInformation from "@components/ui/email/EmailSendInformationRespon";
-import { showError, showSuccess } from "@components/ui/toast/toastNotification";
+import { showError, showOutboundSendFailedToast, showSuccess } from "@components/ui/toast/toastNotification";
+import { dispatchOpenAccountReauth } from "@services/accounts/accountService";
+import { useAccount } from "@context/AccountContext";
 import { useScreen } from "@context/ScreenContext";
 import { useAttachmentDownload } from "@hooks/useAttachmentDownload";
 import { useHorizontalScrollbar } from "@hooks/useHorizontalScrollbar";
@@ -75,6 +77,7 @@ const EmailDetail = ({ email }: Props) => {
     const prevAutoOpenRef = useRef<string | null>(null);
     const { settings } = useSettings();
     const { isDesktop } = useScreen();
+    const { linkedAccounts, primaryAccount, activeAccountId } = useAccount();
     const [isCcBccExpanded, setIsCcBccExpanded] = useState(false);
     const [toVisibleInfo, setToVisibleInfo] = useState({ visible: 0, total: 0 });
 
@@ -296,7 +299,12 @@ const EmailDetail = ({ email }: Props) => {
     }, [loadThreadEmails]);
 
     // Called by socket 'outboundReplyFailed' — mark row as failed and show toast
-    const markPendingReplyFailed = useCallback((clientMessageId: string, errorMessage?: string) => {
+    const markPendingReplyFailed = useCallback((
+        clientMessageId: string,
+        errorMessage?: string,
+        permanent?: boolean,
+        accountId?: string,
+    ) => {
         setPendingReplies(prev =>
             prev.map(r =>
                 r.clientMessageId === clientMessageId
@@ -304,8 +312,21 @@ const EmailDetail = ({ email }: Props) => {
                     : r
             )
         );
-        showError(errorMessage || 'Failed to send reply. Please try again.');
-    }, []);
+        const error = errorMessage?.trim() || 'Failed to send reply. Please try again.';
+        const reauthAccountId = accountId || activeAccountId || undefined;
+        const email =
+            (reauthAccountId && primaryAccount?.id === reauthAccountId
+                ? primaryAccount.email
+                : linkedAccounts.find((a) => a.id === reauthAccountId)?.email) || undefined;
+
+        showOutboundSendFailedToast({
+            error,
+            permanent: permanent === true,
+            onReconnect: permanent
+                ? () => dispatchOpenAccountReauth({ accountId: reauthAccountId || undefined, email })
+                : undefined,
+        });
+    }, [activeAccountId, linkedAccounts, primaryAccount]);
 
     // Clear pending rows / collapse state when switching to a different thread
     useEffect(() => {
@@ -373,10 +394,23 @@ const EmailDetail = ({ email }: Props) => {
         clearPendingReply(data.clientMessageId);
     });
 
-    // Socket: reply failed → mark pending row as failed
-    useSocketEvent('outboundReplyFailed', (data: { clientMessageId: string; error?: string }) => {
-        markPendingReplyFailed(data.clientMessageId, data.error);
-    });
+    // Socket: reply failed → mark pending row as failed (keep separate from outboundSendFailed)
+    useSocketEvent(
+        'outboundReplyFailed',
+        (data: {
+            clientMessageId: string;
+            error?: string;
+            permanent?: boolean;
+            accountId?: string;
+        }) => {
+            markPendingReplyFailed(
+                data.clientMessageId,
+                data.error,
+                data.permanent,
+                data.accountId
+            );
+        }
+    );
 
     // Socket: inbound reply for the currently open thread → append it live
     const handleInboundThreadReply = useCallback((payload: any) => {

@@ -104,6 +104,8 @@ const ToolbarBox = () => {
     const isLocalFolderView = isLocalBoxName(boxName);
     const isSearchOrFilterMailList = allSearchResult || boxTitle === 'Search Results';
     const showArrangeBy = !isSearchOrFilterMailList && !isSchedule;
+    const boxNameRef = useRef(boxName);
+    boxNameRef.current = boxName;
 
     const resolveSelectedMessageIds = () =>
         selectedEmails.size > 0
@@ -234,11 +236,20 @@ const ToolbarBox = () => {
                 lastEmailMessageId: newestMessageId,
             });
             if (response.statusCode === 200) {
-                const incoming = Array.isArray(response.data?.emailList) ? response.data.emailList as Email[] : [];
+                const incoming = Array.isArray(response.data?.emailList)
+                    ? response.data.emailList as Email[]
+                    : [];
+
+                // Empty emailList means "no new mail" — response pagination/total can be
+                // zeroed and must not overwrite the current badge or folder counts.
+                if (incoming.length === 0) {
+                    return;
+                }
+
                 const newer = emailsNewerThan(incoming, newestMessageId || null, newest?.date);
                 const totalCount = readRefreshTotal(response.data);
 
-                if (totalCount !== null) {
+                if (totalCount !== null && totalCount > 0) {
                     setTotalEmailBadge(totalCount);
                 }
 
@@ -264,7 +275,9 @@ const ToolbarBox = () => {
 
                     if (pagination) {
                         const start = pagination.startCount || 1;
-                        const totalEmails = totalCount ?? pagination.totalEmails;
+                        const totalEmails = (totalCount !== null && totalCount > 0)
+                            ? totalCount
+                            : pagination.totalEmails;
                         const totalPages = pageSize > 0 && totalEmails > 0
                             ? Math.ceil(totalEmails / pageSize)
                             : pagination.totalPages;
@@ -279,7 +292,7 @@ const ToolbarBox = () => {
                             hasPreviousPage: currentPage > 1,
                         });
                     }
-                } else if (pagination && totalCount !== null) {
+                } else if (pagination && totalCount !== null && totalCount > 0) {
                     const pageSize = pagination.emailsPerPage > 0 ? pagination.emailsPerPage : 0;
                     const totalPages = pageSize > 0
                         ? Math.ceil(totalCount / pageSize)
@@ -548,10 +561,16 @@ const ToolbarBox = () => {
         });
     }
 
-    const applyMovedEmailsToUi = async (movedEmailIds: string[], targetFolderKey: string) => {
+    const applyMovedEmailsToUi = async (
+        movedEmailIds: string[],
+        targetFolderKey: string,
+        sourceBoxName: string,
+        sourceEmails: Email[],
+        sourcePage: number,
+    ) => {
         if (movedEmailIds.length === 0) return;
 
-        const movedEmails = emails.filter(email => movedEmailIds.includes(email.messageId));
+        const movedEmails = sourceEmails.filter(email => movedEmailIds.includes(email.messageId));
 
         if (verifyBoxName(targetFolderKey, 'trash') || verifyBoxName(targetFolderKey, 'junk')) {
             updateBoxCount(targetFolderKey, 0, movedEmails.length);
@@ -561,10 +580,27 @@ const ToolbarBox = () => {
         }
 
         const unreadRemovedCount = movedEmails.filter(email => !email.isSeen).length;
-        updateBoxCount(boxName, -unreadRemovedCount, -movedEmails.length);
+        updateBoxCount(sourceBoxName, -unreadRemovedCount, -movedEmails.length);
 
-        const remainingEmails = emails.filter(email => !movedEmailIds.includes(email.messageId));
-        deleteEmailState(movedEmailIds, true);
+        const currentBox = boxNameRef.current;
+        const stillOnSource = currentBox === sourceBoxName;
+        const viewingTarget = currentBox === targetFolderKey;
+
+        if (stillOnSource) {
+            const remainingEmails = sourceEmails.filter(
+                email => !movedEmailIds.includes(email.messageId),
+            );
+            deleteEmailState(movedEmailIds, true);
+
+            if (remainingEmails.length === 0) {
+                const targetPage = sourcePage > 1 ? sourcePage - 1 : 1;
+                await fetchEmails(targetPage, sourceBoxName);
+            }
+        } else if (viewingTarget) {
+            // User opened the destination while the move was in flight — refresh it
+            // instead of deleting source IDs from the destination list.
+            await fetchEmails(1, targetFolderKey);
+        }
 
         if (activeEmailMessageId && movedEmailIds.includes(activeEmailMessageId)) {
             setEmailDetailSelected(null);
@@ -577,11 +613,6 @@ const ToolbarBox = () => {
         if (checkboxAll) {
             checkboxAll.checked = false;
         }
-
-        if (remainingEmails.length === 0) {
-            const targetPage = mailListPage > 1 ? mailListPage - 1 : 1;
-            await fetchEmails(targetPage, boxName);
-        }
     };
 
     const moveToFolderHandler = async (folderName: string) => {
@@ -590,6 +621,10 @@ const ToolbarBox = () => {
             : (activeEmailMessageId ? [activeEmailMessageId] : []);
 
         if (messageIds.length === 0) return;
+
+        const sourceBoxName = boxName;
+        const sourceEmails = emails;
+        const sourcePage = mailListPage;
 
         const applyPartialMoveResult = async (
             response: any,
@@ -613,7 +648,13 @@ const ToolbarBox = () => {
 
             if (moved.length > 0) {
                 showSuccess(resultMessage || successFallback.replace('{n}', String(moved.length)));
-                await applyMovedEmailsToUi(moved, targetKey);
+                await applyMovedEmailsToUi(
+                    moved,
+                    targetKey,
+                    sourceBoxName,
+                    sourceEmails,
+                    sourcePage,
+                );
                 setSidebarStateFromAPI().catch(() => {});
             }
 
@@ -718,7 +759,13 @@ const ToolbarBox = () => {
 
         if (response.statusCode === 200) {
             showSuccess("Email moved successfully");
-            await applyMovedEmailsToUi(messageIds as string[], folderName);
+            await applyMovedEmailsToUi(
+                messageIds as string[],
+                folderName,
+                sourceBoxName,
+                sourceEmails,
+                sourcePage,
+            );
         }
     }
 
@@ -1042,7 +1089,7 @@ const ToolbarBox = () => {
                                             </Dropdown>
                                         )}
 
-                                        {isLocalFolderView && (
+                                        {/* {isLocalFolderView && (
                                             <>
                                                 <Dropdown.Divider />
                                                 <Dropdown.Item
@@ -1054,7 +1101,7 @@ const ToolbarBox = () => {
                                                     {isExportingEml ? 'Exporting…' : 'Export as EML'}
                                                 </Dropdown.Item>
                                             </>
-                                        )}
+                                        )} */}
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </div>
@@ -1077,8 +1124,8 @@ const ToolbarBox = () => {
                         </li>
                     </ul>
 
-                    {/* On mobile/tablet with an open email, hide prev/next — swipe navigates instead */}
-                    {hasEmails && (isDesktop || !activeEmailMessageId) && (
+                    {/* Arrange by uses scroll load-more — hide prev/next. On mobile/tablet with an open email, swipe navigates instead. */}
+                    {hasEmails && !arrangeBy && (isDesktop || !activeEmailMessageId) && (
                         <div className="d-flex align-items-center pagination-btn-box">
                             <button
                                 id="previousPageBtn"

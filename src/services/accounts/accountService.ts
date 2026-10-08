@@ -1,5 +1,20 @@
 import { getData, postData, deleteData } from '../apiService';
 
+/** Open Add Account / re-auth modal (AccountSwitcher listens). */
+export const OPEN_ACCOUNT_REAUTH_EVENT = 'mailspot:open-account-reauth';
+
+export type OpenAccountReauthDetail = {
+  accountId?: string;
+  email?: string;
+};
+
+export const dispatchOpenAccountReauth = (detail: OpenAccountReauthDetail = {}) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent<OpenAccountReauthDetail>(OPEN_ACCOUNT_REAUTH_EVENT, { detail })
+  );
+};
+
 export interface LinkedAccount {
   id: string;
   email: string;

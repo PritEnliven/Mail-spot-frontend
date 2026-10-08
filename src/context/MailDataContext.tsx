@@ -12,7 +12,7 @@ import {
 import { getCounts, getEmailsService, searchAndFilterEmailService } from '@services/email/emailService';
 import { getBoxes, refreshFolders } from '@services/mailbox/mailboxService';
 import { getUserPermissions } from '@services/settings/settingsService';
-import { mergeIntoArrangedList } from '@utils/arrangeEmailUtil';
+import { appendArrangedPage, mergeIntoArrangedList } from '@utils/arrangeEmailUtil';
 import { buildParentFolderOptions, ensureContactInOtherMenu, resolveAllSidebarItems, verifyBoxName } from '@utils/emailUtil';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
@@ -114,6 +114,9 @@ interface MailDataType {
     /* API */
     fetchEmails: (page?: number, boxName?: string, isPrevious?: boolean, mailAction?: string, forceRefresh?: boolean) => Promise<void>;
     fetchSearchEmails: (isPrevious?: boolean) => Promise<void>;
+    /** Append next page while Arrange by is active (infinite scroll). */
+    loadMoreEmails: () => Promise<void>;
+    isLoadingMoreEmails: boolean;
     /** Wipe mailbox UI state and reload INBOX/sidebar for a newly switched account */
     reloadForAccountSwitch: () => Promise<void>;
 
@@ -173,16 +176,14 @@ const getInitialBoxName = (): string => {
     return 'INBOX';
 };
 
-const getNumericCount = (count: unknown): number | null => {
-    const parsedCount = Number(count);
-    return Number.isFinite(parsedCount) ? parsedCount : null;
-};
-
 export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [boxName, setBoxName] = useState(getInitialBoxName());
     const [boxTitle, setBoxTitle] = useState('');
     const [totalEmailBadge, setTotalEmailBadge] = useState(0);
     const [emails, setEmails] = useState<Email[]>([]);
+    const emailsRef = useRef<Email[]>([]);
+    const boxNameRef = useRef(boxName);
+    const fetchEmailsRequestIdRef = useRef(0);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const paginationRef = useRef<Pagination | null>(null);
     const [mailListPage, setMailListPage] = useState(1);
@@ -202,6 +203,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [isSidebarLoading, setIsSidebarLoading] = useState<boolean>(false);
     const [isSidebarCountLoading, setIsSidebarCountLoading] = useState<boolean>(false);
     const [isTotalCountLoading, setIsTotalCountLoading] = useState<boolean>(false);
+    const [isLoadingMoreEmails, setIsLoadingMoreEmails] = useState(false);
+    const isLoadingMoreEmailsRef = useRef(false);
     const [userId, setUserId] = useState<string>('guest');
 
     const [sidebarState, setSidebarState] = useState<SidebarStateProps>({
@@ -218,6 +221,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
     const [sidebarItems, setSidebarItems] = useState<SidebarItemType[]>([]);
     const [isSidebarDataReady, setIsSidebarDataReady] = useState(false);
 
+    emailsRef.current = emails;
+    boxNameRef.current = boxName;
     paginationRef.current = pagination;
     const mailListPageRef = useRef(mailListPage);
     mailListPageRef.current = mailListPage;
@@ -346,6 +351,9 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                 return;
             }
 
+            const requestId = ++fetchEmailsRequestIdRef.current;
+            const requestedBox = boxNameParam;
+
             try {
 
                 setEmailDetailSelected(null);
@@ -363,6 +371,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     const payload = buildGetEmailsPayload(activeBox, page, isPrevious, mailAction);
 
                     const response = await getEmailsService(payload);
+                    if (requestId !== fetchEmailsRequestIdRef.current) return;
+                    if (boxNameRef.current !== requestedBox) return;
                     if (response.statusCode !== 200) {
                         throw new Error(`Failed to fetch emails (status ${response.statusCode})`);
                     } else {
@@ -371,25 +381,21 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         syncArrangeFromResponse(response.data);
                     }
 
+                    // Header badge must match pagination "of N" (same get-emails total).
+                    // getCounts below only refreshes sidebar folder badges.
+                    if (paginationData?.totalEmails != null) {
+                        setTotalEmailBadge(Number(paginationData.totalEmails) || 0);
+                    }
+
                     if (boxNameParam && page === 1) {
                         // Local folders are DB-only — do not run IMAP getCounts bootstrap
-                        if (String(boxNameParam).toLowerCase().startsWith('local::')) {
-                            if (paginationData?.totalEmails != null) {
-                                setTotalEmailBadge(Number(paginationData.totalEmails) || 0);
-                            }
-                        } else {
+                        if (!String(boxNameParam).toLowerCase().startsWith('local::')) {
                         setIsTotalCountLoading(true);
 
                         getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
                             if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
-                                const totalCount = getNumericCount(boxCountResponse.data.totalCount);
-
-                                if (totalCount !== null) {
-                                    setTotalEmailBadge(totalCount);
-                                }
-
-                                // Sidebar counts stay on the folder badges. The range label
-                                // keeps startCount–endCount of totalEmails from get-emails.
+                                // Sidebar counts stay on the folder badges. The header badge
+                                // and range label both use totalEmails from get-emails.
 
                                 // Update sidebar state for all boxes returned in sidebarCounts
                                 setSidebarState(prev => {
@@ -426,6 +432,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                     const payload = buildGetEmailsPayload(boxNameParam!, page, isPrevious, mailAction);
 
                     const response = await getEmailsService(payload);
+                    if (requestId !== fetchEmailsRequestIdRef.current) return;
+                    if (boxNameRef.current !== requestedBox) return;
                     if (response.statusCode === 200) {
                         const emailList = response.data.emailList || [];
                         const paginationData = response.data.pagination;
@@ -435,14 +443,14 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
                         setPagination(paginationData);
                         setMailListPage(page);
 
-                        // If it's page 1, we should also update the counts from the API response if available
-                        // or trigger getCounts for the sidebar
+                        // Header badge must match pagination "of N" (same get-emails total).
+                        if (paginationData?.totalEmails != null) {
+                            setTotalEmailBadge(Number(paginationData.totalEmails) || 0);
+                        }
+
+                        // Page 1: refresh sidebar folder badges only (do not overwrite header badge).
                         if (page === 1 && boxNameParam) {
-                            if (String(boxNameParam).toLowerCase().startsWith('local::')) {
-                                if (paginationData?.totalEmails != null) {
-                                    setTotalEmailBadge(Number(paginationData.totalEmails) || 0);
-                                }
-                            } else {
+                            if (!String(boxNameParam).toLowerCase().startsWith('local::')) {
                             setIsTotalCountLoading(true);
 
                             // Determine isReadTotal based on mailAction
@@ -452,11 +460,6 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
                             getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
                                 if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {
-                                    const totalCount = getNumericCount(boxCountResponse.data.totalCount);
-                                    if (totalCount !== null) {
-                                        setTotalEmailBadge(totalCount);
-                                    }
-
                                     setSidebarState(prev => {
                                         const updatedBoxCounts = { ...prev.boxCounts };
                                         if (boxCountResponse.data.sidebarCounts) {
@@ -507,6 +510,65 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         // [mailListPage, readUnreadFilter, userId, boxName]
         [userId, boxName, buildGetEmailsPayload, syncArrangeFromResponse]
     );
+
+    const loadMoreEmails = useCallback(async () => {
+        if (!arrangeByRef.current) return;
+        if (isLoadingMoreEmailsRef.current) return;
+
+        const currentPagination = paginationRef.current;
+        if (!currentPagination?.hasNextPage) return;
+
+        const activeBox = boxName;
+        if (!activeBox || activeBox === 'settings' || activeBox === 'calendar' || activeBox === 'contact') {
+            return;
+        }
+
+        const nextPage = mailListPageRef.current + 1;
+        if (currentPagination.totalPages > 0 && nextPage > currentPagination.totalPages) return;
+
+        isLoadingMoreEmailsRef.current = true;
+        setIsLoadingMoreEmails(true);
+
+        try {
+            const payload = buildGetEmailsPayload(
+                activeBox,
+                nextPage,
+                false,
+                readUnreadFilter || 'all',
+            );
+            const response = await getEmailsService(payload);
+            if (response.statusCode !== 200) {
+                throw new Error(`Failed to load more emails (status ${response.statusCode})`);
+            }
+
+            const nextList = response.data.emailList ?? [];
+            const paginationData = response.data.pagination as Pagination | undefined;
+            syncArrangeFromResponse(response.data);
+
+            const merged = appendArrangedPage(emailsRef.current, nextList);
+            emailsRef.current = merged;
+            setEmails(merged);
+
+            if (paginationData) {
+                if (paginationData.totalEmails != null) {
+                    setTotalEmailBadge(Number(paginationData.totalEmails) || 0);
+                }
+                setPagination({
+                    ...paginationData,
+                    startCount: 1,
+                    endCount: merged.length > 0
+                        ? merged.length
+                        : (paginationData.endCount ?? 0),
+                });
+            }
+            setMailListPage(nextPage);
+        } catch (error) {
+            console.error('Failed to load more emails:', error);
+        } finally {
+            isLoadingMoreEmailsRef.current = false;
+            setIsLoadingMoreEmails(false);
+        }
+    }, [boxName, buildGetEmailsPayload, readUnreadFilter, syncArrangeFromResponse]);
 
     const receiveOutsideRef = useRef<boolean | undefined>(undefined);
     useEffect(() => {
@@ -1202,6 +1264,8 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         setFilterForm,
         fetchEmails,
         fetchSearchEmails,
+        loadMoreEmails,
+        isLoadingMoreEmails,
         reloadForAccountSwitch,
         updateEmailReadState,
         deleteEmailState,

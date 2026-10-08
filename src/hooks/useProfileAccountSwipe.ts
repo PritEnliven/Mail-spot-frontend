@@ -167,6 +167,7 @@ export function useProfileAccountSwipe({ enabled }: UseProfileAccountSwipeOption
       if (target) {
         setOptimisticInitials(getAccountInitials(target.email, target.username));
       }
+      
       resetDrag(false);
 
       // Lock immediately so a second swipe cannot start before React re-renders.
