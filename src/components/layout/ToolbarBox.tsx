@@ -438,7 +438,7 @@ const ToolbarBox = () => {
         }
     };
 
-    const handleExportFolder = async () => {
+    const handleExportFolder = () => {
         if (!isLocalFolderView || isExportingEml) return;
 
         const folderId = getLocalFolderIdFromBoxName(boxName);
@@ -447,29 +447,37 @@ const ToolbarBox = () => {
             return;
         }
 
-        setIsExportingEml(true);
-        const progressToastId = showProgressToast('Exporting folder…');
-        try {
-            const result = await exportEml({ folderId });
-            dismissToast(progressToastId);
+        openModal('confirmDelete', {
+            title: 'Export Folder',
+            message: 'Are you sure you want to export all emails from this folder?',
+            confirmLabel: 'Yes',
+            cancelLabel: 'No',
+            showIcon: false,
+            onConfirm: async () => {
+                setIsExportingEml(true);
+                try {
+                    const result = await exportEml({ folderId });
 
-            if (!result.success) {
-                if (result.statusCode !== 401) {
-                    showError(result.message || 'Failed to export folder');
+                    if (!result.success) {
+                        if (result.statusCode !== 401) {
+                            showError(result.message || 'Failed to export folder');
+                        }
+                        return;
+                    }
+
+                    downloadBlobFile(result.blob, result.filename);
+                    showSuccess(
+                        /\.zip$/i.test(result.filename)
+                            ? 'Folder exported as ZIP'
+                            : 'Folder exported as EML'
+                    );
+                } catch (error: any) {
+                    showError(error?.message || 'Failed to export folder');
+                } finally {
+                    setIsExportingEml(false);
                 }
-                return;
-            }
-
-            downloadBlobFile(result.blob, result.filename);
-            showSuccess(
-                /\.zip$/i.test(result.filename) ? 'Folder exported as ZIP' : 'Folder exported as EML'
-            );
-        } catch (error: any) {
-            dismissToast(progressToastId);
-            showError(error?.message || 'Failed to export folder');
-        } finally {
-            setIsExportingEml(false);
-        }
+            },
+        });
     };
 
     const markAsReadUnreadHandler = (isRead: boolean) => {
@@ -658,19 +666,10 @@ const ToolbarBox = () => {
                 setSidebarStateFromAPI().catch(() => {});
             }
 
-            if (failed.length > 0) {
-                const preview = failed
-                    .slice(0, 3)
-                    .map((f) => f.reason || f.messageId)
-                    .join('; ');
-                showError(
-                    `${failed.length} email(s) could not be moved${preview ? `: ${preview}` : ''}`
-                );
-            }
-
-            if (moved.length === 0 && failed.length === 0) {
-                const message = resultMessage || response?.error || failureFallback;
-                showError(typeof message === 'string' ? message : failureFallback);
+            // Local↔IMAP moves can fail with verbose backend reasons (e.g. ENOENT
+            // attachment paths). Never surface those reasons in the toast.
+            if (moved.length === 0) {
+                showError(failureFallback);
             }
 
             // Treat HTTP 200 with moved ids (or legacy full-success status) as success for callers

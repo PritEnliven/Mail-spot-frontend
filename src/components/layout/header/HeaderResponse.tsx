@@ -1,11 +1,14 @@
 
 import InteractiveIcon from "@components/ui/InteractiveIcon";
+import { clearAccountSession } from "@context/AccountContext";
 import { useProfile } from "@context/userContext";
 import closeIconHover from '@images/close-icon-hover.svg';
 import closeIcon from '@images/close-icon.svg';
 import enlivenLogo from "@images/enliven-logo.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
+import { ApiInterceptor } from "@services/apiService";
 import { logoutUser } from "@services/login/loginService";
+import { disconnectSocket } from "@services/socket/socket";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useContacts, useMailData } from '../../../context/index';
@@ -25,9 +28,17 @@ const Header = () => {
 
     const handleLogout = async () => {
         const currentSocketId = localStorage.getItem('socketId') ?? socketId;
-        await logoutUser(currentSocketId);
-        localStorage.clear();
-        navigate('/login');
+        try {
+            await logoutUser(currentSocketId);
+        } catch {
+            // proceed with logout even if API fails
+        } finally {
+            disconnectSocket();
+            // User-only cleanup so adminToken stays intact in other tabs
+            ApiInterceptor.clearUserData();
+            clearAccountSession();
+            navigate('/login');
+        }
     };
 
     useEffect(() => {

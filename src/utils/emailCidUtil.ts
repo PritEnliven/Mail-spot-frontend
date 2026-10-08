@@ -121,6 +121,8 @@ function findAttachmentForCid(
     const normalized = normalizeCid(cid);
     if (!normalized) return null;
 
+    // Match Content-ID only. Filename / "next image" fallbacks collide when an
+    // inline body image and a regular attachment share the same display name.
     const byContentId = attachments.findIndex((attachment, index) => {
         if (usedIndexes.has(index)) return false;
         return getAttachmentContentId(attachment) === normalized;
@@ -128,26 +130,6 @@ function findAttachmentForCid(
     if (byContentId >= 0) {
         usedIndexes.add(byContentId);
         return attachments[byContentId];
-    }
-
-    const byFilename = attachments.findIndex((attachment, index) => {
-        if (usedIndexes.has(index)) return false;
-        if (!isImageAttachment(attachment)) return false;
-        const filename = getAttachmentFilename(attachment).toLowerCase();
-        return !!filename && normalized.includes(filename);
-    });
-    if (byFilename >= 0) {
-        usedIndexes.add(byFilename);
-        return attachments[byFilename];
-    }
-
-    const nextImage = attachments.findIndex((attachment, index) => {
-        if (usedIndexes.has(index)) return false;
-        return isImageAttachment(attachment);
-    });
-    if (nextImage >= 0) {
-        usedIndexes.add(nextImage);
-        return attachments[nextImage];
     }
 
     return null;

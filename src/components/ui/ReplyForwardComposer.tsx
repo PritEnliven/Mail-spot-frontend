@@ -34,6 +34,7 @@ import { useNavigate } from 'react-router-dom';
 import SimpleBar from "simplebar-react";
 import { useContacts, useMailData, useMailUI } from '../../context/index';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
+import { prepareUniqueAttachmentFiles } from '@utils/attachmentNameUtil';
 import { useSettings } from "@context/SettingsContext";
 import { useScreen } from '@context/ScreenContext';
 import { useComposeActionsOverflow } from '@hooks/useComposeActionsOverflow';
@@ -324,10 +325,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
         if (scheduleAt) {
             // Create FormData for schedule email with attachments
             const scheduleFormData = new FormData();
+            const scheduleBodyHtml = ensureEmailTableBorders(data.body || '');
 
             // Add email fields
             scheduleFormData.append('subject', data.subject);
-            scheduleFormData.append('html', ensureEmailTableBorders(data.body || ''));
+            scheduleFormData.append('html', scheduleBodyHtml);
             scheduleFormData.append('to', data.to.join(','));
             if (data.cc && data.cc.length > 0) {
                 scheduleFormData.append('cc', data.cc.join(','));
@@ -345,8 +347,8 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
             scheduleFormData.append('scheduleAt', scheduleAt);
             scheduleFormData.append('isSchedule', 'true');
 
-            // Add attachments as files
-            attachments.forEach((file) => {
+            // Rename attachments that collide with inline body image filenames
+            prepareUniqueAttachmentFiles(scheduleBodyHtml, attachments).forEach((file) => {
                 if (file instanceof File) {
                     scheduleFormData.append('attachments', file, file.name);
                 } else {
@@ -369,10 +371,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
             // Regular reply/forward sending
             // Create FormData object
             const formData = new FormData();
+            const bodyHtml = ensureEmailTableBorders(data.body || '');
 
             // Add string fields
             formData.append('subject', data.subject);
-            formData.append('content', ensureEmailTableBorders(data.body || ''));
+            formData.append('content', bodyHtml);
 
             // Add array fields as comma-separated strings
             formData.append('to', data.to.join(','));
@@ -385,12 +388,11 @@ const ReplyForwardComposer = ({ email, type, onClose, onEmailSent, onPendingRepl
                 formData.append('bcc', data.bcc.join(','));
             }
 
-            // Add attachments
-            attachments.forEach((file) => {
+            // Rename attachments that collide with inline body image filenames
+            prepareUniqueAttachmentFiles(bodyHtml, attachments).forEach((file) => {
                 if (file instanceof File) {
                     formData.append('attachments', file, file.name);
-                } 
-                else {
+                } else {
                     // For existing attachments, send as JSON string
                     formData.append('existingAttachments', JSON.stringify(file));
                 }

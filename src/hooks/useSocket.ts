@@ -9,7 +9,8 @@ import type { Email } from '@models/Email';
 import type { Socket } from 'socket.io-client';
 import { notificationManager } from '@utils/notifications';
 import { useNavigate } from 'react-router-dom';
-import { getActiveAccountId, LINKED_ACCOUNT_SIGNED_OUT_EVENT, type LinkedAccountSignedOutEventDetail } from '@services/apiService';
+import { ApiInterceptor, getActiveAccountId, LINKED_ACCOUNT_SIGNED_OUT_EVENT, type LinkedAccountSignedOutEventDetail } from '@services/apiService';
+import { clearAccountSession } from '@context/AccountContext';
 import { showOutboundSendFailedToast, showWarning } from '@components/ui/toast/toastNotification';
 import { DEFAULT_SORT_ORDER, type ArrangeBy, type SortOrder } from '@constants/arrangeBy';
 import { mergeIntoArrangedList } from '@utils/arrangeEmailUtil';
@@ -399,9 +400,12 @@ export const useMailSocket = () => {
             }
         };
 
+        // Clear only user session keys — never localStorage.clear(), which would
+        // wipe adminToken shared across admin + user tabs in the same browser.
         const handleLogout = () => {
-            localStorage.clear();
             disconnectSocket();
+            ApiInterceptor.clearUserData();
+            clearAccountSession();
             navigate('/login');
         };
 

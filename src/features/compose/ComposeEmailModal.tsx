@@ -982,6 +982,7 @@ import { sendEmailWithUndo } from '@components/ui/toast/SendMailDelayToast';
 import { getActiveAccountId } from '@services/apiService';
 import { registerPendingOutboundSend } from '@services/socket/pendingOutboundSend';
 import { ensureEmailTableBorders } from '@utils/emailHtmlUtil';
+import { prepareUniqueAttachmentFiles } from '@utils/attachmentNameUtil';
 import BaseModal from '@components/ui/BaseModal';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import CkEditorRichText from '@components/ui/CkEditor/CkEditorRichText';
@@ -1204,10 +1205,11 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
 
     const prepareFormData = (data: ComposeFormValues, isDraft: boolean = false) => {
         const formData = new FormData();
+        const bodyHtml = ensureEmailTableBorders(data.body || '');
 
         // Add string fields
         formData.append('subject', data.subject || '');
-        formData.append('html', ensureEmailTableBorders(data.body || ''));
+        formData.append('html', bodyHtml);
         formData.append('isDraftMail', isDraft.toString());
         if (isDraft) {
             formData.append('draftEmailId', emailData?.draftEmailId || '');
@@ -1225,8 +1227,8 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
             formData.append('bcc', data.bcc.join(','));
         }
 
-        // Add attachments
-        attachments.forEach((file) => {
+        // Rename attachments that collide with inline body image filenames
+        prepareUniqueAttachmentFiles(bodyHtml, attachments).forEach((file) => {
             if (file instanceof File) {
                 formData.append('attachments', file, file.name);
             } else {
@@ -1266,10 +1268,11 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
         if (scheduleAt) {
             // Create FormData for schedule email with attachments
             const scheduleFormData = new FormData();
+            const scheduleBodyHtml = ensureEmailTableBorders(data.body || '');
 
             // Add email fields
             scheduleFormData.append('subject', data.subject);
-            scheduleFormData.append('html', ensureEmailTableBorders(data.body || ''));
+            scheduleFormData.append('html', scheduleBodyHtml);
             scheduleFormData.append('to', data.to.join(','));
             if (data.cc && data.cc.length > 0) {
                 scheduleFormData.append('cc', data.cc.join(','));
@@ -1287,12 +1290,12 @@ export const ComposeEmailModal = ({ modalId, zIndex, emailData }: ComposeEmailMo
                 scheduleFormData.append('scheduleId', emailData?._id || '');
             }
 
-            // Add attachments as files
-            attachments.forEach((file) => {
+            // Rename attachments that collide with inline body image filenames
+            prepareUniqueAttachmentFiles(scheduleBodyHtml, attachments).forEach((file) => {
                 if (file instanceof File) {
-                    scheduleFormData.append('attachments', file);
-                } else if ('file' in file && file.file instanceof File) {
-                    scheduleFormData.append('attachments', file.file);
+                    scheduleFormData.append('attachments', file, file.name);
+                } else if ('file' in file && (file as { file?: File }).file instanceof File) {
+                    scheduleFormData.append('attachments', (file as { file: File }).file);
                 }
             });
 
