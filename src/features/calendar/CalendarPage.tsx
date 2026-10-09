@@ -9,8 +9,10 @@ import type { DatesSetArg } from '@fullcalendar/core'
 import FullCalendar from '@fullcalendar/react'
 import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet'
 import { useSocketEvent } from '@hooks/useSocket'
+import { showError } from '@components/ui/toast/toastNotification'
 import { getEventById } from '@services/calendar/calendarService'
 import { focusDate, focusEvent, normalizeEventForModal } from '@utils/calendarUtil'
+import { writableCalendars } from '@utils/calendarPermissionUtil'
 import chevronDownIcon from '@images/chevron-down-icon.svg'
 import chevronDownIconHover from '@images/chevron-down-icon-hover.svg'
 import chevronUpIcon from '@images/chevron-up-icon.svg'
@@ -30,6 +32,7 @@ function CalendarPage() {
         calendarTitle,
         setCalendarView,
         getAllEventList,
+        calendars,
         fetchCalendars,
         registerResetLastClickedDate,
         isCalendarAllSearchActive,
@@ -320,8 +323,13 @@ function CalendarPage() {
             focusDate(info)
         }
 
+        if (writableCalendars(calendars).length === 0) {
+            showError('No writable calendars available')
+            return
+        }
+
         openModal('calendarEvent', info)
-    }, [openModal, sidebarCalendarRef])
+    }, [calendars, openModal, sidebarCalendarRef])
 
     const mainCalendarConfig = useMemo(() => createMainCalendarConfig({
         onDatesSet: handleDatesSet,

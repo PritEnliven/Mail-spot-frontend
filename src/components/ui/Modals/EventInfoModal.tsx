@@ -20,6 +20,7 @@ import type { EventDetail } from "@models/CalendarModels";
 import { useCalendar } from "@context/CalendarContext";
 import { deleteEvent, getEventById } from "@services/calendar/calendarService";
 import { showError, showSuccess } from "../toast/toastNotification";
+import { canWriteEvents } from "@utils/calendarPermissionUtil";
 import { copyEmailToClipBoard } from "@utils/generalUtil";
 import { resolveExternalLinkUrl } from "@utils/emailHtmlUtil";
 import SimpleBar from 'simplebar-react';
@@ -35,8 +36,11 @@ interface EventInfoModalProps {
 
 function EventInfoModal({ modalId, zIndex, event }: EventInfoModalProps) {
     const { closeModal, openModal } = useMailUI();
-    const { selectedEvent, getAllEventList, setSelectedEvent } = useCalendar();
+    const { calendars, selectedEvent, getAllEventList, setSelectedEvent } = useCalendar();
     const [guestList, setGuestList] = useState(event.guestList);
+    const eventCalendarId = event.calendarId || selectedEvent?.calendarId;
+    const eventCalendar = calendars.find((calendar) => calendar._id === eventCalendarId);
+    const canEditEvent = !eventCalendar || canWriteEvents(eventCalendar);
 
     useEffect(() => {
         setGuestList(event.guestList);
@@ -161,30 +165,34 @@ function EventInfoModal({ modalId, zIndex, event }: EventInfoModalProps) {
                             </button>
                             <h1 className="modal-title modal-title-center" id="eventInfoModalLabel"></h1>
                             <div className="d-flex align-items-center modal-btn-group">
-                                <button type="button" className="hover-link btn  icon-hover-effect" onClick={editEventHandler}>
-                                    <InteractiveIcon
-                                        defaultIcon={edit2Icon}
-                                        hoverIcon={edit2IconHover}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip="Edit"
-                                    />
-                                </button>
-                                <button type="button" className="hover-link btn  icon-hover-effect" onClick={deleteEventHandler}>
-                                    <InteractiveIcon
-                                        defaultIcon={trashIcon}
-                                        hoverIcon={trashIconHover}
-                                        activeIcon=""
-                                        isActive={false}
-                                        alt=""
-                                        className="interactive-icon hover-image"
-                                        renderAs="img"
-                                        tooltip="Delete"
-                                    />
-                                </button>
+                                {canEditEvent && (
+                                    <button type="button" className="hover-link btn  icon-hover-effect" onClick={editEventHandler}>
+                                        <InteractiveIcon
+                                            defaultIcon={edit2Icon}
+                                            hoverIcon={edit2IconHover}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip="Edit"
+                                        />
+                                    </button>
+                                )}
+                                {canEditEvent && (
+                                    <button type="button" className="hover-link btn  icon-hover-effect" onClick={deleteEventHandler}>
+                                        <InteractiveIcon
+                                            defaultIcon={trashIcon}
+                                            hoverIcon={trashIconHover}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip="Delete"
+                                        />
+                                    </button>
+                                )}
                                 <button type="button" className="btn-close hover-link btn  icon-hover-effect" onClick={onClose}>
                                     <InteractiveIcon
                                         defaultIcon={closeIcon}

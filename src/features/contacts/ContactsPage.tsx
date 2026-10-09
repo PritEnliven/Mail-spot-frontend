@@ -101,7 +101,6 @@ function ContactsPage() {
         setPage,
         setLimit,
         setSearchQuery,
-        setSort,
     } = isGroupsView ? groupsList : contactsList;
 
     const visiblePages = useMemo(

@@ -28,6 +28,7 @@ import linkIcon from "@images/link-icon-16.svg";
 import locationIcon from "@images/location-icon.svg";
 import { createEvent, editEvent } from "@services/calendar/calendarService";
 import { generateTimeOptions } from "@utils/calendarUtil";
+import { writableCalendars } from "@utils/calendarPermissionUtil";
 import { formatDate, formatTime24HrFrom12HrString, parseDateForFlatpickr, TimeFormat } from "@utils/dateUtil";
 import { filterGuestByEmail, normalizeGuests } from "@utils/guestUtil";
 import { useEffect, useMemo, useRef } from "react";
@@ -180,8 +181,10 @@ function CalendarEventModal({ modalId, zIndex, ...props }: CalendarEventModalPro
         name: 'calendarId',
     });
 
-    const defaultCalendarId = calendars.find((calendar) => calendar.isDefault)?._id || calendars[0]?._id || '';
-    const calendarOptions = calendars.map((calendar) => ({
+    const writable = writableCalendars(calendars);
+    const defaultCalendarId =
+        writable.find((calendar) => calendar.isDefault)?._id || writable[0]?._id || '';
+    const calendarOptions = writable.map((calendar) => ({
         value: calendar._id,
         label: calendar.name,
     }));

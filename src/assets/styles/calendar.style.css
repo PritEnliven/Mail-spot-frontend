@@ -481,3 +481,98 @@ span.single-event-detail-title:after { content: ""; width: 100%; height: 1px; bo
 .fc-timeGridDay-view .fc-scroller-liquid-absolute { height: calc(100vh - 180px); }
 .event-guest-partstat-group { margin: 0 0 12px 0; }
 .event-guest-partstat-heading { font-size: 12px; font-weight: 500; color: #717D84; }
+
+/* Share calendar modal + list */
+.share-calendar-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid #bbc0c4;
+}
+.share-calendar-modal-scroll { max-height: min(70vh, 520px); padding: 0 16px 16px; }
+.share-calendar-modal-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #212121;
+  margin: 0;
+}
+.share-calendar-note {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #717d84;
+  margin: 0;
+}
+.share-calendar-people-list { display: flex; flex-direction: column; gap: 8px; }
+.share-calendar-people-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #bbc0c4;
+  border-radius: 6px;
+  background: #fff;
+  flex-wrap: wrap;
+}
+.share-calendar-people-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.share-calendar-people-email {
+  font-size: 13px;
+  color: #212121;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-calendar-people-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.share-calendar-permission-select { min-width: 110px; width: 120px; }
+.share-calendar-remove-btn {
+  font-size: 12px;
+  color: #717d84;
+  padding: 4px 6px;
+}
+.share-calendar-remove-btn:hover { color: #212121; }
+.Calendar-main .calendar-list-name-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.Calendar-main .calendar-list-name-wrap .calendar-list-name {
+  flex: none;
+  width: 100%;
+}
+.Calendar-main .calendar-list-shared-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.75);
+}
+.Calendar-main .calendar-list-shared-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+.Calendar-main .calendar-list-shared-owner {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

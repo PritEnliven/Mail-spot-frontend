@@ -223,13 +223,15 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     async (accountId: string) => {
       markLocalUnlink(accountId);
       try {
+
         await unlinkAccountApi(accountId);
 
         if (accountId === activeAccountId && primaryAccount) {
           await switchAccountApi(primaryAccount.id);
         }
-
+        
         await fetchLinkedAccounts();
+
         showSuccess('Account unlinked successfully');
       } catch (err: any) {
         clearLocalUnlink(accountId);

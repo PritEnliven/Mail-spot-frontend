@@ -7,6 +7,9 @@ interface CalendarEvent {
     [key: string]: any;
 }
 
+type CalendarSharePermission = 'view' | 'edit' | 'manage';
+type CalendarShareStatus = 'pending' | 'accepted' | 'declined' | 'revoked';
+
 interface UserCalendar {
     _id: string;
     name: string;
@@ -14,6 +17,20 @@ interface UserCalendar {
     isDefault: boolean;
     createdAt?: string;
     updatedAt?: string;
+    isShared?: boolean;
+    permission?: CalendarSharePermission;
+    ownerEmail?: string;
+    shareId?: string;
+}
+
+interface CalendarShare {
+    _id: string;
+    calendarId: string;
+    inviteeEmail: string;
+    permission: CalendarSharePermission;
+    status: CalendarShareStatus;
+    feedToken?: string;
+    respondedAt?: string;
 }
 
 interface EventDetail {
@@ -39,4 +56,11 @@ interface EventDetail {
     calendarColor?: string,
 }
 
-export type { CalendarEvent, EventDetail, UserCalendar }
+export type {
+    CalendarEvent,
+    CalendarShare,
+    CalendarSharePermission,
+    CalendarShareStatus,
+    EventDetail,
+    UserCalendar,
+}

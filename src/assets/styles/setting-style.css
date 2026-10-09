@@ -79,12 +79,16 @@
 }
 
 .Settings-main .mail-application-box {
-    height: calc(100% - 53px);
+    /* height: calc(100% - 53px); */
     margin-left: -1px;
     padding-left: 1px;
-    overflow: auto;
+    /* overflow: auto; */
 }
 
+.settings-container.setting-main-section-left{
+     height: calc(100vh - 128px);
+      overflow: auto;
+}
 .Settings-main .mobile-search-btn {
     display: none !important;
 }

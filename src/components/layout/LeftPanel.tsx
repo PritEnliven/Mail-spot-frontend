@@ -19,6 +19,7 @@ import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
 import eventIcon from '@images/calendar-event-icon-white.svg';
 import { useScreen } from '@context/ScreenContext';
+import { writableCalendars } from '@utils/calendarPermissionUtil';
 
 
 type SidebarNavItem = { id: string; boxName: string; label: string };
@@ -49,7 +50,7 @@ const LeftPanel = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { sidebarSectionScrollbarRef, handleRef, scrollRef, fadeTopRef, fadeBottomRef } = useSidebarFadeScrollbar();
-    const { setIsCalendarAllSearchActive } = useCalendar();
+    const { calendars, setIsCalendarAllSearchActive } = useCalendar();
 
     const { boxName, setBoxName, setPagination, setBoxTitle, fetchEmails,
         sidebarState,
@@ -449,6 +450,10 @@ const LeftPanel = () => {
     }
 
     const openCalendarModal = () => {
+        if (writableCalendars(calendars).length === 0) {
+            showError('No writable calendars available');
+            return;
+        }
         openModal('calendarEvent');
     }
 

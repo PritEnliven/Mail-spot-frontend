@@ -2,7 +2,7 @@ import type { Email } from '@models/Email';
 import type { ModalClosePayload } from '@models/ModalClosePayload';
 import type { ModalType } from '@models/ModalType';
 import { useScreen } from '@context/ScreenContext';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 interface ToolbarState {
     showBack: boolean;
@@ -23,6 +23,16 @@ export interface ActiveModal {
     onError?: () => void;
     onCancel?: () => void;
     onClose?: (payload: ModalClosePayload) => void;
+}
+
+function collectGroupKeys(emails: Email[]): Set<string> {
+    const keys = new Set<string>();
+    for (const email of emails) {
+        if (!email?.isGroupStart) continue;
+        const key = email.groupKey || email.groupLabel || '';
+        if (key) keys.add(key);
+    }
+    return keys;
 }
 
 interface MailUIType {
@@ -46,6 +56,13 @@ interface MailUIType {
     setIsFilterPanelOpen: (open: boolean) => void;
     activeBoxId: string;
     setActiveBoxId: (boxId: string) => void;
+    collapsedGroups: Set<string>;
+    areAllMailGroupsCollapsed: boolean;
+    toggleMailGroup: (groupKey: string) => void;
+    expandAllMailGroups: () => void;
+    collapseAllMailGroups: () => void;
+    toggleAllMailGroups: () => void;
+    resetCollapsedMailGroups: () => void;
 }
 
 interface MailUIProviderProps {
@@ -55,7 +72,7 @@ interface MailUIProviderProps {
     activeEmailMessageId: string | null;
 }
 
-const REMOUNT_ON_REOPEN_MODALS: ModalType[] = ['calendarEvent', 'forwardIt', 'calendarForm'];
+const REMOUNT_ON_REOPEN_MODALS: ModalType[] = ['calendarEvent', 'forwardIt', 'calendarForm', 'shareCalendar'];
 
 const MailUIContext = createContext<MailUIType | undefined>(undefined);
 
@@ -76,11 +93,60 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
     const [isSidebarExpandedMobile, setIsSidebarExpandedMobile] = useState(false);
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
     const [activeBoxId, setActiveBoxId] = useState<string>('box-li-0');
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
 
     // Add this effect to reset customToolbarState when selection changes
     useEffect(() => {
         setCustomToolbarState(null);
     }, [selectedEmails, activeEmailMessageId]);
+
+    const toggleMailGroup = useCallback((groupKey: string) => {
+        setCollapsedGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(groupKey)) {
+                next.delete(groupKey);
+            } else {
+                next.add(groupKey);
+            }
+            return next;
+        });
+    }, []);
+
+    const groupKeys = useMemo(() => collectGroupKeys(emails), [emails]);
+
+    const areAllMailGroupsCollapsed = useMemo(() => {
+        if (groupKeys.size === 0) return false;
+        for (const key of groupKeys) {
+            if (!collapsedGroups.has(key)) return false;
+        }
+        return true;
+    }, [collapsedGroups, groupKeys]);
+
+    const expandAllMailGroups = useCallback(() => {
+        setCollapsedGroups(new Set());
+    }, []);
+
+    const collapseAllMailGroups = useCallback(() => {
+        setCollapsedGroups(new Set(groupKeys));
+    }, [groupKeys]);
+
+    const toggleAllMailGroups = useCallback(() => {
+        setCollapsedGroups((prev) => {
+            if (groupKeys.size === 0) return prev;
+            let allCollapsed = true;
+            for (const key of groupKeys) {
+                if (!prev.has(key)) {
+                    allCollapsed = false;
+                    break;
+                }
+            }
+            return allCollapsed ? new Set() : new Set(groupKeys);
+        });
+    }, [groupKeys]);
+
+    const resetCollapsedMailGroups = useCallback(() => {
+        setCollapsedGroups(new Set());
+    }, []);
 
     // Derived toolbar state - computes the default state based on selection
     const derivedToolbarState = useMemo(() => {
@@ -220,7 +286,14 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
         isFilterPanelOpen,
         setIsFilterPanelOpen,
         activeBoxId,
-        setActiveBoxId
+        setActiveBoxId,
+        collapsedGroups,
+        areAllMailGroupsCollapsed,
+        toggleMailGroup,
+        expandAllMailGroups,
+        collapseAllMailGroups,
+        toggleAllMailGroups,
+        resetCollapsedMailGroups,
     };
 
     return (

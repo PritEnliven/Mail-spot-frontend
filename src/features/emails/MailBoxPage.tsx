@@ -47,7 +47,19 @@ const MailBoxPage = () => {
     } = useMailData();
     const isSearchOrFilterMailList = boxTitle === 'Search Results';
     const { selectedEmails } = useMailSelection();
-    const { setToolbarState, isLoading, setIsLoading, openModal, isMailListOpen, activeModals, closeModal, setIsMailListOpen } = useMailUI();
+    const {
+        setToolbarState,
+        isLoading,
+        setIsLoading,
+        openModal,
+        isMailListOpen,
+        activeModals,
+        closeModal,
+        setIsMailListOpen,
+        collapsedGroups,
+        toggleMailGroup,
+        resetCollapsedMailGroups,
+    } = useMailUI();
     const { settings } = useSettings();
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
     const { isDesktop } = useScreen();
@@ -55,7 +67,6 @@ const MailBoxPage = () => {
     const isDraftBox = boxName ? verifyBoxName(boxName, 'draft') : false;
     const simpleBarRef = useRef<any>(null);
     const [isEmailDetailLoading, setIsEmailDetailLoading] = useState(false);
-    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
     const navigate = useNavigate();
 
     useShortcutAction('new_compose', () => openModal('compose'));
@@ -508,26 +519,14 @@ const MailBoxPage = () => {
 
     // Expand all groups when arrange mode or folder changes (not on infinite-scroll page bumps)
     useEffect(() => {
-        setCollapsedGroups(new Set());
-    }, [arrangeBy, boxName]);
+        resetCollapsedMailGroups();
+    }, [arrangeBy, boxName, resetCollapsedMailGroups]);
 
     // Replace-style pagination: expand groups when the page changes
     useEffect(() => {
         if (arrangeBy) return;
-        setCollapsedGroups(new Set());
-    }, [mailListPage, arrangeBy]);
-
-    const toggleGroup = useCallback((groupKey: string) => {
-        setCollapsedGroups((prev) => {
-            const next = new Set(prev);
-            if (next.has(groupKey)) {
-                next.delete(groupKey);
-            } else {
-                next.add(groupKey);
-            }
-            return next;
-        });
-    }, []);
+        resetCollapsedMailGroups();
+    }, [mailListPage, arrangeBy, resetCollapsedMailGroups]);
 
     const listHasGroups = useMemo(
         () => Boolean(arrangeBy) && emails.some((email: any) => email?.isGroupStart && email?.groupLabel),
@@ -591,7 +590,7 @@ const MailBoxPage = () => {
                                                                     label={email.groupLabel}
                                                                     groupKey={groupKey || email.groupLabel}
                                                                     expanded={!collapsedGroups.has(groupKey || email.groupLabel)}
-                                                                    onToggle={toggleGroup}
+                                                                    onToggle={toggleMailGroup}
                                                                 />
                                                             )}
                                                             {!isGroupCollapsed && (

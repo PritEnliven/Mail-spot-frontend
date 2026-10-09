@@ -2275,7 +2275,7 @@ function ComposeFormatDropdownsPlugin(editor: any) {
                 'value',
                 numberedCommand,
                 'value',
-                (bulletedOn: unknown, numberedOn: unknown) =>
+                (_bulletedOn: unknown, numberedOn: unknown) =>
                     numberedOn ? IconNumberedList : IconBulletedList
             );
         }

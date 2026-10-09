@@ -19,6 +19,7 @@ const ContactFormModal = lazy(() => import('@features/contacts/ContactFormModal'
 const CreateGroupModal = lazy(() => import('@features/contacts/CreateGroupModal'));
 const GroupDetailModal = lazy(() => import('@features/contacts/GroupDetailModal'));
 const CalendarFormModal = lazy(() => import('./Modals/CalendarFormModal/CalendarFormModal'));
+const ShareCalendarModal = lazy(() => import('./Modals/ShareCalendarModal/ShareCalendarModal'));
 
 const BASE_Z_INDEX = 1050;
 const Z_INDEX_STEP = 20;
@@ -217,6 +218,16 @@ function ModalRoot() {
                     case 'calendarForm':
                         content = (
                             <CalendarFormModal
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+                        break;
+
+                    case 'shareCalendar':
+                        content = (
+                            <ShareCalendarModal
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}

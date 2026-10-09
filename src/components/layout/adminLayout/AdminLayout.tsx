@@ -1,4 +1,3 @@
-import AdminBottomNav from "@components/layout/adminLayout/AdminBottomNav";
 import AdminLeftPanel from "@components/layout/adminLayout/AdminLeftPanel";
 import AdminRightPanel from "@components/layout/adminLayout/AdminRightPanel";
 import AdminModalRoot from "@components/ui/AdminModalRoot";
@@ -34,8 +33,6 @@ const AppContent = () => {
             <div className="right-side-bar-main">
                 <AdminRightPanel />
             </div>
-
-            {/* {isMobile && <AdminBottomNav />} */}
 
             <AdminModalRoot />
         </main>

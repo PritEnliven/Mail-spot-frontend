@@ -6,6 +6,7 @@ import ModalRoot from "@components/ui/ModalRoot";
 import { useMailUI } from "@context/MailUIContext";
 import { SettingsProvider } from "@context/SettingsContext";
 import { useLinkedAccountRevoked, useLinkedAccountSignedOut, useMailSocket, useOutboundSendSocket } from "@hooks/useSocket";
+import { useCalendarSocket } from "@hooks/useCalendarSocket";
 import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
 import AppLoader from "@components/layout/AppLoader";
 import { useGlobalShortcuts } from "@hooks/useGlobalShortcuts";
@@ -18,6 +19,7 @@ const AppContent = () => {
     useOutboundSendSocket();
     useLinkedAccountRevoked();
     useLinkedAccountSignedOut();
+    useCalendarSocket();
     useGlobalShortcuts();
     useSyncActiveAccountProfile();
 

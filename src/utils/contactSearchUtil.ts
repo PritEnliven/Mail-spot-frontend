@@ -7,20 +7,20 @@ function trimEmail(value: unknown): string {
 export function getMemberEmailsFromGroupItem(item: any): string[] {
     if (!item || typeof item !== 'object') return [];
 
-    const fromMembers = Array.isArray(item.members)
+    const fromMembers: string[] = Array.isArray(item.members)
         ? item.members
             .map((member: ContactGroupMember | string) => {
                 if (typeof member === 'string') return trimEmail(member);
                 return trimEmail(member?.email);
             })
-            .filter(Boolean)
+            .filter((email: string): email is string => Boolean(email))
         : [];
 
     if (fromMembers.length > 0) {
         return [...new Set(fromMembers)];
     }
 
-    const fromIds = Array.isArray(item.memberIds)
+    const fromIds: string[] = Array.isArray(item.memberIds)
         ? item.memberIds
             .map((id: string) => trimEmail(id))
             .filter((id: string) => id.includes('@'))

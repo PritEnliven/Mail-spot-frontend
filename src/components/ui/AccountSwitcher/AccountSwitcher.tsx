@@ -132,7 +132,7 @@ const AccountSwitcher = ({ onAccountSwitch, onNestedOverlayChange }: AccountSwit
       const email =
         account?.email ||
         detail.email ||
-        (primaryAccount?.id === detail.accountId ? primaryAccount.email : undefined);
+        (primaryAccount?.id === detail.accountId ? primaryAccount?.email : undefined);
 
       if (!email) {
         setReauthEmail(null);

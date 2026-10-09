@@ -19,4 +19,5 @@ export type ModalType =
     'createGroup' |
     'groupDetail' |
     'calendarForm' |
+    'shareCalendar' |
 null;

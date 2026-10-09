@@ -5,7 +5,13 @@ import { useCalendar } from '@context/CalendarContext';
 import { useMailUI } from '@context/MailUIContext';
 import { useScreen } from '@context/ScreenContext';
 import type { UserCalendar } from '@models/CalendarModels';
-import { deleteCalendar } from '@services/calendar/calendarsService';
+import { deleteCalendar, revokeCalendarShare } from '@services/calendar/calendarsService';
+import {
+    canLeaveShare,
+    canManageShares,
+    isOwnedCalendar,
+    permissionLabel,
+} from '@utils/calendarPermissionUtil';
 import chevronDownIcon from '@images/chevron-down-icon.svg';
 import chevronDownIconHover from '@images/chevron-down-icon-hover.svg';
 import chevronRightIcon from '@images/chevron-right-icon.svg';
@@ -42,6 +48,15 @@ function CalendarList() {
         });
     };
 
+    const openShareModal = (calendar: UserCalendar) => {
+        setOpenDropdownId(null);
+        openModal('shareCalendar', {
+            calendarId: calendar._id,
+            name: calendar.name,
+            color: calendar.color,
+        });
+    };
+
     const handleDelete = async (calendar: UserCalendar) => {
         const response = await deleteCalendar({ calendarId: calendar._id });
         if (response.statusCode === 200) {
@@ -59,6 +74,27 @@ function CalendarList() {
             title: 'Delete calendar',
             message: 'Events on this calendar will be moved to My Calendar. .',
             onConfirm: () => handleDelete(calendar),
+        });
+    };
+
+    const handleLeave = async (calendar: UserCalendar) => {
+        if (!calendar.shareId) return;
+        const response = await revokeCalendarShare({ shareId: calendar.shareId });
+        if (response.statusCode === 200) {
+            showSuccess(response.data?.message || 'Left shared calendar');
+            await fetchCalendars();
+            await getAllEventList();
+            return;
+        }
+        showError(response.message || 'Failed to leave shared calendar');
+    };
+
+    const confirmLeave = (calendar: UserCalendar) => {
+        setOpenDropdownId(null);
+        openModal('confirmDelete', {
+            title: 'Leave shared calendar',
+            message: `Leave “${calendar.name}”? You will no longer see its events.`,
+            onConfirm: () => handleLeave(calendar),
         });
     };
 
@@ -134,6 +170,9 @@ function CalendarList() {
                     {calendars.map((calendar) => {
                         const checkboxId = `calendar-visible-${calendar._id}`;
                         const isChecked = selectedCalendarIds.includes(calendar._id);
+                        const owned = isOwnedCalendar(calendar);
+                        const showShare = canManageShares(calendar);
+                        const showLeave = canLeaveShare(calendar);
 
                         return (
                             <li key={calendar._id} className="calendar-list-row">
@@ -153,16 +192,36 @@ function CalendarList() {
                                         <label htmlFor={checkboxId} className="label-text" />
                                     </div>
                                 </div>
-                                <label htmlFor={checkboxId} className="calendar-list-name">
-                                    {calendar.name}
-                                </label>
+                                <div className="calendar-list-name-wrap">
+                                    <label htmlFor={checkboxId} className="calendar-list-name">
+                                        {calendar.name}
+                                    </label>
+                                    {calendar.isShared && (
+                                        <div className="calendar-list-shared-meta">
+                                            <span className="calendar-list-shared-badge">Shared</span>
+                                            {calendar.ownerEmail && (
+                                                <span className="calendar-list-shared-owner" title={calendar.ownerEmail}>
+                                                    {calendar.ownerEmail}
+                                                </span>
+                                            )}
+                                            {calendar.permission && (
+                                                <span>{permissionLabel(calendar.permission)}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="calendar-list-actions">
                                     <FolderActionsDropdown
                                         isOpen={openDropdownId === calendar._id}
                                         onToggle={(nextOpen) => setOpenDropdownId(nextOpen ? calendar._id : null)}
+                                        showEdit={owned}
                                         onEdit={() => openEditModal(calendar)}
+                                        showDelete={owned && !calendar.isDefault}
                                         onDelete={() => confirmDelete(calendar)}
-                                        showDelete={!calendar.isDefault}
+                                        showShare={showShare}
+                                        onShare={() => openShareModal(calendar)}
+                                        showLeave={showLeave}
+                                        onLeave={() => confirmLeave(calendar)}
                                         drop="down"
                                         align="end"
                                     />

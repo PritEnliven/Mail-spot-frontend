@@ -2,11 +2,16 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import eclipseVerticalIcon from '@images/ellipsis-vertical-icon.svg';
 
 interface FolderActionsDropdownProps {
-    onEdit: () => void;
-    onDelete: () => void;
+    onEdit?: () => void;
+    onDelete?: () => void;
+    onShare?: () => void;
+    onLeave?: () => void;
     isOpen: boolean;
     onToggle: (nextOpen: boolean) => void;
+    showEdit?: boolean;
     showDelete?: boolean;
+    showShare?: boolean;
+    showLeave?: boolean;
     drop?: 'up' | 'start' | 'end' | 'down';
     align?: 'start' | 'end';
 }
@@ -14,9 +19,14 @@ interface FolderActionsDropdownProps {
 const FolderActionsDropdown: React.FC<FolderActionsDropdownProps> = ({
     onEdit,
     onDelete,
+    onShare,
+    onLeave,
     isOpen,
     onToggle,
+    showEdit = true,
     showDelete = true,
+    showShare = false,
+    showLeave = false,
     drop = 'end',
     align = 'start',
 }) => {
@@ -44,17 +54,43 @@ const FolderActionsDropdown: React.FC<FolderActionsDropdownProps> = ({
                     ],
                 }}
             >
-                <Dropdown.Item
-                    as="button"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit();
-                    }}
-                >
-                    Edit
-                </Dropdown.Item>
+                {showEdit && onEdit && (
+                    <Dropdown.Item
+                        as="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit();
+                        }}
+                    >
+                        Edit
+                    </Dropdown.Item>
+                )}
 
-                {showDelete && (
+                {showShare && onShare && (
+                    <Dropdown.Item
+                        as="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onShare();
+                        }}
+                    >
+                        Share
+                    </Dropdown.Item>
+                )}
+
+                {showLeave && onLeave && (
+                    <Dropdown.Item
+                        as="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onLeave();
+                        }}
+                    >
+                        Leave
+                    </Dropdown.Item>
+                )}
+
+                {showDelete && onDelete && (
                     <Dropdown.Item
                         as="button"
                         onClick={(e) => {

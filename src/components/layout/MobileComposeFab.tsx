@@ -3,13 +3,16 @@ import eventIcon from '@images/calendar-event-icon-white.svg';
 import plusIconWhite from '@images/plus-icon-white.svg';
 import { useLocation } from 'react-router-dom';
 import { useScreen } from '@context/ScreenContext';
-import { useContacts, useMailUI } from '@context/index';
+import { useCalendar, useContacts, useMailUI } from '@context/index';
 import { CONTACTS_LIST_REFRESH_EVENT } from '@features/contacts/useContacts';
+import { showError } from '@components/ui/toast/toastNotification';
+import { writableCalendars } from '@utils/calendarPermissionUtil';
 
 const MobileComposeFab = () => {
     const location = useLocation();
     const { isMobile } = useScreen();
     const { openModal, isSidebarExpandedMobile, isFilterPanelOpen, activeEmailMessageId } = useMailUI();
+    const { calendars } = useCalendar();
     const { fetchContacts } = useContacts();
 
     const isCalendar = location.pathname.includes('/calendar');
@@ -26,6 +29,10 @@ const MobileComposeFab = () => {
 
     const handleClick = () => {
         if (isCalendar) {
+            if (writableCalendars(calendars).length === 0) {
+                showError('No writable calendars available');
+                return;
+            }
             openModal('calendarEvent');
             return;
         }

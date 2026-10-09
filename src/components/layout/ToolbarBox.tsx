@@ -14,6 +14,10 @@ import backBtnIconHover from "@images/back-btn-icon-hover.svg";
 import backBtnIcon from "@images/back-btn-icon.svg";
 import leftArrowPaginationIconHover from "@images/chevron-left-icon-big-hover.svg";
 import leftArrowPaginationIcon from "@images/chevron-left-icon-big.svg";
+import chevronDownIconHover from "@images/chevron-down-icon-hover.svg";
+import chevronDownIcon from "@images/chevron-down-icon.svg";
+import chevronUpIconHover from "@images/chevron-up-icon-hover.svg";
+import chevronUpIcon from "@images/chevron-up-icon.svg";
 import rightArrowPaginationIconHover from "@images/chevron-right-icon-big-hover.svg";
 import rightArrowPaginationIcon from "@images/chevron-right-icon-big.svg";
 import moreActionIconHover from "@images/ellipsis-vertical-icon-hover.svg";
@@ -35,7 +39,6 @@ import uploadFileIcon from "@images/upload-file-icon.svg";
 import type { Email } from "@models/Email";
 import { moveToFolder, refreshMailBox } from "@services/emailAction/emailActionService";
 import {
-    downloadBlobFile,
     exportEml,
     importEml,
     moveToImap,
@@ -92,7 +95,16 @@ const ToolbarBox = () => {
     const { pagination, boxName, sidebarState, mailListPage, fetchEmails, readUnreadFilter, fetchSearchEmails, allSearchResult, emailDetailSelected, emails,
         setEmails, setPagination, setTotalEmailBadge, updateBoxCount, deleteEmailState, setEmailDetailSelected, setActiveEmailMessageId, boxTitle, arrangeBy, sortOrder, setSidebarStateFromAPI } = useMailData();
     const { selectAllEmails, selectedEmails, clearEmailSelection } = useMailSelection();
-    const { toolbarState, activeEmailMessageId, setToolbarState, openModal, setIsMailListOpen, setIsLoading } = useMailUI();
+    const {
+        toolbarState,
+        activeEmailMessageId,
+        setToolbarState,
+        openModal,
+        setIsMailListOpen,
+        setIsLoading,
+        areAllMailGroupsCollapsed,
+        toggleAllMailGroups,
+    } = useMailUI();
     const { markAsRead, markAsUnread, deleteEmail } = useEmailAction();
     const [moveToFolderOptions, setMoveToFolderOptions] = useState<any>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -399,8 +411,7 @@ const ToolbarBox = () => {
         }
 
         setIsExportingEml(true);
-        const progressToastId =
-            messageIds.length > 1 ? showProgressToast('Exporting as EML…') : undefined;
+        const progressToastId = showProgressToast('Preparing export…');
         try {
             const result = await exportEml({ messageIds });
             dismissToast(progressToastId);
@@ -421,15 +432,8 @@ const ToolbarBox = () => {
                 return;
             }
 
-            downloadBlobFile(result.blob, result.filename);
-            const isZip = /\.zip$/i.test(result.filename);
-            showSuccess(
-                isZip
-                    ? 'Thread exported as ZIP'
-                    : messageIds.length === 1
-                      ? 'Email exported as EML'
-                      : `${messageIds.length} emails exported as EML`
-            );
+            // File transfer is a browser download of the signed URL (not axios).
+            showSuccess('Download started');
         } catch (error: any) {
             dismissToast(progressToastId);
             showError(error?.message || 'Failed to export as EML');
@@ -455,8 +459,10 @@ const ToolbarBox = () => {
             showIcon: false,
             onConfirm: async () => {
                 setIsExportingEml(true);
+                const progressToastId = showProgressToast('Preparing export…');
                 try {
                     const result = await exportEml({ folderId });
+                    dismissToast(progressToastId);
 
                     if (!result.success) {
                         if (result.statusCode !== 401) {
@@ -465,13 +471,9 @@ const ToolbarBox = () => {
                         return;
                     }
 
-                    downloadBlobFile(result.blob, result.filename);
-                    showSuccess(
-                        /\.zip$/i.test(result.filename)
-                            ? 'Folder exported as ZIP'
-                            : 'Folder exported as EML'
-                    );
+                    showSuccess('Download started');
                 } catch (error: any) {
+                    dismissToast(progressToastId);
                     showError(error?.message || 'Failed to export folder');
                 } finally {
                     setIsExportingEml(false);
@@ -647,9 +649,6 @@ const ToolbarBox = () => {
                     : response;
 
             const moved: string[] = Array.isArray(resultBody?.moved) ? resultBody.moved : [];
-            const failed: Array<{ messageId: string; reason?: string }> = Array.isArray(resultBody?.failed)
-                ? resultBody.failed
-                : [];
             const resultMessage =
                 (typeof resultBody?.message === 'string' ? resultBody.message : undefined) ||
                 (typeof response?.message === 'string' ? response.message : undefined);
@@ -933,6 +932,30 @@ const ToolbarBox = () => {
                         {showArrangeBy && (
                             <div className="arrange-by-toolbar">
                                 <ArrangeByControl />
+                                {arrangeBy && (
+                                    <a
+                                        href="#"
+                                        className="hover-link d-flex align-items-center icon-hover-effect arrange-by-groups-toggle"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            toggleAllMailGroups();
+                                        }}
+                                        aria-label={areAllMailGroupsCollapsed ? "Expand all groups" : "Collapse all groups"}
+                                        aria-expanded={!areAllMailGroupsCollapsed}
+                                    >
+                                        <InteractiveIcon
+                                            key={areAllMailGroupsCollapsed ? "expand" : "collapse"}
+                                            defaultIcon={areAllMailGroupsCollapsed ? chevronDownIcon : chevronUpIcon}
+                                            hoverIcon={areAllMailGroupsCollapsed ? chevronDownIconHover : chevronUpIconHover}
+                                            activeIcon=""
+                                            isActive={false}
+                                            alt=""
+                                            className="interactive-icon hover-image"
+                                            renderAs="img"
+                                            tooltip={areAllMailGroupsCollapsed ? "Expand all" : "Collapse all"}
+                                        />
+                                    </a>
+                                )}
                             </div>
                         )}
 

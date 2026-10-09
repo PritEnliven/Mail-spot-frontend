@@ -1,12 +1,18 @@
 import type { CalendarApi } from '@fullcalendar/core'
 import FullCalendar from '@fullcalendar/react';
-import type { CalendarEvent, EventDetail, UserCalendar } from '@models/CalendarModels';
+import type { CalendarEvent, CalendarSharePermission, EventDetail, UserCalendar } from '@models/CalendarModels';
 import type { ApiResponse } from '@models/Response';
 import { useAccount } from '@context/AccountContext';
 import { getActiveAccountId } from '@services/apiService';
 import { getAllEvents } from '@services/calendar/calendarService';
 import { getCalendars } from '@services/calendar/calendarsService';
 import { clearFocusDate, formatCalendarEvents } from '@utils/calendarUtil';
+import {
+    eventBelongsToCalendar,
+    eventMatchesId,
+    formatLiveEvent,
+    type CalendarLiveEventPayload,
+} from '@utils/calendarLiveSyncUtil';
 import {
     createContext,
     useCallback,
@@ -59,6 +65,10 @@ interface CalendarContextType {
     fetchCalendars: (options?: FetchCalendarsOptions) => Promise<UserCalendar[]>,
     toggleCalendarVisibility: (calendarId: string) => void,
     setCalendarVisible: (calendarId: string, visible: boolean) => void,
+    updateCalendarPermission: (calendarId: string, permission: CalendarSharePermission) => void,
+    removeCalendarLocally: (calendarId: string) => void,
+    upsertLiveEvent: (calendarId: string, eventId: string, event: CalendarLiveEventPayload) => void,
+    removeLiveEvent: (eventId: string) => void,
 
     // Search state
     searchText: string,
@@ -121,9 +131,11 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     const [calendars, setCalendars] = useState<UserCalendar[]>([])
     const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([])
     const [calendarsLoaded, setCalendarsLoaded] = useState(false)
+    const calendarsRef = useRef<UserCalendar[]>([])
 
     selectedCalendarIdsRef.current = selectedCalendarIds
     calendarsLoadedRef.current = calendarsLoaded
+    calendarsRef.current = calendars
 
     const resetSearchState = useCallback(() => {
         setSearchText('')
@@ -266,6 +278,95 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
             return next
         })
     }, [])
+
+    const syncMainEventSource = useCallback((nextEvents: CalendarEvent[]) => {
+        const api = mainCalendarRef.current?.getApi()
+        if (!api) return
+        api.getEventSources().forEach((source) => source.remove())
+        if (nextEvents.length > 0) {
+            api.addEventSource(nextEvents)
+        }
+    }, [])
+
+    const updateCalendarPermission = useCallback((
+        calendarId: string,
+        permission: CalendarSharePermission
+    ) => {
+        setCalendars((prev) =>
+            prev.map((calendar) =>
+                calendar._id === calendarId ? { ...calendar, permission } : calendar
+            )
+        )
+    }, [])
+
+    const removeCalendarLocally = useCallback((calendarId: string) => {
+        setCalendars((prev) => prev.filter((calendar) => calendar._id !== calendarId))
+        setSelectedCalendarIds((prev) => {
+            const next = prev.filter((id) => id !== calendarId)
+            selectedCalendarIdsRef.current = next
+            return next
+        })
+        setSelectedEvent((prev) => (prev?.calendarId === calendarId ? null : prev))
+        setEvents((prev) => {
+            const next = prev.filter((event) => !eventBelongsToCalendar(event, calendarId))
+            syncMainEventSource(next)
+            return next
+        })
+    }, [syncMainEventSource])
+
+    const upsertLiveEvent = useCallback((
+        calendarId: string,
+        eventId: string,
+        event: CalendarLiveEventPayload
+    ) => {
+        if (!selectedCalendarIdsRef.current.includes(calendarId)) return
+
+        // Recurring payloads are safer via a full range refresh.
+        if (event.recurrence) {
+            void getAllEventList()
+            return
+        }
+
+        const calendar = calendarsRef.current.find((item) => item._id === calendarId)
+        const formatted = formatLiveEvent(event, eventId, calendar)
+        if (!formatted) {
+            void getAllEventList()
+            return
+        }
+
+        setEvents((prev) => {
+            const without = prev.filter((item) => !eventMatchesId(item, eventId))
+            const next = [...without, formatted]
+            syncMainEventSource(next)
+            return next
+        })
+
+        setSelectedEvent((prev) => {
+            if (!prev || String(prev.id) !== String(eventId)) return prev
+            return {
+                ...prev,
+                title: event.title ?? prev.title,
+                calendarId: event.calendarId || prev.calendarId,
+                eventColor: event.eventColor ?? prev.eventColor,
+                location: event.location ?? prev.location,
+                eventDescription: event.description ?? prev.eventDescription,
+            }
+        })
+    }, [getAllEventList, syncMainEventSource])
+
+    const removeLiveEvent = useCallback((eventId: string) => {
+        setSelectedEvent((prev) => {
+            if (!prev) return prev
+            if (String(prev.id) === String(eventId)) return null
+            return prev
+        })
+        setEvents((prev) => {
+            const next = prev.filter((event) => !eventMatchesId(event, eventId))
+            if (next.length === prev.length) return prev
+            syncMainEventSource(next)
+            return next
+        })
+    }, [syncMainEventSource])
 
     // Drop previous account calendars/events as soon as the active mailbox changes.
     useEffect(() => {
@@ -411,6 +512,10 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
         fetchCalendars,
         toggleCalendarVisibility,
         setCalendarVisible,
+        updateCalendarPermission,
+        removeCalendarLocally,
+        upsertLiveEvent,
+        removeLiveEvent,
         // Search state
         searchText,
         setSearchText,

@@ -1,5 +1,7 @@
 import { downloadBlobFile } from '../contact/contactService';
-import { getData, postData, postDataRaw } from '../apiService';
+import { getData, postData } from '../apiService';
+
+const API_BASE = String(import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 export interface LocalFolderItem {
     key: string;
@@ -45,7 +47,7 @@ export interface EmlExportFailedItem {
 }
 
 export type ExportEmlResult =
-    | { success: true; blob: Blob; filename: string }
+    | { success: true }
     | {
           success: false;
           message: string;
@@ -81,30 +83,6 @@ const MAX_EML_FILE_BYTES = 25 * 1024 * 1024;
 const MAX_ZIP_FILE_BYTES = 500 * 1024 * 1024;
 /** @deprecated Use MAX_IMPORT_FILES */
 const MAX_EML_FILES = MAX_IMPORT_FILES;
-
-async function parseJsonBlob(blob: Blob): Promise<Record<string, unknown> | null> {
-    try {
-        const text = await blob.text();
-        return JSON.parse(text) as Record<string, unknown>;
-    } catch {
-        return null;
-    }
-}
-
-async function parseExportErrorBlob(blob: Blob, fallback: string) {
-    const parsed = await parseJsonBlob(blob);
-    if (!parsed) return { message: fallback, failed: undefined as EmlExportFailedItem[] | undefined };
-    const message =
-        (typeof parsed.message === 'string' && parsed.message) ||
-        (typeof parsed.error === 'string' && parsed.error) ||
-        fallback;
-    const failed = Array.isArray(parsed.failed) ? (parsed.failed as EmlExportFailedItem[]) : undefined;
-    return { message, failed };
-}
-
-function isJsonBlob(blob: Blob) {
-    return blob.type.includes('application/json') || blob.type.includes('text/json');
-}
 
 async function listLocalFolders() {
     try {
@@ -160,48 +138,6 @@ async function moveToImap(payload: MoveToImapPayload) {
     }
 }
 
-/** True when blob is a ZIP (PK..), even if the UI guessed .eml from selection count. */
-async function blobLooksLikeZip(blob: Blob): Promise<boolean> {
-    const type = String(blob.type || '').toLowerCase();
-    if (
-        type === 'application/zip' ||
-        type === 'application/x-zip-compressed' ||
-        type === 'multipart/x-zip'
-    ) {
-        return true;
-    }
-    try {
-        const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-        return header.length >= 2 && header[0] === 0x50 && header[1] === 0x4b; // "PK"
-    } catch {
-        return false;
-    }
-}
-
-function resolveExportFilename(isZip: boolean, selectedCount: number): string {
-    if (isZip) return `archived-mail-export-${Date.now()}.zip`;
-    return selectedCount === 1 ? 'email.eml' : 'emails-export.zip';
-}
-
-/** Prefer backend Content-Disposition; only fall back when the header is missing. */
-function parseContentDispositionFilename(header: unknown): string | null {
-    if (typeof header !== 'string' || !header.trim()) return null;
-
-    const utf8Match = /filename\*\s*=\s*(?:UTF-8''|utf-8'')([^;]+)/i.exec(header);
-    if (utf8Match?.[1]) {
-        try {
-            const decoded = decodeURIComponent(utf8Match[1].trim().replace(/^"|"$/g, ''));
-            if (decoded) return decoded;
-        } catch {
-            // fall through to plain filename=
-        }
-    }
-
-    const plainMatch = /filename\s*=\s*("?)([^";]+)\1/i.exec(header);
-    const plain = plainMatch?.[2]?.trim();
-    return plain || null;
-}
-
 export type ExportEmlFormat = 'auto' | 'eml' | 'bundle' | 'zip';
 
 /** Exactly one of messageIds / folderId is required. */
@@ -224,14 +160,47 @@ function resolveExportErrorMessage(
     return trimmed || fallback;
 }
 
-/** POST /localFolder/exportEml — binary .eml (1) or .zip (thread / multi / folder). Local folders only. */
+/** Resolve downloadUrl from token response (supports nested `data`). */
+function extractDownloadUrl(response: unknown): string | null {
+    if (!response || typeof response !== 'object') return null;
+    const root = response as Record<string, unknown>;
+    const nested =
+        root.data && typeof root.data === 'object'
+            ? (root.data as Record<string, unknown>)
+            : null;
+    const url =
+        (typeof root.downloadUrl === 'string' && root.downloadUrl) ||
+        (typeof nested?.downloadUrl === 'string' && nested.downloadUrl) ||
+        null;
+    return url?.trim() || null;
+}
+
+/** Browser download via signed URL — no axios timeout (cancel = browser failed download). */
+function openSignedDownload(downloadUrl: string) {
+    const href = /^https?:\/\//i.test(downloadUrl)
+        ? downloadUrl
+        : `${API_BASE}${downloadUrl.startsWith('/') ? downloadUrl : `/${downloadUrl}`}`;
+
+    const link = document.createElement('a');
+    link.href = href;
+    link.style.display = 'none';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/**
+ * POST /localFolder/exportEml/token — Bearer + x-active-account-id create a signed URL;
+ * browser then GETs the file (no axios blob / timeout on the zip itself).
+ */
 async function exportEml(payload: ExportEmlPayload): Promise<ExportEmlResult> {
     const isFolderExport = 'folderId' in payload && typeof payload.folderId === 'string';
     const fallbackMessage = isFolderExport ? 'Failed to export folder' : 'Failed to export as EML';
     const format = payload.format;
+    const mode = isFolderExport ? 'folder' : 'messages';
 
     let body: Record<string, unknown>;
-    let selectedCount = 0;
 
     if (isFolderExport) {
         const folderId = payload.folderId.trim();
@@ -240,8 +209,6 @@ async function exportEml(payload: ExportEmlPayload): Promise<ExportEmlResult> {
         }
         body = { folderId };
         if (format) body.format = format;
-        // Unknown count; zip vs single .eml is decided from the response bytes.
-        selectedCount = 2;
     } else {
         const ids = [...new Set(payload.messageIds.map((id) => id.trim()).filter(Boolean))];
         if (ids.length === 0) {
@@ -249,86 +216,35 @@ async function exportEml(payload: ExportEmlPayload): Promise<ExportEmlResult> {
         }
         body = { messageIds: ids };
         if (format) body.format = format;
-        selectedCount = ids.length;
     }
 
     try {
-        const response = await postDataRaw('localFolder/exportEml', body, { responseType: 'blob' });
-        const data = response.data;
+        // Normal axios timeout; mailbox header is attached by apiService for localFolder/*
+        const response = await postData('localFolder/exportEml/token', body);
+        const downloadUrl = extractDownloadUrl(response);
 
-        if (!(data instanceof Blob)) {
-            return { success: false, message: fallbackMessage, statusCode: 500 };
-        }
-
-        if (isJsonBlob(data)) {
-            const { message, failed } = await parseExportErrorBlob(data, fallbackMessage);
+        if (!downloadUrl) {
             return {
                 success: false,
-                message: resolveExportErrorMessage(message, 400, isFolderExport ? 'folder' : 'messages', fallbackMessage),
-                statusCode: 400,
-                failed,
+                message: resolveExportErrorMessage(
+                    typeof (response as any)?.message === 'string'
+                        ? (response as any).message
+                        : undefined,
+                    500,
+                    mode,
+                    fallbackMessage
+                ),
+                statusCode: 500,
             };
         }
 
-        // Backend expands a single selected thread into a ZIP. Never trust
-        // selection count alone for the download extension.
-        const isZip = await blobLooksLikeZip(data);
-        const headerFilename = parseContentDispositionFilename(
-            response.headers?.['content-disposition']
-        );
-        const filename =
-            headerFilename ||
-            resolveExportFilename(
-                isZip,
-                isFolderExport ? (isZip ? 2 : 1) : selectedCount
-            );
-        const blob = isZip
-            ? new Blob([data], { type: 'application/zip' })
-            : new Blob([data], { type: data.type || 'message/rfc822' });
-
-        return { success: true, blob, filename };
+        openSignedDownload(downloadUrl);
+        return { success: true };
     } catch (error: any) {
-        if (error instanceof Blob) {
-            const { message, failed } = await parseExportErrorBlob(error, fallbackMessage);
-            return {
-                success: false,
-                message: resolveExportErrorMessage(
-                    message,
-                    400,
-                    isFolderExport ? 'folder' : 'messages',
-                    fallbackMessage
-                ),
-                statusCode: 400,
-                failed,
-            };
-        }
-
-        // Axios interceptor may leave a Blob on error.response-shaped rejects
-        if (error?.data instanceof Blob) {
-            const statusCode = error?.statusCode || 400;
-            const { message, failed } = await parseExportErrorBlob(error.data, fallbackMessage);
-            return {
-                success: false,
-                message: resolveExportErrorMessage(
-                    message,
-                    statusCode,
-                    isFolderExport ? 'folder' : 'messages',
-                    fallbackMessage
-                ),
-                statusCode,
-                failed,
-            };
-        }
-
         const statusCode = error?.statusCode || 500;
         return {
             success: false,
-            message: resolveExportErrorMessage(
-                error?.message,
-                statusCode,
-                isFolderExport ? 'folder' : 'messages',
-                fallbackMessage
-            ),
+            message: resolveExportErrorMessage(error?.message, statusCode, mode, fallbackMessage),
             statusCode,
             failed: Array.isArray(error?.failed) ? error.failed : undefined,
         };

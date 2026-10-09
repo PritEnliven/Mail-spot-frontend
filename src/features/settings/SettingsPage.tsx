@@ -311,88 +311,89 @@ function SettingsPage() {
     // ──────────────────────────────────────────────────────────────────
 
     return (
-        <div id="settingsContainer" className="settings-container setting-main-section-left">
-            <div className="single-header blue-line-aft">
-                <h2 className="box-title">General Settings</h2>
-            </div>
-            <div className="setting-features setting-features-select-2">
-                <div className="row m-0">
-                    <div className="col-lg-3 col-md-4">
-                        <div className="form-group form-row ">
-                            <label className="control-label">Undo Send Period</label>
-                            <div className="input-control">
-                                <Controller
-                                    name="undoSendPeriod"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select2Wrapper
-                                            value={field.value.toString() || null}
-                                            onChange={(val: string | null) => {
-                                                field.onChange(val != null ? Number(val) : null)
-                                            }}
-                                            options={[
-                                                { label: "0", value: "0" },
-                                                { label: "5", value: "5" },
-                                                { label: "10", value: "10" },
-                                                { label: "30", value: "30" },
-                                            ]}
-                                            isMulti={false}
-                                            placeholder="Select period..."
-                                        />
-                                    )}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-lg-3 col-md-4">
-                        <div className="form-group form-row ">
-                            <label className="control-label">Maximum page size</label>
-                            <div className="input-control">
-                                <Controller
-                                    name="maximumPageSize"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select2Wrapper
-                                            value={field.value.toString() || null}
-                                            onChange={(val: string | null) => {
-                                                field.onChange(val != null ? Number(val) : null)
-                                            }}
-                                            options={[
-                                                { label: "10", value: "10" },
-                                                { label: "15", value: "15" },
-                                                { label: "20", value: "20" },
-                                                { label: "25", value: "25" },
-                                                { label: "30", value: "30" },
-                                            ]}
-                                            isMulti={false}
-                                            typeable={false}
-                                        />
-                                    )}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-lg-3 col-md-4">
-                        <form id="generalSettingsForm">
+        <div>
+            <div id="settingsContainer" className="settings-container setting-main-section-left">
+                <div className="single-header blue-line-aft">
+                    <h2 className="box-title">General Settings</h2>
+                </div>
+                <div className="setting-features setting-features-select-2">
+                    <div className="row m-0">
+                        <div className="col-lg-3 col-md-4">
                             <div className="form-group form-row ">
-                                <label className="control-label">Recovery mail</label>
+                                <label className="control-label">Undo Send Period</label>
                                 <div className="input-control">
                                     <Controller
-                                        name="recoveryEmail" control={control}
+                                        name="undoSendPeriod"
+                                        control={control}
                                         render={({ field }) => (
-                                            <input
-                                                type="text"
-                                                id="recoveryEmail"
-                                                className={`form-control`}
-                                                {...field}
+                                            <Select2Wrapper
+                                                value={field.value.toString() || null}
+                                                onChange={(val: string | null) => {
+                                                    field.onChange(val != null ? Number(val) : null)
+                                                }}
+                                                options={[
+                                                    { label: "0", value: "0" },
+                                                    { label: "5", value: "5" },
+                                                    { label: "10", value: "10" },
+                                                    { label: "30", value: "30" },
+                                                ]}
+                                                isMulti={false}
+                                                placeholder="Select period..."
                                             />
                                         )}
                                     />
                                 </div>
                             </div>
-                        </form>
-                    </div>
-                    {/* <div className="col-lg-3 col-md-4">
+                        </div>
+                        <div className="col-lg-3 col-md-4">
+                            <div className="form-group form-row ">
+                                <label className="control-label">Maximum page size</label>
+                                <div className="input-control">
+                                    <Controller
+                                        name="maximumPageSize"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select2Wrapper
+                                                value={field.value.toString() || null}
+                                                onChange={(val: string | null) => {
+                                                    field.onChange(val != null ? Number(val) : null)
+                                                }}
+                                                options={[
+                                                    { label: "10", value: "10" },
+                                                    { label: "15", value: "15" },
+                                                    { label: "20", value: "20" },
+                                                    { label: "25", value: "25" },
+                                                    { label: "30", value: "30" },
+                                                ]}
+                                                isMulti={false}
+                                                typeable={false}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="col-lg-3 col-md-4">
+                            <form id="generalSettingsForm">
+                                <div className="form-group form-row ">
+                                    <label className="control-label">Recovery mail</label>
+                                    <div className="input-control">
+                                        <Controller
+                                            name="recoveryEmail" control={control}
+                                            render={({ field }) => (
+                                                <input
+                                                    type="text"
+                                                    id="recoveryEmail"
+                                                    className={`form-control`}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        {/* <div className="col-lg-3 col-md-4">
                         <div className="form-group form-row ">
                             <label className="control-label">Download location</label>
                             <div className="input-icon-add">
@@ -414,220 +415,221 @@ function SettingsPage() {
                             </div>
                         </div>
                     </div> */}
-                    <div className="col-lg-3 col-md-4">
-                        <div className="form-group form-row ">
-                            <label className="control-label">Mark as read delay</label>
-                            <div className="input-control">
+                        <div className="col-lg-3 col-md-4">
+                            <div className="form-group form-row ">
+                                <label className="control-label">Mark as read delay</label>
+                                <div className="input-control">
+                                    <Controller
+                                        name="markAsReadDelay"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select2Wrapper
+                                                value={field.value.toString() || null}
+                                                onChange={(val: string | null) => {
+                                                    field.onChange(val != null ? Number(val) : null)
+                                                }}
+                                                options={[
+                                                    { label: "Immediately", value: "0" },
+                                                    { label: "After 1 second", value: "1" },
+                                                    { label: "After 3 second", value: "3" },
+                                                    { label: "After 20 second", value: "20" },
+                                                    { label: "Never", value: "-1" },
+                                                ]}
+                                                isMulti={false}
+                                                typeable={false}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="single-header blue-line-aft">
+                    <h2 className="box-title">Signature Settings</h2>
+                </div>
+                <div className={`setting-features pt-0 pe-0 ${signatures.length > 0 ? 'pb-0' : ''}`}>
+                    <div className="setting-features-sub-box">
+                        <div className="setting-signature-box">
+                            <div className="signature-table-new">
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <div className="setting-th-head">
+                                                    No.
+                                                </div>
+                                            </th>
+                                            <th className="name-size">
+                                                <div className="setting-th-head">
+                                                    Name
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div className="setting-th-head">
+                                                    Status
+                                                </div>
+                                            </th>
+                                            <th className="text-end">
+                                                <div className="setting-th-head">
+                                                    Action
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="signatureTableBody">
+                                        <SignatureList
+                                            signatures={signatures}
+                                            selectedSignatureId={selectedSignature?.id ?? null}
+                                            onSelect={handleSelectSignature}
+                                            onEdit={handleEdit}
+                                            onDelete={handleDelete}
+                                        />
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button className="btn-new hover-link" onClick={handleCreateSignature}>
+                                <InteractiveIcon
+                                    defaultIcon={plusIcon}
+                                    hoverIcon={plusIconHover}
+                                    activeIcon=""
+                                    isActive={false}
+                                    alt=""
+                                    className="interactive-icon hover-image me-2"
+                                    renderAs="img"
+                                    tooltip=""
+                                />
+                                Create new
+                            </button>
+                            <div className="sub-signatur-setting">
+                                <div className="d-flex align-items-center justify-content-between mb-3">
+                                    <span className="fs-12-commom">Enable compose email signature</span>
+                                    <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                        <Controller
+                                            name="enableSignature" control={control}
+                                            render={({ field }) => (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={field.value}
+                                                    onChange={(e) => field.onChange(e.target.checked)}
+                                                    ref={field.ref}
+                                                    name={field.name}
+                                                    id="enableSignature"
+                                                />
+                                            )}
+                                        />
+                                        <label htmlFor="enableSignature" className="switch-label">
+                                            Toggle
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <span className="fs-12-commom">Enable signature on reply/forward use</span>
+                                    <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                        <Controller
+                                            name="enableReplyForwardUse"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={field.value}
+                                                    onChange={(e) => field.onChange(e.target.checked)}
+                                                    ref={field.ref}
+                                                    name={field.name}
+                                                    id="enableReplyForwardUse"
+                                                />
+                                            )}
+                                        />
+                                        <label htmlFor="enableReplyForwardUse" className="switch-label">
+                                            Toggle
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="d-flex align-items-center justify-content-between mt-3">
+                                    <span className="fs-12-commom">Enable Thread View</span>
+                                    <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                        <Controller
+                                            name="threadView"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={field.value}
+                                                    onChange={(e) => field.onChange(e.target.checked)}
+                                                    ref={field.ref}
+                                                    name={field.name}
+                                                    id="threadView"
+                                                />
+                                            )}
+                                        />
+                                        <label htmlFor="threadView" className="switch-label">
+                                            Toggle
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="d-flex align-items-center justify-content-between mt-3">
+                                    <span className="fs-12-commom">Enable Notification</span>
+                                    <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                        <Controller
+                                            name="notification"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={field.value}
+                                                    onChange={(e) => field.onChange(e.target.checked)}
+                                                    ref={field.ref}
+                                                    name={field.name}
+                                                    id="notification"
+                                                />
+                                            )}
+                                        />
+                                        <label htmlFor="notification" className="switch-label">
+                                            Toggle
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {signatures.length > 0 && (
+                            <div className="setting-quill w-100">
                                 <Controller
-                                    name="markAsReadDelay"
+                                    name="body"
                                     control={control}
                                     render={({ field }) => (
-                                        <Select2Wrapper
-                                            value={field.value.toString() || null}
-                                            onChange={(val: string | null) => {
-                                                field.onChange(val != null ? Number(val) : null)
-                                            }}
-                                            options={[
-                                                { label: "Immediately", value: "0" },
-                                                { label: "After 1 second", value: "1" },
-                                                { label: "After 3 second", value: "3" },
-                                                { label: "After 20 second", value: "20" },
-                                                { label: "Never", value: "-1" },
-                                            ]}
-                                            isMulti={false}
-                                            typeable={false}
-                                        />
+                                        <Suspense fallback={<div className="form-control" style={{ height: '200px' }}>Loading editor...</div>}>
+                                            <CkEditorRichText
+                                                id="compose-email-body"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                variant="settings"
+                                            />
+                                        </Suspense>
                                     )}
                                 />
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
-            </div>
-            <div className="single-header blue-line-aft">
-                <h2 className="box-title">Signature Settings</h2>
-            </div>
-            <div className={`setting-features pt-0 pe-0 ${signatures.length > 0 ? 'pb-0' : ''}`}>
-                <div className="setting-features-sub-box">
-                    <div className="setting-signature-box">
-                        <div className="signature-table-new">
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th>
-                                            <div className="setting-th-head">
-                                                No.
-                                            </div>
-                                        </th>
-                                        <th className="name-size">
-                                            <div className="setting-th-head">
-                                                Name
-                                            </div>
-                                        </th>
-                                        <th>
-                                            <div className="setting-th-head">
-                                                Status
-                                            </div>
-                                        </th>
-                                        <th className="text-end">
-                                            <div className="setting-th-head">
-                                                Action
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="signatureTableBody">
-                                    <SignatureList
-                                        signatures={signatures}
-                                        selectedSignatureId={selectedSignature?.id ?? null}
-                                        onSelect={handleSelectSignature}
-                                        onEdit={handleEdit}
-                                        onDelete={handleDelete}
-                                    />
-                                </tbody>
-                            </table>
-                        </div>
-                        <button className="btn-new hover-link" onClick={handleCreateSignature}>
-                            <InteractiveIcon
-                                defaultIcon={plusIcon}
-                                hoverIcon={plusIconHover}
-                                activeIcon=""
-                                isActive={false}
-                                alt=""
-                                className="interactive-icon hover-image me-2"
-                                renderAs="img"
-                                tooltip=""
-                            />
-                            Create new
-                        </button>
-                        <div className="sub-signatur-setting">
-                            <div className="d-flex align-items-center justify-content-between mb-3">
-                                <span className="fs-12-commom">Enable compose email signature</span>
-                                <div className="switch-toggale d-flex align-items-center justify-content-center">
-                                    <Controller
-                                        name="enableSignature" control={control}
-                                        render={({ field }) => (
-                                            <input
-                                                type="checkbox"
-                                                checked={field.value}
-                                                onChange={(e) => field.onChange(e.target.checked)}
-                                                ref={field.ref}
-                                                name={field.name}
-                                                id="enableSignature"
-                                            />
-                                        )}
-                                    />
-                                    <label htmlFor="enableSignature" className="switch-label">
-                                        Toggle
-                                    </label>
-                                </div>
-                            </div>
-                            <div className="d-flex align-items-center justify-content-between">
-                                <span className="fs-12-commom">Enable signature on reply/forward use</span>
-                                <div className="switch-toggale d-flex align-items-center justify-content-center">
-                                    <Controller
-                                        name="enableReplyForwardUse"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <input
-                                                type="checkbox"
-                                                checked={field.value}
-                                                onChange={(e) => field.onChange(e.target.checked)}
-                                                ref={field.ref}
-                                                name={field.name}
-                                                id="enableReplyForwardUse"
-                                            />
-                                        )}
-                                    />
-                                    <label htmlFor="enableReplyForwardUse" className="switch-label">
-                                        Toggle
-                                    </label>
-                                </div>
-                            </div>
-                            <div className="d-flex align-items-center justify-content-between mt-3">
-                                <span className="fs-12-commom">Enable Thread View</span>
-                                <div className="switch-toggale d-flex align-items-center justify-content-center">
-                                    <Controller
-                                        name="threadView"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <input
-                                                type="checkbox"
-                                                checked={field.value}
-                                                onChange={(e) => field.onChange(e.target.checked)}
-                                                ref={field.ref}
-                                                name={field.name}
-                                                id="threadView"
-                                            />
-                                        )}
-                                    />
-                                    <label htmlFor="threadView" className="switch-label">
-                                        Toggle
-                                    </label>
-                                </div>
-                            </div>
-                            <div className="d-flex align-items-center justify-content-between mt-3">
-                                <span className="fs-12-commom">Enable Notification</span>
-                                <div className="switch-toggale d-flex align-items-center justify-content-center">
-                                    <Controller
-                                        name="notification"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <input
-                                                type="checkbox"
-                                                checked={field.value}
-                                                onChange={(e) => field.onChange(e.target.checked)}
-                                                ref={field.ref}
-                                                name={field.name}
-                                                id="notification"
-                                            />
-                                        )}
-                                    />
-                                    <label htmlFor="notification" className="switch-label">
-                                        Toggle
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {signatures.length > 0 && (
-                        <div className="setting-quill w-100">
-                            <Controller
-                                name="body"
-                                control={control}
-                                render={({ field }) => (
-                                    <Suspense fallback={<div className="form-control" style={{ height: '200px' }}>Loading editor...</div>}>
-                                        <CkEditorRichText
-                                            id="compose-email-body"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            variant="settings"
-                                        />
-                                    </Suspense>
-                                )}
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
-            {/* <div className="single-header blue-line-aft">
+                {/* <div className="single-header blue-line-aft">
                 <h2 className="box-title">Keyboard Shortcuts</h2>
             </div>
             <KeyboardShortCutList shortcuts={settings.shortcuts}/> */}
-            <div className="single-header blue-line-aft">
-                <h2 className="box-title">Rules</h2>
-            </div>
-            <div className="setting-features">
-                <div className="setting-signature-box p-0">
-                    <form className="filter-blocked-sec">
-                        {
-                            rules.length > 0 ? (
-                                <RulesList rules={rules} onEdit={handleEditRule} onDelete={setupDeleteConfirmation} />
-                            ) : (
-                                <div className="text-center p-3 fs-12-commom">No rules found.</div>
-                            )
-                        }
-                    </form>
+                <div className="single-header blue-line-aft">
+                    <h2 className="box-title">Rules</h2>
+                </div>
+                <div className="setting-features">
+                    <div className="setting-signature-box p-0">
+                        <form className="filter-blocked-sec">
+                            {
+                                rules.length > 0 ? (
+                                    <RulesList rules={rules} onEdit={handleEditRule} onDelete={setupDeleteConfirmation} />
+                                ) : (
+                                    <div className="text-center p-3 fs-12-commom">No rules found.</div>
+                                )
+                            }
+                        </form>
+                    </div>
                 </div>
             </div>
             <div className="d-flex align-items-center mb-3 mt-4 ms-3">
