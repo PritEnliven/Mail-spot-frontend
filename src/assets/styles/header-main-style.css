@@ -7050,6 +7050,30 @@ nav#navbarList.nav-collepse::after {
 }
 
 
-
-
-
+/* START:: Status Badge 1 Design */
+.status-badge1{
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e5e8ea;
+    color: #212121;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.status-badge1.orange{
+    background: #FFEED6;
+    color: #FF9900;
+}
+.status-badge1.green{
+  background-color: #E4F6DB;
+  color:#55CB1E;
+}
+.status-badge1.red{
+  background-color: #FBDFE1;
+  color:#EA3843;
+}
+/* END:: Status Badge 1 Design */

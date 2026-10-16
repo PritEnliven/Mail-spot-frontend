@@ -78,17 +78,23 @@
     display: none;
 }
 
-.Settings-main .mail-application-box {
-    /* height: calc(100% - 53px); */
+.Settings-main .setting-main-section-left {
+    height: calc(100dvh - 121px);
     margin-left: -1px;
     padding-left: 1px;
-    /* overflow: auto; */
+    overflow: auto;
 }
 
-.settings-container.setting-main-section-left{
+.setting-footer-btn{
+    width: 100%;
+    background: #fff;
+    padding: 16px;
+}
+
+/* .settings-container.setting-main-section-left{
      height: calc(100vh - 128px);
       overflow: auto;
-}
+} */
 .Settings-main .mobile-search-btn {
     display: none !important;
 }
@@ -517,7 +523,7 @@ span.shortcut-name-text {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
-    min-height: 0;
+    height: calc(100dvh - 173px);
     padding: 16px !important;
     border-bottom: 0 !important;
 }
@@ -1493,3 +1499,5 @@ button.contact-mobile-item__name.contacts-group-open-btn {
     color: #516068;
     word-break: break-word;
 }
+
+

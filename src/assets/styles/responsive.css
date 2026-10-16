@@ -85,6 +85,7 @@
   .Calendar-main .mail-details-header>.two-sc-in.justify-content-end, .mail-details-header.is-calendar-header>.two-sc-in.justify-content-end { flex-shrink: 0; min-width: max-content; }
 
   /* ------- Contact page ------- */
+  .contacts-page-main{height: calc(100dvh - 217px);}
   .contacts-toolbar-row {flex-wrap: wrap;row-gap: 12px;}    
   .contacts-toolbar-row > .contacts-toolbar-left {display: contents;}
   .contacts-toolbar-row .contacts-filters-row {order: 0;flex: 1 1 100%;width: 100%;}    
@@ -376,6 +377,7 @@
   .contacts-mobile-list { gap: 8px; }
   .contact-mobile-item__field { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; }
   .contact-hover-popup { max-width: min(280px, calc(100vw - 24px)); }
+  .email-summary-popup:not(.email-summary-popup--sheet) { max-width: min(280px, calc(100vw - 24px)); }
   .contact-field-row { gap: 6px; }
   .contact-form-modal-content { max-height: calc(100dvh - 24px); }
   .contact-form-modal-scroll { max-height: calc(100dvh - 100px); min-height: 200px; }

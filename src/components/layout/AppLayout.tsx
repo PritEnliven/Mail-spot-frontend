@@ -1,3 +1,7 @@
+import { lazy, Suspense } from 'react';
+// Eagerly load AI-chat styles so .ask-ai-btn (used in Header) is available
+// before the lazy AiChatPanel component is first rendered.
+import '@styles/ai-chat.css';
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import MobileComposeFab from "./MobileComposeFab";
@@ -13,6 +17,8 @@ import { useGlobalShortcuts } from "@hooks/useGlobalShortcuts";
 import { useScreen } from "@context/ScreenContext";
 import { useAccount } from "@context/AccountContext";
 import { useSyncActiveAccountProfile } from "@hooks/useSyncActiveAccountProfile";
+
+const AiChatPanel = lazy(() => import('@components/ui/AiChat/AiChatPanel'));
 
 const AppContent = () => {
     useMailSocket();
@@ -62,6 +68,11 @@ const AppContent = () => {
             <MobileComposeFab />
 
             <ModalRoot />
+
+            {/* AI "Find in mail" slide-over panel */}
+            <Suspense fallback={null}>
+                <AiChatPanel />
+            </Suspense>
         </main>
         </>
     );

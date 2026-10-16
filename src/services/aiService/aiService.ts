@@ -1,4 +1,3 @@
-
 import { postData } from '../apiService';
 
 interface GenerateEmailPayload {
@@ -8,6 +7,11 @@ interface GenerateEmailPayload {
 
 interface GetSmartRepliesPayload {
     emailContent: string
+}
+
+interface GetEmailSummaryPayload {
+    messageId: string;
+    boxName?: string;
 }
 
 async function generateEmail(payload: GenerateEmailPayload) {
@@ -28,7 +32,17 @@ async function getSmartReplies(payload: GetSmartRepliesPayload) {
     }
 }
 
+async function getEmailSummary(payload: GetEmailSummaryPayload) {
+    try {
+        const response = await postData('email/email-summary', payload);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 export {
     generateEmail,
-    getSmartReplies
+    getSmartReplies,
+    getEmailSummary
 };

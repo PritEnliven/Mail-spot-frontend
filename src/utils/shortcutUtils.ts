@@ -4,6 +4,7 @@ export type ShortcutAction =
     | 'go_to_inbox'
     | 'open_settings'
     | 'save_as_draft'
+    | 'open_ai_chat'
     ;
 
 export interface ParsedShortcut {

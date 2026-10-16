@@ -362,7 +362,7 @@ const AdminSettings = () => {
                         </div>
                     </div>
                     <div className="d-flex align-items-center justify-content-between mb-3">
-                        <span className="fs-12-commom">Ai features enabled or not</span>
+                        <span className="fs-12-commom">Enable AI-powered features</span>
                         <div className="switch-toggale d-flex align-items-center justify-content-center">
                             <Controller
                                 name="aiFeatures"

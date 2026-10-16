@@ -6,6 +6,7 @@ import { useScreen } from '@context/ScreenContext';
 import { useEmailAction } from '@hooks/useEmailAction';
 import { useSwipeGesture, type SwipeDirection } from '@hooks/useSwipeGesture';
 import { handleEmailDeletion, verifyBoxName } from '@utils/emailUtil';
+import { AI_SOURCES_BOX_TITLE, resolveEmailOpenBoxName } from '@utils/aiChatCitationUtil';
 import { Fragment, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useMailData, useMailSelection, useMailUI } from '../../context/index';
@@ -45,7 +46,8 @@ const MailBoxPage = () => {
         isLoadingMoreEmails,
         pagination,
     } = useMailData();
-    const isSearchOrFilterMailList = boxTitle === 'Search Results';
+    const isSearchOrFilterMailList =
+        boxTitle === 'Search Results' || boxTitle === AI_SOURCES_BOX_TITLE;
     const { selectedEmails } = useMailSelection();
     const {
         setToolbarState,
@@ -256,7 +258,8 @@ const MailBoxPage = () => {
         currentActiveBox: string,
         uid: number,
         messageId: string,
-        isSearch: boolean
+        isSearch: boolean,
+        mongoId?: string,
     ) => {
         // Clear pending mark-as-read from the previously open email before switching
         if (markAsReadTimeoutRef.current) {
@@ -287,7 +290,8 @@ const MailBoxPage = () => {
                 current_active_box: currentActiveBox,
                 uid,
                 messageId,
-                isSearch
+                isSearch,
+                ...(mongoId ? { id: mongoId } : {}),
             };
 
             let data = await getSingleEmailService(payload);
@@ -422,11 +426,13 @@ const MailBoxPage = () => {
         if (!target?.messageId) return;
 
         swipeNavInFlightRef.current = true;
+        const openBox = resolveEmailOpenBoxName(target, currentActiveBox);
         void openEmailDetailHandler(
-            currentActiveBox,
+            openBox,
             target.uid,
             target.messageId,
-            !!target.isSearchEmail || isSearchOrFilterMailList
+            !!target.isSearchEmail || isSearchOrFilterMailList,
+            (target as { _id?: string })._id,
         ).finally(() => {
             swipeNavInFlightRef.current = false;
         });
@@ -598,10 +604,13 @@ const MailBoxPage = () => {
                                                                     email={email}
                                                                     isRead={isRead}
                                                                     isSelected={isSelected}
-                                                                    isSearch={false}
+                                                                    isSearch={isSearchOrFilterMailList || !!email.isSearchEmail}
                                                                     index={index}
                                                                     emails={emails as any}
-                                                                    onOpenEmail={(uid: number, messageId: string, isSearch: boolean) => openEmailDetailHandler(currentActiveBox, uid, messageId, isSearch)}
+                                                                    onOpenEmail={(uid: number, messageId: string, isSearch: boolean, mongoId?: string) => {
+                                                                        const openBox = resolveEmailOpenBoxName(email, currentActiveBox);
+                                                                        void openEmailDetailHandler(openBox, uid, messageId, isSearch, mongoId);
+                                                                    }}
                                                                     onMarkReadUnread={markAsReadUnreadEmailHandler}
                                                                     onDelete={setupDeleteConfirmation} isActive={email.messageId === activeEmailMessageId} boxName={''} onToggleSelection={() => undefined} />
                                                             )}

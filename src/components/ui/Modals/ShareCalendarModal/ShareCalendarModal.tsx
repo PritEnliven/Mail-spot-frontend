@@ -3,9 +3,11 @@ import arrowPointingOutIcon from '@images/arrows-pointing-out-icon.svg';
 import closeIconHover from '@images/close-icon-hover.svg';
 import closeIcon from '@images/close-icon.svg';
 import BaseModal from '@components/ui/BaseModal';
+import GuestTag, { type Guest } from '@components/ui/calendar/GuestTag';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
-import SubmitButton from '@components/ui/form/SubmitButton';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
+import deleteIcon from "@images/trash-icon.svg";
+import deleteIconHover from "@images/trash-icon-hover.svg";
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useAccount } from '@context/AccountContext';
 import { useCalendar } from '@context/CalendarContext';
@@ -21,9 +23,10 @@ import {
 import { SHARE_LIST_REFRESH_EVENT } from '@hooks/useCalendarSocket';
 import { permissionLabel } from '@utils/calendarPermissionUtil';
 import { parseEmailAddress } from '@utils/emailUtil';
+import { filterGuestByEmail, normalizeGuests } from '@utils/guestUtil';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import SimpleBar from 'simplebar-react';
 import {
     SHARE_PERMISSION_OPTIONS,
@@ -52,6 +55,13 @@ function normalizeInviteEmails(emails: string[]): string[] {
 
     return result;
 }
+
+// function shareStatusLabel(status: CalendarShare['status']): string {
+//     if (status === 'accepted') return 'Accepted';
+//     if (status === 'declined') return 'Declined';
+//     if (status === 'revoked') return 'Revoked';
+//     return 'Pending';
+// }
 
 function shareStatusLabel(status: CalendarShare['status']): string {
     if (status === 'accepted') return 'Accepted';
@@ -91,6 +101,8 @@ function ShareCalendarModal({
         handleSubmit,
         reset,
         setError,
+        getValues,
+        setValue,
         formState: { errors },
     } = useForm<ShareCalendarInviteValues>({
         resolver: zodResolver(shareCalendarInviteSchema),
@@ -99,6 +111,17 @@ function ShareCalendarModal({
             permission: 'view',
         },
     });
+
+    const emailsList = useWatch({
+        control,
+        name: 'emails',
+    });
+    const invitees: Guest[] = normalizeGuests(emailsList);
+
+    const onRemoveInvitee = (email: string) => {
+        const current = getValues('emails') || [];
+        setValue('emails', filterGuestByEmail(current, email), { shouldDirty: true });
+    };
 
     const loadShares = async () => {
         setListLoading(true);
@@ -227,7 +250,7 @@ function ShareCalendarModal({
             dragHandleSelector=".drag-handle"
             width="min(100vw, 520px)"
         >
-            <div id="shareCalendarModal" style={{ zIndex }} role="dialog" aria-modal="true">
+            <div id="shareCalendarModal" className='share-calendar-modal' style={{ zIndex }} role="dialog" aria-modal="true">
                 <div className="modal-dialog modal-dialog-centered m-0">
                     <div className="modal-content modal-box-shadow-c1">
                         <div className="modal-header drag-handle">
@@ -277,45 +300,67 @@ function ShareCalendarModal({
 
                         <div className="modal-body folder-features-select-2 p-0">
                             <SimpleBar className="share-calendar-modal-scroll" autoHide={true}>
-                                <div className="d-block px-1">
-                                    <p className="share-calendar-modal-subtitle mb-3">Share calendar</p>
+                                <div className="share-calendar-content-body">
+                                    <div className="share-calendar-modal-subtitle">Share calendar</div>
 
-                                    <div className="form-group form-row select2-profile mb-2">
-                                        <label className="control-label">Add people</label>
-                                        <div className="input-control">
-                                            <Controller
-                                                name="emails"
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Select2Wrapper
-                                                        value={field.value || []}
-                                                        onChange={field.onChange}
-                                                        options={contacts}
-                                                        onInputChange={searchContacts}
-                                                        onOpen={fetchContacts}
-                                                        onClose={resetContactSuggestions}
-                                                        onLoadMore={loadMoreContacts}
-                                                        hasMore={hasMoreContacts}
-                                                        isLoading={isLoadingContacts}
-                                                        isLoadingMore={isLoadingMoreContacts}
-                                                        showSuggestionBadge={true}
-                                                        placeholder="Enter email"
-                                                        isMulti={true}
-                                                        isModal={true}
-                                                        isEmail={true}
-                                                    />
+                                    <div className="d-block guests-section-calendar po">
+                                        <div className="form-group form-row select2-profile mb-2">
+                                            <label className="control-label">Add people</label>
+                                            <div className="input-control">
+                                                <Controller
+                                                    name="emails"
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Select2Wrapper
+                                                            value={field.value || []}
+                                                            onChange={field.onChange}
+                                                            options={contacts}
+                                                            onInputChange={searchContacts}
+                                                            onOpen={fetchContacts}
+                                                            onClose={resetContactSuggestions}
+                                                            onLoadMore={loadMoreContacts}
+                                                            hasMore={hasMoreContacts}
+                                                            isLoading={isLoadingContacts}
+                                                            isLoadingMore={isLoadingMoreContacts}
+                                                            showSuggestionBadge={true}
+                                                            placeholder="Enter email"
+                                                            isMulti={true}
+                                                            isModal={true}
+                                                            isEmail={true}
+                                                        />
+                                                    )}
+                                                />
+                                                {errors.emails && (
+                                                    <div className="invalid-feedback d-block">
+                                                        {errors.emails.message}
+                                                    </div>
                                                 )}
-                                            />
-                                            {errors.emails && (
-                                                <div className="invalid-feedback d-block">
-                                                    {errors.emails.message}
-                                                </div>
-                                            )}
+                                            </div>
                                         </div>
+                                        {invitees.length > 0 && (
+                                            <div className="form-group mb-2 mail-tag-add-to-bottom">
+                                                <div className="mt-2 d-block selected-tags-addmail mb-3">
+                                                    <SimpleBar
+                                                        className="gustsTagsScrollbar"
+                                                        autoHide={false}
+                                                        forceVisible="y"
+                                                    >
+                                                        {invitees.map((guest, index) => (
+                                                            <GuestTag
+                                                                key={`${guest.email}-${index}`}
+                                                                guest={guest}
+                                                                mode="edit"
+                                                                onRemove={onRemoveInvitee}
+                                                            />
+                                                        ))}
+                                                    </SimpleBar>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div className="d-flex align-items-end gap-2 mb-3 flex-wrap">
-                                        <div className="form-group form-row mb-0 flex-grow-1" style={{ minWidth: 140 }}>
+                                    <div className="share-calendar-section">
+                                        <div className="form-group form-row flex-grow-1" style={{ minWidth: 140 }}>
                                             <label className="control-label">Permission</label>
                                             <Controller
                                                 name="permission"
@@ -334,24 +379,29 @@ function ShareCalendarModal({
                                                 )}
                                             />
                                         </div>
-                                        <SubmitButton
-                                            className="btn-new loading-spinner"
+                                        <button
+                                            className="btn-new btn-new-bg btn-new-bg loading-spinner "
                                             onClick={handleSubmit(onSendInvite)}
                                         >
                                             Send invite
-                                        </SubmitButton>
+                                        </button>
                                     </div>
 
-                                    <div className="share-calendar-shared-list mb-3">
-                                        <label className="control-label">Shared with</label>
+                                    <div className="share-calendar-shared-list">
+                                        <div className="share-calendar-modal-subtitle">Shared with</div>
                                         {listLoading && (
-                                            <p className="text-muted small mb-0 mt-2">Loading…</p>
+                                            <p className="text-muted small mb-0 mt-2">
+                                                <span
+                                                    className="spinner-border spinner-border-sm text-primary"
+                                                    role="status"
+                                                />
+                                            </p>
                                         )}
                                         {!listLoading && listError && (
                                             <p className="text-danger small mb-0 mt-2">{listError}</p>
                                         )}
                                         {!listLoading && !listError && shares.length === 0 && (
-                                            <p className="text-muted small mb-0 mt-2">
+                                            <p className="share-calendar-no-shared">
                                                 No one has been invited yet.
                                             </p>
                                         )}
@@ -367,7 +417,7 @@ function ShareCalendarModal({
                                                                 {share.inviteeEmail}
                                                             </span>
                                                             <span
-                                                                className={`calendar-invite-card__status is-${share.status === 'pending' ? 'tentative' : share.status}`}
+                                                                className={`status-badge1 ${share.status === 'pending' ? 'orange' : share.status === 'accepted' ? 'green' : 'red'}`}
                                                             >
                                                                 {shareStatusLabel(share.status)}
                                                             </span>
@@ -392,9 +442,17 @@ function ShareCalendarModal({
                                                                 type="button"
                                                                 className="btn hover-link btn-sm share-calendar-remove-btn"
                                                                 onClick={() => onRemoveShare(share)}
-                                                                aria-label={`Remove ${share.inviteeEmail}`}
-                                                            >
-                                                                Remove
+                                                                aria-label={`Remove ${share.inviteeEmail}`}     >
+                                                                <InteractiveIcon
+                                                                    defaultIcon={deleteIcon}
+                                                                    hoverIcon={deleteIconHover}
+                                                                    activeIcon=""
+                                                                    isActive={false}
+                                                                    alt=""
+                                                                    className="interactive-icon hover-image"
+                                                                    renderAs="img"
+                                                                    tooltip="Remove"
+                                                                />
                                                             </button>
                                                         </div>
                                                     </li>

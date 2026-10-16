@@ -8,7 +8,9 @@ import trashIcon from "@images/trash-icon.svg";
 import trashIconHover from "@images/trash-icon-hover.svg";
 import eventIcon from "@images/event-icon.svg";
 import AttachmentList from "@components/ui/email/AttachmentList";
+import EmailSummaryPopover from "@components/ui/email/EmailSummaryPopover";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
+import { useEmailSummaryHover } from "@hooks/useEmailSummaryHover";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
 import { getParticipantsLabel, getSenderLabel, verifyBoxName } from "@utils/emailUtil";
 import { useSettings } from "@context/SettingsContext";
@@ -69,7 +71,7 @@ const EmailRow = memo(({
     onDelete,
     onToggleSelection: _onToggleSelection,
 }: EmailRowProps) => {
-    const { boxName } = useMailData();
+    const { boxName, userPermissions } = useMailData();
     const { settings } = useSettings();
     let emailNameOrEmail = getSenderLabel(email.from) || "Unknown";
     if (verifyBoxName(boxName, 'draft') || verifyBoxName(boxName, 'sent')) {
@@ -89,6 +91,47 @@ const EmailRow = memo(({
         !verifyBoxName(boxName, 'trash') &&
         email.threadCount > 1;
 
+    const summaryMessageId = isScheduled ? undefined : email.messageId;
+    const summaryEnabled = Boolean(userPermissions?.aiFeatures && summaryMessageId);
+    const {
+        open: summaryOpen,
+        isLoading: summaryLoading,
+        points: summaryPoints,
+        error: summaryError,
+        anchorEl: summaryAnchorEl,
+        rowRef: summaryRowRef,
+        isHoverDevice,
+        onRowMouseEnter: onSummaryMouseEnter,
+        onRowMouseLeave: onSummaryMouseLeave,
+        onPopoverMouseEnter: onSummaryPopoverEnter,
+        onPopoverMouseLeave: onSummaryPopoverLeave,
+        onRowTouchStart: onSummaryTouchStart,
+        onRowTouchMove: onSummaryTouchMove,
+        onRowTouchEnd: onSummaryTouchEnd,
+        onRowTouchCancel: onSummaryTouchCancel,
+        onRowContextMenu: onSummaryContextMenu,
+        shouldSuppressClickAfterLongPress,
+        close: closeSummary,
+    } = useEmailSummaryHover({
+        enabled: summaryEnabled,
+        messageId: summaryMessageId,
+        boxName,
+        isActive,
+    });
+
+    const handleOpenEmail = () => {
+        closeSummary();
+        onOpenEmail(email.uid, email.messageId, isSearch, email._id);
+    };
+
+    const handleRowClick = () => {
+        // Touch devices: long-press opens summary; suppress the click that follows it.
+        if (summaryEnabled && !isHoverDevice && shouldSuppressClickAfterLongPress()) {
+            return;
+        }
+        handleOpenEmail();
+    };
+
     return (
         <tr
             data-id={email._id}
@@ -98,8 +141,16 @@ const EmailRow = memo(({
         >
             <td>
                 <div
+                    ref={summaryRowRef}
                     className={`mail-message-list ${isRead ? "mail-message-read" : ""} ${isActive ? "mail-message-active" : ""}`}
-                    onClick={() => onOpenEmail(email.uid, email.messageId, isSearch, email._id)}
+                    onClick={handleRowClick}
+                    onMouseEnter={onSummaryMouseEnter}
+                    onMouseLeave={onSummaryMouseLeave}
+                    onTouchStart={onSummaryTouchStart}
+                    onTouchMove={onSummaryTouchMove}
+                    onTouchEnd={onSummaryTouchEnd}
+                    onTouchCancel={onSummaryTouchCancel}
+                    onContextMenu={onSummaryContextMenu}
                 >
                     <div className="mail-received-first">
                         <div className="d-flex align-items-start">
@@ -238,6 +289,19 @@ const EmailRow = memo(({
                         </div>
                     </div>
                 </div>
+                {summaryEnabled && (
+                    <EmailSummaryPopover
+                        open={summaryOpen}
+                        anchorEl={summaryAnchorEl}
+                        isLoading={summaryLoading}
+                        points={summaryPoints}
+                        error={summaryError}
+                        onMouseEnter={onSummaryPopoverEnter}
+                        onMouseLeave={onSummaryPopoverLeave}
+                        variant={isHoverDevice ? 'popover' : 'sheet'}
+                        onClose={closeSummary}
+                    />
+                )}
             </td>
         </tr>
     );

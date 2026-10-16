@@ -1136,7 +1136,7 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const wasShowingSearchResults = restoreMailbox && (
-            allSearchResult || boxTitle === 'Search Results'
+            allSearchResult || boxTitle === 'Search Results' || boxTitle === 'AI Sources'
         );
 
         setAllSearchResult(false);

@@ -3,4 +3,5 @@ export const fixedConstants = [
     { id: 'sc_2', name: 'new_compose', key: '', defaultValue: 'alt+c' },
     { id: 'sc_3', name: 'go_to_inbox', key: '', defaultValue: 'ctrl+i' },
     { id: 'sc_5', name: 'save_as_draft', key: '', defaultValue: 'ctrl+s' },
+    { id: 'sc_6', name: 'open_ai_chat', key: '', defaultValue: 'ctrl+d' },
 ]

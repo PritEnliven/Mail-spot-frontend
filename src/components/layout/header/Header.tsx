@@ -10,6 +10,7 @@ import { AUTH_STORAGE_KEYS } from "@features/login/Login";
 import { useDebounce } from "@hooks/useDebounce";
 import { useProfileAccountSwipe } from "@hooks/useProfileAccountSwipe";
 import { useFilterEmailForm } from "@hooks/useFilterEmailForm";
+import { useShortcutAction } from "@hooks/useShortcutAction";
 import backBtnIconHover from "@images/back-btn-icon-hover.svg";
 import backBtnIcon from "@images/back-btn-icon.svg";
 import btnCloseIconHover from "@images/btn-close-icon-hover.svg";
@@ -24,6 +25,8 @@ import dateIcon from "@images/date-icon-16.svg";
 import enlivenLogo from "@images/enliven-logo.svg";
 import functionIconHover from "@images/function-icon-hover.svg";
 import functionIcon from "@images/function-icon.svg";
+import generateAiIcon from "@images/generate-ai-icon.svg";
+import generateAiIconWhite from "@images/generate-ai-icon-withe.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
 import searchIconHover from "@images/search-icon-hover.svg";
 import searchIcon from "@images/search-icon.svg";
@@ -115,7 +118,9 @@ const Header = () => {
         isSidebarExpandedMobile,
         setIsSidebarExpandedMobile,
         setActiveBoxId,
-        setIsFilterPanelOpen
+        setIsFilterPanelOpen,
+        isAiChatOpen,
+        setIsAiChatOpen,
     } = useMailUI();
     const { setAllSearchResult, setEmails, setPagination,
         setSearchTerm, setFilterForm, setTotalEmailBadge,
@@ -155,7 +160,7 @@ const Header = () => {
         }, 0);
     }, []);
     const [isResponsiveSearch, setIsResponsiveSearch] = useState(false);
-    const { isDesktop, isMobile } = useScreen();
+    const { isDesktop, isMobile, isMobilebig } = useScreen();
     const {
         hasMultipleAccounts,
         isSwitchingAccount: isSwipeSwitchingAccount,
@@ -734,7 +739,7 @@ const Header = () => {
         openModal('changePassword')
     }
 
-    const { totalEmailBadge, readUnreadFilter } = useMailData();
+    const { totalEmailBadge, readUnreadFilter, userPermissions } = useMailData();
 
     const toggleFilterDropdown = () => {
         if (isCreateRuleModalOpen) {
@@ -856,6 +861,15 @@ const Header = () => {
     const isCalendar = verifyBoxName(boxName, "calendar");
     const isSettings = verifyBoxName(boxName, "settings");
     const isContact = verifyBoxName(boxName, "contact");
+
+    const canUseAiChat =
+        !!userPermissions?.aiFeatures && !isCalendar && !isSettings && !isContact;
+
+    const toggleAiChat = useCallback(() => {
+        setIsAiChatOpen(!isAiChatOpen);
+    }, [isAiChatOpen, setIsAiChatOpen]);
+
+    useShortcutAction('open_ai_chat', toggleAiChat, canUseAiChat);
 
     const mountFilterMonthDropdown = useFlatpickrMonthDropdown(0);
     const mountFilterMonthDropdownRef = useRef(mountFilterMonthDropdown);
@@ -1312,11 +1326,60 @@ const Header = () => {
                 </>
             )}
 
-            {/* RIGHT: Profile & Calendar */}
-            <div className="d-flex align-items-center two-sc-in justify-content-end">
+            {/* RIGHT: Ask AI (centered in gap on desktop) + Profile */}
+            <div className={`mail-header-right two-sc-in${isMobilebig ? ' mail-header-right--compact' : ''}`}>
+                {/* Ask AI — centered between search bar and profile (desktop / tablet wide) */}
+                {canUseAiChat && !isMobilebig && (
+                    <div className="ask-ai-btn-slot">
+                        <button
+                            type="button"
+                            className={`btn-new ask-ai-btn${isAiChatOpen ? ' btn-new-bg' : ''}`}
+                            onClick={toggleAiChat}
+                            title="Find in mail with AI (Ctrl+D)"
+                            aria-expanded={isAiChatOpen}
+                            aria-controls="ai-chat-panel"
+                        >
+                            <img
+                                src={isAiChatOpen ? generateAiIconWhite : generateAiIcon}
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="ask-ai-btn__icon"
+                                aria-hidden="true"
+                            />
+                            <span className="ask-ai-btn__label">Ask AI</span>
+                        </button>
+                    </div>
+                )}
+
+                <div className="mail-header-right__end">
+                {/* Ask AI — icon-only in the action cluster on mobile */}
+                {canUseAiChat && isMobilebig && (
+                    <div className="ask-ai-btn-slot ask-ai-btn-slot--mobile">
+                        <button
+                            type="button"
+                            className={`btn-new ask-ai-btn ask-ai-btn--icon${isAiChatOpen ? ' btn-new-bg' : ''}`}
+                            onClick={toggleAiChat}
+                            title="Find in mail with AI"
+                            aria-label="Ask AI"
+                            aria-expanded={isAiChatOpen}
+                            aria-controls="ai-chat-panel"
+                        >
+                            <img
+                                src={isAiChatOpen ? generateAiIconWhite : generateAiIcon}
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="ask-ai-btn__icon"
+                                aria-hidden="true"
+                            />
+                            <span className="ask-ai-btn__label">Ask AI</span>
+                        </button>
+                    </div>
+                )}
                 {/* Mobile-serch-btn */}
                 {!isCalendar && !isSettings && !isContact && (
-                    <button type="button" className="btn hover-link input-icon-1 mobile-search-btn icon-hover-effect ms-3 me-2" onClick={() => setIsResponsiveSearch(!isResponsiveSearch)} >
+                    <button type="button" className="btn hover-link input-icon-1 mobile-search-btn icon-hover-effect ms-2 me-2" onClick={() => setIsResponsiveSearch(!isResponsiveSearch)} >
                         <InteractiveIcon
                             defaultIcon={searchIcon}
                             hoverIcon={searchIconHover}
@@ -1370,6 +1433,9 @@ const Header = () => {
                             return;
                         }
                         setIsProfileOpen(nextShow);
+                        if (nextShow) {
+                            setIsAiChatOpen(false);
+                        }
                     }}
                 >
                     <Dropdown.Toggle className="btn btn-secondary dropdown-toggle d-flex align-items-center">
@@ -1509,6 +1575,7 @@ const Header = () => {
                         </div>
                     </Dropdown.Menu>
                 </Dropdown>
+                </div>
             </div>
         </div>
     );

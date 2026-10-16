@@ -54,6 +54,8 @@ interface MailUIType {
     setIsSidebarExpandedMobile: (open: boolean) => void;
     isFilterPanelOpen: boolean;
     setIsFilterPanelOpen: (open: boolean) => void;
+    isAiChatOpen: boolean;
+    setIsAiChatOpen: (open: boolean) => void;
     activeBoxId: string;
     setActiveBoxId: (boxId: string) => void;
     collapsedGroups: Set<string>;
@@ -92,6 +94,7 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
     const [isComposeExpanded, setIsComposeExpanded] = useState(false);
     const [isSidebarExpandedMobile, setIsSidebarExpandedMobile] = useState(false);
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+    const [isAiChatOpen, setIsAiChatOpen] = useState(false);
     const [activeBoxId, setActiveBoxId] = useState<string>('box-li-0');
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
 
@@ -285,6 +288,8 @@ export const MailUIProvider = ({ children, emails, selectedEmails, activeEmailMe
         setIsSidebarExpandedMobile,
         isFilterPanelOpen,
         setIsFilterPanelOpen,
+        isAiChatOpen,
+        setIsAiChatOpen,
         activeBoxId,
         setActiveBoxId,
         collapsedGroups,

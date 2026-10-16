@@ -632,7 +632,7 @@ function SettingsPage() {
                     </div>
                 </div>
             </div>
-            <div className="d-flex align-items-center mb-3 mt-4 ms-3">
+            <div className="setting-footer-btn">
                 <SubmitButton className="btn-new btn-new-bg loading-spinner"
                     onClick={handleSubmit(onSubmit, (errors: any) => {
                         console.log('SUBMIT BLOCKED BY ERRORS:', errors);
