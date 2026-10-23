@@ -1,0 +1,23 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="aiLabelStarGrad" x1="2" y1="2" x2="14" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0097EF"/>
+      <stop offset="45%" stop-color="#7B5CFF"/>
+      <stop offset="100%" stop-color="#FF8A00"/>
+    </linearGradient>
+    <linearGradient id="aiLabelSparkGrad" x1="11" y1="1" x2="15" y2="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFC400"/>
+      <stop offset="100%" stop-color="#FF8A00"/>
+    </linearGradient>
+  </defs>
+  <!-- Main 4-point sparkle -->
+  <path
+    d="M8 1.2C8 4.2 9.9 6.1 12.9 6.1C9.9 6.1 8 8 8 11C8 8 6.1 6.1 3.1 6.1C6.1 6.1 8 4.2 8 1.2Z"
+    fill="url(#aiLabelStarGrad)"
+  />
+  <!-- Small accent sparkle -->
+  <path
+    d="M13.1 1C13.1 2.15 13.85 2.9 15 2.9C13.85 2.9 13.1 3.65 13.1 4.8C13.1 3.65 12.35 2.9 11.2 2.9C12.35 2.9 13.1 2.15 13.1 1Z"
+    fill="url(#aiLabelSparkGrad)"
+  />
+</svg>

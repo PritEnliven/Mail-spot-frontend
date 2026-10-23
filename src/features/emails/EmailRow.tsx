@@ -142,7 +142,8 @@ const EmailRow = memo(({
             <td>
                 <div
                     ref={summaryRowRef}
-                    className={`mail-message-list ${isRead ? "mail-message-read" : ""} ${isActive ? "mail-message-active" : ""}`}
+                    className={`mail-message-list ${isRead ? "mail-message-read" : ""} ${isActive ? "mail-message-active" : ""}${summaryLoading ? " mail-message-list--summary-preparing" : ""}`}
+                    aria-busy={summaryLoading || undefined}
                     onClick={handleRowClick}
                     onMouseEnter={onSummaryMouseEnter}
                     onMouseLeave={onSummaryMouseLeave}
@@ -152,6 +153,9 @@ const EmailRow = memo(({
                     onTouchCancel={onSummaryTouchCancel}
                     onContextMenu={onSummaryContextMenu}
                 >
+                    {summaryLoading && (
+                        <div className="mail-message-list__summary-blur" aria-hidden="true" />
+                    )}
                     <div className="mail-received-first">
                         <div className="d-flex align-items-start">
                             {/* Checkbox */}

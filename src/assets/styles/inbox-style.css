@@ -279,6 +279,7 @@
   border-bottom: 1px solid #d0d9de;
   background-color: #fff;
   width: 100%; /* overflow-y: hidden; */
+  cursor: pointer;
 }
 .mail-message-list::before {
   content: "";
@@ -1436,6 +1437,38 @@ div.accordion-button.custom-toggle-btn
   font-size: 13px;
   font-weight: 500;
   color: #212121;
+}
+
+/* AI summary preparing: frosted overlay on the row until the summary menu can open */
+.mail-message-list--summary-preparing {
+  user-select: none;
+}
+
+.mail-message-list--summary-preparing:hover .mail-received-hover-btn {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mail-message-list__summary-blur {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: emailSummaryPreparingPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes emailSummaryPreparingPulse {
+  0%,
+  100% {
+    background: rgba(255, 255, 255, 0.34);
+  }
+  50% {
+    background: rgba(255, 255, 255, 0.55);
+  }
 }
 
 /* --- Email row hover summary (same tokens as contact-hover-popup) --- */

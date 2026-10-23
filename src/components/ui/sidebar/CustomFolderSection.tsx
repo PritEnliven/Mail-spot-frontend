@@ -23,6 +23,7 @@ import refreshIconHover from "@images/refresh-icon-hover.svg";
 // import arrowSubFolderIcon from "@images/arrow-sub-folder-icon-16.svg";
 // import arrowSubFolderHoverIcon from "@images/arrow-sub-folder-hover-icon-16.svg"
 import FolderActionsDropdown from '@components/ui/sidebar/FolderActionsDropdown';
+import { LabelTagIcon } from '@components/ui/sidebar/LabelTagIcon';
 import { useMailUI } from "@context/MailUIContext";
 import { useCustomFolderScrollbar } from '@hooks/useCustomFolderScrollbar';
 
@@ -51,6 +52,10 @@ interface CustomFolderSectionProps {
   /** Show the IMAP refresh control (hide for local folders) */
   showRefresh?: boolean;
   createTooltip?: string;
+  /** folder = custom/local folder SVGs; label = Gmail-style tag icons */
+  iconVariant?: 'folder' | 'label';
+  /** Optional icon shown immediately after the section title (e.g. AI sparkles). */
+  sectionTitleIcon?: string;
 }
 
 export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
@@ -66,6 +71,8 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   sectionId = 'customFolderSection',
   showRefresh = true,
   createTooltip = 'Add Folder',
+  iconVariant = 'folder',
+  sectionTitleIcon,
 }) => {
   const { isSidebarOpen } = useMailUI();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -73,6 +80,10 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownResetKey] = useState(0);
   const dropdownRef = useRef<HTMLLIElement>(null);
+
+  const hasItems = folders.length > 0;
+  const showRefreshControl = showRefresh && hasItems;
+  const sectionCollapsed = hasItems && isCollapsed;
 
   // Set of folder IDs that have been collapsed by the user (starts empty = all expanded)
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
@@ -120,7 +131,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
     handleRef,
     scrollUp,
     scrollDown,
-  } = useCustomFolderScrollbar();
+  } = useCustomFolderScrollbar(folders.length);
 
   const getFolderIcon = (color: string) => {
     const colorMap: { [key: string]: string } = {
@@ -133,9 +144,11 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
       "#263DB8": deepRoyalBlueColorIcon,
       "#49BA14": greenLiteColorIcon,
       "#00A3EF": brightBlueColorIcon,
+      "#0097EF": brightBlueColorIcon,
+      "rgba(0, 151, 239, 1)": brightBlueColorIcon,
       "#398415": greenDarkColorIcon
     };
-    return colorMap[color] || 'folder-orange-icon.svg';
+    return colorMap[color] || orangeColorIcon;
   };
 
   const handleFolderClick = (folder: Folder) => {
@@ -161,10 +174,17 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   }, [isSidebarOpen]);
 
   return (
-    <div className={`create-folder-sec${!showRefresh ? ' create-folder-sec--single-action' : ''}`} id={sectionId}>
+    <div
+      className={[
+        'create-folder-sec',
+        !showRefreshControl ? 'create-folder-sec--single-action' : '',
+        !hasItems ? 'create-folder-sec--empty' : '',
+      ].filter(Boolean).join(' ')}
+      id={sectionId}
+    >
       <div className="sidebar-create-folder-box-main">
         <div className="folder-header-actions">
-          {showRefresh && (
+          {showRefreshControl && (
           <span
             className={`refresh-folder-btn tooltips-ds${isRefreshingFolders ? ' refresh-loader' : ''}`}
             onClick={(e) => {
@@ -217,41 +237,56 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
           className="sidebar-create-folder-box tooltips-ds open-folder-box"
           onClick={(e) => {
             e.preventDefault();
+            if (!hasItems) return;
             setIsCollapsed(!isCollapsed);
           }}
+          style={{ cursor: hasItems ? 'pointer' : 'default' }}
         >
           <div className="d-flex align-items-center">
-            <span className={`create-folder-arrow ${isCollapsed ? 'collapsed' : ''}`}>
-              {isCollapsed ?
-                <InteractiveIcon
-                  defaultIcon={chevronRightIcon}
-                  hoverIcon={chevronRightIconHover}
-                  activeIcon=""
-                  isActive={false}
-                  alt=""
-                  className="interactive-icon hover-image"
-                  renderAs="img"
-                  tooltip=""
-                /> :
-                <InteractiveIcon
-                  defaultIcon={chevronDownIcon}
-                  hoverIcon={chevronDownIconHover}
-                  activeIcon=""
-                  isActive={false}
-                  alt=""
-                  className="interactive-icon hover-image"
-                  renderAs="img"
-                  tooltip=""
-                />
-              }
-            </span>
-            <span className="label-text ms-2">{sectionTitle}</span>
+            {hasItems && (
+              <span className={`create-folder-arrow ${sectionCollapsed ? 'collapsed' : ''}`}>
+                {sectionCollapsed ?
+                  <InteractiveIcon
+                    defaultIcon={chevronRightIcon}
+                    hoverIcon={chevronRightIconHover}
+                    activeIcon=""
+                    isActive={false}
+                    alt=""
+                    className="interactive-icon hover-image"
+                    renderAs="img"
+                    tooltip=""
+                  /> :
+                  <InteractiveIcon
+                    defaultIcon={chevronDownIcon}
+                    hoverIcon={chevronDownIconHover}
+                    activeIcon=""
+                    isActive={false}
+                    alt=""
+                    className="interactive-icon hover-image"
+                    renderAs="img"
+                    tooltip=""
+                  />
+                }
+              </span>
+            )}
+            <span className={`label-text${hasItems ? ' ms-2' : ''}`}>{sectionTitle}</span>
+            {sectionTitleIcon && (
+              <img
+                src={sectionTitleIcon}
+                alt=""
+                width={25}
+                height={25}
+                className="section-title-ai-icon ms-1"
+                aria-hidden="true"
+              />
+            )}
           </div>
         </a>
       </div>
 
-      <div className={`add-floder-single-box collapse ${!isCollapsed ? 'show' : ''}`} id="sidebarCreateFolderBox">
-        <div>
+      {hasItems && (
+      <div className={`add-floder-single-box collapse ${!sectionCollapsed ? 'show' : ''}`} id={`${sectionId}FolderBox`}>
+          <div>
           <button
             className={`create-folder-scroll-btn btn create-folder-scroll-up ${isSidebarOpen ? 'd-none' : ''}`}
             aria-label="Scroll Up"
@@ -261,13 +296,12 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
           </button>
 
           <div className="nav-custom-scroll-wrapper" ref={scrollWrapperRef}>
+            <div className="nav-custom-scroll-fade-top" ref={fadeTopRef} />
             <ul
-              className="left-side-manu-link-list create-new-folder-sec nav-custom-scroll-content"
-              id="sidebarCustomMenu"
+              className="left-side-manu-link-list left-side-manu-link-list--no-divider create-new-folder-sec nav-custom-scroll-content"
+              id={`${sectionId}Menu`}
               ref={scrollRef}
             >
-              <div className="nav-custom-scroll-fade-top" ref={fadeTopRef} />
-
               {visibleFolders.map((folder) => {
                 const isActive = activeBoxId === folder.id;
                 const depth = folder.depth ?? 0;
@@ -320,7 +354,11 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                         </span>
                       )} */}
 
-                      <img className="hover-image" src={getFolderIcon(folder.color)} />
+                      {iconVariant === 'label' ? (
+                        <LabelTagIcon color={folder.color || '#808080'} />
+                      ) : (
+                        <img className="hover-image" src={getFolderIcon(folder.color)} alt="" />
+                      )}
                       <span className="active-line-t"
                         style={{ '--active-line-bg': folder.color || 'rgba(0, 151, 239, 1)' } as React.CSSProperties}
                       />
@@ -340,9 +378,8 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
                   </li>
                 );
               })}
-
-              <div className="nav-custom-scroll-fade-bottom" ref={fadeBottomRef} />
             </ul>
+            <div className="nav-custom-scroll-fade-bottom" ref={fadeBottomRef} />
 
             <div className="nav-custom-scroll-scrollbar" ref={scrollbarRef}>
               <div className="nav-custom-scroll-handle" ref={handleRef} />
@@ -358,6 +395,7 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 };

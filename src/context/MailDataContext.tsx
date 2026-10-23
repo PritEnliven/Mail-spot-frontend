@@ -389,7 +389,10 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
                     if (boxNameParam && page === 1) {
                         // Local folders are DB-only — do not run IMAP getCounts bootstrap
-                        if (!String(boxNameParam).toLowerCase().startsWith('local::')) {
+                        if (
+                            !String(boxNameParam).toLowerCase().startsWith('local::') &&
+                            !String(boxNameParam).toLowerCase().startsWith('ailabel::')
+                        ) {
                         setIsTotalCountLoading(true);
 
                         getCounts(boxNameParam, false, isReadTotal).then((boxCountResponse) => {
@@ -450,7 +453,10 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
 
                         // Page 1: refresh sidebar folder badges only (do not overwrite header badge).
                         if (page === 1 && boxNameParam) {
-                            if (!String(boxNameParam).toLowerCase().startsWith('local::')) {
+                            if (
+                                !String(boxNameParam).toLowerCase().startsWith('local::') &&
+                                !String(boxNameParam).toLowerCase().startsWith('ailabel::')
+                            ) {
                             setIsTotalCountLoading(true);
 
                             // Determine isReadTotal based on mailAction
@@ -918,9 +924,13 @@ export const MailDataProvider = ({ children }: { children: ReactNode }) => {
             });
 
             // Fire getCounts without blocking - update counts when response arrives
-            // Skip for local folders (DB-only; no IMAP count sync)
+            // Skip for local folders / AI labels (DB-only; no IMAP count sync)
             const countBox = boxNameOverride || boxName;
-            if (countBox && !String(countBox).toLowerCase().startsWith('local::')) {
+            if (
+                countBox &&
+                !String(countBox).toLowerCase().startsWith('local::') &&
+                !String(countBox).toLowerCase().startsWith('ailabel::')
+            ) {
                 setIsSidebarCountLoading(true);
                 getCounts(countBox, true, null).then((boxCountResponse) => {
                     if (boxCountResponse.statusCode === 200 && boxCountResponse.data) {

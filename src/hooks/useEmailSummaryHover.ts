@@ -8,7 +8,10 @@ import {
 } from 'react';
 import { getEmailSummary } from '@services/aiService/aiService';
 
-const OPEN_DELAY_MS = 1000;
+/** Show preparing blur on the row after this hover intent delay. */
+const BLUR_DELAY_MS = 500;
+/** Start the AI summary API after this longer hover delay. */
+const OPEN_DELAY_MS = 2000;
 const CLOSE_DELAY_MS = 175;
 /** Touch / coarse pointer: hold this long to open summary instead of navigating. */
 const LONG_PRESS_MS = 500;
@@ -56,6 +59,7 @@ function attachScrollSuppression() {
 
 export type EmailSummaryHoverState = {
     open: boolean;
+    /** True while the AI summary request is in flight (row shows preparing blur; menu stays closed). */
     isLoading: boolean;
     points: string[] | null;
     error: string | null;
@@ -111,6 +115,7 @@ export function useEmailSummaryHover({
 
     const rowRef = useRef<HTMLDivElement | null>(null);
     const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -123,6 +128,13 @@ export function useEmailSummaryHover({
         if (openTimerRef.current) {
             clearTimeout(openTimerRef.current);
             openTimerRef.current = null;
+        }
+    }, []);
+
+    const clearBlurTimer = useCallback(() => {
+        if (blurTimerRef.current) {
+            clearTimeout(blurTimerRef.current);
+            blurTimerRef.current = null;
         }
     }, []);
 
@@ -148,6 +160,7 @@ export function useEmailSummaryHover({
 
     const close = useCallback(() => {
         clearOpenTimer();
+        clearBlurTimer();
         clearCloseTimer();
         clearLongPressTimer();
         invalidateInFlight();
@@ -157,10 +170,15 @@ export function useEmailSummaryHover({
         setIsLoading(false);
         setError(null);
         setAnchorEl(null);
-    }, [clearCloseTimer, clearLongPressTimer, clearOpenTimer, invalidateInFlight]);
+    }, [clearBlurTimer, clearCloseTimer, clearLongPressTimer, clearOpenTimer, invalidateInFlight]);
 
     const closeRef = useRef(close);
     closeRef.current = close;
+
+    const showPopover = useCallback(() => {
+        openRef.current = true;
+        setOpen(true);
+    }, []);
 
     const fetchSummary = useCallback(
         async (id: string) => {
@@ -169,21 +187,28 @@ export function useEmailSummaryHover({
                 setPoints(cached);
                 setIsLoading(false);
                 setError(null);
+                showPopover();
                 return;
             }
 
             const requestId = ++requestIdRef.current;
 
+            // Keep row blurred while fetching; open the menu only after the response.
             setIsLoading(true);
             setError(null);
             setPoints(null);
+            openRef.current = false;
+            setOpen(false);
 
             const payload: { messageId: string; boxName?: string } = { messageId: id };
             if (boxName?.trim()) payload.boxName = boxName.trim();
 
+            // Yield so React can paint the preparing blur before the request settles.
+            await Promise.resolve();
+
             const response = await getEmailSummary(payload);
 
-            // Ignore stale responses if hover moved on or popover closed.
+            // Ignore stale responses if hover moved on or preparing was cancelled.
             if (requestId !== requestIdRef.current || hoveredMessageIdRef.current !== id) {
                 return;
             }
@@ -201,6 +226,7 @@ export function useEmailSummaryHover({
                 setError("Couldn't load summary");
                 setPoints([]);
                 setIsLoading(false);
+                showPopover();
                 return;
             }
 
@@ -208,8 +234,9 @@ export function useEmailSummaryHover({
             setPoints(summary);
             setIsLoading(false);
             setError(null);
+            showPopover();
         },
-        [boxName, close],
+        [boxName, close, showPopover],
     );
 
     const openPopover = useCallback(
@@ -225,22 +252,23 @@ export function useEmailSummaryHover({
             });
 
             clearCloseTimer();
+
             hoveredMessageIdRef.current = id;
-            openRef.current = true;
             setAnchorEl(rowRef.current);
-            setOpen(true);
 
             const cached = emailSummaryCache.get(id);
             if (cached) {
                 setPoints(cached);
                 setIsLoading(false);
                 setError(null);
+                showPopover();
                 return;
             }
 
+            // Keep menu closed until AI summary is ready; row shows preparing blur instead.
             void fetchSummary(id);
         },
-        [clearCloseTimer, enabled, fetchSummary, messageId],
+        [clearCloseTimer, enabled, fetchSummary, messageId, showPopover],
     );
 
     const scheduleClose = useCallback(() => {
@@ -260,18 +288,42 @@ export function useEmailSummaryHover({
         if (!enabled || !messageId?.trim() || !canHover() || isMailListScrolling) return;
         clearCloseTimer();
         clearOpenTimer();
+        clearBlurTimer();
+
+        const id = messageId.trim();
+
+        // Show preparing blur while the user keeps hovering (before the API fires).
+        blurTimerRef.current = setTimeout(() => {
+            blurTimerRef.current = null;
+            if (isMailListScrolling || openRef.current) return;
+            if (emailSummaryCache.has(id)) return;
+            hoveredMessageIdRef.current = id;
+            setAnchorEl(rowRef.current);
+            setIsLoading(true);
+        }, BLUR_DELAY_MS);
+
         openTimerRef.current = setTimeout(() => {
             openTimerRef.current = null;
             if (isMailListScrolling) return;
             openPopover();
         }, OPEN_DELAY_MS);
-    }, [clearCloseTimer, clearOpenTimer, enabled, messageId, openPopover]);
+    }, [clearBlurTimer, clearCloseTimer, clearOpenTimer, enabled, messageId, openPopover]);
 
     const onRowMouseLeave = useCallback(() => {
         if (!canHover()) return;
         clearOpenTimer();
+        clearBlurTimer();
+        // While summary is still preparing there is no menu to move into — cancel immediately.
+        if (!openRef.current) {
+            clearCloseTimer();
+            invalidateInFlight();
+            hoveredMessageIdRef.current = null;
+            setIsLoading(false);
+            setAnchorEl(null);
+            return;
+        }
         scheduleClose();
-    }, [clearOpenTimer, scheduleClose]);
+    }, [clearBlurTimer, clearCloseTimer, clearOpenTimer, invalidateInFlight, scheduleClose]);
 
     const onPopoverMouseEnter = useCallback(() => {
         if (isMailListScrolling || !canHover()) return;
@@ -316,7 +368,7 @@ export function useEmailSummaryHover({
             }, LONG_PRESS_MS);
         },
         [clearLongPressTimer, enabled, messageId, openPopover],
-    );
+    );                                                                     
 
     const onRowTouchMove = useCallback(
         (event: ReactTouchEvent) => {
@@ -376,16 +428,16 @@ export function useEmailSummaryHover({
         };
     }, []);
 
-    // Outside tap / backdrop closes summary on touch devices.
+    // Outside tap dismisses an open sheet, or cancels an in-flight prepare, on touch devices.
     useEffect(() => {
-        if (!open || canHover()) return;
+        if ((!open && !isLoading) || canHover()) return;
 
         const onPointerDown = (event: MouseEvent | TouchEvent) => {
             const target = event.target as Node;
             if (rowRef.current?.contains(target)) return;
             const popup = document.querySelector('.email-summary-popup');
             if (popup?.contains(target)) return;
-            // Backdrop (or any other outside target) dismisses the sheet.
+            // Backdrop (or any other outside target) dismisses the sheet / preparing state.
             close();
         };
 
@@ -399,7 +451,7 @@ export function useEmailSummaryHover({
             document.removeEventListener('mousedown', onPointerDown);
             document.removeEventListener('touchstart', onPointerDown);
         };
-    }, [open, close]);
+    }, [open, isLoading, close]);
 
     // Close when the email is opened or AI features are disabled.
     useEffect(() => {
@@ -416,6 +468,7 @@ export function useEmailSummaryHover({
 
         const onScrollClose = () => {
             clearOpenTimer();
+            clearBlurTimer();
             clearCloseTimer();
             clearLongPressTimer();
             longPressTriggeredRef.current = false;
@@ -431,16 +484,17 @@ export function useEmailSummaryHover({
         return () => {
             scrollCloseListeners.delete(onScrollClose);
         };
-    }, [clearCloseTimer, clearLongPressTimer, clearOpenTimer, enabled, invalidateInFlight]);
+    }, [clearBlurTimer, clearCloseTimer, clearLongPressTimer, clearOpenTimer, enabled, invalidateInFlight]);
 
     useEffect(() => {
         return () => {
             clearOpenTimer();
+            clearBlurTimer();
             clearCloseTimer();
             clearLongPressTimer();
             invalidateInFlight();
         };
-    }, [clearCloseTimer, clearLongPressTimer, clearOpenTimer, invalidateInFlight]);
+    }, [clearBlurTimer, clearCloseTimer, clearLongPressTimer, clearOpenTimer, invalidateInFlight]);
 
     return {
         open,

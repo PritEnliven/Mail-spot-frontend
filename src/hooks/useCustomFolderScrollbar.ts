@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-export function useCustomFolderScrollbar() {
+export function useCustomFolderScrollbar(itemCount = 0) {
     const scrollRef = useRef<HTMLUListElement | null>(null);
     const fadeTopRef = useRef<HTMLDivElement | null>(null);
     const fadeBottomRef = useRef<HTMLDivElement | null>(null);
@@ -19,19 +19,20 @@ export function useCustomFolderScrollbar() {
         const contentHeight = el.scrollHeight;
         const visibleHeight = el.clientHeight;
         const scrollTop = el.scrollTop;
-        const maxScroll = contentHeight - visibleHeight;
+        const maxScroll = Math.max(0, contentHeight - visibleHeight);
 
-        // ── Fade logic
-        topFade.style.opacity = Math.min(scrollTop / 60, 1).toString();
-        bottomFade.style.opacity = Math.min((maxScroll - scrollTop) / 60, 1).toString();
-
-        // ── Scrollbar visibility (1px covers subpixel rounding after collapse)
-        if (contentHeight - visibleHeight <= 1) {
+        // ── Fade logic (hidden when content does not overflow)
+        if (maxScroll <= 1) {
+            topFade.style.opacity = '0';
+            bottomFade.style.opacity = '0';
             bar.classList.remove('visible');
             handle.style.height = '100%';
             handle.style.top = '0px';
             return;
         }
+
+        topFade.style.opacity = Math.min(scrollTop / 60, 1).toString();
+        bottomFade.style.opacity = Math.min((maxScroll - scrollTop) / 60, 1).toString();
 
         bar.classList.add('visible');
 
@@ -78,7 +79,7 @@ export function useCustomFolderScrollbar() {
             resizeObserver.disconnect();
             mutationObserver.disconnect();
         };
-    }, [update]);
+    }, [update, itemCount]);
 
     return {
         scrollRef,

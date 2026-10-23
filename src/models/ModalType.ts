@@ -9,6 +9,7 @@ export type ModalType =
     'customRecurrence' |
     'createCustomFolder' |
     'createLocalFolder' |
+    'createAiLabel' |
     'changeImapSmtpPassword' |
     'changePassword' |
     'createSignature' |

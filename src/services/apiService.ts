@@ -74,6 +74,7 @@ const MAILBOX_SCOPED_PREFIXES = [
   'email/',
   'customBox/',
   'localFolder/',
+  'ai-label/',
   'event/',
   'calendar/',
   'rule/',

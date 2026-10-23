@@ -42,11 +42,20 @@ const HIGHLIGHT_STYLE = `
     border-radius: 2px;
   }
 
-    .quoted-content {
-      margin-top: 8px !important;
-      /* Do not force font-size/background — that breaks quoted marketing templates. */
-      background-color: transparent !important;
-      padding: 0 !important;
+  .quoted-content {
+    margin-top: 8px !important;
+    /* Do not force font-size/background — that breaks quoted marketing templates. */
+    background-color: transparent !important;
+    padding: 0 !important;
+    /* Multi-trail replies were wrapped in td[align=center]/text-align:center.
+       Keep conversation text left-aligned; inline text-align on children still wins. */
+    text-align: left;
+  }
+
+  /* Only the outer quote wrapper — not nested marketing cells. */
+  .quoted-content[data-email-centered="1"] > table[role="presentation"] > tbody > tr > td,
+  .quoted-content[data-email-centered="1"] > table[role="presentation"] > tr > td {
+    text-align: left !important;
   }
  
 `;
@@ -194,10 +203,63 @@ function findRsvpActionContainers(root: ParentNode): Element[] {
   return containers;
 }
 
-/**
- * Apple iCloud calendar invites ship hi-res Accept/Decline/Maybe assets that
- * render oversized when template CSS sizing does not apply in the shadow DOM.
- */
+function cellLooksCentered(el: HTMLElement): boolean {
+  const align = (el.getAttribute("align") || "").toLowerCase();
+  const style = el.getAttribute("style") || "";
+  return (
+    align === "center" ||
+    /(?:^|;)\s*text-align\s*:\s*center\s*(;|$)/i.test(style)
+  );
+}
+
+function normalizeQuotedTrailAlignment(root: ParentNode) {
+  root.querySelectorAll(".quoted-content").forEach((quoted) => {
+    quoted
+      .querySelectorAll(":scope > table[role=\"presentation\"]")
+      .forEach((table) => {
+        const td = table.querySelector(
+          ":scope > tbody > tr > td, :scope > tr > td",
+        ) as HTMLElement | null;
+        if (!td || !cellLooksCentered(td)) return;
+        td.style.setProperty("text-align", "left", "important");
+      });
+
+    // Also undo aggressive single-cell centering from an older restore pass.
+    quoted.querySelectorAll("td, th").forEach((node) => {
+      const cell = node as HTMLElement;
+      if (!cellLooksCentered(cell)) return;
+
+      const row = cell.parentElement;          
+      if (!row || row.tagName !== "TR") return;
+
+      const cells = Array.from(row.children).filter(
+        (el) => el.tagName === "TD" || el.tagName === "TH",
+      );
+
+      if (cells.length !== 1) return;
+
+      // Marketing: keep center when a fixed/max-width nested table is centered.
+      const keepsMarketingCenter = Array.from(
+        cell.querySelectorAll("table"),
+      ).some((table) => {
+        const tAlign = (table.getAttribute("align") || "").toLowerCase();
+        const tStyle = table.getAttribute("style") || "";
+        const hasWidth =
+          /^\d+$/.test((table.getAttribute("width") || "").trim()) ||
+          /(?:^|;)\s*(?:max-)?width\s*:\s*\d+(?:\.\d+)?px/i.test(tStyle);
+        const isCentered =
+          tAlign === "center" ||
+          /margin-left\s*:\s*auto/i.test(tStyle) ||
+          /margin\s*:\s*(?:[^;]*\s)?auto(?:\s|;|$)/i.test(tStyle);
+        return hasWidth && isCentered;
+      });
+      if (keepsMarketingCenter) return;
+
+      cell.style.setProperty("text-align", "left", "important");
+    });
+  });
+}
+
 function constrainCalendarInviteActionIcons(root: ParentNode) {
   if (!looksLikeCalendarInviteActions(root)) return;
 
@@ -215,7 +277,7 @@ function constrainCalendarInviteActionIcons(root: ParentNode) {
       svg.setAttribute("height", String(RSVP_ACTION_ICON_PX));
     });
   });
-}
+}                                                             
 
 function EmailBody({ html, searchTerm, attachments }: EmailBodyProps) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -254,6 +316,8 @@ function EmailBody({ html, searchTerm, attachments }: EmailBodyProps) {
     honorHtmlImgPixelSizes(container);
     // Apple iCloud invites: keep Accept / Decline / Maybe icons at a sane size.
     constrainCalendarInviteActionIcons(container);
+    // Fix multi-trail quotes that were incorrectly center-aligned on send.
+    normalizeQuotedTrailAlignment(container);
 
     container.querySelectorAll("a[href]").forEach((anchor) => {
       const resolvedHref = resolveExternalLinkUrl(anchor.getAttribute("href"));
@@ -264,7 +328,6 @@ function EmailBody({ html, searchTerm, attachments }: EmailBodyProps) {
 
     container.querySelectorAll(".quoted-content").forEach((quotedContent) => {
       const wrapper = document.createElement("div");
-
       const toggle = document.createElement("button");
       toggle.type = "button";
       toggle.style.border = "none";

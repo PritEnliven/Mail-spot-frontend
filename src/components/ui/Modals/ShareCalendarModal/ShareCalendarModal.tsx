@@ -5,7 +5,7 @@ import closeIcon from '@images/close-icon.svg';
 import BaseModal from '@components/ui/BaseModal';
 import GuestTag, { type Guest } from '@components/ui/calendar/GuestTag';
 import Select2Wrapper from '@components/ui/form/Select2Wrapper';
-import InteractiveIcon from '@components/ui/InteractiveIcon';
+import InteractiveIcon from '@components/ui/InteractiveIcon';      
 import deleteIcon from "@images/trash-icon.svg";
 import deleteIconHover from "@images/trash-icon-hover.svg";
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
@@ -65,7 +65,7 @@ function normalizeInviteEmails(emails: string[]): string[] {
 
 function shareStatusLabel(status: CalendarShare['status']): string {
     if (status === 'accepted') return 'Accepted';
-    if (status === 'declined') return 'Declined';
+    if (status === 'declined') return 'Declined';                        
     if (status === 'revoked') return 'Revoked';
     return 'Pending';
 }
@@ -127,7 +127,7 @@ function ShareCalendarModal({
         setListLoading(true);
         setListError('');
         const response = await listCalendarShares({ calendarId });
-        if (response.statusCode === 200) {
+        if (response.statusCode === 200) {             
             const nextShares = (response.data?.shares || []).filter(
                 (share) => share.status !== 'revoked'
             );

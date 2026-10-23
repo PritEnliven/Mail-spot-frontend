@@ -86,6 +86,8 @@ function fixMalformedPercentWidths(doc: Document): void {
 /**
  * CKEditor rewrites td[align=center] → style="text-align:center".
  * Outlook/Gmail need the legacy align attribute to center nested layout tables.
+ * Only restore when the cell was already authored as centered — never force
+ * center on conversation quotes that merely nest a table (e.g. signature).
  */
 function restoreEmailCellAlign(doc: Document): void {
   doc.querySelectorAll('td, th').forEach((cell) => {
@@ -97,22 +99,33 @@ function restoreEmailCellAlign(doc: Document): void {
 
     if (hasTextAlignCenter) {
       cell.setAttribute('align', 'center');
-      return;
     }
-
-    // Full-width single-cell rows are the classic email centering wrapper.
-    // Do not touch multi-column rows (e.g. image | text cards).
-    const row = cell.parentElement;
-    if (!row || row.tagName !== 'TR') return;
-    const cells = Array.from(row.children).filter(
-      (el) => el.tagName === 'TD' || el.tagName === 'TH',
-    );
-    if (cells.length !== 1) return;
-    if (!cell.querySelector('table')) return;
-
-    cell.setAttribute('align', 'center');
-    cell.setAttribute('style', mergeInlineStyles(style, 'text-align: center'));
   });
+}
+
+/** True when quoted HTML looks like a centered marketing/layout template. */
+function hasCenteredMarketingLayout(root: Element): boolean {
+  for (const table of Array.from(root.querySelectorAll('table'))) {
+    const align = (table.getAttribute('align') || '').toLowerCase();
+    const style = table.getAttribute('style') || '';
+    if (
+      (hasFixedWidth(table) || hasMaxWidth(table)) &&
+      (align === 'center' || hasAutoHorizontalMargin(style))
+    ) {
+      return true;
+    }
+  }
+
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>('[style*="max-width"]'))) {
+    // Ignore our own quoted-content shell (width/max-width:100% only).
+    if (el.classList?.contains('quoted-content')) continue;
+    const style = el.getAttribute('style') || '';
+    if (hasAutoHorizontalMargin(style) && hasMaxWidth(el)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -198,13 +211,15 @@ function centerMaxWidthBlocks(doc: Document): void {
 }
 
 /**
- * Wrap quoted marketing HTML in an Outlook-safe full-width centering table.
- * Email clients reliably center children of td[align=center].
+ * Wrap quoted marketing HTML in an Outlook-safe full-width table so fixed-width
+ * layout tables can sit centered. Skip plain conversation quotes (any nested
+ * table alone is not enough — that mis-centers multi-trail replies).
+ * Default text stays left-aligned; intentional inline text-align still wins.
  */
 function wrapQuotedContentInCenterTable(doc: Document): void {
   doc.querySelectorAll('.quoted-content').forEach((quoted) => {
     if (quoted.getAttribute('data-email-centered') === '1') return;
-    if (!quoted.querySelector('table, [style*="max-width"]')) return;
+    if (!hasCenteredMarketingLayout(quoted)) return;
 
     const wrapper = doc.createElement('table');
     wrapper.setAttribute('role', 'presentation');
@@ -219,9 +234,11 @@ function wrapQuotedContentInCenterTable(doc: Document): void {
 
     const tr = doc.createElement('tr');
     const td = doc.createElement('td');
+    // align=center helps Outlook center nested layout tables as blocks;
+    // text-align:left keeps conversation paragraphs left-aligned.
     td.setAttribute('align', 'center');
     td.setAttribute('valign', 'top');
-    td.setAttribute('style', 'text-align:center;width:100%;margin:0;padding:0;');
+    td.setAttribute('style', 'text-align:left;width:100%;margin:0;padding:0;');
 
     while (quoted.firstChild) {
       td.appendChild(quoted.firstChild);

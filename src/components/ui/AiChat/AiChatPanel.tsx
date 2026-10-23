@@ -333,26 +333,27 @@ export default function AiChatPanel() {
         const text = inputText.trim();
         if (!text || composerDisabled) return;
         setInputText('');
-        
-        if (textareaRef.current) {                                  
-            textareaRef.current.style.height = 'auto';         
+
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
             textareaRef.current.classList.remove('is-scrollable');
         }
 
         await sendMessage(text);
+
         if (isMobilebig) {
             setIsHistoryOpen(false);
         }
     }, [composerDisabled, inputText, isMobilebig, sendMessage]);
 
-    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {            
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             void handleSend();
         }
     };
 
-    const handleNewChat = () => {
+    const handleNewChat = () => {             
         resetChat();
         setInputText('');
         if (textareaRef.current) {
@@ -427,7 +428,7 @@ export default function AiChatPanel() {
                     <div className="ai-chat-panel__header-actions">
                         <button
                             type="button"
-                            className="btn-new ai-chat-panel__new-btn"
+                            className="btn-new ai-chat-panel__new-btn btn-new-bg"
                             onClick={handleNewChat}
                             title="Start a new conversation"
                         >
@@ -533,12 +534,14 @@ export default function AiChatPanel() {
                                 </div>
                                 <button
                                     type="button"
-                                    className="btn-new btn-new-bg ai-chat-panel__send-btn"
+                                    className={`btn-new ai-chat-panel__send-btn${inputText.trim() ? ' has-prompt' : ''}`}
                                     onClick={() => void handleSend()}
                                     disabled={composerDisabled || !inputText.trim()}
                                     aria-label="Send message"
                                 >
-                                    Send
+                                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M3 4L19 11L3 18L4.99889 11H10.4989H4.99997L3 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>

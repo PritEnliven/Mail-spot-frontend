@@ -132,6 +132,24 @@ function getLocalFolderIdFromBoxName(boxName?: string | null): string | null {
     return parts[1] || null;
 }
 
+/** AI labels use boxName `aiLabel::<labelId|name>` with get-emails (not IMAP). */
+function isAiLabelBoxName(boxName?: string | null): boolean {
+    if (!boxName) return false;
+    return decodeURIComponent(boxName).toLowerCase().startsWith('ailabel::');
+}
+
+function getAiLabelKeyFromBoxName(boxName?: string | null): string | null {
+    if (!boxName || !isAiLabelBoxName(boxName)) return null;
+    const decoded = decodeURIComponent(boxName);
+    const sep = decoded.indexOf('::');
+    if (sep < 0) return null;
+    return decoded.slice(sep + 2) || null;
+}
+
+function buildAiLabelBoxName(labelIdOrName: string): string {
+    return `aiLabel::${labelIdOrName}`;
+}
+
 function verifyBoxName(boxName: string, boxValue: string) {
     if (!boxName || !boxValue) return false;
     const normalized = normalizeBoxName(boxName).toLowerCase();
@@ -663,4 +681,4 @@ const getEmailPreviewText = (email: {
     return withoutQuote || email.subject || "";
 };
 
-export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, ensureContactInOtherMenu, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText, isCustomFolderDepthAllowed, getParentFolderDepth, wouldExceedCustomFolderDepth, isLocalBoxName, getLocalFolderIdFromBoxName };
+export { parseEmailAddress, getAttachmentIcon, buildParentFolderOptions, buildCustomFolderTree, resolveSidebarItem, resolveAllSidebarItems, ensureContactInOtherMenu, handleEmailDeletion, openEmailDetail, getBoxNameFromSidebar, verifyBoxName, getEmailPreviewText, isCustomFolderDepthAllowed, getParentFolderDepth, wouldExceedCustomFolderDepth, isLocalBoxName, getLocalFolderIdFromBoxName, isAiLabelBoxName, getAiLabelKeyFromBoxName, buildAiLabelBoxName };

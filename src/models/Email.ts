@@ -65,6 +65,8 @@ export interface Email {
     isGroupStart?: boolean;
     /** Bytes when arrangeBy is size (or otherwise provided). */
     size?: number;
+    /** AI-applied label names from the backend labeling pipeline. */
+    aiLabels?: string[];
 }
 
 export interface EmailAddress {

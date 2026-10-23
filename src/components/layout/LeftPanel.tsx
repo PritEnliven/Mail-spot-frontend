@@ -5,21 +5,35 @@ import navCollapseIcon from '@images/nav-collepse-icon.svg';
 import navExpandIconHover from '@images/nav-collepse-icon-hover.svg';
 import navCollapseIconHover from "@images/nav-collepse-icon-hover-2.svg";
 import menuIcon from "@images/menu-icon.svg";
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import SidebarItem from '../../features/emails/SidebarItem';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMailData, useMailUI, useContacts, useCalendar } from '../../context/index';
+import { useAccount } from '@context/AccountContext';
 import { getBoxes } from '@services/mailbox/mailboxService';
 import { CustomFolderSection } from '../ui/sidebar/CustomFolderSection';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
-import { verifyBoxName, buildCustomFolderTree, resolveAllSidebarItems, getLocalFolderIdFromBoxName, isLocalBoxName } from '@utils/emailUtil';
+import {
+    verifyBoxName,
+    buildCustomFolderTree,
+    resolveAllSidebarItems,
+    getLocalFolderIdFromBoxName,
+    isLocalBoxName,
+    isAiLabelBoxName,
+    getAiLabelKeyFromBoxName,
+    buildAiLabelBoxName,
+} from '@utils/emailUtil';
 import { deleteCustomBox } from '@services/customBox/customBoxService';
 import { deleteLocalFolder } from '@services/localFolder/localFolderService';
+import { deleteAiLabel, listAiLabels, type AiLabel } from '@services/aiService/aiLabelService';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
 import eventIcon from '@images/calendar-event-icon-white.svg';
+import aiLabelsIcon from '@images/ai-labels-icon.svg';
 import { useScreen } from '@context/ScreenContext';
 import { writableCalendars } from '@utils/calendarPermissionUtil';
+
+const AI_LABEL_DEFAULT_COLOR = '#FF8A00';
 
 
 type SidebarNavItem = { id: string; boxName: string; label: string };
@@ -63,11 +77,16 @@ const LeftPanel = () => {
         setAllSearchResult,
         setSidebarStateFromAPI,
         refreshSidebarFolders,
-        clearMailSearch } = useMailData();
+        clearMailSearch,
+        userPermissions } = useMailData();
     const { setToolbarState, openModal, closeModal, activeModals, isMailListOpen, setIsMailListOpen, isSidebarOpen, setIsSidebarOpen, isSidebarExpandedMobile, setIsSidebarExpandedMobile, activeBoxId, setActiveBoxId } = useMailUI();
     const { fetchContacts } = useContacts();
     const { isMobile } = useScreen();
+    const { activeAccountId } = useAccount();
     const [isRefreshingFolders, setIsRefreshingFolders] = useState(false);
+    const [aiLabels, setAiLabels] = useState<AiLabel[]>([]);
+
+    const aiFeaturesEnabled = Boolean(userPermissions?.aiFeatures);
 
     const customFolders = useMemo(() => {
         const items = sidebarItems.filter(item => item.category === 'customBoxes');
@@ -78,7 +97,42 @@ const LeftPanel = () => {
         return sidebarItems.filter(item => item.category === 'localFolders');
     }, [sidebarItems]);
 
+    const aiLabelFolders = useMemo(
+        () =>
+            aiLabels.map((label) => ({
+                id: `ai-label-${label._id}`,
+                name: label.name,
+                color: label.color || AI_LABEL_DEFAULT_COLOR,
+                icon: '',
+                value: buildAiLabelBoxName(label._id),
+                depth: 0,
+            })),
+        [aiLabels]
+    );
+
     const sidebarActiveBoxId = allSearchResult ? '' : activeBoxId;
+
+    const refreshAiLabels = useCallback(async () => {
+        if (!aiFeaturesEnabled) {
+            setAiLabels([]);
+            return;
+        }
+        try {
+            const response = await listAiLabels();
+            const list = Array.isArray(response?.data)
+                ? response.data
+                : Array.isArray(response)
+                    ? response
+                    : [];
+            setAiLabels(list);
+        } catch (error: any) {
+            showError(error?.message || 'Failed to load labels');
+        }
+    }, [aiFeaturesEnabled, activeAccountId]);
+
+    useEffect(() => {
+        void refreshAiLabels();
+    }, [refreshAiLabels]);
 
 
     useEffect(() => {
@@ -89,41 +143,60 @@ const LeftPanel = () => {
 
     // Sync active sidebar item when URL changes (e.g. navigated from compose modal)
     useEffect(() => {
-        if (sidebarItems.length === 0 || allSearchResult) return;
+        if (allSearchResult) return;
 
         const pathParts = location.pathname.split('/');
-        const urlBoxName = pathParts[pathParts.length - 1];
+        const urlBoxName = decodeURIComponent(pathParts[pathParts.length - 1] || '');
 
-        if (urlBoxName) {
-            // Special handling for settings route
-            if (urlBoxName === 'settings') {
-                const settingsItem = sidebarItems.find(item =>
-                    item.id.includes('settings') || item.boxName === 'settings'
-                );
-                if (settingsItem) {
-                    setActiveBoxId(settingsItem.id);
-                    setBoxTitle(settingsItem.label);
-                    setBoxName(settingsItem.boxName);
-                }
-            } else if (urlBoxName === 'contact') {
-                const contactItem = sidebarItems.find(item =>
-                    item.id.includes('contact') || item.boxName === 'contact'
-                );
-                if (contactItem) {
-                    setActiveBoxId(contactItem.id);
-                    setBoxTitle(contactItem.label);
-                    setBoxName(contactItem.boxName);
-                }
+        if (!urlBoxName) return;
+
+        if (isAiLabelBoxName(urlBoxName)) {
+            const labelKey = getAiLabelKeyFromBoxName(urlBoxName);
+            const label = aiLabels.find(
+                (item) => item._id === labelKey || item.name === labelKey
+            );
+            if (label) {
+                setActiveBoxId(`ai-label-${label._id}`);
+                setBoxTitle(label.name);
+                setBoxName(buildAiLabelBoxName(label._id));
             } else {
-                const matchedItem = sidebarItems.find(item => item.boxName === urlBoxName);
-                if (matchedItem) {
-                    setActiveBoxId(matchedItem.id);
-                    setBoxTitle(matchedItem.label);
-                    setBoxName(urlBoxName);
-                }
+                setActiveBoxId(labelKey ? `ai-label-${labelKey}` : '');
+                setBoxTitle(labelKey || 'Label');
+                setBoxName(urlBoxName);
+            }
+            return;
+        }
+
+        if (sidebarItems.length === 0) return;
+
+        // Special handling for settings route
+        if (urlBoxName === 'settings') {
+            const settingsItem = sidebarItems.find(item =>
+                item.id.includes('settings') || item.boxName === 'settings'
+            );
+            if (settingsItem) {
+                setActiveBoxId(settingsItem.id);
+                setBoxTitle(settingsItem.label);
+                setBoxName(settingsItem.boxName);
+            }
+        } else if (urlBoxName === 'contact') {
+            const contactItem = sidebarItems.find(item =>
+                item.id.includes('contact') || item.boxName === 'contact'
+            );
+            if (contactItem) {
+                setActiveBoxId(contactItem.id);
+                setBoxTitle(contactItem.label);
+                setBoxName(contactItem.boxName);
+            }
+        } else {
+            const matchedItem = sidebarItems.find(item => item.boxName === urlBoxName);
+            if (matchedItem) {
+                setActiveBoxId(matchedItem.id);
+                setBoxTitle(matchedItem.label);
+                setBoxName(urlBoxName);
             }
         }
-    }, [location.pathname, sidebarItems, allSearchResult]);
+    }, [location.pathname, sidebarItems, allSearchResult, aiLabels, setActiveBoxId, setBoxTitle, setBoxName]);
 
     //call an api 
     useEffect(() => {
@@ -146,17 +219,25 @@ const LeftPanel = () => {
                 );
                 setSidebarItems(resolvedItems);
 
-                let activeItem = getActiveSidebarItem(location.pathname, resolvedItems);
+                const pathBox = decodeURIComponent(
+                    location.pathname.split('/').pop() || ''
+                );
+                if (isAiLabelBoxName(pathBox)) {
+                    // Title / active id synced once labels load (separate effect).
+                    setBoxName(pathBox);
+                } else {
+                    let activeItem = getActiveSidebarItem(location.pathname, resolvedItems);
 
-                if (!activeItem) {
-                    activeItem = resolvedItems.find(item =>
-                        item.id.includes("inbox")
-                    );
-                }
+                    if (!activeItem) {
+                        activeItem = resolvedItems.find(item =>
+                            item.id.includes("inbox")
+                        );
+                    }
 
-                if (activeItem) {
-                    setActiveBoxId(activeItem.id);
-                    setBoxTitle(activeItem.label);
+                    if (activeItem) {
+                        setActiveBoxId(activeItem.id);
+                        setBoxTitle(activeItem.label);
+                    }
                 }
             } catch (error) {
                 console.error('Error loading boxes:', error);
@@ -169,12 +250,15 @@ const LeftPanel = () => {
     useEffect(() => {
         if (!sidebarItems.length || allSearchResult) return;
 
+        const pathBox = decodeURIComponent(location.pathname.split('/').pop() || '');
+        if (isAiLabelBoxName(pathBox)) return;
+
         const activeItem = getActiveSidebarItem(location.pathname, sidebarItems);
         if (activeItem) {
             setActiveBoxId(activeItem.id);
             setBoxTitle(activeItem.label);
         }
-    }, [location.pathname, sidebarItems, allSearchResult]);
+    }, [location.pathname, sidebarItems, allSearchResult, setActiveBoxId, setBoxTitle]);
 
     const openComposeModal = () => {
         fetchContacts();
@@ -261,6 +345,15 @@ const LeftPanel = () => {
         }
     };
 
+    const openCreateAiLabelModal = () => {
+        openModal('createAiLabel', {
+            onSuccess: refreshAiLabels,
+        });
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
+    };
+
     const handleRefreshFolders = async () => {
         if (isRefreshingFolders) return;
         setIsRefreshingFolders(true);
@@ -336,6 +429,69 @@ const LeftPanel = () => {
         if (isMobile) {
             setIsSidebarExpandedMobile(false);
         }
+    };
+
+    const resolveAiLabelId = (boxNameOrId: string) =>
+        getAiLabelKeyFromBoxName(boxNameOrId) || boxNameOrId;
+
+    const handleEditAiLabel = (boxNameOrId: string) => {
+        const labelId = resolveAiLabelId(boxNameOrId);
+        const label = aiLabels.find((item) => item._id === labelId);
+        if (!label) return;
+        openModal('createAiLabel', {
+            name: label.name,
+            rulePrompt: label.rulePrompt,
+            labelIconColor: label.color || AI_LABEL_DEFAULT_COLOR,
+            labelId: label._id,
+            isEdit: true,
+            onSuccess: refreshAiLabels,
+        });
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
+    };
+
+    const handleDeleteAiLabel = (boxNameOrId: string, labelName: string) => {
+        const labelId = resolveAiLabelId(boxNameOrId);
+        openModal('confirmDelete', {
+            title: 'Delete Label',
+            message: `delete the label "${labelName}"? Emails keep any labels already applied.`,
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            onConfirm: () => deleteAiLabelHandler(labelId, labelName),
+        });
+        if (isMobile) {
+            setIsSidebarExpandedMobile(false);
+        }
+    };
+
+    const deleteAiLabelHandler = async (labelId: string, labelName: string) => {
+        const isDeletingActiveLabel =
+            isAiLabelBoxName(boxName) &&
+            getAiLabelKeyFromBoxName(boxName) === labelId;
+
+        const response: any = await deleteAiLabel({ labelId });
+        if (response?.statusCode === 200 || response?.data?._id) {
+            showSuccess(`Label "${labelName}" deleted successfully`);
+            await refreshAiLabels();
+            if (isDeletingActiveLabel) {
+                redirectToInbox();
+            }
+            return true;
+        }
+        showError(
+            response?.message ||
+            response?.error ||
+            `Failed to delete label "${labelName}"`
+        );
+        throw new Error(response?.message || response?.error || 'Delete label failed');
+    };
+
+    const handleSelectAiLabel = (labelBoxName: string) => {
+        const labelId = getAiLabelKeyFromBoxName(labelBoxName);
+        const label = aiLabels.find((item) => item._id === labelId);
+        if (!label) return;
+        changeBox(labelBoxName, `ai-label-${label._id}`, label.name);
     };
 
     const redirectToInbox = (updatedSidebar?: Awaited<ReturnType<typeof setSidebarStateFromAPI>>) => {
@@ -623,7 +779,24 @@ const LeftPanel = () => {
                         onCreateFolder={openCreateFolderModal}
                         onRefreshFolders={handleRefreshFolders}
                         isRefreshingFolders={isRefreshingFolders}
-                    />
+                    />                             
+
+                    {aiFeaturesEnabled && (
+                        <CustomFolderSection
+                            sectionId="aiLabelSection"
+                            sectionTitle="AI Labels"
+                            sectionTitleIcon={aiLabelsIcon}
+                            showRefresh={false}
+                            createTooltip="Add Label"
+                            iconVariant="label"
+                            folders={aiLabelFolders}
+                            activeBoxId={sidebarActiveBoxId}
+                            onChangeBox={handleSelectAiLabel}
+                            onEditFolder={handleEditAiLabel}
+                            onDeleteFolder={handleDeleteAiLabel}
+                            onCreateFolder={openCreateAiLabelModal}
+                        />
+                    )}
 
                     <CustomFolderSection
                         sectionId="localFolderSection"
@@ -671,7 +844,6 @@ const LeftPanel = () => {
                     <div className="nav-custom-scroll-handle" ref={handleRef}></div>
                 </div>
             </nav>
-
         </>
     );
 };

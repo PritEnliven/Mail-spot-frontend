@@ -9,6 +9,7 @@ const EditRecurringModal = lazy(() => import('@components/ui/Modals/EditRecurrin
 const CustomRecurrenceModal = lazy(() => import('@components/ui/Modals/CustomRecurrenceModal/CustomRecurrenceModal'));
 const CreateCustomFolderModal = lazy(() => import('./Modals/CreateCustomFolder/CreateCustomFolderModal'));
 const CreateLocalFolderModal = lazy(() => import('./Modals/CreateLocalFolder/CreateLocalFolderModal'));
+const CreateAiLabelModal = lazy(() => import('./Modals/CreateAiLabel/CreateAiLabelModal'));
 const ChangeImapSmtpPasswordModal = lazy(() => import('@components/ui/Modals/PasswordChangeImapSmtp/changeImapSmtpPasswordModal'));
 const SignatureModal = lazy(() => import('./Modals/SignatureModal/SignatureModal'));
 const ChangePassword = lazy(() => import('@components/ui/Modals/ChangePassword/ChangePassword'));
@@ -118,6 +119,16 @@ function ModalRoot() {
                     case 'createLocalFolder':
                         content = (
                             <CreateLocalFolderModal
+                                modalId={modal.id}
+                                zIndex={zIndex}
+                                {...modal.props}
+                            />
+                        );
+                        break;
+
+                    case 'createAiLabel':
+                        content = (
+                            <CreateAiLabelModal
                                 modalId={modal.id}
                                 zIndex={zIndex}
                                 {...modal.props}

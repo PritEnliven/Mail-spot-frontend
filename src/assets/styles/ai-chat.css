@@ -10,34 +10,54 @@
 
 /* ── Slide-over panel ─────────────────────────────────────── */
 /*
- * Panel starts just below the MailSpot app header (~52 px) so the header
- * bar — including the "Ask AI" toggle button and the profile dropdown —
- * stays accessible while the panel is open.
+ * Docked to the right corner: flush under the app header, flush to
+ * the right edge and bottom — full remaining viewport height.
  */
 :root {
-  --ai-chat-header-offset: 52px;   /* height of .mail-details-header   */
+  --ai-chat-header-offset: 53px; /* .mail-details-header + bottom border */
 }
 
 .ai-chat-panel {
+  overflow: hidden;
   position: fixed;
   top: var(--ai-chat-header-offset);
   right: 0;
+  bottom: 0;
   width: min(520px, 100vw);
-  height: calc(100dvh - var(--ai-chat-header-offset));
+  height: auto;
   display: flex;
   flex-direction: column;
   background-color: #fff;
-  border-left: 1px solid #d0d9de;
-  border-top: 1px solid #d0d9de;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #d0d9de;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 10px 0 0 0;
+  box-shadow: -1px 0px 4px 0px #0000001f;
   transform: translateX(100%);
   transition: transform 0.25s ease, width 0.2s ease;
   z-index: 1040;
   font-family: 'DM Sans', sans-serif;
+  pointer-events: none;
+}
+
+.ai-chat-panel::before {
+  content: "";
+  background-image: url(../images/profile-new-bg.svg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .ai-chat-panel.is-open {
   transform: translateX(0);
+  pointer-events: auto;
 }
 
 .ai-chat-panel.has-history {
@@ -55,15 +75,22 @@
   }
 }
 
-/* Mobile: full-screen above the app header */
+/* Mobile: full-screen */
 @media (max-width: 767px) {
   .ai-chat-panel {
     top: 0;
+    right: 0;
+    bottom: 0;
     width: 100vw;
-    height: 100dvh;
-    border-top: none;
-    border-left: none;
+    height: auto;
+    border: none;
+    border-radius: 0;
     z-index: 1100;
+    transform: translateX(100%);
+  }
+
+  .ai-chat-panel.is-open {
+    transform: translateX(0);
   }
 
   .ai-chat-backdrop {
@@ -174,12 +201,15 @@
 .ai-chat-panel__header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
   border-bottom: 1px solid #d0d9de;
+  background: #f5f5f5;
   gap: 8px;
   min-height: 52px;
   flex-shrink: 0;
-  background-color: #fff;
+  position: relative;
+  z-index: 1;
 }
 
 .ai-chat-panel__title-wrap {
@@ -244,7 +274,8 @@
   display: flex;
   flex-direction: column;
   border-right: 1px solid #d0d9de;
-  background-color: #fafbfc;
+  /* Transparent so the panel Mailspot theme bg shows through (same as chat) */
+  background-color: #f5f5f5;
   min-height: 0;
 }
 
@@ -417,7 +448,7 @@
     width: 100%;
     z-index: 2;
     border-right: none;
-    background-color: #fff;
+    background-color: transparent;
   }
 
   .ai-chat-history__delete-btn {
@@ -494,12 +525,12 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 14px 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background-color: #f5f5f5;
   min-width: 0;
+  min-height: 0;
 }
 
 /* ── Empty state ──────────────────────────────────────────── */
@@ -575,9 +606,9 @@
 }
 
 .ai-chat-message--user .ai-chat-message__bubble {
-  background-color: #0097ef;
-  color: #fff;
-  border-radius: 16px 16px 4px 16px;
+  background-color: #d4ebf9;
+  color: #212121;
+  border-radius: 16px 4px 16px 16px;
   padding: 10px 14px;
   max-width: 88%;
   font-size: 14px;
@@ -593,12 +624,11 @@
 }
 
 .ai-chat-message--assistant .ai-chat-message__bubble {
-  background-color: #fff;
-  border: 1px solid #d0d9de;
-  border-radius: 12px;
+  background-color: #e5e8ea;
+   border-radius: 4px 16px 16px 16px;
   padding: 14px 16px;
   width: 100%;
-  max-width: 100%;
+  max-width: 88%;
   box-sizing: border-box;
   font-size: 14px;
   line-height: 1.55;
@@ -901,37 +931,71 @@
 
 /* ── Panel footer (input row) ─────────────────────────────── */
 .ai-chat-panel__footer {
-  padding: 12px 16px;
-  border-top: 1px solid #d0d9de;
-  background-color: #fff;
+  padding: 12px 16px 16px;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  border-top: 1px solid #d0d9de;
 }
 
 .ai-chat-input-row {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: 0;
+  position: relative;
+  border-radius: 6px;
+  background: #d4ebf9;
+}
+
+.ai-chat-input-row::after {
+  content: "";
+  background: linear-gradient(32deg, rgba(0, 163, 239, 1) 0%, rgba(0, 93, 137, 0) 100%);
+  width: calc(100% - 16px);
+  height: 1px;
+  display: block;
+  z-index: 1;
+  position: absolute;
+  bottom: 0;
+  left: 8px;
+  pointer-events: none;
 }
 
 .ai-chat-input-wrap {
   flex: 1;
   position: relative;
+  min-width: 0;
 }
 
 .ai-chat-panel__textarea {
   resize: none;
-  min-height: 40px;
+  min-height: 44px;
   max-height: 120px;
   font-size: 14px;
   /* Hide scrollbar gutter — avoids the black vertical line while typing */
   overflow-y: hidden;
   overflow-x: hidden;
-  line-height: 1.5;
-  padding: 8px 12px;
+  line-height: 20px;
+  padding: 12px 44px 12px 12px;
   border-radius: 6px;
   box-sizing: border-box;
   width: 100%;
   scrollbar-width: none; /* Firefox */
+  background: transparent;
+  border: 0;
+}
+.ai-chat-panel__textarea.form-control:focus{
+    background-color: transparent !important;
+    border-color: unset;
+    outline: 0;
+    box-shadow: unset;
+}
+.ai-chat-panel__textarea.form-control:disabled{
+   background-color: transparent !important;
+   opacity: 0.8;
 }
 
 .ai-chat-panel__textarea::-webkit-scrollbar {
@@ -943,8 +1007,8 @@
 }
 
 .ai-chat-panel__send-btn {
-  height: 40px;
-  padding: 0 14px;
+  height: 36px;
+  padding: 0 !important;
   flex-shrink: 0;
   white-space: nowrap;
   display: flex;
@@ -953,9 +1017,25 @@
   gap: 5px;
   font-size: 14px;
   border-radius: 5px;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: unset !important;
+  width: 36px;
+  min-width: unset !important;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 4px;
+  color: #9abdcc;
+  z-index: 2;
+}
+
+/* Blue only after the user has typed a prompt */
+.ai-chat-panel__send-btn.has-prompt {
+  color: #0097ef;
 }
 
 .ai-chat-panel__send-btn:disabled {
-  opacity: 0.65;
+  opacity: 1;
   cursor: not-allowed;
 }

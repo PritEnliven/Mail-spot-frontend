@@ -50,7 +50,7 @@ export interface PostAiChatFeedbackPayload {
 }
 
 export interface AiChatConversationSummary {
-    conversationId: string;
+    conversationId: string;             
     title: string;
     preview: string;
     turnCount: number;
@@ -95,9 +95,9 @@ async function listAiChatConversations(params: ListAiChatConversationsParams = {
             params: {
                 limit: params.limit ?? 20,
                 ...(params.before ? { before: params.before } : {}),
-            },
+            }
         });
-        return response;
+        return response;                          
     } catch (error: any) {
         return error;
     }
@@ -119,9 +119,10 @@ async function deleteAiChatConversation(conversationId: string) {
         const response = await deleteData(
             `email/ai-chat/conversations/${encodeURIComponent(conversationId)}`,
             {},
-        );
+        );                                    
         return response;
-    } catch (error: any) {
+    } 
+    catch (error: any) {
         return error;
     }
 }

@@ -3192,6 +3192,27 @@ button.ck.ck-button.ck-on.ck-color-grid__tile:hover {
    9. Editor Area (editable / source editing)
    ========================================================================== */
 
+/*
+ * Gmail-like compose spacing only (keep default font size/style):
+ * CKEditor defaults to line-height 1.5 + browser <p> margins (~1em), which
+ * looks much looser than Gmail (Enter = new block with no extra gap).
+ */
+.ck.ck-editor__editable.ck-content,
+.ck-content.ck-editor__editable {
+  --ck-content-line-height: 1.35;
+}
+
+.ck-content p,
+.ck-content h1,
+.ck-content h2,
+.ck-content h3,
+.ck-content h4,
+.ck-content h5,
+.ck-content h6 {
+  margin: 0;
+  line-height: inherit;
+}
+
 .ck-rounded-corners .ck.ck-editor__main > .ck-editor__editable,
 .ck.ck-editor__main > .ck-editor__editable.ck-rounded-corners {
     height: 360px !important;
@@ -6091,7 +6112,7 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
 
 /* START:: Create Folder */
 .create-folder-sec {
-  padding: 0 0 13px 0;
+  padding: 0;
 }
 
 .sidebar-create-folder-box-main {
@@ -6128,6 +6149,11 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.sidebar-create-folder-box .section-title-ai-icon {
+  flex-shrink: 0;
+  display: block;
 }
 
 /* Local Folders (and any section with only the + action): give the title more room */
@@ -6173,13 +6199,58 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   to { transform: rotate(360deg); }
 }
 
+/*
+ * Section dividers: exactly one line between stacked folder sections.
+ * - Following section draws border-top
+ * - Previous section’s ::after is suppressed when another folder section follows
+ * - Last folder section keeps ::after (before Other menu / end of sidebar)
+ */
 .create-folder-sec::after {
   content: "";
   width: calc(100% - -16px);
   height: 1px;
   background-color: #d0d9de;
   display: block;
-  margin: 0 0 0 -8px;
+  margin: 8px 0 13px -8px;
+}
+
+.create-folder-sec:has(+ .create-folder-sec)::after {
+  content: none !important;
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+}
+
+.create-folder-sec + .create-folder-sec {
+  border-top: 1px solid #d0d9de;
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+/* Empty sections: tighter title → divider gap */
+.create-folder-sec--empty .sidebar-create-folder-box {
+  margin-bottom: 0;
+}
+
+/* Folder lists must not draw their own bottom rule (that stacked with section dividers) */
+.left-side-manu-link-list--no-divider::after,
+.create-folder-sec .left-side-manu-link-list::after,
+.create-folder-sec .create-new-folder-sec::after {
+  content: none !important;
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  border: 0 !important;
+}
+
+.create-folder-sec .left-side-manu-link-list .m-item:last-child {
+  margin-bottom: 0;
+}
+
+.create-folder-sec .left-side-manu-link-list .m-item:last-child .m-link {
+  margin-bottom: 0;
 }
 
 .create-new-folder-sec {
@@ -6261,7 +6332,6 @@ nav#navbarList.nav-collepse::after {
 
 .nav-collepse .create-folder-sec {
   padding: 0;
-  margin-bottom: 13px;
 }
 
 .nav-collepse .create-folder-sec .nav-link-before-collapse {
@@ -6269,10 +6339,6 @@ nav#navbarList.nav-collepse::after {
 }
 
 .create-folder-sec .create-folder-sec::after {
-  display: none;
-}
-
-.create-folder-sec .left-side-manu-link-list::after {
   display: none;
 }
 
@@ -6301,7 +6367,12 @@ nav#navbarList.nav-collepse::after {
 
 .nav-collepse .create-folder-sec::after {
   width: 64px;
-  margin: 0 0 0 0;
+  margin: 8px 0 13px 0;
+}
+
+.nav-collepse .create-folder-sec + .create-folder-sec {
+  margin-top: 8px;
+  padding-top: 12px;
 }
 
 .nav-collepse .left-side-manu-link-list::after {
@@ -6797,6 +6868,7 @@ nav#navbarList.nav-collepse::after {
   width: 195px;
   pointer-events: none;
   z-index: 1;
+  opacity: 0;
   transition: opacity 0.25s ease;
 }
 
