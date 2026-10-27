@@ -66,7 +66,7 @@ export interface Email {
     /** Bytes when arrangeBy is size (or otherwise provided). */
     size?: number;
     /** AI-applied label names from the backend labeling pipeline. */
-    aiLabels?: string[];
+    aiLabels?: Array<string | { name?: string }>;
 }
 
 export interface EmailAddress {

@@ -612,6 +612,36 @@ export const useLinkedAccountSignedOut = () => {
     }, [activeAccountId, commitActiveAccount, prepareMailboxForAccount, primaryAccount]);
 };
 
+type AiFeaturesUpdatedPayload = {
+    aiFeatures?: boolean;
+    aiFeaturesEnabled?: boolean;
+};
+
+/** Live-toggle AI chat, smart replies, labels, summary when admin settings change. */
+export const useAiFeaturesSocket = () => {
+    const { userPermissions, setUserPermissions, refreshUserPermissions } = useMailData();
+    const { setIsAiChatOpen } = useMailUI();
+    const permissionsRef = useRef(userPermissions);
+    permissionsRef.current = userPermissions;
+
+    useSocketEvent('aiFeaturesUpdated', (payload: AiFeaturesUpdatedPayload) => {
+        const enabled = Boolean(payload?.aiFeatures ?? payload?.aiFeaturesEnabled);
+        const current = permissionsRef.current;
+
+        if (current) {
+            if (current.aiFeatures !== enabled) {
+                setUserPermissions({ ...current, aiFeatures: enabled });
+            }
+        } else {
+            void refreshUserPermissions();
+        }
+
+        if (!enabled) {
+            setIsAiChatOpen(false);
+        }
+    });
+};
+
 /**
  * Compose / new-mail SMTP outcome (async after HTTP 200 pending).
  * Replies keep using outboundReplyFailed / outboundReplySent in EmailDetail.

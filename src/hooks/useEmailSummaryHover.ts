@@ -32,11 +32,30 @@ let scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
 const scrollCloseListeners = new Set<() => void>();
 let scrollListenerAttached = false;
 
-/** Only one summary popover open at a time (important for long-press on mobile). */
+/** Only one summary popover / preparing row at a time (important for long-press on mobile). */
 const openSummaryClosers = new Set<() => void>();
 
 function isLongPressIgnoredTarget(target: EventTarget | null) {
     return Boolean(target instanceof Element && target.closest(LONG_PRESS_IGNORE_SELECTOR));
+}
+
+/** True when the pointer is still over this row (or a descendant). */
+function isPointerOverRow(row: HTMLElement | null) {
+    if (!row || typeof document === 'undefined') return false;
+    try {
+        if (row.matches(':hover')) return true;
+    } catch {
+        // :hover in matches() can throw in older engines — fall through.
+    }
+    const hovered = document.querySelector('.mail-message-list:hover');
+    return hovered === row || (hovered != null && row.contains(hovered));
+}
+
+/** Dismiss every other row's preparing/open state so only `keep` stays active. */
+function dismissOtherSummaries(keep: (() => void) | null) {
+    openSummaryClosers.forEach((fn) => {
+        if (fn !== keep) fn();
+    });
 }
 
 function attachScrollSuppression() {
@@ -175,6 +194,11 @@ export function useEmailSummaryHover({
     const closeRef = useRef(close);
     closeRef.current = close;
 
+    // Stable identity in openSummaryClosers (must match dismissOtherSummaries `keep`).
+    const dismissSelfRef = useRef(() => {
+        closeRef.current();
+    });
+
     const showPopover = useCallback(() => {
         openRef.current = true;
         setOpen(true);
@@ -245,11 +269,11 @@ export function useEmailSummaryHover({
             const fromPress = Boolean(opts?.fromPress);
             if (!enabled || !id || isMailListScrolling) return;
             if (!fromPress && !canHover()) return;
+            // Desktop: timer may fire after the pointer already moved to another row.
+            if (!fromPress && !isPointerOverRow(rowRef.current)) return;
 
-            // Close any other row's summary first (mobile tap switching rows).
-            openSummaryClosers.forEach((fn) => {
-                if (fn !== closeRef.current) fn();
-            });
+            // Close any other row's summary first (hover switch / mobile tap).
+            dismissOtherSummaries(dismissSelfRef.current);
 
             clearCloseTimer();
 
@@ -286,6 +310,11 @@ export function useEmailSummaryHover({
 
     const onRowMouseEnter = useCallback(() => {
         if (!enabled || !messageId?.trim() || !canHover() || isMailListScrolling) return;
+
+        // Immediately clear preparing/open on every other row so animation never
+        // sticks to the previous (often "above") email after a fast hover move.
+        dismissOtherSummaries(dismissSelfRef.current);
+
         clearCloseTimer();
         clearOpenTimer();
         clearBlurTimer();
@@ -297,6 +326,10 @@ export function useEmailSummaryHover({
             blurTimerRef.current = null;
             if (isMailListScrolling || openRef.current) return;
             if (emailSummaryCache.has(id)) return;
+            // Pointer may have moved to another row while the timer was pending.
+            if (!isPointerOverRow(rowRef.current)) return;
+
+            dismissOtherSummaries(dismissSelfRef.current);
             hoveredMessageIdRef.current = id;
             setAnchorEl(rowRef.current);
             setIsLoading(true);
@@ -319,6 +352,7 @@ export function useEmailSummaryHover({
             invalidateInFlight();
             hoveredMessageIdRef.current = null;
             setIsLoading(false);
+            setError(null);
             setAnchorEl(null);
             return;
         }
@@ -421,7 +455,7 @@ export function useEmailSummaryHover({
 
     // Register this row's closer so other rows can dismiss us.
     useEffect(() => {
-        const closer = () => closeRef.current();
+        const closer = dismissSelfRef.current;
         openSummaryClosers.add(closer);
         return () => {
             openSummaryClosers.delete(closer);

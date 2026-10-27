@@ -9,10 +9,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const AdminBottomNav = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { setAdminBoxTitle, setSettingPayLoad, setIsSidebarExpandedMobile } = useAdmin();
+    const { setAdminBoxTitle, setSettingPayLoad, setIsSidebarExpandedMobile, settingPayLoad } = useAdmin();
 
-    const isUsers = !location.pathname.includes('/admin/settings');
-    const isSettings = location.pathname.includes('/admin/settings');
+    const isEditingUser = Boolean(settingPayLoad?.userId && !settingPayLoad?.isAdmin);
+    const isSettings = location.pathname.includes('/admin/settings') && !isEditingUser;
+    const isUsers = !isSettings;
 
     const goUsers = () => {
         setIsSidebarExpandedMobile(false);

@@ -54,8 +54,6 @@ interface CustomFolderSectionProps {
   createTooltip?: string;
   /** folder = custom/local folder SVGs; label = Gmail-style tag icons */
   iconVariant?: 'folder' | 'label';
-  /** Optional icon shown immediately after the section title (e.g. AI sparkles). */
-  sectionTitleIcon?: string;
 }
 
 export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
@@ -72,7 +70,6 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
   showRefresh = true,
   createTooltip = 'Add Folder',
   iconVariant = 'folder',
-  sectionTitleIcon,
 }) => {
   const { isSidebarOpen } = useMailUI();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -234,52 +231,45 @@ export const CustomFolderSection: React.FC<CustomFolderSectionProps> = ({
           </span>
         </div>
         <a
-          className="sidebar-create-folder-box tooltips-ds open-folder-box"
+          className={`sidebar-create-folder-box tooltips-ds open-folder-box${!hasItems ? ' is-disabled' : ''}`}
           onClick={(e) => {
             e.preventDefault();
             if (!hasItems) return;
             setIsCollapsed(!isCollapsed);
           }}
           style={{ cursor: hasItems ? 'pointer' : 'default' }}
+          aria-disabled={!hasItems || undefined}
         >
           <div className="d-flex align-items-center">
-            {hasItems && (
-              <span className={`create-folder-arrow ${sectionCollapsed ? 'collapsed' : ''}`}>
-                {sectionCollapsed ?
-                  <InteractiveIcon
-                    defaultIcon={chevronRightIcon}
-                    hoverIcon={chevronRightIconHover}
-                    activeIcon=""
-                    isActive={false}
-                    alt=""
-                    className="interactive-icon hover-image"
-                    renderAs="img"
-                    tooltip=""
-                  /> :
-                  <InteractiveIcon
-                    defaultIcon={chevronDownIcon}
-                    hoverIcon={chevronDownIconHover}
-                    activeIcon=""
-                    isActive={false}
-                    alt=""
-                    className="interactive-icon hover-image"
-                    renderAs="img"
-                    tooltip=""
-                  />
-                }
-              </span>
-            )}
-            <span className={`label-text${hasItems ? ' ms-2' : ''}`}>{sectionTitle}</span>
-            {sectionTitleIcon && (
-              <img
-                src={sectionTitleIcon}
-                alt=""
-                width={25}
-                height={25}
-                className="section-title-ai-icon ms-1"
-                aria-hidden="true"
-              />
-            )}
+            <span
+              className={`create-folder-arrow${!hasItems || sectionCollapsed ? ' collapsed' : ''}${!hasItems ? ' is-disabled' : ''}`}
+              aria-hidden={!hasItems ? true : undefined}
+            >
+              {!hasItems || sectionCollapsed ? (
+                <InteractiveIcon
+                  defaultIcon={chevronRightIcon}
+                  hoverIcon={hasItems ? chevronRightIconHover : chevronRightIcon}
+                  activeIcon=""
+                  isActive={false}
+                  alt=""
+                  className="interactive-icon hover-image"
+                  renderAs="img"
+                  tooltip=""
+                />
+              ) : (
+                <InteractiveIcon
+                  defaultIcon={chevronDownIcon}
+                  hoverIcon={chevronDownIconHover}
+                  activeIcon=""
+                  isActive={false}
+                  alt=""
+                  className="interactive-icon hover-image"
+                  renderAs="img"
+                  tooltip=""
+                />
+              )}
+            </span>
+            <span className="label-text ms-2">{sectionTitle}</span>
           </div>
         </a>
       </div>

@@ -4878,8 +4878,16 @@ hr {
   z-index: 2;
 }
 
-.nav-collepse .nav-custom-scroll-scrollbar {
-  left: 68px;
+/* Collapsed nav is 64px but uses expanded-nav (300px) for hover flyouts.
+   Keep every custom scrollbar hidden so none can paint over the mail list.
+   (Folder sections use the up/down scroll buttons instead.) */
+.nav-collepse .nav-custom-scroll-scrollbar,
+.nav-collepse .create-folder-sec .nav-custom-scroll-scrollbar,
+.nav-collepse
+  .create-folder-sec:hover
+  .add-floder-single-box.show
+  .nav-custom-scroll-scrollbar.visible {
+  display: none !important;
 }
 
 .nav-custom-scroll-scrollbar.visible {
@@ -4910,10 +4918,6 @@ hr {
 
 .create-folder-sec:hover .add-floder-single-box.show .nav-custom-scroll-scrollbar.visible {
   display: block;
-}
-
-.nav-collepse .create-folder-sec .nav-custom-scroll-scrollbar {
-  display: none;
 }
 
 /* -------------- END:: Sidebar Scrollbar ---------------- */
@@ -6111,6 +6115,11 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
 }
 
 /* START:: Create Folder */
+/* Desktop: wrapper is layout-transparent so section dividers keep working */
+.sidebar-folder-sections {
+  display: contents;
+}
+
 .create-folder-sec {
   padding: 0;
 }
@@ -6154,6 +6163,25 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
 .sidebar-create-folder-box .section-title-ai-icon {
   flex-shrink: 0;
   display: block;
+  width: 16px;
+  height: 16px;
+}
+
+/* Empty Folder / AI Labels / Archived Mail: keep '>' visible but non-interactive */
+.sidebar-create-folder-box.is-disabled {
+  cursor: default;
+}
+.create-folder-arrow.is-disabled {
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.45;
+}
+
+.create-ai-label-modal-icon {
+  flex-shrink: 0;
+  display: block;
+  width: 22px;
+  height: 22px;
 }
 
 /* Local Folders (and any section with only the + action): give the title more room */

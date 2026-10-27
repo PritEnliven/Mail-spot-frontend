@@ -29,7 +29,6 @@ import { deleteAiLabel, listAiLabels, type AiLabel } from '@services/aiService/a
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useSidebarFadeScrollbar } from '@hooks/useScrollFade';
 import eventIcon from '@images/calendar-event-icon-white.svg';
-import aiLabelsIcon from '@images/ai-labels-icon.svg';
 import { useScreen } from '@context/ScreenContext';
 import { writableCalendars } from '@utils/calendarPermissionUtil';
 
@@ -754,78 +753,80 @@ const LeftPanel = () => {
                         )}
                     </ul>
 
-                    <CustomFolderSection
-                        folders={customFolders.map(item => ({
-                            id: item.id,
-                            name: item.label,
-                            color: item.color,
-                            icon: item.icon,
-                            value: item.boxName,
-                            depth: item.depth,
-                        }))}
-                        activeBoxId={sidebarActiveBoxId}
-                        onChangeBox={(boxName) => {
-                            const item = sidebarItems.find(si => si.boxName === boxName);
-                            if (item) {
-                                changeBox(boxName, item.id, item.label);
-                            }
-                        }}
-                        onEditFolder={(boxId) => {
-                            handleEditFolder(boxId);
-                        }}
-                        onDeleteFolder={(boxId, folderName) => {
-                            handleDeleteFolder(boxId, folderName);
-                        }}
-                        onCreateFolder={openCreateFolderModal}
-                        onRefreshFolders={handleRefreshFolders}
-                        isRefreshingFolders={isRefreshingFolders}
-                    />                             
-
-                    {aiFeaturesEnabled && (
+                    <div className="sidebar-folder-sections">
                         <CustomFolderSection
-                            sectionId="aiLabelSection"
-                            sectionTitle="AI Labels"
-                            sectionTitleIcon={aiLabelsIcon}
-                            showRefresh={false}
-                            createTooltip="Add Label"
-                            iconVariant="label"
-                            folders={aiLabelFolders}
+                            folders={customFolders.map(item => ({
+                                id: item.id,
+                                name: item.label,
+                                color: item.color,
+                                icon: item.icon,
+                                value: item.boxName,
+                                depth: item.depth,
+                            }))}
                             activeBoxId={sidebarActiveBoxId}
-                            onChangeBox={handleSelectAiLabel}
-                            onEditFolder={handleEditAiLabel}
-                            onDeleteFolder={handleDeleteAiLabel}
-                            onCreateFolder={openCreateAiLabelModal}
+                            onChangeBox={(boxName) => {
+                                const item = sidebarItems.find(si => si.boxName === boxName);
+                                if (item) {
+                                    changeBox(boxName, item.id, item.label);
+                                }
+                            }}
+                            onEditFolder={(boxId) => {
+                                handleEditFolder(boxId);
+                            }}
+                            onDeleteFolder={(boxId, folderName) => {
+                                handleDeleteFolder(boxId, folderName);
+                            }}
+                            onCreateFolder={openCreateFolderModal}
+                            onRefreshFolders={handleRefreshFolders}
+                            isRefreshingFolders={isRefreshingFolders}
                         />
-                    )}
 
-                    <CustomFolderSection
-                        sectionId="localFolderSection"
-                        sectionTitle="Archived Mail"
-                        showRefresh={false}
-                        createTooltip="Add Local Folder"
-                        folders={localFolders.map(item => ({
-                            id: item.id,
-                            name: item.label,
-                            color: item.color || '#49BA14',
-                            icon: item.icon,
-                            value: item.boxName,
-                            depth: 0,
-                        }))}
-                        activeBoxId={sidebarActiveBoxId}
-                        onChangeBox={(nextBoxName) => {
-                            const item = sidebarItems.find(si => si.boxName === nextBoxName);
-                            if (item) {
-                                changeBox(nextBoxName, item.id, item.label);
-                            }
-                        }}
-                        onEditFolder={(boxId) => {
-                            handleEditLocalFolder(boxId);
-                        }}
-                        onDeleteFolder={(boxId, folderName) => {
-                            handleDeleteLocalFolder(boxId, folderName);
-                        }}
-                        onCreateFolder={openCreateLocalFolderModal}
-                    />
+                        {aiFeaturesEnabled && (
+                            <CustomFolderSection
+                                sectionId="aiLabelSection"
+                                sectionTitle="AI Labels"
+                                showRefresh={false}
+                                createTooltip="Add Label"
+                                iconVariant="label"
+                                folders={aiLabelFolders}
+                                activeBoxId={sidebarActiveBoxId}
+                                onChangeBox={handleSelectAiLabel}
+                                onEditFolder={handleEditAiLabel}
+                                onDeleteFolder={handleDeleteAiLabel}
+                                onCreateFolder={openCreateAiLabelModal}
+                            />
+                        )}
+
+                        <CustomFolderSection
+                            sectionId="localFolderSection"
+                            sectionTitle="Archived Mail"
+                            showRefresh={false}
+                            createTooltip="Add Local Folder"
+                            folders={localFolders.map(item => ({
+                                id: item.id,
+                                name: item.label,
+                                color: item.color || '#49BA14',
+                                icon: item.icon,
+                                value: item.boxName,
+                                depth: 0,
+                            }))}
+
+                            activeBoxId={sidebarActiveBoxId}
+                            onChangeBox={(nextBoxName) => {
+                                const item = sidebarItems.find(si => si.boxName === nextBoxName);
+                                if (item) {
+                                    changeBox(nextBoxName, item.id, item.label);
+                                }
+                            }}
+                            onEditFolder={(boxId) => {
+                                handleEditLocalFolder(boxId);
+                            }}
+                            onDeleteFolder={(boxId, folderName) => {
+                                handleDeleteLocalFolder(boxId, folderName);
+                            }}
+                            onCreateFolder={openCreateLocalFolderModal}
+                        />
+                    </div>
 
                     {/* Other Menu Items */}
                     {sidebarState.otherMenu.length > 0 && (

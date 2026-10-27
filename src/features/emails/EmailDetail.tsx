@@ -116,6 +116,15 @@ const EmailDetail = ({ email }: Props) => {
 
     const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
     const highlightTerm = email.isSearchEmail || allSearchResult ? searchTerm : "";
+    const aiLabelNames = (email.aiLabels ?? [])
+        .map((label) =>
+            typeof label === 'string'
+                ? label.trim()
+                : (label && typeof label === 'object' && 'name' in label
+                    ? String((label as { name?: string }).name || '').trim()
+                    : '')
+        )
+        .filter(Boolean);
     const openAttachment = (customFileName: string, filename: string) => {
         downloadAttachments('single', customFileName, filename, email.messageId);
     };
@@ -479,10 +488,23 @@ const EmailDetail = ({ email }: Props) => {
                 data-thread-id={email.threadId}
                 data-uid={email.uid}
             >
-                <div className="d-flex align-items-center">
+                <div className="d-flex align-items-center mail-details-subject-row">
                     <h2 className="box-title" title={email.subject || "No Subject"}>
                         <HighlightText text={email.subject || "No Subject"} searchTerm={highlightTerm} />
                     </h2>
+                    {aiLabelNames.length > 0 && (
+                        <div className="mail-received-ai-labels mail-details-ai-labels">
+                            {aiLabelNames.map((labelName) => (
+                                <span
+                                    key={labelName}
+                                    className="mail-received-ai-label mail-details-ai-label"
+                                    title={labelName}
+                                >
+                                    {labelName}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

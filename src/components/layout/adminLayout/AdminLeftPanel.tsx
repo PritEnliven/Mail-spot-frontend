@@ -19,20 +19,26 @@ const AdminLeftPanel = () => {
         adminSidebarItems,
         setAdminBoxTitle,
         setSettingPayLoad,
+        settingPayLoad,
     } = useAdmin();
     const { isMobile } = useScreen();
     const [activeBoxId, setActiveBoxId] = useState<string>('userManagement');
     const navigate = useNavigate();
     const location = useLocation();
 
+    const isEditingUser = Boolean(settingPayLoad?.userId && !settingPayLoad?.isAdmin);
+
     const getActiveBoxId = () => {
-        if (location.pathname.includes('/admin/settings')) return 'settings';
+        // Editing a user opens /admin/settings, but keep User Management selected
+        if (location.pathname.includes('/admin/settings') && !isEditingUser) {
+            return 'settings';
+        }
         return 'userManagement';
     };
 
     useEffect(() => {
         setActiveBoxId(getActiveBoxId());
-    }, [location.pathname]);
+    }, [location.pathname, isEditingUser]);
 
     const changeBox = (boxId: string, label: string) => {
         if (boxId === 'settings') {

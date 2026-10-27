@@ -3,6 +3,7 @@ import arrowPointingOutIcon from "@images/arrows-pointing-out-icon.svg";
 import arrowPointingOutIconHover from "@images/arrows-pointing-out-icon-hover.svg";
 import closeIcon from "@images/close-icon.svg";
 import closeIconHover from "@images/close-icon-hover.svg";
+import aiLabelsIcon from "@images/ai-labels-icon.svg";
 import { useMailUI } from "@context/MailUIContext";
 import { createAiLabelFormSchema, type CreateAiLabelFormValues } from "./createAiLabel.schema";
 import { Controller, useForm } from "react-hook-form";
@@ -15,7 +16,10 @@ import { createAiLabel, updateAiLabel } from "@services/aiService/aiLabelService
 import { showError, showSuccess } from "@components/ui/toast/toastNotification";
 import SimpleBar from "simplebar-react";
 
-const defaultColor = colorListConfi.find((c) => c.default)?.value ?? colorListConfi[0].value;
+const defaultColor =
+    colorListConfi.find((c) => c.label === "Blue")?.value ??
+    colorListConfi.find((c) => c.default)?.value ??
+    colorListConfi[0].value;
 
 interface CreateAiLabelModalProps {
     modalId: string;
@@ -127,7 +131,15 @@ function CreateAiLabelModal({
                                     tooltip="Move"
                                 />
                             </button>
-                            <h5 className="modal-title modal-title-center" id="createAiLabelModalLabel">
+                            <h5 className="modal-title modal-title-center d-flex align-items-center justify-content-center gap-2" id="createAiLabelModalLabel">
+                                <img
+                                    src={aiLabelsIcon}
+                                    alt=""
+                                    width={22}
+                                    height={22}
+                                    className="create-ai-label-modal-icon"
+                                    aria-hidden="true"
+                                />
                                 {props.isEdit ? "Edit Label" : "Create Label"}
                             </h5>
                             <button type="button" className="btn-close hover-link btn icon-hover-effect" onClick={onClose}>

@@ -283,7 +283,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
           setActiveId(primary.id, primary.email);
         }
         return false;
-      }
+      } 
 
       lastSignedOutSnapRef.current = { accountId, at: now };
       const alreadyOnPrimary = currentActiveId === primary.id;
@@ -349,7 +349,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     [fetchLinkedAccounts, linkedAccounts]
-  );
+  );            
 
   const linkExternal = useCallback(
     async (email: string, imap: ImapConfig, smtp: SmtpConfig): Promise<boolean> => {

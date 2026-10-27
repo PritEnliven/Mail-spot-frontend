@@ -110,10 +110,11 @@ function EmailSummaryAnchoredPortal({
 
             const spaceAbove = anchorRect.top;
             const spaceBelow = viewportHeight - anchorRect.bottom;
+            // Prefer below the hovered row so the popup isn't mistaken for the email above.
             const placement: 'top' | 'bottom' =
-                spaceAbove > spaceBelow && spaceAbove >= popupHeight + POPUP_GAP
-                    ? 'top'
-                    : 'bottom';
+                spaceBelow >= popupHeight + POPUP_GAP || spaceBelow >= spaceAbove
+                    ? 'bottom'
+                    : 'top';
 
             let top =
                 placement === 'top'

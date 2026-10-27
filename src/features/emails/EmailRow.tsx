@@ -7,6 +7,7 @@ import envelopOpenIconHover from "@images/envelope-open-icon-hover.svg";
 import trashIcon from "@images/trash-icon.svg";
 import trashIconHover from "@images/trash-icon-hover.svg";
 import eventIcon from "@images/event-icon.svg";
+import aiLabelsIcon from "@images/ai-labels-icon.svg";
 import AttachmentList from "@components/ui/email/AttachmentList";
 import EmailSummaryPopover from "@components/ui/email/EmailSummaryPopover";
 import InteractiveIcon from "@components/ui/InteractiveIcon";
@@ -55,6 +56,8 @@ export interface EmailDetail {
         isOld: boolean;
     };
     calendarInvite?: CalendarInvite | null;
+    /** AI-applied label names from the backend labeling pipeline. */
+    aiLabels?: Array<string | { name?: string }>;
 }
 
 const EmailRow = memo(({
@@ -90,6 +93,10 @@ const EmailRow = memo(({
         settings.threadView &&
         !verifyBoxName(boxName, 'trash') &&
         email.threadCount > 1;
+
+    const aiLabelNames = (email.aiLabels ?? [])
+        .map((label) => (typeof label === 'string' ? label.trim() : label?.name?.trim() || ''))
+        .filter(Boolean);
 
     const summaryMessageId = isScheduled ? undefined : email.messageId;
     const summaryEnabled = Boolean(userPermissions?.aiFeatures && summaryMessageId);
@@ -153,9 +160,6 @@ const EmailRow = memo(({
                     onTouchCancel={onSummaryTouchCancel}
                     onContextMenu={onSummaryContextMenu}
                 >
-                    {summaryLoading && (
-                        <div className="mail-message-list__summary-blur" aria-hidden="true" />
-                    )}
                     <div className="mail-received-first">
                         <div className="d-flex align-items-start">
                             {/* Checkbox */}
@@ -203,10 +207,24 @@ const EmailRow = memo(({
                             {/* Main Content */}
                             <div className="mail-received-info-details-box w-100">
                                 <div className="d-flex align-items-center justify-content-between c-mb-2">
-                                    { /* Thread Count */}
+                                    { /* Thread Count / AI summary preparing label */}
                                     <div className="d-flex align-items-center">
-                                        <div className="mail-received-name mb-0">{emailNameOrEmail}</div>
-                                        {showThreadCount && (
+                                        {summaryLoading ? (
+                                            <div className="mail-received-name mail-received-summary-label mb-0">
+                                                <img
+                                                    src={aiLabelsIcon}
+                                                    alt=""
+                                                    width={16}
+                                                    height={16}
+                                                    className="mail-received-summary-label__icon"
+                                                    aria-hidden="true"
+                                                />
+                                                <span>Summary</span>
+                                            </div>
+                                        ) : (
+                                            <div className="mail-received-name mb-0">{emailNameOrEmail}</div>
+                                        )}
+                                        {!summaryLoading && showThreadCount && (
                                             <span className="badge thread-badge">
                                                 {email.threadCount}
                                             </span>
@@ -225,14 +243,31 @@ const EmailRow = memo(({
                                 </div>
 
                                 <div className="d-flex align-items-center justify-content-between c-mb-2">
-                                    <div className="mail-received-subject">
-                                        {email.subject || ""}
+                                    <div className={`mail-received-subject-row${summaryLoading ? " mail-received-subject--summary-blur" : ""}`}>
+                                        <div className="mail-received-subject">
+                                            {email.subject || ""}
+                                        </div>
+                                        {aiLabelNames.length > 0 && (
+                                            <div className="mail-received-ai-labels">
+                                                {aiLabelNames.map((labelName) => (
+                                                    <span
+                                                        key={labelName}
+                                                        className="mail-received-ai-label"
+                                                        title={labelName}
+                                                    >
+                                                        {labelName}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     {safeAttachments.length > 0 && (
-                                        <a href="#"
-                                            className="hover-link d-inline-flex align-items-center justify-content-end"
+                                        <a
+                                            href="#"
+                                            className={`hover-link d-inline-flex align-items-center justify-content-end${summaryLoading ? " mail-received-attach-icon--summary-hidden" : ""}`}
+                                            aria-hidden={summaryLoading || undefined}
                                         >
-                                            <img src={attachmentRoundIcon} />
+                                            <img src={attachmentRoundIcon} alt="" />
                                         </a>
                                     )}
                                 </div>

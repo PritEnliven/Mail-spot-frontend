@@ -39,7 +39,7 @@ const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(false);
     const gridRef = useRef<AgGridReact>(null);
     const { openModal } = useAdminUI();
-    const { setSettingPayLoad } = useAdmin();
+    const { setSettingPayLoad, setAdminBoxTitle } = useAdmin();
 
     const pageSizeNum = Number(pageSize) || 10;
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSizeNum) || 1);
@@ -154,6 +154,7 @@ const AdminDashboard = () => {
                 role: "user",
                 isAdmin: false
             });
+            setAdminBoxTitle('Edit Settings');
             navigate('/admin/settings');
         } catch (error) {
             console.error('Error fetching user settings:', error);

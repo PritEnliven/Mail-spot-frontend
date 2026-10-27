@@ -9,7 +9,7 @@ import MailProviders from "../../context/MailProviders";
 import ModalRoot from "@components/ui/ModalRoot";
 import { useMailUI } from "@context/MailUIContext";
 import { SettingsProvider } from "@context/SettingsContext";
-import { useLinkedAccountRevoked, useLinkedAccountSignedOut, useMailSocket, useOutboundSendSocket } from "@hooks/useSocket";
+import { useAiFeaturesSocket, useLinkedAccountRevoked, useLinkedAccountSignedOut, useMailSocket, useOutboundSendSocket } from "@hooks/useSocket";
 import { useCalendarSocket } from "@hooks/useCalendarSocket";
 import { usePageStylesheet, pageStyles } from "@hooks/usePageStyleSheet";
 import AppLoader from "@components/layout/AppLoader";
@@ -23,6 +23,7 @@ const AiChatPanel = lazy(() => import('@components/ui/AiChat/AiChatPanel'));
 const AppContent = () => {
     useMailSocket();
     useOutboundSendSocket();
+    useAiFeaturesSocket();
     useLinkedAccountRevoked();
     useLinkedAccountSignedOut();
     useCalendarSocket();

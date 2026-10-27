@@ -325,12 +325,19 @@ const MailBoxPage = () => {
             // Prefer list state for fields kept fresh by socket (isSeen, threadCount).
             // get-single-email often returns threadCount: 1 for a reply, which would skip
             // loading the rest of the thread on first open.
+            // Also keep list aiLabels when the detail payload omits them.
             const emailInList = emails.find(e => e.messageId === messageId);
             const listThreadCount = emailInList?.threadCount ?? 0;
             const apiThreadCount = data.emailList?.threadCount ?? 0;
+            const apiAiLabels = data.emailList?.aiLabels;
+            const listAiLabels = emailInList?.aiLabels;
             setEmailDetailSelected({
                 ...data.emailList,
                 threadCount: Math.max(listThreadCount, apiThreadCount) || apiThreadCount || 1,
+                aiLabels:
+                    Array.isArray(apiAiLabels) && apiAiLabels.length > 0
+                        ? apiAiLabels
+                        : listAiLabels,
             });
 
             // Scroll detail pane to top when opening / swiping to another email

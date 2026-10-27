@@ -25,8 +25,7 @@ import dateIcon from "@images/date-icon-16.svg";
 import enlivenLogo from "@images/enliven-logo.svg";
 import functionIconHover from "@images/function-icon-hover.svg";
 import functionIcon from "@images/function-icon.svg";
-import generateAiIcon from "@images/generate-ai-icon.svg";
-import generateAiIconWhite from "@images/generate-ai-icon-withe.svg";
+import aiLabelsIcon from "@images/ai-labels-icon.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
 import searchIconHover from "@images/search-icon-hover.svg";
 import searchIcon from "@images/search-icon.svg";
@@ -645,7 +644,15 @@ const Header = () => {
                 setIsMailListOpen(false);
             }
 
-            setEmailDetailSelected(data.emailList);
+            const apiAiLabels = data.emailList?.aiLabels;
+            const listAiLabels = searchResults.find((e) => e.messageId === messageId)?.aiLabels;
+            setEmailDetailSelected({
+                ...data.emailList,
+                aiLabels:
+                    Array.isArray(apiAiLabels) && apiAiLabels.length > 0
+                        ? apiAiLabels
+                        : listAiLabels,
+            });
             setActiveEmailMessageId(messageId);
             setActiveBoxId('');
 
@@ -1328,52 +1335,51 @@ const Header = () => {
 
             {/* RIGHT: Ask AI (centered in gap on desktop) + Profile */}
             <div className={`mail-header-right two-sc-in${isMobilebig ? ' mail-header-right--compact' : ''}`}>
-                {/* Ask AI — centered between search bar and profile (desktop / tablet wide) */}
+                {/* Ask AI — sparkle icon (same as AI Labels), centered on desktop */}
                 {canUseAiChat && !isMobilebig && (
                     <div className="ask-ai-btn-slot">
                         <button
                             type="button"
-                            className={`btn-new ask-ai-btn${isAiChatOpen ? ' btn-new-bg' : ''}`}
+                            className={`ask-ai-icon-btn${isAiChatOpen ? ' is-active' : ''}`}
                             onClick={toggleAiChat}
                             title="Find in mail with AI (Ctrl+D)"
+                            aria-label="Find in mail with AI"
                             aria-expanded={isAiChatOpen}
                             aria-controls="ai-chat-panel"
                         >
                             <img
-                                src={isAiChatOpen ? generateAiIconWhite : generateAiIcon}
+                                src={aiLabelsIcon}
                                 alt=""
-                                width={16}
-                                height={16}
+                                width={22}
+                                height={22}
                                 className="ask-ai-btn__icon"
                                 aria-hidden="true"
                             />
-                            <span className="ask-ai-btn__label">Ask AI</span>
                         </button>
                     </div>
                 )}
 
                 <div className="mail-header-right__end">
-                {/* Ask AI — icon-only in the action cluster on mobile */}
+                {/* Ask AI — same icon in the action cluster on mobile */}
                 {canUseAiChat && isMobilebig && (
                     <div className="ask-ai-btn-slot ask-ai-btn-slot--mobile">
                         <button
                             type="button"
-                            className={`btn-new ask-ai-btn ask-ai-btn--icon${isAiChatOpen ? ' btn-new-bg' : ''}`}
+                            className={`ask-ai-icon-btn${isAiChatOpen ? ' is-active' : ''}`}
                             onClick={toggleAiChat}
                             title="Find in mail with AI"
-                            aria-label="Ask AI"
+                            aria-label="Find in mail with AI"
                             aria-expanded={isAiChatOpen}
                             aria-controls="ai-chat-panel"
                         >
                             <img
-                                src={isAiChatOpen ? generateAiIconWhite : generateAiIcon}
+                                src={aiLabelsIcon}
                                 alt=""
-                                width={16}
-                                height={16}
+                                width={22}
+                                height={22}
                                 className="ask-ai-btn__icon"
                                 aria-hidden="true"
                             />
-                            <span className="ask-ai-btn__label">Ask AI</span>
                         </button>
                     </div>
                 )}
@@ -1396,6 +1402,7 @@ const Header = () => {
                         />
                     </button>
                 )}
+                
                 {isCalendar && isDesktop && (
                     <div className="form-group recurrence-div mb-0 me-3" id="calendarViewDropdownSection">
                         <Select2Wrapper
