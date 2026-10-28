@@ -1,10 +1,13 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
+import AiLabelChip from "@components/ui/email/AiLabelChip";
 import CopyEmail from "@components/ui/email/CopyEmail";
 import EmailBody from "@components/ui/email/EmailBody";
 import EmailDetailAttachmentPreview from "@components/ui/email/EmailDetailAttachmentPreview";
 import EmailRecipientList from "@components/ui/email/EmailRecipientList";
 import EmailSendInformation from "@components/ui/email/EmailSendInformationRespon";
 import { showError, showOutboundSendFailedToast, showSuccess } from "@components/ui/toast/toastNotification";
+import { unlabelEmail } from "@services/aiService/aiLabelService";
+import { normalizeAiLabelNames, removeAiLabelFromList } from "@utils/aiLabelUtil";
 import { dispatchOpenAccountReauth } from "@services/accounts/accountService";
 import { useAccount } from "@context/AccountContext";
 import { useScreen } from "@context/ScreenContext";
@@ -31,7 +34,7 @@ import type { Response } from "@models/Response";
 import { cancelScheduledEmail, getScheduleEmail } from "@services/scheduleEmail/scheduleEmailService";
 import { getAllThreadEmails } from "@services/threadEmail/threadEmailService";
 import { formatDate, TimeFormat } from "@utils/dateUtil";
-import { getEmailPreviewText, verifyBoxName } from "@utils/emailUtil";
+import { getEmailPreviewText, isAiLabelBoxName, verifyBoxName } from "@utils/emailUtil";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMailData, useMailUI } from '../../context/index';
 import { HighlightText } from "@components/ui/HighlightText";
@@ -64,7 +67,20 @@ interface Props {
 const EmailDetail = ({ email }: Props) => {
     const { downloadAttachments } = useAttachmentDownload();
     const { openModal } = useMailUI();
-    const { emails, setEmails, emailDetailSelected, setEmailDetailSelected, pagination, setPagination, setActiveEmailMessageId, boxName, updateBoxCount, searchTerm, allSearchResult } = useMailData()
+    const {
+        emails,
+        setEmails,
+        emailDetailSelected,
+        setEmailDetailSelected,
+        pagination,
+        setPagination,
+        setActiveEmailMessageId,
+        boxName,
+        updateBoxCount,
+        searchTerm,
+        allSearchResult,
+        userPermissions,
+    } = useMailData()
     const { replyForwardState, openReplyForward, closeReplyForward } = useReplyForward();
     const { contentRef, scrollbarRef, thumbRef } = useHorizontalScrollbar()
     const [threadEmails, setThreadEmails] = useState<any[]>([]);
@@ -116,15 +132,53 @@ const EmailDetail = ({ email }: Props) => {
 
     const emailDate = formatDate(email.date, TimeFormat.EMAIL_DETAIL_DATE);
     const highlightTerm = email.isSearchEmail || allSearchResult ? searchTerm : "";
-    const aiLabelNames = (email.aiLabels ?? [])
-        .map((label) =>
-            typeof label === 'string'
-                ? label.trim()
-                : (label && typeof label === 'object' && 'name' in label
-                    ? String((label as { name?: string }).name || '').trim()
-                    : '')
-        )
-        .filter(Boolean);
+    const aiLabelNames = normalizeAiLabelNames(email.aiLabels);
+    const canRemoveAiLabel = Boolean(userPermissions?.aiFeatures && email.messageId);
+
+    const handleRemoveAiLabel = useCallback(async (labelName: string) => {
+        if (!email.messageId) return;
+        const response = await unlabelEmail({
+            messageId: email.messageId,
+            label: labelName,
+        });
+        if (response?.statusCode !== 200) {
+            showError(response?.message || 'Failed to remove label');
+            return;
+        }
+
+        const nextLabels = removeAiLabelFromList(email.aiLabels, labelName);
+        const viewingAiLabelFolder = isAiLabelBoxName(boxName);
+
+        setEmails((prev) => {
+            if (viewingAiLabelFolder) {
+                return prev.filter((row) => row.messageId !== email.messageId);
+            }
+            return prev.map((row) =>
+                row.messageId === email.messageId ? { ...row, aiLabels: nextLabels } : row
+            );
+        });
+
+        if (emailDetailSelected?.messageId === email.messageId) {
+            if (viewingAiLabelFolder) {
+                setEmailDetailSelected(null);
+                setActiveEmailMessageId(null);
+            } else {
+                setEmailDetailSelected({
+                    ...emailDetailSelected,
+                    aiLabels: nextLabels,
+                });
+            }
+        }
+    }, [
+        boxName,
+        email.aiLabels,
+        email.messageId,
+        emailDetailSelected,
+        setActiveEmailMessageId,
+        setEmailDetailSelected,
+        setEmails,
+    ]);
+
     const openAttachment = (customFileName: string, filename: string) => {
         downloadAttachments('single', customFileName, filename, email.messageId);
     };
@@ -495,13 +549,12 @@ const EmailDetail = ({ email }: Props) => {
                     {aiLabelNames.length > 0 && (
                         <div className="mail-received-ai-labels mail-details-ai-labels">
                             {aiLabelNames.map((labelName) => (
-                                <span
+                                <AiLabelChip
                                     key={labelName}
-                                    className="mail-received-ai-label mail-details-ai-label"
-                                    title={labelName}
-                                >
-                                    {labelName}
-                                </span>
+                                    labelName={labelName}
+                                    className="mail-details-ai-label"
+                                    onRemove={canRemoveAiLabel ? handleRemoveAiLabel : undefined}
+                                />
                             ))}
                         </div>
                     )}

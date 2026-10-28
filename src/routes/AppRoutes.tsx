@@ -23,6 +23,7 @@ const AppLayout = lazyWithRetry(() => import('@components/layout/AppLayout'));
 const AdminLogin = lazyWithRetry(() => import('@features/adminLogin/adminLogin'));
 const AdminLayout = lazyWithRetry(() => import('@components/layout/adminLayout/AdminLayout'));
 const AdminDashboard = lazyWithRetry(() => import('@features/AdminDashboard/AdminDashboard'));
+const AdminOutsideMail = lazyWithRetry(() => import('@features/AdminOutsideMail/AdminOutsideMail'));
 
 // Admin protected route component
 const AdminProtectedRoute = () => {
@@ -59,6 +60,7 @@ const AppRoutes = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="outside-mail" element={<AdminOutsideMail />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Route>

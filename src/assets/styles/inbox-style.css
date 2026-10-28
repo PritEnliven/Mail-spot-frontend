@@ -430,7 +430,9 @@ tr:has(+ tr .mail-message-list.mail-message-active) .mail-message-list {
   overflow: hidden;
 }
 .mail-received-ai-label {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   max-width: 120px;
   padding: 1px 6px;
   border-radius: 3px;
@@ -441,7 +443,43 @@ tr:has(+ tr .mail-message-list.mail-message-active) .mail-message-list {
   background: #eef2f4;
   white-space: nowrap;
   overflow: hidden;
+  vertical-align: middle;
+}
+.mail-received-ai-label__text {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
+}
+.mail-received-ai-label__remove {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+.mail-received-ai-label__remove img {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+.mail-received-ai-label--removable {
+  max-width: 140px;
+  padding-right: 2px;
+}
+.mail-received-ai-label__remove:hover {
+  background: rgba(113, 125, 132, 0.18);
+}
+.mail-received-ai-label.is-removing {
+  opacity: 0.55;
+  pointer-events: none;
 }
 .mail-details-subject-row {
   display: flex;

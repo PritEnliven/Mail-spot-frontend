@@ -29,6 +29,9 @@ const AdminLeftPanel = () => {
     const isEditingUser = Boolean(settingPayLoad?.userId && !settingPayLoad?.isAdmin);
 
     const getActiveBoxId = () => {
+        if (location.pathname.includes('/admin/outside-mail')) {
+            return 'outsideMail';
+        }
         // Editing a user opens /admin/settings, but keep User Management selected
         if (location.pathname.includes('/admin/settings') && !isEditingUser) {
             return 'settings';
@@ -37,7 +40,15 @@ const AdminLeftPanel = () => {
     };
 
     useEffect(() => {
-        setActiveBoxId(getActiveBoxId());
+        const nextId = getActiveBoxId();
+        setActiveBoxId(nextId);
+        if (nextId === 'outsideMail') {
+            setAdminBoxTitle('Outside Emails');
+        } else if (nextId === 'settings') {
+            setAdminBoxTitle('Settings');
+        } else if (!isEditingUser) {
+            setAdminBoxTitle('User Management');
+        }
     }, [location.pathname, isEditingUser]);
 
     const changeBox = (boxId: string, label: string) => {
@@ -48,6 +59,13 @@ const AdminLeftPanel = () => {
                 isAdmin: true,
             });
             navigate('/admin/settings');
+        } else if (boxId === 'outsideMail') {
+            setSettingPayLoad({
+                userId: null,
+                role: 'admin',
+                isAdmin: true,
+            });
+            navigate('/admin/outside-mail');
         } else {
             navigate(`/admin/dashboard`);
         }

@@ -214,10 +214,9 @@ function CreateAiLabelModal({
                                             </div>
                                         </div>
                                     </div>
-
                                     <div className="form-group form-row mb-0">
                                         <label className="control-label" htmlFor="aiLabelRulePrompt">
-                                            Label prompt
+                                            Label Prompt
                                         </label>
                                     </div>
                                     <div className="form-group form-row mb-3">

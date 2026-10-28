@@ -149,18 +149,22 @@ const AdminDashboard = () => {
 
     const handleEditUser = async (userId: string) => {
         try {
+            const user = rowData.find((row) => row.id === userId);
+            const userLabel = (user?.name || user?.email || '').trim();
             setSettingPayLoad({
                 userId,
                 role: "user",
                 isAdmin: false
             });
-            setAdminBoxTitle('Edit Settings');
-            navigate('/admin/settings');
+            setAdminBoxTitle(
+                userLabel ? `User Management (${userLabel})` : 'User Management'
+            );
+            navigate('/admin/settings');        
         } catch (error) {
             console.error('Error fetching user settings:', error);
             showError("An error occurred while fetching user settings");
         }
-    };
+    };                                              
 
     const handleDeleteUser = (userId: string) => {
         openModal('deleteConfirmation', {
@@ -173,7 +177,8 @@ const AdminDashboard = () => {
                     const maxPage = Math.max(1, Math.ceil(nextTotal / pageSizeNum) || 1);
                     if (currentPage > maxPage) {
                         setCurrentPage(maxPage);
-                    } else {
+                    } 
+                    else {
                         await fetchUsers(currentPage, pageSizeNum);
                     }
                 } else {
@@ -245,6 +250,29 @@ const AdminDashboard = () => {
 
     const paginationControls = (
         <div className="d-flex align-items-center justify-content-between pt-3 admin-pagination-row">
+            <div className="go-to-sec d-flex align-items-center">
+                <div className="form-group m-0 me-2">
+                    <input
+                        type="number"
+                        className="form-control"
+                        id="goToPageInput"
+                        placeholder="Page"
+                        min={1}
+                        max={totalPages}
+                        value={goToPage}
+                        onChange={(e) => setGoToPage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                    />
+                </div>
+                <button
+                    id="goToPageBtn"
+                    className="btn-new"
+                    onClick={handleGoToPage}
+                    disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages || isLoading}
+                >
+                    Go
+                </button>
+            </div>
             <div className="pagination-box d-flex align-items-center">
                 <div className="d-flex align-items-center pagination-btn-box">
                     <button
@@ -266,7 +294,7 @@ const AdminDashboard = () => {
                         <img className="hover-image" src={chevronRightIconBig} alt="Next" />
                     </button>
                 </div>
-                <ul className="pagination-cus me-3">
+                <ul className="pagination-cus">
                     <li className="pagination-count">
                         <span id="currentPageRange" className="email-count">
                             {rangeStart} - {rangeEnd}
@@ -278,31 +306,6 @@ const AdminDashboard = () => {
                     </li>
                 </ul>
             </div>
-            {/* {!isMobile && ( */}
-                <div className="go-to-sec d-flex align-items-center">
-                    <div className="form-group m-0 me-2">
-                        <input
-                            type="number"
-                            className="form-control"
-                            id="goToPageInput"
-                            placeholder="Page"
-                            min={1}
-                            max={totalPages}
-                            value={goToPage}
-                            onChange={(e) => setGoToPage(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                        />
-                    </div>
-                    <button
-                        id="goToPageBtn"
-                        className="btn-new"
-                        onClick={handleGoToPage}
-                        disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages || isLoading}
-                    >
-                        Go
-                    </button>
-                </div>
-            {/* )} */}
         </div>
     );
 

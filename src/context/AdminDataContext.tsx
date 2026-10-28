@@ -1,5 +1,7 @@
 import userManagementIconHover from "@images/add-pesion-icon-active.svg";
 import userManagementIcon from "@images/add-pesion-icon.svg";
+import outsideMailIconHover from "@images/mail-icon-active.svg";
+import outsideMailIcon from "@images/mail-icon.svg";
 import settingsIconHover from "@images/setting-icon-active.svg";
 import settingsIcon from "@images/setting-icon.svg";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -17,6 +19,13 @@ const sidebarOptions = [
         icon: userManagementIcon,
         activeIcon: userManagementIconHover,
         boxKey: 'userManagement'
+    },
+    {
+        id: 'outsideMail',
+        label: 'Outside Emails',
+        icon: outsideMailIcon,
+        activeIcon: outsideMailIconHover,
+        boxKey: 'outsideMail'
     },
     {
         id: 'settings',

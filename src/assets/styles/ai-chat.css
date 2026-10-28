@@ -126,22 +126,34 @@
 }
 
 .ask-ai-icon-btn {
-  display: inline-flex;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  gap: 6px;
+  height: 36px;
+  width: 36px;
   padding: 0;
   border: none;
-  border-radius: 6px;
-  background-color: #e5e8ea;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00A3EF 0%, #006DBC 40%, #FF9900 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  box-shadow:
+    0 2px 4px -2px rgba(0, 0, 0, 0.1),
+    0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: filter 0.15s ease, transform 0.15s ease;
+  z-index: 1;
 }
 
 .ask-ai-icon-btn:hover,
 .ask-ai-icon-btn.is-active {
-  background-color: #d0d9de;
+   filter: brightness(1.08); 
 }
 
 .ask-ai-btn__icon {
@@ -149,6 +161,7 @@
   height: 22px;
   flex-shrink: 0;
   display: block;
+  filter: brightness(9);
 }
 
 /* Mobile / narrow header: pin actions to the right */
@@ -164,9 +177,16 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 769px) {
   .ask-ai-btn-slot--mobile {
     margin-right: 2px;
+  }
+
+  .ask-ai-btn-slot--mobile .ask-ai-icon-btn {
+    position: static;
+    bottom: auto;
+    right: auto;
+    z-index: auto;
   }
 }
 
@@ -175,7 +195,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 8px 12px 16px;
+  padding: 12px 8px 12px 8px;
   border-bottom: 1px solid #d0d9de;
   /* background: #fff; */
   gap: 8px;
@@ -584,6 +604,11 @@
   font-weight: 500;
 }
 
+.ai-chat-assistant-head__name img{
+  opacity: 0.5;
+  width: 18px;
+  height: 18px;
+}
 .ai-chat-assistant-head__icon {
   flex-shrink: 0;
   color: #212121;
@@ -918,7 +943,7 @@
   width: fit-content;
   max-width: 100%;
   padding: 10px 14px;
-  background-color: #e0dfe1;
+  backdrop-filter: blur(5px);
   border: 1px solid #d0d9de;
   border-radius: 4px 16px 16px 16px;
   font-size: 13px;
@@ -931,7 +956,7 @@
 
 /* ── Searching: animated gradient border (replaces the spinner) ── */
 .ai-chat-loading--glow,
-.ai-chat-input-row.is-searching {
+/* .ai-chat-input-row.is-searching {
   position: relative;
 }
 
@@ -956,8 +981,46 @@
   to {
     background-position: 200% 0;
   }
+} */
+
+
+.ai-chat-input-row.is-searching {
+  position: relative;
+  --ai-logo-gradient: linear-gradient(
+    90deg,
+    #006dbc 0%,
+    #00a3ef 12%,
+    #ffffff 28%,   /* logo ka white */
+    #ffb800 44%,   /* yellow */
+    #ff9900 50%,   /* orange */
+    #ffb800 56%,
+    #ffffff 72%,
+    #00a3ef 88%,
+    #006dbc 100%
+  );
 }
 
+.ai-chat-loading--glow::before
+/* .ai-chat-input-row.is-searching::before */
+ {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--ai-logo-gradient);
+  background-size: 200% 100%;
+  animation: ai-chat-flow 2.5s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes ai-chat-flow {
+  to { background-position: 200% 0; }
+}
 /* ── Typewriter caret ─────────────────────────────────────── */
 .ai-chat-typewriter {
   min-width: 0;
@@ -1263,7 +1326,9 @@
   gap: 0;
   position: relative;
   border-radius: 6px;
-  background: #d4ebf9;
+  background: #fff;
+  border: 1px solid #bbc0c4;
+  box-shadow: 0px 1px 3px 0px #0000001f;
 }
 
 /* .ai-chat-input-row::after {
@@ -1290,7 +1355,6 @@
   min-height: 44px;
   max-height: 120px;
   font-size: 14px;
-  /* Hide scrollbar gutter — avoids the black vertical line while typing */
   overflow-y: hidden;
   overflow-x: hidden;
   line-height: 20px;
@@ -1298,7 +1362,7 @@
   border-radius: 6px;
   box-sizing: border-box;
   width: 100%;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none; 
   background: transparent;
   border: 0;
 }

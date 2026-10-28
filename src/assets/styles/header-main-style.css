@@ -179,7 +179,7 @@ p {
 }
 
 .left-side-manu-link-list .m-item:last-child {
-  margin-bottom: 13px;
+  margin-bottom: 8px;
 }
 
 .left-side-manu-link-list-last-ul {
@@ -6239,21 +6239,22 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   height: 1px;
   background-color: #d0d9de;
   display: block;
-  margin: 8px 0 13px -8px;
+  margin: 0 0 13px -8px;
 }
-
+/* 
 .create-folder-sec:has(+ .create-folder-sec)::after {
   content: none !important;
   display: none !important;
   height: 0 !important;
   margin: 0 !important;
-}
+} */
 
 .create-folder-sec + .create-folder-sec {
-  border-top: 1px solid #d0d9de;
-  margin-top: 8px;
-  padding-top: 12px;
+  /* border-top: 1px solid #d0d9de;
+  padding-top: 12px; */
+  
 }
+
 
 /* Empty sections: tighter title → divider gap */
 .create-folder-sec--empty .sidebar-create-folder-box {
@@ -6273,9 +6274,9 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   border: 0 !important;
 }
 
-.create-folder-sec .left-side-manu-link-list .m-item:last-child {
+/* .create-folder-sec .left-side-manu-link-list .m-item:last-child {
   margin-bottom: 0;
-}
+} */
 
 .create-folder-sec .left-side-manu-link-list .m-item:last-child .m-link {
   margin-bottom: 0;
@@ -6395,22 +6396,21 @@ nav#navbarList.nav-collepse::after {
 
 .nav-collepse .create-folder-sec::after {
   width: 64px;
-  margin: 8px 0 13px 0;
+  margin: 0 0 13px 0;
 }
 
-.nav-collepse .create-folder-sec + .create-folder-sec {
-  margin-top: 8px;
+/* .nav-collepse .create-folder-sec + .create-folder-sec {
   padding-top: 12px;
-}
+} */
 
 .nav-collepse .left-side-manu-link-list::after {
-  width: 64px;
+  width: 66px;
   margin: 0 0 0 -18px;
 }
 
 .nav-collepse .left-side-manu-link-list .m-item.m-item--divider-above::before {
-  width: 64px;
-  margin: 5px 0 13px -18px;
+  width: 66px;
+  margin: 12px 0 13px -18px;
 }
 
 .create-folder-scroll-up,
@@ -6569,7 +6569,6 @@ nav#navbarList.nav-collepse::after {
   height: 30px;
   position: relative;
   left: -25px;
-  z-index: -1;
 }
 
 .nav-collepse .m-link.active .active-line-t::before {

@@ -14,7 +14,7 @@ import { adminSettingsSchema, type AdminSettingsFormValues } from './adminSettin
 
 const AdminSettings = () => {
     const navigate = useNavigate();
-    let { settingPayLoad } = useAdmin();
+    const { settingPayLoad, setSettingPayLoad, setAdminBoxTitle } = useAdmin();
     const {
         control,
         handleSubmit,
@@ -87,6 +87,12 @@ const AdminSettings = () => {
     }, [settingPayLoad, reset]);
 
     const redirectToDashboard = () => {
+        setSettingPayLoad({
+            userId: null,
+            role: 'admin',
+            isAdmin: true,
+        });
+        setAdminBoxTitle('User Management');
         navigate('/admin/dashboard');
     }
 
@@ -147,6 +153,10 @@ const AdminSettings = () => {
         const response = await adminSaveSettings(payload);
         if (response.statusCode === 200) {
             showSuccess("Settings saved successfullly");
+            // Editing a user — return to the users table after save
+            if (!settingPayLoad?.isAdmin && settingPayLoad?.userId) {
+                redirectToDashboard();
+            }
         }
         else {
             showError("Error while save settings")

@@ -74,7 +74,7 @@ const EmailRow = memo(({
     onDelete,
     onToggleSelection: _onToggleSelection,
 }: EmailRowProps) => {
-    const { boxName, userPermissions } = useMailData();
+    const { boxName, userPermissions, activeEmailMessageId } = useMailData();
     const { settings } = useSettings();
     let emailNameOrEmail = getSenderLabel(email.from) || "Unknown";
     if (verifyBoxName(boxName, 'draft') || verifyBoxName(boxName, 'sent')) {
@@ -82,7 +82,6 @@ const EmailRow = memo(({
     }
     const emailDate = formatDate(email.date, TimeFormat.MONTH_DAY)
     const { toggleEmailSelection, toggleEmailSelectionWithShift, setLastSelectedIndex } = useMailSelection();
-    const { activeEmailMessageId } = useMailData();
     isActive = activeEmailMessageId === (isScheduled ? email._id : email.messageId);
     const safeAttachments = email.attachments
         ? Array.isArray(email.attachments)
@@ -93,10 +92,6 @@ const EmailRow = memo(({
         settings.threadView &&
         !verifyBoxName(boxName, 'trash') &&
         email.threadCount > 1;
-
-    const aiLabelNames = (email.aiLabels ?? [])
-        .map((label) => (typeof label === 'string' ? label.trim() : label?.name?.trim() || ''))
-        .filter(Boolean);
 
     const summaryMessageId = isScheduled ? undefined : email.messageId;
     const summaryEnabled = Boolean(userPermissions?.aiFeatures && summaryMessageId);
@@ -247,19 +242,6 @@ const EmailRow = memo(({
                                         <div className="mail-received-subject">
                                             {email.subject || ""}
                                         </div>
-                                        {aiLabelNames.length > 0 && (
-                                            <div className="mail-received-ai-labels">
-                                                {aiLabelNames.map((labelName) => (
-                                                    <span
-                                                        key={labelName}
-                                                        className="mail-received-ai-label"
-                                                        title={labelName}
-                                                    >
-                                                        {labelName}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
                                     </div>
                                     {safeAttachments.length > 0 && (
                                         <a

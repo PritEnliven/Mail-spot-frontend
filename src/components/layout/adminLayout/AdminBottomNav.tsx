@@ -2,6 +2,8 @@ import InteractiveIcon from '@components/ui/InteractiveIcon';
 import { useAdmin } from '@context/AdminDataContext';
 import userManagementIconHover from '@images/add-pesion-icon-active.svg';
 import userManagementIcon from '@images/add-pesion-icon.svg';
+import outsideMailIconHover from '@images/mail-icon-active.svg';
+import outsideMailIcon from '@images/mail-icon.svg';
 import settingsIconHover from '@images/setting-icon-active.svg';
 import settingsIcon from '@images/setting-icon.svg';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -12,13 +14,25 @@ const AdminBottomNav = () => {
     const { setAdminBoxTitle, setSettingPayLoad, setIsSidebarExpandedMobile, settingPayLoad } = useAdmin();
 
     const isEditingUser = Boolean(settingPayLoad?.userId && !settingPayLoad?.isAdmin);
+    const isOutside = location.pathname.includes('/admin/outside-mail');
     const isSettings = location.pathname.includes('/admin/settings') && !isEditingUser;
-    const isUsers = !isSettings;
+    const isUsers = !isSettings && !isOutside;
 
     const goUsers = () => {
         setIsSidebarExpandedMobile(false);
         setAdminBoxTitle('User Management');
         navigate('/admin/dashboard');
+    };
+
+    const goOutside = () => {
+        setIsSidebarExpandedMobile(false);
+        setSettingPayLoad({
+            userId: null,
+            role: 'admin',
+            isAdmin: true,
+        });
+        setAdminBoxTitle('Outside Emails');
+        navigate('/admin/outside-mail');
     };
 
     const goSettings = () => {
@@ -48,6 +62,21 @@ const AdminBottomNav = () => {
                     renderAs="img"
                 />
                 <span>Users</span>
+            </button>
+            <button
+                type="button"
+                className={`admin-bottom-nav__item ${isOutside ? 'active' : ''}`}
+                onClick={goOutside}
+            >
+                <InteractiveIcon
+                    defaultIcon={outsideMailIcon}
+                    activeIcon={outsideMailIconHover}
+                    isActive={isOutside}
+                    alt="Outside mail"
+                    className="interactive-icon hover-image"
+                    renderAs="img"
+                />
+                <span>Outside</span>
             </button>
             <button
                 type="button"

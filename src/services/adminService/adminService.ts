@@ -49,6 +49,22 @@ interface GetUserListParams {
     limit: number;
 }
 
+type OutsideMailType = 'sent' | 'received';
+
+interface GetOutsideMailUsersParams {
+    search?: string;
+    page?: number;
+    limit?: number;
+}
+
+interface GetOutsideMailParams {
+    userId: string;
+    type: OutsideMailType;
+    search?: string;
+    page?: number;
+    limit?: number;
+}
+
 async function adminGetUserList({ page, limit }: GetUserListParams) {
     try {
         const response = await getData('admin/getUserList', {
@@ -111,6 +127,43 @@ async function adminSaveSettings(payload: adminSaveSettingsPayload) {
     }
 }
 
+async function adminGetOutsideMailUsers({ search, page = 1, limit = 50 }: GetOutsideMailUsersParams = {}) {
+    try {
+        const response = await getData('admin/getOutsideMailUsers', {
+            params: {
+                ...(search ? { search } : {}),
+                page,
+                limit,
+            },
+        });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function adminGetOutsideMail({ userId, type, search = '', page = 1, limit = 25 }: GetOutsideMailParams) {
+    try {
+        const response = await getData('admin/getOutsideMail', {
+            params: { userId, type, search, page, limit },
+        });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function adminGetOutsideMailEmail(userId: string, id: string) {
+    try {
+        const response = await getData('admin/getOutsideMailEmail', {
+            params: { userId, id },
+        });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 async function deleteUser(userId: string) {
     try {
         const response = await postData('admin/deleteUser', { userId });
@@ -122,5 +175,6 @@ async function deleteUser(userId: string) {
 
 
 export {
-    adminGetUserList, adminLogin, adminSaveSettings, deleteUser, getAdminSettings, loginAdminAsUser, resetPasswordByAdmin
+    adminGetOutsideMail, adminGetOutsideMailEmail, adminGetOutsideMailUsers, adminGetUserList, adminLogin, adminSaveSettings, deleteUser, getAdminSettings, loginAdminAsUser, resetPasswordByAdmin
 };
+export type { OutsideMailType };

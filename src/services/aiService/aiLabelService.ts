@@ -27,6 +27,14 @@ interface DeleteAiLabelPayload {
     labelId: string;
 }
 
+interface UnlabelEmailPayload {
+    messageId?: string;
+    messageIds?: string[];
+    label?: string;
+    labelName?: string;
+    labelId?: string;
+}
+
 async function createAiLabel(payload: CreateAiLabelPayload) {
     try {
         const response = await postData('ai-label/create', payload);
@@ -63,9 +71,19 @@ async function deleteAiLabel(payload: DeleteAiLabelPayload) {
     }
 }
 
+async function unlabelEmail(payload: UnlabelEmailPayload) {
+    try {
+        const response = await postData('ai-label/unlabel-email', payload);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 export {
     createAiLabel,
     listAiLabels,
     updateAiLabel,
     deleteAiLabel,
+    unlabelEmail,
 };
