@@ -4653,8 +4653,8 @@ hr {
 }
 
 .admin-outside-mail-dialog .modal-dialog {
-  width: min(92vw, 760px);
-  max-width: 760px;
+  width: min(92vw, 1100px);
+  max-width: 1100px;
   margin: 0;
 }
 
@@ -4680,7 +4680,7 @@ hr {
   margin-bottom: 8px;
   font-size: 13px;
   line-height: 18px;
-}
+}                  
 
 .admin-outside-mail-dialog__label {
   color: #717d84;

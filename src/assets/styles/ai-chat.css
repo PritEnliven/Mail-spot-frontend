@@ -1316,8 +1316,8 @@
   position: relative;
   width: 100%;
   box-sizing: border-box;
-    border-top: 1px solid transparent;
-  border-image: linear-gradient(90deg,rgba(128, 216, 255, 0) 0%, #80D8FF 25%, #80D8FF 75%, rgba(128, 216, 255, 0) 100%) 1;
+    /* border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg,rgba(128, 216, 255, 0) 0%, #80D8FF 25%, #80D8FF 75%, rgba(128, 216, 255, 0) 100%) 1; */
 }
 
 .ai-chat-input-row {
@@ -1326,9 +1326,9 @@
   gap: 0;
   position: relative;
   border-radius: 6px;
-  background: #fff;
   border: 1px solid #bbc0c4;
-  box-shadow: 0px 1px 3px 0px #0000001f;
+  box-shadow: 0px 1px 3px 0px #0000001f inset;
+  background: #fff;
 }
 
 /* .ai-chat-input-row::after {

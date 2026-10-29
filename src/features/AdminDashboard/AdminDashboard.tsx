@@ -10,13 +10,51 @@ import { pageStyles, usePageStylesheet } from '@hooks/usePageStyleSheet';
 import chevronLeftIconBig from "@images/chevron-left-icon-big.svg";
 import chevronRightIconBig from "@images/chevron-right-icon-big.svg";
 import searchIcon from "@images/search-icon.svg";
-import { adminGetUserList, deleteUser, loginAdminAsUser } from '@services/adminService/adminService';
+import { adminGetUserList, deleteUser, getAdminSettings, loginAdminAsUser } from '@services/adminService/adminService';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const firstDefined = (source: any, keys: string[]) => {
+    for (const key of keys) {
+        const value = source?.[key] ?? source?.settings?.[key];
+        if (value !== undefined && value !== null && value !== '') return value;
+    }
+    return undefined;
+};
+
+const asFlag = (value: unknown): boolean | null => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (['true', '1', 'yes', 'enabled', 'on'].includes(normalized)) return true;
+        if (['false', '0', 'no', 'disabled', 'off'].includes(normalized)) return false;
+    }
+    return null;
+};
+
+const formatFlag = (value: boolean | null) => (value === null ? '—' : value ? 'Yes' : 'No');
+
+const withUserSettings = (user: any, settings?: any) => {
+    const source = settings ? { ...user, ...settings } : user;
+    return {
+        ...user,
+        fileSize: firstDefined(source, ['fileSize', 'file_size']),
+        sendToOutsideDomain: firstDefined(source, ['sendToOutsideDomain', 'sentOutside', 'sendOutside']),
+        receiveFromOutsideDomain: firstDefined(source, ['receiveFromOutsideDomain', 'receiveOutside', 'receivedOutside']),
+        aiFeatures: firstDefined(source, ['aiFeatures', 'enableAiFeatures', 'aiFeaturesEnabled']),
+    };
+};
+
+const userSettingsArePresent = (user: any) =>
+    user?.fileSize !== undefined
+    && user?.sendToOutsideDomain !== undefined
+    && user?.receiveFromOutsideDomain !== undefined
+    && user?.aiFeatures !== undefined;
 
 const PAGE_SIZE_OPTIONS: SingleOption[] = [
     // { label: "2", value: "2" },
@@ -38,6 +76,7 @@ const AdminDashboard = () => {
     const [goToPage, setGoToPage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const gridRef = useRef<AgGridReact>(null);
+    const usersRequestRef = useRef(0);
     const { openModal } = useAdminUI();
     const { setSettingPayLoad, setAdminBoxTitle } = useAdmin();
 
@@ -45,13 +84,27 @@ const AdminDashboard = () => {
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSizeNum) || 1);
 
     const fetchUsers = useCallback(async (page: number, limit: number) => {
+        const requestId = ++usersRequestRef.current;
         setIsLoading(true);
         try {
             const response = await adminGetUserList({ page, limit });
             const users = Array.isArray(response?.data) ? response.data : [];
             const total = Number(response?.total ?? response?.totalCount ?? users.length) || 0;
+            const normalized = users.map((user: any) => withUserSettings(user));
+            const withSettings = await Promise.all(normalized.map(async (user: any) => {
+                if (userSettingsArePresent(user) || !user?.id) return user;
+                const settingsResponse = await getAdminSettings({
+                    isAdmin: false,
+                    userId: user.id,
+                    role: 'user',
+                });
+                if (settingsResponse?.statusCode !== 200) return user;
+                return withUserSettings(user, settingsResponse.data);
+            }));
 
-            setRowData(users);
+            if (requestId !== usersRequestRef.current) return;
+
+            setRowData(withSettings);
             setTotalRows(total);
 
             // If current page is past the last page after a size/delete change, clamp it
@@ -60,11 +113,14 @@ const AdminDashboard = () => {
                 setCurrentPage(maxPage);
             }
         } catch (err) {
+            if (requestId !== usersRequestRef.current) return;
             console.error('Failed to load users', err);
             setRowData([]);
             setTotalRows(0);
         } finally {
-            setIsLoading(false);
+            if (requestId === usersRequestRef.current) {
+                setIsLoading(false);
+            }
         }
     }, []);
 
@@ -114,6 +170,44 @@ const AdminDashboard = () => {
             sortable: true,
             minWidth: 100,
             flex: 1,
+        },
+        {
+            headerName: 'Allowed file size',
+            sortable: true,
+            minWidth: 160,
+            flex: 1,
+            valueGetter: (params: any) => {
+                const value = params.data?.fileSize;
+                if (value === undefined || value === null || value === '') return null;
+                const size = Number(value);
+                return Number.isNaN(size) ? null : size;
+            },
+            valueFormatter: (params: any) =>
+                params.value === null || params.value === undefined ? '—' : `${params.value} MB`,
+        },
+        {
+            headerName: 'Sent outside domain',
+            sortable: true,
+            minWidth: 180,
+            flex: 1,
+            valueGetter: (params: any) => asFlag(params.data?.sendToOutsideDomain),
+            valueFormatter: (params: any) => formatFlag(params.value),
+        },
+        {
+            headerName: 'Receive outside domain',
+            sortable: true,
+            minWidth: 200,
+            flex: 1,
+            valueGetter: (params: any) => asFlag(params.data?.receiveFromOutsideDomain),
+            valueFormatter: (params: any) => formatFlag(params.value),
+        },
+        {
+            headerName: 'Enable AI-powered features',
+            sortable: true,
+            minWidth: 220,
+            flex: 1,
+            valueGetter: (params: any) => asFlag(params.data?.aiFeatures),
+            valueFormatter: (params: any) => formatFlag(params.value),
         },
         {
             headerName: 'Status',
@@ -173,7 +267,7 @@ const AdminDashboard = () => {
                 if (response.statusCode === 200) {
                     showSuccess('User deleted successfully');
                     // Refetch so page totals stay in sync with the server
-                    const nextTotal = Math.max(0, totalRows - 1);
+                    const nextTotal = Math.max(0, totalRows - 1);     
                     const maxPage = Math.max(1, Math.ceil(nextTotal / pageSizeNum) || 1);
                     if (currentPage > maxPage) {
                         setCurrentPage(maxPage);

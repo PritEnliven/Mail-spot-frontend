@@ -145,9 +145,8 @@ const OutsideMailDialog = ({ userId, email, onClose }: OutsideMailDialogProps) =
             closeOnEsc
             draggable
             showBackdrop
-            backdropClassName="modal-backdrop-transparent"
             dragHandleSelector=".drag-handle"
-            width="min(100vw, 760px)"
+            width="min(100vw, 1100px)"
             maxWidth="95vw"
         >
             <div className="admin-outside-mail-dialog">

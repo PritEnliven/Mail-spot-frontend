@@ -15,10 +15,11 @@ import { useEffect, useRef, useState } from 'react';
 import OutsideMailDialog, { type OutsideMailPreview } from './OutsideMailDialog';
 
 const MAIL_PAGE_SIZE_OPTIONS: SingleOption[] = [
-    { label: '25', value: '25' },
-    { label: '50', value: '50' },
+    { label: '10', value: '10' },
+    { label: '25', value: '25' }, 
+    { label: '50', value: '50' },           
     { label: '100', value: '100' },
-];
+];                                          
 
 const USER_PAGE_LIMIT = 50;
 const SEARCH_DELAY_MS = 400;
@@ -103,7 +104,6 @@ const AdminOutsideMail = () => {
     const [userPage, setUserPage] = useState(1);
     const [userTotal, setUserTotal] = useState(0);
     const userQueryRef = useRef(userQuery);
-
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [detailUser, setDetailUser] = useState<OutsideMailUser | null>(null);
     const [mobileDetail, setMobileDetail] = useState(false);
@@ -217,6 +217,7 @@ const AdminOutsideMail = () => {
                     page: mailPage,
                     limit: pageSizeNum,
                 });
+                
                 if (cancelled) return;
 
                 if (response?.statusCode && response.statusCode !== 200) {
