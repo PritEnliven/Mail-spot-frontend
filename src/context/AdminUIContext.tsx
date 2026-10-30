@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
-type ModalType = 'changePassword' | 'userDetails' | 'deleteConfirmation' | 'loginAsUser';
+type ModalType = 'changePassword' | 'standardHours' | 'userDetails' | 'deleteConfirmation' | 'loginAsUser';
 
 export interface ActiveModal {
     id: string;

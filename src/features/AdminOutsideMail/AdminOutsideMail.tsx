@@ -320,8 +320,8 @@ const AdminOutsideMail = () => {
                                 >
                                     <span className="mail-profile-label">{user.initial}</span>
                                     <span className="admin-outside-user__text">
-                                        <span className="mail-profile-name">{user.name}</span>
-                                        <span className="mail-profile-id">{user.email}</span>
+                                        <span className="mail-received-name">{user.name}</span>
+                                        <span className="mail-received-subject">{user.email}</span>
                                     </span>
                                 </button>
                             );
@@ -369,23 +369,6 @@ const AdminOutsideMail = () => {
                     </p>
                 ) : (
                     <>
-                        <div className="admin-outside-mail__identity">
-                            <span className="mail-profile-label">{detailUser.initial}</span>
-                            <div>
-                                <h3 className="admin-outside-mail__name">{detailUser.name}</h3>
-                                <p className="admin-outside-mail__meta">
-                                    {detailUser.email}
-                                    {detailUser.domain ? ` · ${detailUser.domain}` : ''}
-                                </p>
-                            </div>
-                        </div>
-
-                        <p className="admin-outside-mail__hint">
-                            {direction === 'sent'
-                                ? 'Emails this user sent to addresses outside their domain.'
-                                : 'Emails this user received from addresses outside their domain.'}
-                        </p>
-
                         <div className="admin-outside-mail__toolbar">
                             <div className="admin-outside-mail__tabs" role="tablist" aria-label="Outside-domain mail">
                                 <button
@@ -436,12 +419,18 @@ const AdminOutsideMail = () => {
                             <table className="admin-outside-table">
                                 <thead>
                                     <tr>
-                                        {direction === 'received' && <th>From</th>}
-                                        {direction === 'sent' && <th>To</th>}
-                                        <th>Subject</th>
-                                        <th>Outside domain</th>
-                                        <th>Date</th>
-                                        <th className="view">View</th>
+                                        {direction === 'received' && (
+                                            <th><span className="admin-outside-table__head-label">Sender</span></th>
+                                        )}
+                                        {direction === 'sent' && (
+                                            <th><span className="admin-outside-table__head-label">Receiver</span></th>
+                                        )}
+                                        <th><span className="admin-outside-table__head-label">Subject</span></th>
+                                        <th><span className="admin-outside-table__head-label">Outside domain</span></th>
+                                        <th><span className="admin-outside-table__head-label">Date</span></th>
+                                        <th className="view">
+                                            <span className="admin-outside-table__head-label">View</span>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>

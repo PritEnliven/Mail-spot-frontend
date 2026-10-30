@@ -1,16 +1,16 @@
-
 import { useAdminUI } from '@context/AdminUIContext';
 import { lazy, Suspense } from 'react';
+
 const AdminChangePassword = lazy(() => import('@components/ui/Modals/AdminChangePassword/AdminChangePassword'));
 const AdminConfirmDelete = lazy(() => import('@components/ui/Modals/AdminConfirmDelete/AdminConfirmDelete'));
+const AdminStandardHours = lazy(() => import('@components/ui/Modals/AdminStandardHours/AdminStandardHours'));
 
 const BASE_Z_INDEX = 1050;
 const Z_INDEX_STEP = 20;
 
 function AdminModalRoot() {
     const { activeModals } = useAdminUI();
-    
-    // Debug logs    
+
     if (activeModals.length === 0) return null;
 
     return (
@@ -23,6 +23,16 @@ function AdminModalRoot() {
                         return (
                             <Suspense fallback={null} key={modal.id}>
                                 <AdminChangePassword
+                                    modalId={modal.id}
+                                    zIndex={zIndex}
+                                    {...modal.props}
+                                />
+                            </Suspense>
+                        );
+                    case 'standardHours':
+                        return (
+                            <Suspense fallback={null} key={modal.id}>
+                                <AdminStandardHours
                                     modalId={modal.id}
                                     zIndex={zIndex}
                                     {...modal.props}

@@ -1,5 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import SimpleBar from 'simplebar-react';
+
+const DROPDOWN_MAX_HEIGHT = 220;
+const DROPDOWN_GAP = 4;
 
 const restrictAndFormatInput = (raw: string): string => {
   let cleaned = raw
@@ -29,6 +33,13 @@ interface CustomTimeSelectorProps {
   minSequence?: number;
 }
 
+interface DropdownPosition {
+  top?: number;
+  bottom?: number;
+  left: number;
+  width: number;
+}
+
 function CustomTimeSelector({
   value,
   onChange,
@@ -39,24 +50,73 @@ function CustomTimeSelector({
 }: CustomTimeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const skipBlurSnapRef = useRef(false);
+  const inputValueRef = useRef(value || '');
 
   useEffect(() => {
     setInputValue(value || ''); // ✅ value is already in 12-hour format
+    inputValueRef.current = value || '';
   }, [value]);
 
+  const updateDropdownPosition = () => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    const rect = input.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < DROPDOWN_MAX_HEIGHT + DROPDOWN_GAP;
+
+    setDropdownPosition(
+      openUp
+        ? {
+            bottom: window.innerHeight - rect.top + DROPDOWN_GAP,
+            left: rect.left,
+            width: rect.width,
+          }
+        : {
+            top: rect.bottom + DROPDOWN_GAP,
+            left: rect.left,
+            width: rect.width,
+          },
+    );
+  };
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setDropdownPosition(null);
+      return;
+    }
+
+    updateDropdownPosition();
+
+    const handleReposition = () => updateDropdownPosition();
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+    return () => {
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [isOpen]);
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-        snapAndCommit();
-      }
+      const target = e.target as Node;
+      const clickedInput = Boolean(containerRef.current?.contains(target));
+      const clickedDropdown = Boolean(dropdownRef.current?.contains(target));
+      if (clickedInput || clickedDropdown) return;
+      setIsOpen(false);
+      snapAndCommit();
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [inputValue, value]);
+  }, [isOpen, inputValue, value]);
 
   const filteredOptions = options
     .map((time, index) => ({
@@ -118,17 +178,19 @@ function CustomTimeSelector({
     return closest;
   };
 
-  const snapAndCommit = () => {
-    let time24 = to24Hour(inputValue);
+  const snapAndCommit = (rawValue = inputValueRef.current) => {
+    let time24 = to24Hour(rawValue);
 
     if (!time24) {
       setInputValue(value || '');
+      inputValueRef.current = value || '';
       return;
     }
 
     const minutes = parseToMinutes(time24);
     if (minutes === null) {
       setInputValue(value || '');
+      inputValueRef.current = value || '';
       return;
     }
 
@@ -146,14 +208,20 @@ function CustomTimeSelector({
 
     onChange(nearest);
     setInputValue(nearest);
+    inputValueRef.current = nearest;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = restrictAndFormatInput(e.target.value);
     setInputValue(formatted);
+    inputValueRef.current = formatted;
   };
 
   const handleBlur = () => {
+    if (skipBlurSnapRef.current) {
+      skipBlurSnapRef.current = false;
+      return;
+    }
     snapAndCommit();
   };
 
@@ -172,9 +240,12 @@ function CustomTimeSelector({
   };
 
   const handleSelect = (time12: string) => {
+    skipBlurSnapRef.current = true;
     onChange(time12);
     setInputValue(time12);
+    inputValueRef.current = time12;
     setIsOpen(false);
+    // Blur after commit so onBlur does not snap back to the previous value.
     inputRef.current?.blur();
   };
 
@@ -227,47 +298,27 @@ function CustomTimeSelector({
     return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   };
 
-  return (
-    <div ref={containerRef} className="position-relative">
-      <input
-        ref={inputRef}
-        type="text"
-        className={`form-control ${className}`.trim()}
-        max={4}
-        placeholder={placeholder}
-        value={inputValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        onFocus={() => setIsOpen(true)}
-        onClick={() => setIsOpen(true)}
-        maxLength={8}
-      />
-
-      {isOpen && (
+  const dropdown = isOpen && dropdownPosition && typeof document !== 'undefined'
+    ? createPortal(
         <div
-          className="position-absolute w-100 mt-1 time-dropdown-custom-react"
-          style={{ zIndex: 1050, maxHeight: '236px', overflow: 'hidden' }}
+          ref={dropdownRef}
+          className="time-dropdown-custom-react"
+          style={{
+            position: 'fixed',
+            top: dropdownPosition.top,
+            bottom: dropdownPosition.bottom,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            zIndex: 10060,
+            maxHeight: DROPDOWN_MAX_HEIGHT,
+            overflow: 'hidden',
+          }}
+          onMouseDown={(event) => {
+            // Keep focus on the input so blur/snap does not fight option clicks.
+            event.preventDefault();
+          }}
         >
-          <SimpleBar style={{ maxHeight: 220 }}>
-            {/* <ul className="list-unstyled m-0 p-0">
-              {options.map((time24) => (
-                <li
-                  key={time24}
-                  className={`time-option ${time24 === value ? 'active' : ''}`}
-                  data-sequence={options.indexOf}
-                  style={{
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    padding: '8px 12px',
-                    backgroundColor: time24 === value ? '#f0f0f0' : undefined,
-                  }}
-                  onClick={() => handleSelect(time24)}
-                >
-                  {to12Hour(time24)}
-                </li>
-              ))}
-            </ul> */}
+          <SimpleBar style={{ maxHeight: DROPDOWN_MAX_HEIGHT - 14 }}>
             <ul className="list-unstyled m-0 p-0">
               {filteredOptions.map(({ time, sequence }) => (
                 <li
@@ -287,8 +338,28 @@ function CustomTimeSelector({
               ))}
             </ul>
           </SimpleBar>
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <div ref={containerRef} className="position-relative">
+      <input
+        ref={inputRef}
+        type="text"
+        className={`form-control ${className}`.trim()}
+        max={4}
+        placeholder={placeholder}
+        value={inputValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setIsOpen(true)}
+        onClick={() => setIsOpen(true)}
+        maxLength={8}
+      />
+      {dropdown}
     </div>
   );
 }

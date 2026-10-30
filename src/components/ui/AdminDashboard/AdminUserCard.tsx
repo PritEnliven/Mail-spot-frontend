@@ -9,8 +9,10 @@ interface AdminUserCardProps {
         domain?: string;
         size?: number | string;
         status?: string;
+        hasStandardHours?: boolean;
     };
     onClickChangePassword: (id: string) => void;
+    onClickStandardHours: (id: string) => void;
     onClickEditUser: (id: string) => void;
     onClickDeleteUser: (id: string) => void;
     onClickLoginAsUser: (id: string) => void;
@@ -19,6 +21,7 @@ interface AdminUserCardProps {
 const AdminUserCard = ({
     user,
     onClickChangePassword,
+    onClickStandardHours,
     onClickEditUser,
     onClickDeleteUser,
     onClickLoginAsUser,
@@ -47,12 +50,19 @@ const AdminUserCard = ({
                     <span className="admin-user-card__meta-label">Size (MB)</span>
                     <span className="admin-user-card__meta-value">{user.size}</span>
                 </div>
+                <div>
+                    <span className="admin-user-card__meta-label">Standard hours</span>
+                    <span className="admin-user-card__meta-value">
+                        {user.hasStandardHours ? 'Yes' : 'No'}
+                    </span>
+                </div>
             </div>
 
             <div className="admin-user-card__actions">
                 <ActionCell
                     id={user.id}
                     onClickChangePassword={onClickChangePassword}
+                    onClickStandardHours={onClickStandardHours}
                     onClickEditUser={onClickEditUser}
                     onClickDeleteUser={onClickDeleteUser}
                     onClickLoginAsUser={onClickLoginAsUser}

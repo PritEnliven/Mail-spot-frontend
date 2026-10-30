@@ -1,5 +1,7 @@
 import userManagementIconHover from "@images/add-pesion-icon-active.svg";
 import userManagementIcon from "@images/add-pesion-icon.svg";
+import clockIconHover from "@images/clock-icon-active.svg";
+import clockIcon from "@images/clock-icon.svg";
 import outsideMailIconHover from "@images/mail-icon-active.svg";
 import outsideMailIcon from "@images/mail-icon.svg";
 import settingsIconHover from "@images/setting-icon-active.svg";
@@ -22,10 +24,17 @@ const sidebarOptions = [
     },
     {
         id: 'outsideMail',
-        label: 'Outside Emails',
+        label: 'Outside Domain Emails',
         icon: outsideMailIcon,
         activeIcon: outsideMailIconHover,
         boxKey: 'outsideMail'
+    },
+    {
+        id: 'outOfHoursMail',
+        label: 'Out of Hours Emails',
+        icon: clockIcon,
+        activeIcon: clockIconHover,
+        boxKey: 'outOfHoursMail'
     },
     {
         id: 'settings',

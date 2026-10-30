@@ -32,6 +32,9 @@ const AdminLeftPanel = () => {
         if (location.pathname.includes('/admin/outside-mail')) {
             return 'outsideMail';
         }
+        if (location.pathname.includes('/admin/out-of-hours-mail')) {
+            return 'outOfHoursMail';
+        }
         // Editing a user opens /admin/settings, but keep User Management selected
         if (location.pathname.includes('/admin/settings') && !isEditingUser) {
             return 'settings';
@@ -43,7 +46,9 @@ const AdminLeftPanel = () => {
         const nextId = getActiveBoxId();
         setActiveBoxId(nextId);
         if (nextId === 'outsideMail') {
-            setAdminBoxTitle('Outside Emails');
+            setAdminBoxTitle('Outside Domain Emails');
+        } else if (nextId === 'outOfHoursMail') {
+            setAdminBoxTitle('Out of Hours Emails');
         } else if (nextId === 'settings') {
             setAdminBoxTitle('Settings');
         } else if (!isEditingUser) {
@@ -66,6 +71,13 @@ const AdminLeftPanel = () => {
                 isAdmin: true,
             });
             navigate('/admin/outside-mail');
+        } else if (boxId === 'outOfHoursMail') {
+            setSettingPayLoad({
+                userId: null,
+                role: 'admin',
+                isAdmin: true,
+            });
+            navigate('/admin/out-of-hours-mail');
         } else {
             navigate(`/admin/dashboard`);
         }

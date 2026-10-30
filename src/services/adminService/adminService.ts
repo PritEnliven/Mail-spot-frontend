@@ -47,9 +47,29 @@ async function adminLogin(payload: loginPayload) {
 interface GetUserListParams {
     page: number;
     limit: number;
+    /** true = only users with hours enabled; false = without hours; omit = all */
+    standardHoursEnabled?: boolean;
 }
 
 type OutsideMailType = 'sent' | 'received';
+type OutOfHoursMailType = 'sent' | 'received' | 'all';
+
+interface StandardHoursDay {
+    day: number;
+    start: string;
+    end: string;
+}
+
+interface StandardHoursConfig {
+    enabled: boolean;
+    days?: StandardHoursDay[];
+}
+
+interface SaveUserStandardHoursPayload {
+    userId: string;
+    timeZone?: string;
+    standardHours: StandardHoursConfig;
+}
 
 interface GetOutsideMailUsersParams {
     search?: string;
@@ -65,10 +85,24 @@ interface GetOutsideMailParams {
     limit?: number;
 }
 
-async function adminGetUserList({ page, limit }: GetUserListParams) {
+interface GetOutOfHoursMailParams {
+    userId: string;
+    type?: OutOfHoursMailType;
+    search?: string;
+    page?: number;
+    limit?: number;
+}
+
+async function adminGetUserList({ page, limit, standardHoursEnabled }: GetUserListParams) {
     try {
         const response = await getData('admin/getUserList', {
-            params: { page, limit },
+            params: {
+                page,
+                limit,
+                ...(standardHoursEnabled === undefined
+                    ? {}
+                    : { standardHoursEnabled }),
+            },
         });
         return response;
     } catch (error: any) {
@@ -173,8 +207,75 @@ async function deleteUser(userId: string) {
     }
 }
 
+async function adminGetUserStandardHours(userId: string) {
+    try {
+        const response = await getData('admin/getUserStandardHours', {
+            params: { userId },
+        });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function adminSaveUserStandardHours(payload: SaveUserStandardHoursPayload) {
+    try {
+        const response = await postData('admin/saveUserStandardHours', payload);
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function adminGetOutOfHoursMail({
+    userId,
+    type = 'all',
+    search = '',
+    page = 1,
+    limit = 25,
+}: GetOutOfHoursMailParams) {
+    try {
+        const response = await getData('admin/getOutOfHoursMail', {
+            params: { userId, type, search, page, limit },
+        });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
+async function adminGetOutOfHoursMailEmail(userId: string, id: string) {
+    try {
+        const response = await getData('admin/getOutOfHoursMailEmail', {
+            params: { userId, id, emailId: id },
+        });
+        return response;
+    } catch (error: any) {
+        return error;
+    }
+}
+
 
 export {
-    adminGetOutsideMail, adminGetOutsideMailEmail, adminGetOutsideMailUsers, adminGetUserList, adminLogin, adminSaveSettings, deleteUser, getAdminSettings, loginAdminAsUser, resetPasswordByAdmin
+    adminGetOutOfHoursMail,
+    adminGetOutOfHoursMailEmail,
+    adminGetOutsideMail,
+    adminGetOutsideMailEmail,
+    adminGetOutsideMailUsers,
+    adminGetUserList,
+    adminGetUserStandardHours,
+    adminLogin,
+    adminSaveSettings,
+    adminSaveUserStandardHours,
+    deleteUser,
+    getAdminSettings,
+    loginAdminAsUser,
+    resetPasswordByAdmin,
 };
-export type { OutsideMailType };
+export type {
+    OutOfHoursMailType,
+    OutsideMailType,
+    SaveUserStandardHoursPayload,
+    StandardHoursConfig,
+    StandardHoursDay,
+};

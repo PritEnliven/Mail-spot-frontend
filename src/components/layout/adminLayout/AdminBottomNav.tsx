@@ -2,6 +2,8 @@ import InteractiveIcon from '@components/ui/InteractiveIcon';
 import { useAdmin } from '@context/AdminDataContext';
 import userManagementIconHover from '@images/add-pesion-icon-active.svg';
 import userManagementIcon from '@images/add-pesion-icon.svg';
+import clockIconHover from '@images/clock-icon-active.svg';
+import clockIcon from '@images/clock-icon.svg';
 import outsideMailIconHover from '@images/mail-icon-active.svg';
 import outsideMailIcon from '@images/mail-icon.svg';
 import settingsIconHover from '@images/setting-icon-active.svg';
@@ -15,8 +17,9 @@ const AdminBottomNav = () => {
 
     const isEditingUser = Boolean(settingPayLoad?.userId && !settingPayLoad?.isAdmin);
     const isOutside = location.pathname.includes('/admin/outside-mail');
+    const isOutOfHours = location.pathname.includes('/admin/out-of-hours-mail');
     const isSettings = location.pathname.includes('/admin/settings') && !isEditingUser;
-    const isUsers = !isSettings && !isOutside;
+    const isUsers = !isSettings && !isOutside && !isOutOfHours;
 
     const goUsers = () => {
         setIsSidebarExpandedMobile(false);
@@ -31,8 +34,19 @@ const AdminBottomNav = () => {
             role: 'admin',
             isAdmin: true,
         });
-        setAdminBoxTitle('Outside Emails');
+        setAdminBoxTitle('Outside Domain Emails');
         navigate('/admin/outside-mail');
+    };
+
+    const goOutOfHours = () => {
+        setIsSidebarExpandedMobile(false);
+        setSettingPayLoad({
+            userId: null,
+            role: 'admin',
+            isAdmin: true,
+        });
+        setAdminBoxTitle('Out of Hours Emails');
+        navigate('/admin/out-of-hours-mail');
     };
 
     const goSettings = () => {
@@ -77,6 +91,21 @@ const AdminBottomNav = () => {
                     renderAs="img"
                 />
                 <span>Outside</span>
+            </button>
+            <button
+                type="button"
+                className={`admin-bottom-nav__item ${isOutOfHours ? 'active' : ''}`}
+                onClick={goOutOfHours}
+            >
+                <InteractiveIcon
+                    defaultIcon={clockIcon}
+                    activeIcon={clockIconHover}
+                    isActive={isOutOfHours}
+                    alt="Out of hours mail"
+                    className="interactive-icon hover-image"
+                    renderAs="img"
+                />
+                <span>Hours</span>
             </button>
             <button
                 type="button"

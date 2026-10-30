@@ -7,7 +7,8 @@ import { default as closeIcon, default as closeIconHover } from "@images/close-i
 import type { Response } from '@models/Response';
 import { adminSaveSettings, getAdminSettings } from '@services/adminService/adminService';
 import { isDangerousExtension } from './dangerousFileExtensions';
-import { useEffect, useRef, useState } from 'react';
+import { SUGGESTED_FILE_EXTENSIONS } from './suggestedFileExtensions';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { adminSettingsSchema, type AdminSettingsFormValues } from './adminSettings.schema';
@@ -38,8 +39,12 @@ const AdminSettings = () => {
     });
 
     const fileExtensionInputRef = useRef<HTMLInputElement>(null);
+    const fileExtensionComboRef = useRef<HTMLDivElement>(null);
     const [fileExtensions, setFileExtensions] = useState<string[]>([]);
     const fileExtensionsRef = useRef<string[]>([]);
+    const [extensionQuery, setExtensionQuery] = useState('');
+    const [extensionMenuOpen, setExtensionMenuOpen] = useState(false);
+    const skipExtensionBlurRef = useRef(false);
 
     const syncFileExtensions = (next: string[]) => {
         fileExtensionsRef.current = next;
@@ -50,6 +55,16 @@ const AdminSettings = () => {
             shouldValidate: true,
         });
     };
+
+    const suggestedExtensionOptions = useMemo(() => {
+        const selected = new Set(fileExtensions.map((ext) => ext.toLowerCase()));
+        const query = extensionQuery.trim().replace(/^\.+/, '').toLowerCase();
+        return SUGGESTED_FILE_EXTENSIONS.filter((ext) => {
+            if (selected.has(ext)) return false;
+            if (!query) return true;
+            return ext.includes(query);
+        });
+    }, [fileExtensions, extensionQuery]);
 
     useEffect(() => {
         let isMounted = true;
@@ -117,16 +132,42 @@ const AdminSettings = () => {
         return next;
     };
 
+    const clearExtensionInput = () => {
+        setExtensionQuery('');
+        if (fileExtensionInputRef.current) {
+            fileExtensionInputRef.current.value = '';
+        }
+    };
+
     const consumePendingExtension = () => {
         const current = fileExtensionsRef.current;
-        const inputEl = fileExtensionInputRef.current;
-        if (!inputEl) return current;
-        const raw = inputEl.value;
+        const raw = extensionQuery || fileExtensionInputRef.current?.value || '';
         if (!raw.trim()) return current;
         const next = addExtension(raw, current);
-        inputEl.value = '';
+        clearExtensionInput();
         return next;
     };
+
+    const selectSuggestedExtension = (extension: string) => {
+        skipExtensionBlurRef.current = true;
+        addExtension(extension);
+        clearExtensionInput();
+        setExtensionMenuOpen(true);
+        fileExtensionInputRef.current?.focus();
+    };
+
+    useEffect(() => {
+        if (!extensionMenuOpen) return;
+
+        const handlePointerDown = (event: MouseEvent) => {
+            const target = event.target as Node;
+            if (fileExtensionComboRef.current?.contains(target)) return;
+            setExtensionMenuOpen(false);
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        return () => document.removeEventListener('mousedown', handlePointerDown);
+    }, [extensionMenuOpen]);
 
     const onSubmit = async (data: any) => {
         const userId = settingPayLoad?.isAdmin ? null : settingPayLoad?.userId || null;
@@ -167,6 +208,15 @@ const AdminSettings = () => {
         if (e.key === 'Enter') {
             e.preventDefault();
             consumePendingExtension();
+            setExtensionMenuOpen(true);
+            return;
+        }
+        if (e.key === 'Escape') {
+            setExtensionMenuOpen(false);
+            return;
+        }
+        if (e.key === 'ArrowDown') {
+            setExtensionMenuOpen(true);
         }
     };
 
@@ -272,17 +322,70 @@ const AdminSettings = () => {
                     </div>
                     <div className="col-12 col-p">
                         <div className="form-group form-row mb-2">
-                            <label className="control-label">Allowed file extensions</label>
+                            <label className="control-label" htmlFor="fileExtensionInput">
+                                Allowed file extensions
+                            </label>
                             <div className="input-control">
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    id="fileExtensionInput"
-                                    placeholder="Add extensions (e.g., doc, pdf)..."
-                                    ref={fileExtensionInputRef}
-                                    onKeyDown={handleKeyDown}
-                                    onBlur={consumePendingExtension}
-                                />
+                                <div className="admin-file-extension-combo" ref={fileExtensionComboRef}>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        id="fileExtensionInput"
+                                        placeholder="Add extensions (e.g., doc, pdf)..."
+                                        ref={fileExtensionInputRef}
+                                        value={extensionQuery}
+                                        autoComplete="off"
+                                        onChange={(event) => {
+                                            setExtensionQuery(event.target.value);
+                                            setExtensionMenuOpen(true);
+                                        }}
+                                        onFocus={() => setExtensionMenuOpen(true)}
+                                        onClick={() => setExtensionMenuOpen(true)}
+                                        onKeyDown={handleKeyDown}
+                                        onBlur={() => {
+                                            if (skipExtensionBlurRef.current) {
+                                                skipExtensionBlurRef.current = false;
+                                                return;
+                                            }
+                                            consumePendingExtension();
+                                            setExtensionMenuOpen(false);
+                                        }}
+                                    />
+                                    {extensionMenuOpen && (
+                                        <div
+                                            className="admin-file-extension-combo__menu"
+                                            role="listbox"
+                                            aria-label="Suggested file extensions"
+                                            onMouseDown={(event) => {
+                                                event.preventDefault();
+                                                skipExtensionBlurRef.current = true;
+                                            }}
+                                        >
+                                            {suggestedExtensionOptions.length > 0 ? (
+                                                <ul className="admin-file-extension-combo__list">
+                                                    {suggestedExtensionOptions.map((extension) => (
+                                                        <li key={extension}>
+                                                            <button
+                                                                type="button"
+                                                                className="admin-file-extension-combo__option"
+                                                                role="option"
+                                                                onClick={() => selectSuggestedExtension(extension)}
+                                                            >
+                                                                .{extension}
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="admin-file-extension-combo__empty">
+                                                    {extensionQuery.trim()
+                                                        ? 'No matching suggestions. Press Enter to add a custom type.'
+                                                        : 'All suggested extensions are already added.'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="tags-input-container mb-4 d-flex flex-wrap gap-2">

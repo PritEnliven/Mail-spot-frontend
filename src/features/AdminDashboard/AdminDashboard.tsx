@@ -210,6 +210,19 @@ const AdminDashboard = () => {
             valueFormatter: (params: any) => formatFlag(params.value),
         },
         {
+            headerName: 'Standard hours',
+            sortable: true,
+            minWidth: 140,
+            flex: 1,
+            valueGetter: (params: any) => {
+                if (typeof params.data?.hasStandardHours === 'boolean') {
+                    return params.data.hasStandardHours;
+                }
+                return asFlag(params.data?.standardHours?.enabled);
+            },
+            valueFormatter: (params: any) => formatFlag(params.value),
+        },
+        {
             headerName: 'Status',
             field: 'status',
             sortable: true,
@@ -220,13 +233,14 @@ const AdminDashboard = () => {
         {
             headerName: 'Actions',
             sortable: false,
-            minWidth: 100,
-            maxWidth: 150,
+            minWidth: 160,
+            maxWidth: 190,
             flex: 0,
             cellRenderer: (params: any) => (
                 <ActionCell
                     id={params.data.id}
                     onClickChangePassword={handleChangePassword}
+                    onClickStandardHours={handleStandardHours}
                     onClickEditUser={handleEditUser}
                     onClickDeleteUser={handleDeleteUser}
                     onClickLoginAsUser={handleLoginAsUser}
@@ -238,6 +252,17 @@ const AdminDashboard = () => {
     const handleChangePassword = (userId: string) => {
         openModal('changePassword', {
             userId
+        });
+    };
+
+    const handleStandardHours = (userId: string) => {
+        const user = rowData.find((row) => row.id === userId);
+        openModal('standardHours', {
+            userId,
+            userName: (user?.name || user?.email || '').trim(),
+            onSaved: () => {
+                fetchUsers(currentPage, pageSizeNum);
+            },
         });
     };
 
@@ -307,6 +332,7 @@ const AdminDashboard = () => {
         flex: 1,
         sortable: true,
         resizable: false,
+        suppressMovable: true,
         unSortIcon: true
     };
 
