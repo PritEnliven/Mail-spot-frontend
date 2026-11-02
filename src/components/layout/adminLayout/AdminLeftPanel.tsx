@@ -50,7 +50,7 @@ const AdminLeftPanel = () => {
         } else if (nextId === 'outOfHoursMail') {
             setAdminBoxTitle('Out of Hours Emails');
         } else if (nextId === 'settings') {
-            setAdminBoxTitle('Settings');
+            setAdminBoxTitle('Settings (Default)');
         } else if (!isEditingUser) {
             setAdminBoxTitle('User Management');
         }
@@ -64,21 +64,24 @@ const AdminLeftPanel = () => {
                 isAdmin: true,
             });
             navigate('/admin/settings');
-        } else if (boxId === 'outsideMail') {
+        } 
+        else if (boxId === 'outsideMail') {
             setSettingPayLoad({
                 userId: null,
                 role: 'admin',
                 isAdmin: true,
             });
             navigate('/admin/outside-mail');
-        } else if (boxId === 'outOfHoursMail') {
+        } 
+        else if (boxId === 'outOfHoursMail') {
             setSettingPayLoad({
                 userId: null,
                 role: 'admin',
                 isAdmin: true,
             });
             navigate('/admin/out-of-hours-mail');
-        } else {
+        } 
+        else {
             navigate(`/admin/dashboard`);
         }
         setActiveBoxId(boxId);
@@ -94,9 +97,10 @@ const AdminLeftPanel = () => {
             return;
         }
         setIsSidebarOpen(!isSidebarOpen);
-    };
-
+    };                                             
+                                                
     const showExpandedBrand = isMobile ? isSidebarExpandedMobile : isSidebarOpen;
+    
     const navCollapsedClass = isMobile
         ? (isSidebarExpandedMobile ? '' : 'nav-collepse expanded-nav')
         : (isSidebarOpen ? '' : 'nav-collepse expanded-nav');

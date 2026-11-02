@@ -113,7 +113,7 @@ const rangeLabel = (page: number, limit: number, total: number): string => {
 };
 
 const AdminOutOfHoursMail = () => {
-    const { isMobile } = useScreen();
+    const { isDesktop } = useScreen();
     const [users, setUsers] = useState<OutOfHoursUser[]>([]);
     const [usersLoading, setUsersLoading] = useState(true);
     const [usersError, setUsersError] = useState('');
@@ -124,7 +124,8 @@ const AdminOutOfHoursMail = () => {
     const userQueryRef = useRef(userQuery);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [detailUser, setDetailUser] = useState<OutOfHoursUser | null>(null);
-    const [mobileDetail, setMobileDetail] = useState(false);
+    // Mirrors mailbox isMailListOpen: on ≤992, hide users list while a user's emails are open.
+    const [isUserListOpen, setIsUserListOpen] = useState(true);
     const [direction, setDirection] = useState<OutOfHoursMailType>('sent');
     const [emails, setEmails] = useState<OutOfHoursMessage[]>([]);
     const [emailsLoading, setEmailsLoading] = useState(false);
@@ -306,6 +307,16 @@ const AdminOutOfHoursMail = () => {
         };
     }, [selectedUserId, direction, mailQuery, mailPage, pageSizeNum]);
 
+    // Keep email detail visible when shrinking past 992 with a user selected (mailbox-style).
+    useEffect(() => {
+        if (!isDesktop && selectedUserId) {
+            setIsUserListOpen(false);
+        }
+        if (isDesktop) {
+            setIsUserListOpen(true);
+        }
+    }, [isDesktop, selectedUserId]);
+
     const selectUser = (user: OutOfHoursUser) => {
         if (user.id !== selectedUserId) {
             setSelectedUserId(user.id);
@@ -320,7 +331,7 @@ const AdminOutOfHoursMail = () => {
             setConfigured(true);
             setConfigMessage('');
         }
-        if (isMobile) setMobileDetail(true);
+        if (!isDesktop) setIsUserListOpen(false);
     };
 
     const changeDirection = (next: OutOfHoursMailType) => {
@@ -340,9 +351,10 @@ const AdminOutOfHoursMail = () => {
         : (mailQuery ? 'No emails match this search.' : EMPTY_MAIL_MESSAGE);
 
     const colSpan = 5;
+    const isDetailOpen = !isDesktop && !isUserListOpen && !!selectedUserId;
 
     return (
-        <div className={`admin-outside-mail ${isMobile && mobileDetail ? 'admin-outside-mail--detail' : ''}`}>
+        <div className={`admin-outside-mail ${isDetailOpen ? 'admin-outside-mail--detail' : ''}`}>
             <aside className="admin-outside-mail__users">
                 <div className="admin-outside-mail__user-search">
                     <img src={searchIcon} alt="" />
@@ -405,11 +417,11 @@ const AdminOutOfHoursMail = () => {
             </aside>
 
             <section className="admin-outside-mail__detail">
-                {isMobile && (
+                {!isDesktop && (
                     <button
                         type="button"
                         className="admin-outside-mail__back"
-                        onClick={() => setMobileDetail(false)}
+                        onClick={() => setIsUserListOpen(true)}
                     >
                         <img src={chevronLeftIconBig} alt="" />
                         Users

@@ -196,7 +196,7 @@ p {
   height: 1px;
   background-color: #d0d9de;
   display: block;
-  margin: 5px 0 13px -8px;
+  margin: 5px 0 10px -8px;
 }
 
 .left-side-manu-link-list .m-item:last-child .m-link {
@@ -6145,7 +6145,7 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   font-size: 12px;
   font-weight: 600;
   border-radius: 5px;
-  margin: 0 0 13px 0;
+  margin: 0 0 10px 0;
   width: calc(100% - 72px);
   display: flex;
   align-items: center;
@@ -6239,7 +6239,7 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   height: 1px;
   background-color: #d0d9de;
   display: block;
-  margin: 0 0 13px -8px;
+  margin: 0 0 10px -8px;
 }
 /* 
 .create-folder-sec:has(+ .create-folder-sec)::after {
@@ -6255,11 +6255,6 @@ body .flatpickr-calendar.OnlyYear .flatpickr-month {
   
 }
 
-
-/* Empty sections: tighter title → divider gap */
-.create-folder-sec--empty .sidebar-create-folder-box {
-  margin-bottom: 0;
-}
 
 /* Folder lists must not draw their own bottom rule (that stacked with section dividers) */
 .left-side-manu-link-list--no-divider::after,

@@ -30,7 +30,7 @@ const AppContent = () => {
                 />
             )}
 
-            <div className="right-side-bar-main">
+            <div className={`right-side-bar-main ${!isMobile && !isSidebarOpen ? 'right-side-bar-main-expanded' : ''}`}>
                 <AdminRightPanel />
             </div>
 

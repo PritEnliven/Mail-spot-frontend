@@ -1,3 +1,4 @@
+import { getPasswordValidationError } from '@utils/passwordValidation';
 import { z } from 'zod';
 
 export const adminSettingsSchema = z.object({
@@ -9,7 +10,38 @@ export const adminSettingsSchema = z.object({
   receive: z.boolean(),
   both: z.boolean(),
   aiFeatures: z.boolean(),
-  status: z.boolean()
+  status: z.boolean(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
+}).superRefine((data, ctx) => {
+  const password = data.password?.trim() ?? '';
+  const confirmPassword = data.confirmPassword?.trim() ?? '';
+  if (!password && !confirmPassword) return;
+
+  if (!password) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Enter a new password',
+      path: ['password'],
+    });
+  } else {
+    const error = getPasswordValidationError(password);
+    if (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: error,
+        path: ['password'],
+      });
+    }
+  }
+
+  if (password !== confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Passwords don't match",
+      path: ['confirmPassword'],
+    });
+  }
 }).transform((data) => ({
   ...data,
   both: data.send && data.receive,

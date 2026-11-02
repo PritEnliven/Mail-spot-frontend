@@ -3,8 +3,10 @@ import { useAdmin } from "@context/AdminDataContext";
 import { useScreen } from "@context/ScreenContext";
 import enlivenLogo from "@images/enliven-logo.svg";
 import { default as logoutIcon, default as logoutIconHover } from "@images/logout-icon.svg";
-import menuIcon from "@images/menu-icon.svg";
-import menuIconHover from "@images/menu-icon-hover.svg";
+import sidebarcloseIcon from "@images/side-bar-close-icon.svg";
+import sidebarcloseHoverIcon from "@images/side-bar-close-hover-icon.svg";
+import sidebaropenIcon from "@images/side-bar-open-icon.svg";
+import sidebaropenHoverIcon from "@images/side-bar-open-hover-icon.svg";
 import { useNavigate } from "react-router-dom";
 
 const ADMIN_AUTH_STORAGE_KEYS = ["adminToken", "adminUsername", "adminId"] as const;
@@ -15,8 +17,13 @@ interface adminHeaderProps {
 
 const AdminHeader = ({ title }: adminHeaderProps) => {
     const navigate = useNavigate();
-    const { isMobile } = useScreen();
-    const { isSidebarExpandedMobile, setIsSidebarExpandedMobile } = useAdmin();
+    const { isDesktop, isMobile } = useScreen();
+    const {
+        isSidebarOpen,
+        setIsSidebarOpen,
+        isSidebarExpandedMobile,
+        setIsSidebarExpandedMobile,
+    } = useAdmin();
 
     const logout = () => {
         ADMIN_AUTH_STORAGE_KEYS.forEach((key) => {
@@ -26,29 +33,38 @@ const AdminHeader = ({ title }: adminHeaderProps) => {
         navigate('/admin/login');
     };
 
-    const toggleMobileSidebar = () => {
-        setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+    // Same as MailSpot user Header: ≤992 shows the 3-line toggle.
+    // ≤575 overlays the drawer; 576–992 collapses the rail via isSidebarOpen.
+    const toggleSidebarHandler = () => {
+        if (isMobile) {
+            setIsSidebarExpandedMobile(!isSidebarExpandedMobile);
+        } else {
+            setIsSidebarOpen(!isSidebarOpen);
+        }
     };
+
+    const isSidebarShown = isMobile ? isSidebarExpandedMobile : !isSidebarOpen;
 
     return (
         <div className={`mail-details-header d-flex align-items-center justify-content-between ${isMobile ? 'admin-mobile-header' : ''}`}>
             <div className="d-flex align-items-center">
-                {isMobile && (
+                {!isDesktop && (
                     <button
                         type="button"
-                        className="btn hover-link admin-mobile-menu-btn"
-                        onClick={toggleMobileSidebar}
-                        aria-label="Open menu"
+                        className="btn hover-link admin-mobile-menu-btn me-2"
+                        style={{ width: '24px', height: '24px' }}
+                        onClick={toggleSidebarHandler}
+                        aria-label="Toggle menu"
                     >
                         <InteractiveIcon
-                            defaultIcon={menuIcon}
-                            hoverIcon={menuIconHover}
+                            defaultIcon={isSidebarShown ? sidebarcloseIcon : sidebaropenIcon}
+                            hoverIcon={isSidebarShown ? sidebarcloseHoverIcon : sidebaropenHoverIcon}
                             activeIcon=""
                             isActive={false}
-                            alt=""
+                            alt="Toggle Sidebar"
                             className="interactive-icon hover-image"
                             renderAs="img"
-                            tooltip=""
+                            tooltip="Toggle Menu"
                         />
                     </button>
                 )}

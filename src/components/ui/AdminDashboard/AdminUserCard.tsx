@@ -11,8 +11,6 @@ interface AdminUserCardProps {
         status?: string;
         hasStandardHours?: boolean;
     };
-    onClickChangePassword: (id: string) => void;
-    onClickStandardHours: (id: string) => void;
     onClickEditUser: (id: string) => void;
     onClickDeleteUser: (id: string) => void;
     onClickLoginAsUser: (id: string) => void;
@@ -20,8 +18,6 @@ interface AdminUserCardProps {
 
 const AdminUserCard = ({
     user,
-    onClickChangePassword,
-    onClickStandardHours,
     onClickEditUser,
     onClickDeleteUser,
     onClickLoginAsUser,
@@ -61,8 +57,6 @@ const AdminUserCard = ({
             <div className="admin-user-card__actions">
                 <ActionCell
                     id={user.id}
-                    onClickChangePassword={onClickChangePassword}
-                    onClickStandardHours={onClickStandardHours}
                     onClickEditUser={onClickEditUser}
                     onClickDeleteUser={onClickDeleteUser}
                     onClickLoginAsUser={onClickLoginAsUser}

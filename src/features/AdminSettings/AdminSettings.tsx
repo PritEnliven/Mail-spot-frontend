@@ -4,10 +4,20 @@ import { showError, showSuccess } from '@components/ui/toast/toastNotification';
 import { useAdmin } from '@context/AdminDataContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { default as closeIcon, default as closeIconHover } from "@images/close-icon.svg";
+import passwordHideIcon from "@images/password-hide-icon-16.svg";
+import passwordShowIcon from "@images/password-show-icon-16.svg";
 import type { Response } from '@models/Response';
-import { adminSaveSettings, getAdminSettings } from '@services/adminService/adminService';
+import { adminGetUserStandardHours, adminSaveSettings, getAdminSettings, type StandardHoursConfig } from '@services/adminService/adminService';
 import { isDangerousExtension } from './dangerousFileExtensions';
 import { SUGGESTED_FILE_EXTENSIONS } from './suggestedFileExtensions';
+import UserStandardHoursFields, {
+    applyConfiguredStandardHoursDays,
+    buildDefaultStandardHoursDays,
+    buildStandardHoursPayload,
+    DEFAULT_TIME_ZONE,
+    validateStandardHours,
+    type StandardHoursDayRow,
+} from './UserStandardHoursFields';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +45,8 @@ const AdminSettings = () => {
             both: false,
             aiFeatures: false,
             status: true,
+            password: '',
+            confirmPassword: '',
         },
     });
 
@@ -45,6 +57,12 @@ const AdminSettings = () => {
     const [extensionQuery, setExtensionQuery] = useState('');
     const [extensionMenuOpen, setExtensionMenuOpen] = useState(false);
     const skipExtensionBlurRef = useRef(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [hoursEnabled, setHoursEnabled] = useState(false);
+    const [timeZone, setTimeZone] = useState(DEFAULT_TIME_ZONE);
+    const [standardDays, setStandardDays] = useState<StandardHoursDayRow[]>(buildDefaultStandardHoursDays);
+    const isUserSettings = Boolean(settingPayLoad && !settingPayLoad.isAdmin);
 
     const syncFileExtensions = (next: string[]) => {
         fileExtensionsRef.current = next;
@@ -59,11 +77,23 @@ const AdminSettings = () => {
     const suggestedExtensionOptions = useMemo(() => {
         const selected = new Set(fileExtensions.map((ext) => ext.toLowerCase()));
         const query = extensionQuery.trim().replace(/^\.+/, '').toLowerCase();
-        return SUGGESTED_FILE_EXTENSIONS.filter((ext) => {
+        const matches = SUGGESTED_FILE_EXTENSIONS.filter((ext) => {
             if (selected.has(ext)) return false;
             if (!query) return true;
             return ext.includes(query);
         });
+
+        // If the user typed a custom extension not in the list, show it as a selectable option.
+        if (
+            query
+            && !selected.has(query)
+            && !matches.some((ext) => ext === query)
+            && !isDangerousExtension(query)
+        ) {
+            return [query, ...matches];
+        }
+
+        return matches;
     }, [fileExtensions, extensionQuery]);
 
     useEffect(() => {
@@ -81,6 +111,40 @@ const AdminSettings = () => {
                     fileExtensionsRef.current = filteredExtensions;
                     setFileExtensions(filteredExtensions);
 
+                    let standardHours: Partial<StandardHoursConfig> = response.data.standardHours ?? {};
+                    let nextZone = typeof response.data.timeZone === 'string' && response.data.timeZone.trim()
+                        ? response.data.timeZone
+                        : '';
+
+                    if (!response.data.standardHours && settingPayLoad.userId && !settingPayLoad.isAdmin) {
+                        try {
+                            const hoursResponse = await adminGetUserStandardHours(settingPayLoad.userId);
+                            if (!isMounted) return;
+                            const hoursPayload = hoursResponse?.data ?? {};
+                            const hoursUser = hoursPayload.user ?? {};
+                            standardHours = hoursPayload.standardHours ?? hoursUser.standardHours ?? {};
+                            if (!nextZone) {
+                                nextZone = typeof hoursPayload.timeZone === 'string' && hoursPayload.timeZone.trim()
+                                    ? hoursPayload.timeZone
+                                    : (typeof hoursUser.timeZone === 'string' ? hoursUser.timeZone : '');
+                            }
+                        } catch (hoursError) {
+                            console.error('Error fetching standard hours:', hoursError);
+                        }
+                    }
+
+                    if (!nextZone) nextZone = DEFAULT_TIME_ZONE;
+
+                    setHoursEnabled(Boolean(standardHours.enabled));
+                    setTimeZone(nextZone);
+                    setStandardDays(
+                        standardHours.days?.length
+                            ? applyConfiguredStandardHoursDays(standardHours.days)
+                            : buildDefaultStandardHoursDays(),
+                    );
+                    setShowPassword(false);
+                    setShowConfirmPassword(false);
+
                     reset({
                         name: response.data.userName,
                         email: response.data.email,
@@ -90,7 +154,9 @@ const AdminSettings = () => {
                         receive: response.data.receiveFromOutsideDomain,
                         both: response.data.both,
                         aiFeatures: response.data.aiFeatures,
-                        status: response.data.status
+                        status: response.data.status,
+                        password: '',
+                        confirmPassword: '',
                     });
                 }
             } catch (error) {
@@ -152,7 +218,7 @@ const AdminSettings = () => {
         skipExtensionBlurRef.current = true;
         addExtension(extension);
         clearExtensionInput();
-        setExtensionMenuOpen(true);
+        setExtensionMenuOpen(false);
         fileExtensionInputRef.current?.focus();
     };
 
@@ -180,6 +246,15 @@ const AdminSettings = () => {
             return;
         }
 
+        const password = typeof data.password === 'string' ? data.password.trim() : '';
+        if (isUserSettings) {
+            const hoursError = validateStandardHours(hoursEnabled, timeZone, standardDays);
+            if (hoursError) {
+                showError(hoursError);
+                return;
+            }
+        }
+
         let payload = {
             fileSize: data.fileSize,
             allowedFileTypes,
@@ -189,7 +264,14 @@ const AdminSettings = () => {
             aiFeatures: data.aiFeatures,
             isAdmin: settingPayLoad?.isAdmin ?? false,
             userId: userId,
-            status: data.status
+            status: data.status,
+            ...(isUserSettings
+                ? {
+                    timeZone,
+                    standardHours: buildStandardHoursPayload(hoursEnabled, standardDays),
+                    ...(password ? { password } : {}),
+                }
+                : {}),
         }
         const response = await adminSaveSettings(payload);
         if (response.statusCode === 200) {
@@ -241,9 +323,13 @@ const AdminSettings = () => {
         setValue('receive', checked, { shouldDirty: true });
     };
 
+    const updateStandardDay = (day: number, patch: Partial<StandardHoursDayRow>) => {
+        setStandardDays((current) => current.map((row) => (row.day === day ? { ...row, ...patch } : row)));
+    };
+
     return (
-        <div>
             <div className="admin-setting-box" id="adminSettingBox">
+                <div className="admin-setting-box__scroll">
                 <div className="row m-0 row-p">
                     <div className={`col-lg-4 col-md-4 col-p ${settingPayLoad?.isAdmin ? 'd-none' : ''}`}>
                         <div className="form-group form-row ">
@@ -363,23 +449,29 @@ const AdminSettings = () => {
                                         >
                                             {suggestedExtensionOptions.length > 0 ? (
                                                 <ul className="admin-file-extension-combo__list">
-                                                    {suggestedExtensionOptions.map((extension) => (
-                                                        <li key={extension}>
-                                                            <button
-                                                                type="button"
-                                                                className="admin-file-extension-combo__option"
-                                                                role="option"
-                                                                onClick={() => selectSuggestedExtension(extension)}
-                                                            >
-                                                                .{extension}
-                                                            </button>
-                                                        </li>
-                                                    ))}
+                                                    {suggestedExtensionOptions.map((extension) => {
+                                                        // const query = extensionQuery.trim().replace(/^\.+/, '').toLowerCase();
+                                                        
+                                                        return (
+                                                            <li key={extension}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="admin-file-extension-combo__option"
+                                                                    role="option"
+                                                                    onClick={() => selectSuggestedExtension(extension)}
+                                                                >
+                                                                    .{extension}
+                                                                </button>
+                                                            </li>
+                                                        );
+                                                    })}
                                                 </ul>
                                             ) : (
                                                 <p className="admin-file-extension-combo__empty">
                                                     {extensionQuery.trim()
-                                                        ? 'No matching suggestions. Press Enter to add a custom type.'
+                                                        ? (isDangerousExtension(extensionQuery.trim().replace(/^\.+/, '').toLowerCase())
+                                                            ? 'This extension is not allowed for security reasons.'
+                                                            : 'This extension is already added.')
                                                         : 'All suggested extensions are already added.'}
                                                 </p>
                                             )}
@@ -413,6 +505,8 @@ const AdminSettings = () => {
                         </div>
                     </div>
                 </div>
+                <div className={isUserSettings ? 'admin-options-hours-row' : undefined}>
+                <div className="admin-options-hours-row__left">
                 <div className="switch-settings">
                     <div className="d-flex align-items-center justify-content-between mb-3">
                         <span className="fs-12-commom">Send to outside domains</span>
@@ -515,20 +609,110 @@ const AdminSettings = () => {
                         </div>
                     </div>
                 </div>
-                <div className="d-flex align-items-center mt-5">
-                    <button className="btn-new mb-0 me-3" onClick={redirectToDashboard}>
-                        Cancel
-                    </button>
+                {isUserSettings && (
+                    <div className="admin-setting-section">
+                        <h6 className="admin-setting-section-title">Change password</h6>
+                        <p className="admin-standard-hours-modal__hint">
+                            Leave both fields blank to keep the current password.
+                        </p>
+                        <div className="form-group form-row">
+                            <label className="control-label" htmlFor="new-password">
+                                New password
+                            </label>
+                            <div className="input-control">
+                                <div className="input-icon-add">
+                                    <Controller
+                                        name="password"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input
+                                                {...field}
+                                                type={showPassword ? 'text' : 'password'}
+                                                className="form-control"
+                                                id="new-password"
+                                                placeholder="New password"
+                                                autoComplete="new-password"
+                                            />
+                                        )}
+                                    />
+                                    <img
+                                        src={showPassword ? passwordShowIcon : passwordHideIcon}
+                                        alt={showPassword ? 'Hide password' : 'Show password'}
+                                        className="input-icon-3"
+                                        onClick={() => setShowPassword((current) => !current)}
+                                        style={{ cursor: 'pointer' }}
+                                    />
+                                </div>
+                            </div>
+                            {errors.password && (
+                                <span className="invalid-feedback" style={{ display: 'block' }}>
+                                    {errors.password.message}
+                                </span>
+                            )}
+                        </div>
+                        <div className="form-group form-row">
+                            <label className="control-label" htmlFor="confirm-password">
+                                Confirm password
+                            </label>
+                            <div className="input-control">
+                                <div className="input-icon-add">
+                                    <Controller
+                                        name="confirmPassword"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input
+                                                {...field}
+                                                type={showConfirmPassword ? 'text' : 'password'}
+                                                className="form-control"
+                                                id="confirm-password"
+                                                placeholder="Confirm password"
+                                                autoComplete="new-password"
+                                            />
+                                        )}
+                                    />
+                                    <img
+                                        src={showConfirmPassword ? passwordShowIcon : passwordHideIcon}
+                                        alt={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                        className="input-icon-3"
+                                        onClick={() => setShowConfirmPassword((current) => !current)}
+                                        style={{ cursor: 'pointer' }}
+                                    />
+                                </div>
+                            </div>
+                            {errors.confirmPassword && (
+                                <span className="invalid-feedback" style={{ display: 'block' }}>
+                                    {errors.confirmPassword.message}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+                </div>
+                {isUserSettings && (
+                    <UserStandardHoursFields
+                        enabled={hoursEnabled}
+                        timeZone={timeZone}
+                        days={standardDays}
+                        onEnabledChange={setHoursEnabled}
+                        onTimeZoneChange={setTimeZone}
+                        onDayChange={updateStandardDay}
+                    />
+                )}
+                </div>
+                </div>
+                <div className="admin-setting-box__footer">
                     <SubmitButton
-                        className="btn-new ms-3 send-btn d-flex align-items-center loading-spinner"
+                        className="btn-new mb-0 send-btn d-flex align-items-center loading-spinner"
                         onClick={handleSubmit(onSubmit, (errors: any) => {
                             console.log('SUBMIT BLOCKED BY ERRORS:', errors);
                             showError("Please fix the validation errors before submitting");
                         })}
                     >Save</SubmitButton>
+                    <button className="btn-new mb-0" type="button" onClick={redirectToDashboard}>
+                        Cancel
+                    </button>
                 </div>
             </div>
-        </div >
     )
 }
 

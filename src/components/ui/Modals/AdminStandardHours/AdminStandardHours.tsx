@@ -338,15 +338,30 @@ function AdminStandardHours({ modalId, zIndex, userId, userName, onSaved }: Admi
                                         </div>
                                         {days.map((row) => (
                                             <div key={row.day} className="admin-standard-hours-modal__day-row">
-                                                <label className="admin-standard-hours-modal__day-check">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={row.active}
-                                                        disabled={!enabled}
-                                                        onChange={(event) => updateDay(row.day, { active: event.target.checked })}
-                                                    />
-                                                    <span>{row.label}</span>
-                                                </label>
+                                                <div className="admin-standard-hours-modal__day-check">
+                                                    <div className="mail-received-check-btn">
+                                                        <div className={`blue checkbox-custom table-check${enabled ? '' : ' disabled-checkbox-custom'}`}>
+                                                            <input
+                                                                type="checkbox"
+                                                                id={`standardHoursDay-${row.day}`}
+                                                                className="list-child"
+                                                                checked={row.active}
+                                                                disabled={!enabled}
+                                                                onChange={(event) => updateDay(row.day, { active: event.target.checked })}
+                                                            />
+                                                            <label
+                                                                htmlFor={`standardHoursDay-${row.day}`}
+                                                                className="label-text"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <label
+                                                        htmlFor={`standardHoursDay-${row.day}`}
+                                                        className="admin-standard-hours-modal__day-label"
+                                                    >
+                                                        {row.label}
+                                                    </label>
+                                                </div>
                                                 <div className={`admin-standard-hours-modal__times ${!row.active ? 'admin-standard-hours-modal__times--inactive' : ''}`}>
                                                     <div className="input-icon-add position-relative admin-standard-hours-modal__time-field">
                                                         <CustomTimeSelector

@@ -1,11 +1,7 @@
-:root {
-  --ai-chat-header-offset: 53px; /* .mail-details-header + bottom border */
-}
-
 .ai-chat-panel {
   overflow: hidden;
   position: fixed;
-  top: var(--ai-chat-header-offset);
+  top: 53px;
   right: 0;
   bottom: 0;
   width: min(520px, 100vw);
@@ -45,14 +41,12 @@
   pointer-events: auto;
 }
 
-/* Tablet: slightly narrower so mail list still has room */
 @media (max-width: 1100px) and (min-width: 768px) {
   .ai-chat-panel {
     width: min(440px, 42vw);
   }
 }
 
-/* Mobile: full-screen */
 @media (max-width: 767px) {
   .ai-chat-panel {
     top: 0;
@@ -78,8 +72,6 @@
     display: none;
   }
 }
-
-/* ── Mobile backdrop ──────────────────────────────────────── */
 .ai-chat-backdrop {
   position: fixed;
   inset: 0;
@@ -87,15 +79,6 @@
   z-index: 1039;
 }
 
-/* ── "Ask AI" header button ───────────────────────────────── */
-/*
- * Inherits all visual styles from .btn-new / .btn-new-bg.
- * Only overrides the min-width so the button stays compact in the header.
- */
-/*
- * Right header column: Ask AI sits centered in the free space
- * between the search bar (left of this column) and the profile cluster.
- */
 .mail-header-right {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -105,7 +88,6 @@
   gap: 8px;
 }
 
-/* When Ask AI is hidden, keep profile pinned to the right */
 .mail-header-right:not(:has(.ask-ai-btn-slot)) {
   grid-template-columns: 1fr;
   justify-items: end;
@@ -148,7 +130,7 @@
     0 2px 4px -2px rgba(0, 0, 0, 0.1),
     0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transition: filter 0.15s ease, transform 0.15s ease;
-  z-index: 1;
+  z-index: 8;
 }
 
 .ask-ai-icon-btn:hover,
@@ -164,7 +146,6 @@
   filter: brightness(9);
 }
 
-/* Mobile / narrow header: pin actions to the right */
 .mail-header-right--compact {
   display: flex;
   justify-content: flex-end;
@@ -182,22 +163,21 @@
     margin-right: 2px;
   }
 
+
+}
+@media (max-width: 575px) {
   .ask-ai-btn-slot--mobile .ask-ai-icon-btn {
-    position: static;
-    bottom: auto;
-    right: auto;
-    z-index: auto;
+        bottom: 80px;
+        right: 24px;
   }
 }
 
-/* ── Panel header ─────────────────────────────────────────── */
 .ai-chat-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 8px 12px 8px;
   border-bottom: 1px solid #d0d9de;
-  /* background: #fff; */
   gap: 8px;
   min-height: 52px;
   flex-shrink: 0;
@@ -257,10 +237,7 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  /* background: linear-gradient(160deg, #f8fafc, #e8f3fc); */
 }
-
-/* ── History dropdown (under history icon) ─────────────────── */
 .ai-chat-history-dropdown {
   position: fixed;
   z-index: 1200;
@@ -433,15 +410,12 @@
   gap: 6px;
   flex-shrink: 0;
 }
-
-/* New chat button — inherits .btn-new from Bootstrap global styles */
 .ai-chat-panel__new-btn {  
   white-space: nowrap;
   border: 0;
   background-color: transparent;
 }
 
-/* Close button */
 .ai-chat-panel__close-btn {
   background: transparent;
   border: none;
@@ -466,7 +440,6 @@
   display: block;
 }
 
-/* ── Panel body (scrollable messages) ─────────────────────── */
 .ai-chat-panel__body {
   flex: 1;
   overflow-y: auto;
@@ -479,7 +452,6 @@
   min-height: 0;
 }
 
-/* ── Empty state ──────────────────────────────────────────── */
 .ai-chat-empty {
   display: flex;
   flex-direction: column;
@@ -538,7 +510,6 @@
   border-color: #0097ef;
 }
 
-/* ── Message bubbles ──────────────────────────────────────── */
 .ai-chat-message {
   display: flex;
   flex-direction: column;
@@ -547,7 +518,6 @@
   min-width: 0;
 }
 
-/* User message */
 .ai-chat-message--user {
   align-items: flex-end;
 }
@@ -564,7 +534,6 @@
   word-break: break-word;
 }
 
-/* Assistant message — nearly full-width card, content wraps inside */
 .ai-chat-message--assistant {
   align-items: stretch;
   width: 100%;
@@ -585,7 +554,6 @@
   min-width: 0;
 }
 
-/* ── Assistant header: sparkle + name  ·····  Show thinking ── */
 .ai-chat-assistant-head {
   display: flex;
   align-items: center;
@@ -654,7 +622,6 @@
   overflow: hidden;
 }
 
-/* Markdown content inside assistant bubble */
 .ai-chat-md {
   display: flex;
   flex-direction: column;
@@ -678,7 +645,6 @@
   margin-bottom: 0;
 }
 
-/* A paragraph that is only a bold line acts as a section heading */
 .ai-chat-md__p:has(> strong:only-child) {
   margin-top: 4px;
 }
@@ -740,8 +706,6 @@
   word-break: break-word;
   min-width: 0;
 }
-
-/* Nested lists (indented bullets under a parent item) */
 .ai-chat-md__ul .ai-chat-md__ul,
 .ai-chat-md__ul .ai-chat-md__ol,
 .ai-chat-md__ol .ai-chat-md__ul,
@@ -769,7 +733,6 @@
   margin-top: 4px;
 }
 
-/* Soft section divider when answer has --- / *** */
 .ai-chat-md__hr {
   border: 0;
   border-top: 1px solid #d0d9de;
@@ -783,7 +746,6 @@
   padding: 0 2px;
 }
 
-/* ── Status messages ──────────────────────────────────────── */
 .ai-chat-status {
   font-size: 13px;
   color: #717d84;
@@ -795,7 +757,7 @@
   font-style: italic;
 }
 
-/* ── Disclaimer ───────────────────────────────────────────── */
+
 .ai-chat-disclaimer {
   font-size: 12px;
   color: #717d84;
@@ -804,7 +766,7 @@
   border-radius: 4px;
 }
 
-/* ── Citations ────────────────────────────────────────────── */
+
 .ai-chat-citations {
   display: flex;
   flex-direction: column;
@@ -821,7 +783,6 @@
   margin-bottom: 2px;
 }
 
-/* Citation row — uses btn-new visual style */
 .ai-chat-citation-row {
   display: flex;
   flex-direction: column;
@@ -878,18 +839,15 @@
   line-height: 1.4;
   margin-top: 2px;
 }
-
-/* ── Show sources button ──────────────────────────────────── */
 .ai-chat-show-sources-btn {
   align-self: flex-start;
   margin-top: 4px;
   font-size: 13px;
-  padding: 5px 12px;
+  padding: 5px 12px !important;
   min-width: auto;
   gap: 4px;
 }
 
-/* ── Thumbs feedback ──────────────────────────────────────── */
 .ai-chat-thumbs {
   display: flex;
   align-items: center;
@@ -934,7 +892,6 @@
   color: #dc3545;
 }
 
-/* ── Loading indicator ────────────────────────────────────── */
 .ai-chat-loading {
   position: relative;
   display: flex;
@@ -954,54 +911,26 @@
   min-width: 0;
 }
 
-/* ── Searching: animated gradient border (replaces the spinner) ── */
+
 .ai-chat-loading--glow,
-/* .ai-chat-input-row.is-searching {
-  position: relative;
-}
-
-.ai-chat-loading--glow::before,
-.ai-chat-input-row.is-searching::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(90deg, #006dbc, #0090d9, #3aaee8, #d0d9de, #3aaee8, #0090d9, #006dbc);
-  background-size: 200% 100%;
-  animation: ai-chat-border-flow 1.6s linear infinite;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-@keyframes ai-chat-border-flow {
-  to {
-    background-position: 200% 0;
-  }
-} */
-
-
 .ai-chat-input-row.is-searching {
   position: relative;
+
   --ai-logo-gradient: linear-gradient(
     90deg,
-    #006dbc 0%,
-    #00a3ef 12%,
-    #ffffff 28%,   /* logo ka white */
-    #ffb800 44%,   /* yellow */
-    #ff9900 50%,   /* orange */
-    #ffb800 56%,
-    #ffffff 72%,
-    #00a3ef 88%,
-    #006dbc 100%
+    #006DBC 0%,
+    #008FE0 15%,
+    #00C8FF 30%,
+   
+    #FF9900 58%,
+    #FFB800 70%,
+   
+    #8DDBFF 92%,
+    #006DBC 100%
   );
 }
 
 .ai-chat-loading--glow::before
-/* .ai-chat-input-row.is-searching::before */
  {
   content: "";
   position: absolute;
@@ -1021,7 +950,7 @@
 @keyframes ai-chat-flow {
   to { background-position: 200% 0; }
 }
-/* ── Typewriter caret ─────────────────────────────────────── */
+
 .ai-chat-typewriter {
   min-width: 0;
 }
@@ -1049,7 +978,7 @@
   }
 }
 
-/* ── Source cards (inside the assistant bubble) ───────────── */
+
 .ai-chat-message--assistant .ai-chat-message__bubble--wide {
   max-width: 100%;
   background-color: #e5e8ea;
@@ -1130,10 +1059,7 @@
   border-color: #bbc0c4;
 }
 
-/* .ai-chat-mail-card.tone-g { --card-bg: #ddf3e7; --card-fg: #0f6b3c; }
-.ai-chat-mail-card.tone-a { --card-bg: #fff0d3; --card-fg: #8a5300; }
-.ai-chat-mail-card.tone-p { --card-bg: #ebe5fd; --card-fg: #5b3bc4; }
-.ai-chat-mail-card.tone-b { --card-bg: #d6ebfb; --card-fg: #0a5ea8; } */
+
 
 .ai-chat-mail-card__main {
   display: flex;
@@ -1306,7 +1232,7 @@
   }
 }
 
-/* ── Panel footer (input row) ─────────────────────────────── */
+
 .ai-chat-panel__footer {
   padding:16px;
   flex-shrink: 0;
@@ -1316,8 +1242,7 @@
   position: relative;
   width: 100%;
   box-sizing: border-box;
-    /* border-top: 1px solid transparent;
-  border-image: linear-gradient(90deg,rgba(128, 216, 255, 0) 0%, #80D8FF 25%, #80D8FF 75%, rgba(128, 216, 255, 0) 100%) 1; */
+   
 }
 
 .ai-chat-input-row {
@@ -1331,18 +1256,7 @@
   background: #fff;
 }
 
-/* .ai-chat-input-row::after {
-  content: "";
-  background: linear-gradient(32deg, rgba(0, 163, 239, 1) 0%, rgba(0, 93, 137, 0) 100%);
-  width: calc(100% - 16px);
-  height: 1px;
-  display: block;
-  z-index: 1;
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  pointer-events: none;
-} */
+
 
 .ai-chat-input-wrap {
   flex: 1;
@@ -1353,12 +1267,12 @@
 .ai-chat-panel__textarea {
   resize: none;
   min-height: 44px;
-  max-height: 120px;
+  max-height: 36px;
   font-size: 14px;
   overflow-y: hidden;
   overflow-x: hidden;
-  line-height: 20px;
-  padding: 12px 44px 12px 12px;
+  line-height: 18px;
+  padding: 8px 44px 8px 8px;
   border-radius: 6px;
   box-sizing: border-box;
   width: 100%;
@@ -1378,7 +1292,7 @@
 }
 
 .ai-chat-panel__textarea::-webkit-scrollbar {
-  display: none; /* Chrome / Edge / Safari */
+  display: none; 
 }
 
 .ai-chat-panel__textarea.is-scrollable {
@@ -1409,7 +1323,7 @@
   z-index: 2;
 }
 
-/* Blue only after the user has typed a prompt */
+
 .ai-chat-panel__send-btn.has-prompt {
   color: #0097ef;
 }

@@ -32,6 +32,9 @@ interface adminSaveSettingsPayload {
     isAdmin: boolean
     userId?: string | null
     status: boolean | true
+    timeZone?: string
+    standardHours?: StandardHoursConfig
+    password?: string
 }
 
 async function adminLogin(payload: loginPayload) {

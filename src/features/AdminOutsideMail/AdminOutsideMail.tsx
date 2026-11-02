@@ -95,7 +95,7 @@ const rangeLabel = (page: number, limit: number, total: number): string => {
 };
 
 const AdminOutsideMail = () => {
-    const { isMobile } = useScreen();
+    const { isDesktop } = useScreen();
     const [users, setUsers] = useState<OutsideMailUser[]>([]);
     const [usersLoading, setUsersLoading] = useState(true);
     const [usersError, setUsersError] = useState('');
@@ -106,7 +106,8 @@ const AdminOutsideMail = () => {
     const userQueryRef = useRef(userQuery);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [detailUser, setDetailUser] = useState<OutsideMailUser | null>(null);
-    const [mobileDetail, setMobileDetail] = useState(false);
+    // Mirrors mailbox isMailListOpen: on ≤992, hide users list while a user's emails are open.
+    const [isUserListOpen, setIsUserListOpen] = useState(true);
     const [direction, setDirection] = useState<OutsideMailType>('sent');
     const [emails, setEmails] = useState<OutsideMailMessage[]>([]);
     const [emailsLoading, setEmailsLoading] = useState(false);
@@ -259,6 +260,16 @@ const AdminOutsideMail = () => {
         };
     }, [selectedUserId, direction, mailQuery, mailPage, pageSizeNum]);
 
+    // Keep email detail visible when shrinking past 992 with a user selected (mailbox-style).
+    useEffect(() => {
+        if (!isDesktop && selectedUserId) {
+            setIsUserListOpen(false);
+        }
+        if (isDesktop) {
+            setIsUserListOpen(true);
+        }
+    }, [isDesktop, selectedUserId]);
+
     const selectUser = (user: OutsideMailUser) => {
         if (user.id !== selectedUserId) {
             setSelectedUserId(user.id);
@@ -271,7 +282,7 @@ const AdminOutsideMail = () => {
             setMailTotal(0);
             setEmailError('');
         }
-        if (isMobile) setMobileDetail(true);
+        if (!isDesktop) setIsUserListOpen(false);
     };
 
     const changeDirection = (next: OutsideMailType) => {
@@ -288,8 +299,10 @@ const AdminOutsideMail = () => {
 
     const emptyCopy = mailQuery ? 'No emails match this search.' : EMPTY_MAIL_MESSAGE;
 
+    const isDetailOpen = !isDesktop && !isUserListOpen && !!selectedUserId;
+
     return (
-        <div className={`admin-outside-mail ${isMobile && mobileDetail ? 'admin-outside-mail--detail' : ''}`}>
+        <div className={`admin-outside-mail ${isDetailOpen ? 'admin-outside-mail--detail' : ''}`}>
             <aside className="admin-outside-mail__users">
                 <div className="admin-outside-mail__user-search">
                     <img src={searchIcon} alt="" />
@@ -352,11 +365,11 @@ const AdminOutsideMail = () => {
             </aside>
 
             <section className="admin-outside-mail__detail">
-                {isMobile && (
+                {!isDesktop && (
                     <button
                         type="button"
                         className="admin-outside-mail__back"
-                        onClick={() => setMobileDetail(false)}
+                        onClick={() => setIsUserListOpen(true)}
                     >
                         <img src={chevronLeftIconBig} alt="" />
                         Users

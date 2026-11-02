@@ -233,14 +233,12 @@ const AdminDashboard = () => {
         {
             headerName: 'Actions',
             sortable: false,
-            minWidth: 160,
-            maxWidth: 190,
+            minWidth: 120,
+            maxWidth: 140,
             flex: 0,
             cellRenderer: (params: any) => (
                 <ActionCell
                     id={params.data.id}
-                    onClickChangePassword={handleChangePassword}
-                    onClickStandardHours={handleStandardHours}
                     onClickEditUser={handleEditUser}
                     onClickDeleteUser={handleDeleteUser}
                     onClickLoginAsUser={handleLoginAsUser}
@@ -248,23 +246,6 @@ const AdminDashboard = () => {
             )
         }
     ];
-
-    const handleChangePassword = (userId: string) => {
-        openModal('changePassword', {
-            userId
-        });
-    };
-
-    const handleStandardHours = (userId: string) => {
-        const user = rowData.find((row) => row.id === userId);
-        openModal('standardHours', {
-            userId,
-            userName: (user?.name || user?.email || '').trim(),
-            onSaved: () => {
-                fetchUsers(currentPage, pageSizeNum);
-            },
-        });
-    };
 
     const handleEditUser = async (userId: string) => {
         try {

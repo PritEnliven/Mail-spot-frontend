@@ -1,8 +1,4 @@
 import InteractiveIcon from "@components/ui/InteractiveIcon";
-import changePasswordIcon from "@images/change-password-new-icon.svg";
-import changePasswordIconHover from "@images/change-password-new-icon-hover.svg";
-import clockIcon from "@images/clock-icon.svg";
-import clockIconHover from "@images/clock-icon-hover.svg";
 import editIcon from "@images/edit2-icon.svg";
 import editIconHover from "@images/edit2-icon-hover.svg";
 import deleteIcon from "@images/trash-icon.svg";
@@ -12,8 +8,6 @@ import loginIconHover from "@images/login-icon-hover.svg";
 
 interface ActionsCellProps {
     id: string;
-    onClickChangePassword: (id: string) => void;
-    onClickStandardHours: (id: string) => void;
     onClickEditUser: (id: string) => void;
     onClickDeleteUser: (id: string) => void;
     onClickLoginAsUser: (id: string) => void;
@@ -21,54 +15,12 @@ interface ActionsCellProps {
 
 const ActionsCell = ({
     id,
-    onClickChangePassword,
-    onClickStandardHours,
     onClickEditUser,
     onClickDeleteUser,
     onClickLoginAsUser,
 }: ActionsCellProps) => {
     return (
         <div className="d-flex align-items-center">
-            <a
-                href="#"
-                className="hover-link d-flex align-items-center me-2"
-                onClick={(e) => {
-                    e.preventDefault();
-                    onClickChangePassword(id);
-                }}
-            >
-                <InteractiveIcon
-                    defaultIcon={changePasswordIcon}
-                    hoverIcon={changePasswordIconHover}
-                    activeIcon=""
-                    isActive={false}
-                    alt=""
-                    className="interactive-icon hover-image"
-                    renderAs="img"
-                    tooltip="Change Password"
-                />
-            </a>
-
-            <a
-                href="#"
-                className="hover-link d-flex align-items-center me-2"
-                onClick={(e) => {
-                    e.preventDefault();
-                    onClickStandardHours(id);
-                }}
-            >
-                <InteractiveIcon
-                    defaultIcon={clockIcon}
-                    hoverIcon={clockIconHover}
-                    activeIcon=""
-                    isActive={false}
-                    alt=""
-                    className="interactive-icon hover-image"
-                    renderAs="img"
-                    tooltip="Standard hours"
-                />
-            </a>
-
             <a
                 href="#"
                 className="hover-link d-flex align-items-center me-2"
