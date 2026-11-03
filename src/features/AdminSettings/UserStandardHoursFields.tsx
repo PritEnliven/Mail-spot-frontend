@@ -1,5 +1,6 @@
-import Select2Wrapper, { type SingleOption } from '@components/ui/form/Select2Wrapper';
+import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import CustomTimeSelector from '@components/ui/Modals/CalendarEventModal/TimerList';
+import { TIMEZONE_OPTIONS } from '@constants/timezones';
 import timeIcon from '@images/time-icon-16.svg';
 import { generateTimeOptions } from '@utils/calendarUtil';
 import { formatTime12HrFrom24HrString, formatTime24HrFrom12HrString } from '@utils/dateUtil';
@@ -12,16 +13,6 @@ export interface StandardHoursDayRow {
     start: string;
     end: string;
 }
-
-const TIMEZONE_OPTIONS: SingleOption[] = [
-    { value: 'UTC', label: 'GMT +00:00 — UTC' },
-    { value: 'Asia/Kolkata', label: 'GMT +05:30 — Asia/Kolkata' },
-    { value: 'America/New_York', label: 'GMT -05:00 — America/New_York' },
-    { value: 'Europe/London', label: 'GMT +00:00 — Europe/London' },
-    { value: 'Asia/Dubai', label: 'GMT +04:00 — Asia/Dubai' },
-    { value: 'Asia/Tokyo', label: 'GMT +09:00 — Asia/Tokyo' },
-    { value: 'Australia/Sydney', label: 'GMT +10:00 — Australia/Sydney' },
-];
 
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const TIME_OPTIONS_15 = generateTimeOptions({ interval: 15 });
@@ -135,6 +126,7 @@ interface UserStandardHoursFieldsProps {
     onEnabledChange: (enabled: boolean) => void;
     onTimeZoneChange: (timeZone: string) => void;
     onDayChange: (day: number, patch: Partial<StandardHoursDayRow>) => void;
+    hint?: string;
 }
 
 const UserStandardHoursFields = ({
@@ -144,11 +136,12 @@ const UserStandardHoursFields = ({
     onEnabledChange,
     onTimeZoneChange,
     onDayChange,
+    hint = 'Emails outside these hours appear in Out of Hours Emails for this user.',
 }: UserStandardHoursFieldsProps) => (
     <div className="admin-user-hours">
         <h6 className="admin-setting-section-title">Standard hours</h6>
         <p className="admin-standard-hours-modal__hint">
-            Emails outside these hours appear in Out of Hours Emails for this user.
+            {hint}
         </p>
         <div className="admin-standard-hours-modal__toggle-row">
             <span className="fs-12-commom">Enable standard hours</span>
@@ -177,6 +170,7 @@ const UserStandardHoursFields = ({
                             options={TIMEZONE_OPTIONS}
                             placeholder="Select time zone"
                             isMulti={false}
+                            typeable={true}
                         />
                     </div>
                 </div>

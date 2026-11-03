@@ -1,9 +1,10 @@
 import BaseModal from '@components/ui/BaseModal';
-import Select2Wrapper, { type SingleOption } from '@components/ui/form/Select2Wrapper';
+import Select2Wrapper from '@components/ui/form/Select2Wrapper';
 import SubmitButton from '@components/ui/form/SubmitButton';
 import InteractiveIcon from '@components/ui/InteractiveIcon';
 import CustomTimeSelector from '@components/ui/Modals/CalendarEventModal/TimerList';
 import { showError, showSuccess } from '@components/ui/toast/toastNotification';
+import { TIMEZONE_OPTIONS } from '@constants/timezones';
 import { useAdminUI } from '@context/AdminUIContext';
 import timeIcon from '@images/time-icon-16.svg';
 import arrowPointingOutIcon from '@images/arrows-pointing-out-icon.svg';
@@ -34,16 +35,6 @@ interface DayRow {
     start: string;
     end: string;
 }
-
-const TIMEZONE_OPTIONS: SingleOption[] = [
-    { value: 'UTC', label: 'GMT +00:00 — UTC' },
-    { value: 'Asia/Kolkata', label: 'GMT +05:30 — Asia/Kolkata' },
-    { value: 'America/New_York', label: 'GMT -05:00 — America/New_York' },
-    { value: 'Europe/London', label: 'GMT +00:00 — Europe/London' },
-    { value: 'Asia/Dubai', label: 'GMT +04:00 — Asia/Dubai' },
-    { value: 'Asia/Tokyo', label: 'GMT +09:00 — Asia/Tokyo' },
-    { value: 'Australia/Sydney', label: 'GMT +10:00 — Australia/Sydney' },
-];
 
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const TIME_OPTIONS_15 = generateTimeOptions({ interval: 15 });
@@ -173,6 +164,7 @@ function AdminStandardHours({ modalId, zIndex, userId, userName, onSaved }: Admi
         if (!timeZone.trim()) return 'Select a time zone.';
 
         const activeDays = days.filter((row) => row.active);
+
         if (activeDays.length === 0) {
             return 'Select at least one working day, or turn standard hours off.';
         }
@@ -326,6 +318,7 @@ function AdminStandardHours({ modalId, zIndex, userId, userName, onSaved }: Admi
                                                 options={TIMEZONE_OPTIONS}
                                                 placeholder="Select time zone"
                                                 isMulti={false}
+                                                typeable={true}
                                                 isDisabled={!enabled}
                                             />
                                         </div>

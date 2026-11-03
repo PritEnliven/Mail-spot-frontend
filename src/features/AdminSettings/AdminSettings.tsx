@@ -247,12 +247,10 @@ const AdminSettings = () => {
         }
 
         const password = typeof data.password === 'string' ? data.password.trim() : '';
-        if (isUserSettings) {
-            const hoursError = validateStandardHours(hoursEnabled, timeZone, standardDays);
-            if (hoursError) {
-                showError(hoursError);
-                return;
-            }
+        const hoursError = validateStandardHours(hoursEnabled, timeZone, standardDays);
+        if (hoursError) {
+            showError(hoursError);
+            return;
         }
 
         let payload = {
@@ -265,13 +263,9 @@ const AdminSettings = () => {
             isAdmin: settingPayLoad?.isAdmin ?? false,
             userId: userId,
             status: data.status,
-            ...(isUserSettings
-                ? {
-                    timeZone,
-                    standardHours: buildStandardHoursPayload(hoursEnabled, standardDays),
-                    ...(password ? { password } : {}),
-                }
-                : {}),
+            timeZone,
+            standardHours: buildStandardHoursPayload(hoursEnabled, standardDays),
+            ...(isUserSettings && password ? { password } : {}),
         }
         const response = await adminSaveSettings(payload);
         if (response.statusCode === 200) {
@@ -328,8 +322,8 @@ const AdminSettings = () => {
     };
 
     return (
-            <div className="admin-setting-box" id="adminSettingBox">
-                <div className="admin-setting-box__scroll">
+        <div className="admin-setting-box" id="adminSettingBox">
+            <div className="admin-setting-box__scroll">
                 <div className="row m-0 row-p">
                     <div className={`col-lg-4 col-md-4 col-p ${settingPayLoad?.isAdmin ? 'd-none' : ''}`}>
                         <div className="form-group form-row ">
@@ -451,7 +445,7 @@ const AdminSettings = () => {
                                                 <ul className="admin-file-extension-combo__list">
                                                     {suggestedExtensionOptions.map((extension) => {
                                                         // const query = extensionQuery.trim().replace(/^\.+/, '').toLowerCase();
-                                                        
+
                                                         return (
                                                             <li key={extension}>
                                                                 <button
@@ -505,190 +499,189 @@ const AdminSettings = () => {
                         </div>
                     </div>
                 </div>
-                <div className={isUserSettings ? 'admin-options-hours-row' : undefined}>
-                <div className="admin-options-hours-row__left">
-                <div className="switch-settings">
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                        <span className="fs-12-commom">Send to outside domains</span>
-                        <div className="switch-toggale d-flex align-items-center justify-content-center">
-                            <Controller
-                                name="send"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={(e) => handleSendToggle(e.target.checked, field.onChange)}
-                                        ref={field.ref}
-                                        name={field.name}
-                                        id="send"
-                                    />
-                                )}
-                            />
-                            <label htmlFor="send">Toggle</label>
-                        </div>
-                    </div>
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                        <span className="fs-12-commom">Receive from outside domains</span>
-                        <div className="switch-toggale d-flex align-items-center justify-content-center">
-                            <Controller
-                                name="receive"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={(e) => handleReceiveToggle(e.target.checked, field.onChange)}
-                                        ref={field.ref}
-                                        name={field.name}
-                                        id="receive"
-                                    />
-                                )}
-                            />
-                            <label htmlFor="receive">Toggle</label>
-                        </div>
-                    </div>
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                        <span className="fs-12-commom">Both</span>
-                        <div className="switch-toggale d-flex align-items-center justify-content-center">
-                            <Controller
-                                name="both"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={(e) => handleBothToggle(e.target.checked, field.onChange)}
-                                        ref={field.ref}
-                                        name={field.name}
-                                        id="both"
-                                    />
-                                )}
-                            />
-                            <label htmlFor="both">Toggle</label>
-                        </div>
-                    </div>
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                        <span className="fs-12-commom">Enable AI-powered features</span>
-                        <div className="switch-toggale d-flex align-items-center justify-content-center">
-                            <Controller
-                                name="aiFeatures"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                        ref={field.ref}
-                                        name={field.name}
-                                        id="aiFeatures"
-                                    />
-                                )}
-                            />
-                            <label htmlFor="aiFeatures">Toggle</label>
-                        </div>
-                    </div>
-                    <div className={`d-flex align-items-center justify-content-between mb-3 ${settingPayLoad?.isAdmin ? 'd-none' : ''}`}>
-                        <span className="fs-12-commom">Status (Active/InActive)</span>
-                        <div className="switch-toggale d-flex align-items-center justify-content-center">
-                            <Controller
-                                name="status"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={(e) => field.onChange(e.target.checked)}
-                                        ref={field.ref}
-                                        name={field.name}
-                                        id="status"
-                                    />
-                                )}
-                            />
-                            <label htmlFor="status">Toggle</label>
-                        </div>
-                    </div>
-                </div>
-                {isUserSettings && (
-                    <div className="admin-setting-section">
-                        <h6 className="admin-setting-section-title">Change password</h6>
-                        <p className="admin-standard-hours-modal__hint">
-                            Leave both fields blank to keep the current password.
-                        </p>
-                        <div className="form-group form-row">
-                            <label className="control-label" htmlFor="new-password">
-                                New password
-                            </label>
-                            <div className="input-control">
-                                <div className="input-icon-add">
+                <div className="admin-options-hours-row">
+                    <div className="admin-options-hours-row__left">
+                        <div className="switch-settings">
+                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                <span className="fs-12-commom">Send to outside domains</span>
+                                <div className="switch-toggale d-flex align-items-center justify-content-center">
                                     <Controller
-                                        name="password"
+                                        name="send"
                                         control={control}
                                         render={({ field }) => (
                                             <input
-                                                {...field}
-                                                type={showPassword ? 'text' : 'password'}
-                                                className="form-control"
-                                                id="new-password"
-                                                placeholder="New password"
-                                                autoComplete="new-password"
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={(e) => handleSendToggle(e.target.checked, field.onChange)}
+                                                ref={field.ref}
+                                                name={field.name}
+                                                id="send"
                                             />
                                         )}
                                     />
-                                    <img
-                                        src={showPassword ? passwordShowIcon : passwordHideIcon}
-                                        alt={showPassword ? 'Hide password' : 'Show password'}
-                                        className="input-icon-3"
-                                        onClick={() => setShowPassword((current) => !current)}
-                                        style={{ cursor: 'pointer' }}
-                                    />
+                                    <label htmlFor="send">Toggle</label>
                                 </div>
                             </div>
-                            {errors.password && (
-                                <span className="invalid-feedback" style={{ display: 'block' }}>
-                                    {errors.password.message}
-                                </span>
-                            )}
-                        </div>
-                        <div className="form-group form-row">
-                            <label className="control-label" htmlFor="confirm-password">
-                                Confirm password
-                            </label>
-                            <div className="input-control">
-                                <div className="input-icon-add">
+                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                <span className="fs-12-commom">Receive from outside domains</span>
+                                <div className="switch-toggale d-flex align-items-center justify-content-center">
                                     <Controller
-                                        name="confirmPassword"
+                                        name="receive"
                                         control={control}
                                         render={({ field }) => (
                                             <input
-                                                {...field}
-                                                type={showConfirmPassword ? 'text' : 'password'}
-                                                className="form-control"
-                                                id="confirm-password"
-                                                placeholder="Confirm password"
-                                                autoComplete="new-password"
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={(e) => handleReceiveToggle(e.target.checked, field.onChange)}
+                                                ref={field.ref}
+                                                name={field.name}
+                                                id="receive"
                                             />
                                         )}
                                     />
-                                    <img
-                                        src={showConfirmPassword ? passwordShowIcon : passwordHideIcon}
-                                        alt={showConfirmPassword ? 'Hide password' : 'Show password'}
-                                        className="input-icon-3"
-                                        onClick={() => setShowConfirmPassword((current) => !current)}
-                                        style={{ cursor: 'pointer' }}
-                                    />
+                                    <label htmlFor="receive">Toggle</label>
                                 </div>
                             </div>
-                            {errors.confirmPassword && (
-                                <span className="invalid-feedback" style={{ display: 'block' }}>
-                                    {errors.confirmPassword.message}
-                                </span>
-                            )}
+                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                <span className="fs-12-commom">Both</span>
+                                <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                    <Controller
+                                        name="both"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={(e) => handleBothToggle(e.target.checked, field.onChange)}
+                                                ref={field.ref}
+                                                name={field.name}
+                                                id="both"
+                                            />
+                                        )}
+                                    />
+                                    <label htmlFor="both">Toggle</label>
+                                </div>
+                            </div>
+                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                <span className="fs-12-commom">Enable AI-powered features</span>
+                                <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                    <Controller
+                                        name="aiFeatures"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={(e) => field.onChange(e.target.checked)}
+                                                ref={field.ref}
+                                                name={field.name}
+                                                id="aiFeatures"
+                                            />
+                                        )}
+                                    />
+                                    <label htmlFor="aiFeatures">Toggle</label>
+                                </div>
+                            </div>
+                            <div className={`d-flex align-items-center justify-content-between mb-3 ${settingPayLoad?.isAdmin ? 'd-none' : ''}`}>
+                                <span className="fs-12-commom">Status (Active/InActive)</span>
+                                <div className="switch-toggale d-flex align-items-center justify-content-center">
+                                    <Controller
+                                        name="status"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={(e) => field.onChange(e.target.checked)}
+                                                ref={field.ref}
+                                                name={field.name}
+                                                id="status"
+                                            />
+                                        )}
+                                    />
+                                    <label htmlFor="status">Toggle</label>
+                                </div>
+                            </div>
                         </div>
+                        {isUserSettings && (
+                            <div className="admin-setting-section">
+                                <h6 className="admin-setting-section-title">Change password</h6>
+                                <p className="admin-standard-hours-modal__hint">
+                                    Leave both fields blank to keep the current password.
+                                </p>
+                                <div className="form-group form-row">
+                                    <label className="control-label" htmlFor="new-password">
+                                        New password
+                                    </label>
+                                    <div className="input-control">
+                                        <div className="input-icon-add">
+                                            <Controller
+                                                name="password"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <input
+                                                        {...field}
+                                                        type={showPassword ? 'text' : 'password'}
+                                                        className="form-control"
+                                                        id="new-password"
+                                                        placeholder="New password"
+                                                        autoComplete="new-password"
+                                                    />
+                                                )}
+                                            />
+                                            <img
+                                                src={showPassword ? passwordShowIcon : passwordHideIcon}
+                                                alt={showPassword ? 'Hide password' : 'Show password'}
+                                                className="input-icon-3"
+                                                onClick={() => setShowPassword((current) => !current)}
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                        </div>
+                                    </div>
+                                    {errors.password && (
+                                        <span className="invalid-feedback" style={{ display: 'block' }}>
+                                            {errors.password.message}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="form-group form-row">
+                                    <label className="control-label" htmlFor="confirm-password">
+                                        Confirm password
+                                    </label>
+                                    <div className="input-control">
+                                        <div className="input-icon-add">
+                                            <Controller
+                                                name="confirmPassword"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <input
+                                                        {...field}
+                                                        type={showConfirmPassword ? 'text' : 'password'}
+                                                        className="form-control"
+                                                        id="confirm-password"
+                                                        placeholder="Confirm password"
+                                                        autoComplete="new-password"
+                                                    />
+                                                )}
+                                            />
+                                            <img
+                                                src={showConfirmPassword ? passwordShowIcon : passwordHideIcon}
+                                                alt={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                                className="input-icon-3"
+                                                onClick={() => setShowConfirmPassword((current) => !current)}
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                        </div>
+                                    </div>
+                                    {errors.confirmPassword && (
+                                        <span className="invalid-feedback" style={{ display: 'block' }}>
+                                            {errors.confirmPassword.message}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
-                </div>
-                {isUserSettings && (
                     <UserStandardHoursFields
                         enabled={hoursEnabled}
                         timeZone={timeZone}
@@ -696,23 +689,27 @@ const AdminSettings = () => {
                         onEnabledChange={setHoursEnabled}
                         onTimeZoneChange={setTimeZone}
                         onDayChange={updateStandardDay}
+                        hint={
+                            isUserSettings
+                                ? 'Emails outside these hours appear in Out of Hours Emails for this user.'
+                                : 'Default hours for users. Emails outside these hours appear in Out of Hours Emails.'
+                        }
                     />
-                )}
-                </div>
-                </div>
-                <div className="admin-setting-box__footer">
-                    <SubmitButton
-                        className="btn-new mb-0 send-btn d-flex align-items-center loading-spinner"
-                        onClick={handleSubmit(onSubmit, (errors: any) => {
-                            console.log('SUBMIT BLOCKED BY ERRORS:', errors);
-                            showError("Please fix the validation errors before submitting");
-                        })}
-                    >Save</SubmitButton>
-                    <button className="btn-new mb-0" type="button" onClick={redirectToDashboard}>
-                        Cancel
-                    </button>
                 </div>
             </div>
+            <div className="admin-setting-box__footer">
+                <SubmitButton
+                    className="btn-new mb-0 send-btn d-flex align-items-center loading-spinner"
+                    onClick={handleSubmit(onSubmit, (errors: any) => {
+                        console.log('SUBMIT BLOCKED BY ERRORS:', errors);
+                        showError("Please fix the validation errors before submitting");
+                    })}
+                >Save</SubmitButton>
+                <button className="btn-new mb-0" type="button" onClick={redirectToDashboard}>
+                    Cancel
+                </button>
+            </div>
+        </div>
     )
 }
 

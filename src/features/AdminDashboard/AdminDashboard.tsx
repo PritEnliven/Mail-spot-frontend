@@ -300,7 +300,8 @@ const AdminDashboard = () => {
             localStorage.setItem('id', id);
 
             window.open('/mail/INBOX', '_blank');
-        } else {
+        }                   
+        else {
             showError(
                 response.message ||
                 response.data?.message ||
